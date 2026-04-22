@@ -46,74 +46,35 @@ export abstract class CommandCenter {
     this.name = name;
   }
 
-  /**
-   * Get human-readable connection string for debugging
-   */
   abstract getConnectionString(): string;
-
-  /**
-   * Start the command center connection
-   */
   abstract start(): Promise<void>;
-
-  /**
-   * Stop the command center connection
-   */
   abstract stop(): Promise<void>;
-
-  /**
-   * Called when a client connects - request full state
-   */
   abstract clientConnected(): void;
 
-  /**
-   * TURNOUT CONTROL
-   */
   abstract setTurnout(address: number, closed: boolean): Promise<boolean>;
   abstract getTurnout(address: number): Promise<TurnoutInfo | null>;
 
-  /**
-   * LOCOMOTIVE CONTROL
-   */
   abstract setLoco(address: number, speed: number, direction: "forward" | "reverse"): Promise<boolean>;
   abstract setLocoFunction(address: number, fn: number, active: boolean): Promise<boolean>;
   abstract getLoco(address: number): Promise<LocoInfo | null>;
 
-  /**
-   * POWER CONTROL
-   */
   abstract setTrackPower(on: boolean): Promise<boolean>;
   abstract emergencyStop(): Promise<boolean>;
 
-  /**
-   * SENSOR / INPUT CONTROL
-   */
   abstract getSensor(address: number): Promise<SensorInfo | null>;
 
-  /**
-   * Get current power state
-   */
   getPowerInfo(): PowerInfo {
     return this.powerInfo;
   }
 
-  /**
-   * Get stored loco info
-   */
   getLocoInfo(address: number): LocoInfo | undefined {
     return this.locos.get(address);
   }
 
-  /**
-   * Get stored turnout info
-   */
   getTurnoutInfo(address: number): TurnoutInfo | undefined {
     return this.turnouts.get(address);
   }
 
-  /**
-   * Get name
-   */
   getName(): string {
     return this.name;
   }
