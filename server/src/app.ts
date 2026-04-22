@@ -14,8 +14,10 @@ export const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-const publicDir = path.resolve(__dirname, "../../public");
-const clientDistDir = path.resolve(__dirname, "../../../dist/client");
+export const distDir = path.resolve(__dirname, "../../dist");
+export const clientDir = path.resolve(distDir, "./client");
+export const publicDir = path.resolve(__dirname, "../public");
+
 
 app.use("/images", express.static(path.join(publicDir, "images")));
 
@@ -28,8 +30,9 @@ app.get("/api/health", (_req, res) => {
 });
 
 // production frontend
-app.use(express.static(clientDistDir));
+app.use(express.static(clientDir));
 
 app.get(/.*/, (_req, res) => {
-  res.sendFile(path.join(clientDistDir, "index.html"));
+  res.sendFile(path.join(clientDir, "index.html"));
 });
+

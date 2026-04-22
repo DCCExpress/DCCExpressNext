@@ -8,9 +8,10 @@ function resolveCommandCentersFilePath() {
     const candidate2 = path.resolve(cwd, "server", "data", "command-centers.json");
     return { candidate1, candidate2 };
 }
-async function readCommandCenters() {
+async function readCommandCenter() {
     const { candidate1, candidate2 } = resolveCommandCentersFilePath();
     try {
+        console.log("COMMAND CENTER:", candidate1);
         const content = await fs.readFile(candidate1, "utf8");
         return JSON.parse(content);
     }
@@ -20,55 +21,89 @@ async function readCommandCenters() {
             return JSON.parse(content);
         }
         catch {
-            return [];
+            return null;
         }
     }
 }
-async function writeCommandCenters(items) {
+async function writeCommandCenter(item) {
     const { candidate1, candidate2 } = resolveCommandCentersFilePath();
     try {
         await fs.mkdir(path.dirname(candidate1), { recursive: true });
-        await fs.writeFile(candidate1, JSON.stringify(items, null, 2), "utf8");
+        await fs.writeFile(candidate1, JSON.stringify(item, null, 2), "utf8");
     }
     catch {
         await fs.mkdir(path.dirname(candidate2), { recursive: true });
-        await fs.writeFile(candidate2, JSON.stringify(items, null, 2), "utf8");
+        await fs.writeFile(candidate2, JSON.stringify(item, null, 2), "utf8");
     }
+}
+function isValidCommandCenterType(value) {
+    return value === "z21" || value === "dcc-ex-tcp" || value === "dcc-ex-serial";
+}
+function normalizeCommandCenter(input) {
+    return {
+        name: typeof input.name === "string" ? input.name : "",
+        type: isValidCommandCenterType(input.type) ? input.type : "z21",
+        z21: {
+            host: typeof input.z21?.host === "string" ? input.z21.host : "",
+            port: typeof input.z21?.port === "number" ? input.z21.port : 21105,
+        },
+        dccexTcp: {
+            host: typeof input.dccexTcp?.host === "string" ? input.dccexTcp.host : "",
+            port: typeof input.dccexTcp?.port === "number" ? input.dccexTcp.port : 2560,
+        },
+        dccexSerial: {
+            serialPort: typeof input.dccexSerial?.serialPort === "string"
+                ? input.dccexSerial.serialPort
+                : "",
+            baudRate: typeof input.dccexSerial?.baudRate === "number"
+                ? input.dccexSerial.baudRate
+                : 115200,
+        },
+        autoConnect: typeof input.autoConnect === "boolean" ? input.autoConnect : false,
+    };
 }
 commandCenterRoutes.get("/", async (_req, res) => {
     try {
-        const items = await readCommandCenters();
-        res.json(items);
+        const item = await readCommandCenter();
+        res.json(item);
     }
     catch (error) {
         console.error("GET /api/command-centers error:", error);
         res.status(500).json({
             success: false,
-            message: "Nem sikerült beolvasni a parancsközpontokat.",
+            message: "Nem sikerült beolvasni a parancsközpontot.",
         });
     }
 });
 commandCenterRoutes.put("/", async (req, res) => {
     try {
-        const items = req.body;
-        if (!Array.isArray(items)) {
+        const body = req.body;
+        if (!body || typeof body !== "object" || Array.isArray(body)) {
             res.status(400).json({
                 success: false,
-                message: "A kérés törzsének parancsközpont tömbnek kell lennie.",
+                message: "A kérés törzsének egy parancsközpont objektumnak kell lennie.",
             });
             return;
         }
-        await writeCommandCenters(items);
+        const item = normalizeCommandCenter(body);
+        if (!item.name.trim()) {
+            res.status(400).json({
+                success: false,
+                message: "A név megadása kötelező.",
+            });
+            return;
+        }
+        await writeCommandCenter(item);
         res.json({
             success: true,
-            count: items.length,
+            item,
         });
     }
     catch (error) {
         console.error("PUT /api/command-centers error:", error);
         res.status(500).json({
             success: false,
-            message: "Nem sikerült elmenteni a parancsközpontokat.",
+            message: "Nem sikerült elmenteni a parancsközpontot.",
         });
     }
 });

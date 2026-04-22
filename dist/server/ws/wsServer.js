@@ -23,6 +23,10 @@ export function setupWebSocketServer(server) {
             type: "ws:welcome",
             data: { message: "Connected" },
         });
+        sendToClient(ws, {
+            type: "commandCenterInfo",
+            data: { alive: false }
+        });
         ws.on("message", (message) => {
             try {
                 const text = message.toString();

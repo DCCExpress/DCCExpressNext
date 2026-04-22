@@ -281,7 +281,7 @@
           "bg": "black",
           "fg": "white",
           "address": 0,
-          "turnouAddress": 10,
+          "turnouAddress": 11,
           "turnoutClosedValue": true
         },
         {

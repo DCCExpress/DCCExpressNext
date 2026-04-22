@@ -64,7 +64,7 @@ export function setupWebSocketServer(server: http.Server) {
 
     sendToClient(ws, {
       type: "commandCenterInfo",
-      data: {alive: true}
+      data: {alive: false}
     } as CommandCenterInfo)
 
     ws.on("message", (message) => {

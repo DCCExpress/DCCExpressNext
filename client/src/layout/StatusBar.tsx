@@ -33,9 +33,9 @@ export default function StatusBar(p: StatusBarProps) {
           {/* WS: {wsStatus} */}
           WS
         </Badge>
-        <Badge color={(commandCenterAlive && wsStatus == "connected") ? "green" : "red"} variant="filled" >CC</Badge>
+        <Badge color={(commandCenterAlive && wsStatus == "connected") ? "green" : "red"} variant="filled" >{commandCenter.type}</Badge>
 
-        <Badge color={(!commandCenterAlive && wsStatus == "connected") ? "green" : "red"} variant="filled" >PWR</Badge>
+        <Badge color={(commandCenterAlive && wsStatus == "connected") ? "green" : "red"} variant="filled" >PWR</Badge>
 
       </Group>
 
