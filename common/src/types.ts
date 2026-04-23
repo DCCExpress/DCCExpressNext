@@ -1,3 +1,23 @@
+export type Direction = "forward" | "reverse";
+
+export type SetLocoMessage = {
+  type: "setLoco";
+  data: {
+    address: number;
+    speed: number;
+    direction: Direction;
+  };
+};
+
+export type SetLocoFunctionMessage = {
+  type: "setLocoFunction";
+  data: {
+    fn: number;
+    on: boolean;
+  };
+};
+
+
 export type SetTurnoutMessage = {
   type: "setTurnout";
   data: {
@@ -46,6 +66,14 @@ export type Loco = {
   invert: boolean;
   image?: string;
   functions: LocoFunction[];
+};
+
+
+export type LocoState = {
+  address: number;
+  speed: number;
+  direction: Direction;
+  functions: number;
 };
 
 export type CommandCenterType = "z21" | "dcc-ex-tcp" | "dcc-ex-serial";
