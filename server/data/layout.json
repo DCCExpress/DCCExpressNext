@@ -461,6 +461,7 @@
           "bg": "black",
           "fg": "white",
           "address": 1,
+          "turnoutAddress": 0,
           "turnoutClosedValue": true
         },
         {
@@ -905,6 +906,7 @@
           "bg": "black",
           "fg": "white",
           "address": 0,
+          "turnoutAddress": 0,
           "turnoutClosedValue": false
         },
         {

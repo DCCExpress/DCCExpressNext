@@ -82,7 +82,7 @@ export class ElementFactory {
         tleft.name = data.name;
         tleft.rotation = data.rotation;
         tleft.address = data.address;
-        tleft.turnoutAddress = data.turnoutAddress,
+        tleft.turnoutAddress = data.turnoutAddress ?? 0,
         tleft.turnoutClosedValue = data.turnoutClosedValue,
         tleft.bg = data.bg;
         tleft.fg = data.fg;
@@ -95,7 +95,7 @@ export class ElementFactory {
         tright.name = data.name;
         tright.rotation = data.rotation;
         tright.address = data.address;
-        tright.turnoutAddress = data.turnoutAddress,
+        tright.turnoutAddress = data.turnoutAddress ?? 0,
         tright.turnoutClosedValue = data.turnoutClosedValue,
         tright.bg = data.bg;
         tright.fg = data.fg;

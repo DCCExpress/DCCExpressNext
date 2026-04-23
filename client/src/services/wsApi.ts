@@ -44,5 +44,6 @@ export const wsApi = {
 
   setTurnout(t: SetTurnoutMessage) {
     return wsClient.send(t);
+    return wsClient.send({ type: t.type, data: t.data });
   }
 };
