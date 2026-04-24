@@ -49,6 +49,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [commandCenterOpened, setCommandCenterOpened] = useState(false);
   const [commandCenter, setCommandCenter] = useState<CommandCenter>(new CommandCenter());
   const [commandCenterAlive, setCommandCenterAlive] = useState(false);
+const [commandCenterPower, setCommandCenterPower] = useState(false);
 
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
@@ -384,10 +385,11 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       }
     );
 
-    const unsubscribeCommandCenter = wsClient.on<{ alive: boolean }>(
+    const unsubscribeCommandCenter = wsClient.on(
       "commandCenterInfo",
       data => {
         setCommandCenterAlive(data.alive);
+        setCommandCenterPower(data.power);
       }
     );
 
@@ -579,7 +581,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         </AppShell.Main>
 
         <AppShell.Footer>
-          <StatusBar commandCenter={commandCenter} alive={commandCenterAlive} />
+          <StatusBar commandCenter={commandCenter} alive={commandCenterAlive} power={commandCenterPower} />
         </AppShell.Footer>
       </AppShell>
     </>

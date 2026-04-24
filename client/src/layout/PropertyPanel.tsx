@@ -166,7 +166,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                   </Group>
                   <Checkbox
                     mb={4}
-                    label="Show occupacy address"
+                    label="Show occupancy address"
                     checked={settings.showOccupacySensorAddress}
                     onChange={(e) =>
                       updateSettings({ showOccupacySensorAddress: e.currentTarget.checked })

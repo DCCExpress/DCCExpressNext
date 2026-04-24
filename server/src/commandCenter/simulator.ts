@@ -5,12 +5,45 @@ import { log } from "../utility.js";
 import { broadcastAll } from "../ws/wsServer.js";
 
 export class CommandCenterSimulator extends CommandCenter {
+
+  alive: boolean = false;
+  aliveTask: NodeJS.Timeout | null = null;
   start(): Promise<boolean> {
     log("Starting command center simulator...");
+    this.alive = true;
+    this.power = true;
+    this.aliveTask = setInterval(() => {
+      
+      const msg: WsMessage = {
+        type: "commandCenterInfo",
+        data: {
+          alive: this.alive,
+          power: this.power,
+          type: "simulator",
+        }
+      };
+      broadcastAll(msg);
+
+    }, 1000);
     return Promise.resolve(true);
   }
   stop(): Promise<boolean> {
     log("Stopping command center simulator...");
+    this.alive = false;
+    this.power = false;
+    if(this.aliveTask) {
+    clearInterval(this.aliveTask);
+    this.aliveTask = null;
+    const msg: WsMessage = {
+        type: "commandCenterInfo",
+        data: {
+          alive: this.alive,
+          power: this.power,
+          type: "simulator",
+        }
+      };
+      broadcastAll(msg);
+    }
     return Promise.resolve(true);
   }
   getConnectionString(): string {

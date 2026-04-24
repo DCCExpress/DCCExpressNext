@@ -7,11 +7,13 @@ import { useEffect, useState } from "react";
 type StatusBarProps = {
   commandCenter: CommandCenter;
   alive: boolean;
+  power: boolean;
 };
 export default function StatusBar(p: StatusBarProps) {
 
   const [commandCenter, setCommandCenter] = useState(p.commandCenter);
   const [commandCenterAlive, setCommandCenterAlive] = useState(false);
+  const [commandCenterPower, setCommandCenterPower] = useState(false);
 
   const wsStatus = useWsStatus();
 
@@ -21,8 +23,11 @@ export default function StatusBar(p: StatusBarProps) {
 
   useEffect(() => {
     setCommandCenterAlive(p.alive);
-  }, [p.alive])
+  }, [p.alive]);
 
+    useEffect(() => {
+      setCommandCenterPower(p.power);
+    }, [p.power]);
   return (
     <Group h="100%" px="md" justify="space-between">
 
@@ -35,7 +40,7 @@ export default function StatusBar(p: StatusBarProps) {
         </Badge>
         <Badge color={(commandCenterAlive && wsStatus == "connected") ? "green" : "red"} variant="filled" >{commandCenter.type}</Badge>
 
-        <Badge color={(commandCenterAlive && wsStatus == "connected") ? "green" : "red"} variant="filled" >PWR</Badge>
+        <Badge color={(commandCenterPower && wsStatus == "connected") ? "green" : "red"} variant="filled" >PWR</Badge>
 
       </Group>
 

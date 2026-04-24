@@ -47,12 +47,14 @@ export type CommandCenterInfo = {
   data: {
     type: string;
     alive: boolean;
+    power: boolean;
   }
 }
 export type WsMessage =
   | SetTurnoutMessage
   | SetSensorMessage
   | TurnoutChangedMessage
+  | CommandCenterInfo
   | {
       type: string;
       data?: any;
