@@ -3,10 +3,10 @@ import { Loco, LocoState, SetLocoFunctionMessage, SetLocoMessage, WsMessage } fr
 import { CommandCenter, LocoInfo, SensorInfo, TurnoutInfo } from "./CommandCenter.js";
 
 export class CommandCenterSimulator extends CommandCenter{
-  start(): Promise<void> {
+  start(): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
-  stop(): Promise<void> {
+  stop(): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
   getConnectionString(): string {

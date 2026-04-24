@@ -12,16 +12,16 @@ export interface PowerInfo {
   current: number;
 }
 
-export interface TurnoutInfo {
-  address: number;
-  closed: boolean;
-}
-
 export interface LocoInfo {
   address: number;
   speed: number;
   direction: "forward" | "reverse";
   functions: { [fn: number]: boolean };
+}
+
+export interface TurnoutInfo {
+  address: number;
+  closed: boolean;
 }
 
 export interface SensorInfo {
@@ -47,8 +47,8 @@ export abstract class CommandCenter {
   }
 
   abstract getConnectionString(): string;
-  abstract start(): Promise<void>;
-  abstract stop(): Promise<void>;
+  abstract start(): Promise<boolean>;
+  abstract stop(): Promise<boolean>;
   abstract clientConnected(): void;
 
   abstract setTurnout(address: number, closed: boolean): Promise<boolean>;

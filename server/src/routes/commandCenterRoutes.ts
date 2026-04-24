@@ -30,7 +30,7 @@ export function setCommandCenterConfigLoadedCallback(cb: (conf: CommandCenterCon
   cbCommandCenterConfigLoaded = cb;
 }
 
-async function readCommandCenter(): Promise<CommandCenterConfig | null> {
+export async function readCommandCenter(): Promise<CommandCenterConfig | null> {
   const { candidate1, candidate2 } = resolveCommandCentersFilePath();
 
   try {

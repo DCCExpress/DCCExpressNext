@@ -1,9 +1,10 @@
 import type http from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
 import { CommandCenterInfo, WsMessage } from "../../../common/src/types.js";
-import { CommandCenterConfig, setCommandCenterConfigLoadedCallback } from "../routes/commandCenterRoutes.js";
+import { CommandCenterConfig, readCommandCenter, setCommandCenterConfigLoadedCallback } from "../routes/commandCenterRoutes.js";
 import { CommandCenter } from "../commandCenter/CommandCenter.js";
 import { CommandCenterSimulator } from "../commandCenter/simulator.js";
+import { Z21CommandCenter } from "../commandCenter/z21CommandCenter.js";
 
 
 // type SetTurnoutMessage = {
@@ -53,14 +54,42 @@ function broadcast(wss: WebSocketServer, message: unknown, exclude?: WebSocket) 
   }
 }
 
-let commandCenter: CommandCenter | null = new CommandCenterSimulator("Simulator");
+let commandCenter: CommandCenter | null = null; //new CommandCenterSimulator("Simulator");
+
 setCommandCenterConfigLoadedCallback((conf: CommandCenterConfig | null) => {
   console.log("Command center config loaded:", conf);
+
+  if (commandCenter) {
+    commandCenter.stop().then(() => {
+      console.log("Previous command center stopped");
+    });
+  }
+
+
+  switch (conf?.type) {
+    case "z21":
+      console.log("Starting command center:", conf.type);
+      commandCenter = new Z21CommandCenter(conf.name, conf.z21.host!, conf.z21.port!);
+      commandCenter.start().then(() => {
+        console.log("Command center started:", conf?.type);
+      }).catch(err => {
+        console.error("Failed to start command center:", err);
+      });
+      break;
+    default:
+      commandCenter = new CommandCenterSimulator("Simulator");
+      break;
+  }
 });
 
 export function setupWebSocketServer(server: http.Server) {
 
-
+  readCommandCenter().then(conf => {
+    console.log("Initial command center config:", conf);
+  }).catch(err => {
+    console.error("Failed to read initial command center config:", err);
+  });
+  
   const wss = new WebSocketServer({
     server,
     path: "/ws",
@@ -80,93 +109,99 @@ export function setupWebSocketServer(server: http.Server) {
     } as CommandCenterInfo)
 
     ws.on("message", (message) => {
-      try {
-        const text = message.toString();
-        console.log("WS message:", text);
+      if (commandCenter && false) {
+        try {
+          const text = message.toString();
+          console.log("WS message:", text);
 
-        const msg = JSON.parse(text) as WsMessage;
+          const msg = JSON.parse(text) as WsMessage;
 
-        switch (msg.type) {
-          case "setTurnout": {
-            const address = msg.data?.address;
-            const closed = msg.data?.closed;
+          switch (msg.type) {
+            case "setTurnout": {
+              const address = msg.data?.address;
+              const closed = msg.data?.closed;
 
-            if (typeof address !== "number" || typeof closed !== "boolean") {
-              sendToClient(ws, {
-                type: "error",
-                data: { message: "Invalid setTurnout payload" },
-              });
-              return;
-            }
-
-            // Itt később majd valódi hardver/logika kezelés jöhet
-            // pl. setTurnout(address, closed);
-                broadcast(wss, {
-                  type: "turnoutChanged",
-                  data: {
-                    address,
-                    closed,
-                  },
-                });
-
-            commandCenter?.setTurnout(address, closed).then(success => {
-              console.log("Turnout set result:", success);
-              if (!success) {
-                broadcast(wss, {
+              if (typeof address !== "number" || typeof closed !== "boolean") {
+                sendToClient(ws, {
                   type: "error",
-                  data: { message: "Failed to set turnout" },
+                  data: { message: "Invalid setTurnout payload" },
                 });
-              } else
-                 {
-                broadcast(wss, {
-                  type: "turnoutChanged",
-                  data: {
-                    address,
-                    closed,
-                  },
-                });
+                return;
               }
-            });
 
-            return;
-          }
-
-          case "setSensor": {
-            const address = msg.data?.address;
-            const on = msg.data?.on;
-
-            if (typeof address !== "number" || typeof on !== "boolean") {
-              sendToClient(ws, {
-                type: "error",
-                data: { message: "Invalid setSensor payload" },
+              // Itt később majd valódi hardver/logika kezelés jöhet
+              // pl. setTurnout(address, closed);
+              broadcast(wss, {
+                type: "turnoutChanged",
+                data: {
+                  address,
+                  closed,
+                },
               });
+
+              commandCenter?.setTurnout(address, closed).then(success => {
+                console.log("Turnout set result:", success);
+                if (!success) {
+                  broadcast(wss, {
+                    type: "error",
+                    data: { message: "Failed to set turnout" },
+                  });
+                } else {
+                  broadcast(wss, {
+                    type: "turnoutChanged",
+                    data: {
+                      address,
+                      closed,
+                    },
+                  });
+                }
+              });
+
               return;
             }
 
-            // Itt később majd valódi hardver/logika kezelés jöhet
-            // pl. setSensor(address, on);
+            case "setSensor": {
+              const address = msg.data?.address;
+              const on = msg.data?.on;
 
-            broadcast(wss, {
-              type: "sensorChanged",
-              data: {
-                address,
-                on,
-              },
-            });
+              if (typeof address !== "number" || typeof on !== "boolean") {
+                sendToClient(ws, {
+                  type: "error",
+                  data: { message: "Invalid setSensor payload" },
+                });
+                return;
+              }
 
-            return;
+              // Itt később majd valódi hardver/logika kezelés jöhet
+              // pl. setSensor(address, on);
+
+              broadcast(wss, {
+                type: "sensorChanged",
+                data: {
+                  address,
+                  on,
+                },
+              });
+
+              return;
+            }
+
+            default: {
+              // minden más mehet tovább, ha akarod
+              broadcast(wss, msg, ws);
+              return;
+            }
           }
-
-          default: {
-            // minden más mehet tovább, ha akarod
-            broadcast(wss, msg, ws);
-            return;
-          }
+        } catch (error) {
+          sendToClient(ws, {
+            type: "error",
+            data: { message: String(error) },
+          });
         }
-      } catch (error) {
+      } else {
         sendToClient(ws, {
           type: "error",
-          data: { message: String(error) },
+          data: { message: "No command center available" },
         });
       }
     });

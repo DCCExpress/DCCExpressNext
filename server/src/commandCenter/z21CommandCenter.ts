@@ -1,44 +1,60 @@
-import { CommandCenter } from "./CommandCenter.js";
+import { RemoteInfo } from "dgram";
+import { CommandCenter, LocoInfo, SensorInfo, TurnoutInfo } from "./CommandCenter.js";
 import { UDPClient } from "./udpClient.js";
 import { log, logError } from "../utility.js";
-const cLAN_X_TURNOUT_INFO0x43 = 0x43;
-const cLAN_SYSTEMSTATE_DATACHANGED0x84 = 0x84;
+
+
+
+const cLAN_X_TURNOUT_INFO0x43 = 0x43
+const cLAN_SYSTEMSTATE_DATACHANGED0x84 = 0x84
+
 export class Z21CommandCenter extends CommandCenter {
-    ip = "";
-    port = 21105;
-    udpClient;
-    lastSentTime = 0;
-    taskId = undefined;
-    buffer = [];
+    ip: string = ""
+    port: number = 21105
+    udpClient: UDPClient
+    lastSentTime: number = 0;
+    taskId?: NodeJS.Timeout = undefined;
+    buffer: any[] = []
     //accessories: { [address: number]: iSetBasicAccessory } = {};
-    polingTask;
-    constructor(name, ip, port) {
-        super(name);
-        this.ip = ip;
-        this.port = port;
-        this.udpClient = new UDPClient(this.name, this.ip, this.port, (buffer, rinfo) => {
+    polingTask?: NodeJS.Timeout;
+
+    constructor(name: string, ip: string, port: number) {
+        super(name)
+        
+        this.ip = ip
+        this.port = port
+
+        this.udpClient = new UDPClient(this.name, this.ip, this.port, (buffer: Buffer, rinfo: RemoteInfo) => {
             const length = buffer.readUInt16LE(0);
             var i = 0;
+
             while (i < buffer.length) {
                 var len = buffer.readUInt16LE(i);
-                var data = buffer.slice(i, i + len);
-                i += len;
-                this.parse(data);
+                var data = buffer.slice(i, i + len)
+                i += len
+                this.parse(data)
             }
+
             if (i != rinfo.size) {
-                logError("Z21 on message: eltérő méretek!");
-                logError("rinfo.size:", rinfo.size);
-                logError("payload:", i);
+
+                logError("Z21 on message: eltérő méretek!")
+                logError("rinfo.size:", rinfo.size)
+                logError("payload:", i)
                 //broadcast({ type: ApiCommands.alert, data: "Z21 on message: eltérő méretek!" } as iData)
             }
         });
     }
-    parse(data) {
+
+    parse(data: any) {
+
     }
     //   parse3(data: any) {
     //     //this.lastMessageReceivedTime = performance.now()
+
+
     //     var len = data.readUInt16LE(0)
     //     var header = data.readUInt16LE(2)
+
     //     if (header == 0x40) {
     //         var xheader = data.readUInt8(4)
     //         //========================================
@@ -53,6 +69,7 @@ export class Z21CommandCenter extends CommandCenter {
     //             var closed = false
     //             var address = (msb << 8) + lsb
     //             zz = data.readUInt8(7) & 0x03
+
     //             var state = "NA"
     //             switch (zz) {
     //                 case 0: state = "Turnout not switched yet"
@@ -66,18 +83,22 @@ export class Z21CommandCenter extends CommandCenter {
     //                 case 3: state = "Invalid"
     //                     break
     //             }
+
     //             // //const cc: iCommandCenter = commandCenters.getDevice(this.uuid)
     //             // const turnoutInfo: iTurnoutInfo = { address: address + 1, isClosed: closed }
     //             // broadcast({ type: ApiCommands.turnoutInfo, data: turnoutInfo } as iData)
     //             // //accessories[address] = { address: address + 1, value: closed, device: this.device }
+
     //             // //var device: iCommandCenter = {id: this.uuid, name: this.name, type: CommandCenterTypes.Z21}
     //             // this.turnouts[address] = turnoutInfo
     //             // log("BROADCAST LAN_X_TURNOUT_INFO:", { address: address + 1, isClosed: closed })
     //         }
+
     //         //========================================
     //         // LAN_X_LOCO_INFO
     //         //========================================
     //         else if (xheader == 0xef && data.length >= 10) {
+
     //             var db0 = data.readUInt8(5)
     //             var db1 = data.readUInt8(6)
     //             var db2 = data.readUInt8(7)
@@ -89,12 +110,14 @@ export class Z21CommandCenter extends CommandCenter {
     //             var db8 = data.readUInt8(13)
     //             //var address = ((db0 & 0x3F) << 8) | db1
     //             var address: any = data.readInt16BE(5) & 0x3fff
+
     //             // var busy = (db2 & 0b0000_1000) > 0
     //             // var speedsteps = (db2 & 0b0000_0111)
     //             // var direction = (db3 & 0b1000_0000) > 0 ? Z21Directions.forward : Z21Directions.reverse
     //             // var speed = (db3 & 0b0111_1111)
     //             // var f0 = ((db4 & 0b0001_0000) >> 4) | ((db4 & 0b0000_1111) << 1)
     //             // var f = (db8 << 29) | (db7 << 21) | (db6 << 13) | (db5 << 5) | f0
+
     //             // var loco: iLoco = { address: address, speed: speed, direction: direction, funcMap: f }
     //             // broadcast({ type: ApiCommands.locoInfo, data: loco } as iData)
     //             //log("BROADCAST Z21 LOCO INFO:", loco)
@@ -108,7 +131,9 @@ export class Z21CommandCenter extends CommandCenter {
     //             this.powerInfo!.trackVoltageOn = (info & 0x02) == 0x02
     //             this.powerInfo!.shortCircuit = (info & 0x04) == 0x04
     //             this.powerInfo!.programmingModeActive = (info & 0x20) == 0x20
+
     //             //const pi: iPowerInfo = { info: data.readUInt8(5), cc: commandCenters.getDevice(this.uuid) }
+
     //             //broadcastAll({ type: ApiCommands.powerInfo, data: this.powerInfo } as iData)
     //         }
     //         //========================================
@@ -127,14 +152,17 @@ export class Z21CommandCenter extends CommandCenter {
     //     // LAN_RMBUS_DATACHANGED
     //     //========================================
     //     else if (header == 0x80 && data.length >= 10) {
+
     //         const length = data.readUInt16LE(0);
     //         const header = data.readUInt16LE(2);
+
     //         if (header == 0x80) {
     //             const group = data.readUInt8(4)
     //             var b1 = data.readUInt8(5)
     //             var b2 = data.readUInt8(6)
     //             const now = Date.now()
     //             var bytes = Array.from(data)
+
     //             // for(var i = 5; i < 13; i++) {
     //             //     bytes.push(data.readUInt8(i))
     //             // }
@@ -156,60 +184,70 @@ export class Z21CommandCenter extends CommandCenter {
     //             Reserved: data.readUInt8(18),
     //             Capabilities: data.readUInt8(19),
     //         }
+
     //         const info = data.readUInt8(16)
     //         this.powerInfo!.emergencyStop = (info & 0x01) == 0x01
     //         this.powerInfo!.trackVoltageOn = (info & 0x02) == 0x00
     //         this.powerInfo!.shortCircuit = (info & 0x04) == 0x04
     //         this.powerInfo!.programmingModeActive = (info & 0x20) == 0x20
+
     //         //const pi: iPowerInfo = { info: data.readUInt8(5), cc: commandCenters.getDevice(this.uuid) }
+
     //         broadcast({ type: ApiCommands.systemInfo, data: sysdata } as iData)
     //         broadcast({ type: ApiCommands.powerInfo, data: this.powerInfo } as iData)
+
     //     }
     //     else if (len == 0x08 && header == 0x10) {
     //         const snr = data.readUInt32LE(4)
     //         log('Z21 SERIAL NUMBER:', snr)
+
     //     }
     //     else {
     //         log(`Válasz érkezett a z21-től: ${data.toString("hex")}`);
     //     }
     // }
-    getConnectionString() {
+
+    getConnectionString(): string {
         throw new Error("Method not implemented.");
     }
-    start() {
+    start(): Promise<boolean> {
         //throw new Error("Method not implemented.");
         log("Starting Z21 command center with config:", { ip: this.ip, port: this.port });
         return Promise.resolve(true);
     }
-    stop() {
+    stop(): Promise<boolean> {
         log("Stopping Z21 command center with config:", { ip: this.ip, port: this.port });
         return Promise.resolve(true);
     }
-    clientConnected() {
+    clientConnected(): void {
         throw new Error("Method not implemented.");
     }
-    setTurnout(address, closed) {
+    setTurnout(address: number, closed: boolean): Promise<boolean> {
+
         return Promise.resolve(true);
     }
-    getTurnout(address) {
+    getTurnout(address: number): Promise<TurnoutInfo | null> {
         throw new Error("Method not implemented.");
     }
-    setLoco(address, speed, direction) {
+    setLoco(address: number, speed: number, direction: "forward" | "reverse"): Promise<boolean> {
         throw new Error("Method not implemented.");
     }
-    setLocoFunction(address, fn, active) {
+    setLocoFunction(address: number, fn: number, active: boolean): Promise<boolean> {
         throw new Error("Method not implemented.");
     }
-    getLoco(address) {
+    getLoco(address: number): Promise<LocoInfo | null> {
         throw new Error("Method not implemented.");
     }
-    setTrackPower(on) {
+    setTrackPower(on: boolean): Promise<boolean> {
         throw new Error("Method not implemented.");
     }
-    emergencyStop() {
+    emergencyStop(): Promise<boolean> {
         throw new Error("Method not implemented.");
     }
-    getSensor(address) {
+    getSensor(address: number): Promise<SensorInfo | null> {
         throw new Error("Method not implemented.");
     }
+
+
+
 }

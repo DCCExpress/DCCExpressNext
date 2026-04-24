@@ -13,7 +13,7 @@ let cbCommandCenterConfigLoaded;
 export function setCommandCenterConfigLoadedCallback(cb) {
     cbCommandCenterConfigLoaded = cb;
 }
-async function readCommandCenter() {
+export async function readCommandCenter() {
     const { candidate1, candidate2 } = resolveCommandCentersFilePath();
     try {
         console.log("COMMAND CENTER:", candidate1);
