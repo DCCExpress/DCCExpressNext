@@ -163,8 +163,8 @@ export default function TopMenuBar({
 
           <Menu.Dropdown>
             <Menu.Item onClick={onOpenLocos}>{t("Locomotives") + "..."}</Menu.Item>
-            <Menu.Item onClick={onOpenLocos}>{t("Trains" + "...")}</Menu.Item>
-            <Menu.Item onClick={onOpenLocos}>{t("Routes") + "..."}</Menu.Item>
+            <Menu.Item disabled onClick={onOpenLocos}>{t("Trains" + "...")}</Menu.Item>
+            <Menu.Item disabled onClick={onOpenLocos}>{t("Routes") + "..."}</Menu.Item>
           </Menu.Dropdown>
         </Menu>
 
@@ -202,7 +202,6 @@ export default function TopMenuBar({
           <Menu.Dropdown>
             <Menu.Item onClick={onSettingsClick}>{t("UI") + "..."}</Menu.Item>
             <Menu.Item onClick={onOpenCommandCenterDialog}>{t("CommandCenter") + "..."}</Menu.Item>
-            <Menu.Item onClick={onOpenLocos}>{t("Routes") + "..."}</Menu.Item>
           </Menu.Dropdown>
         </Menu>
 
