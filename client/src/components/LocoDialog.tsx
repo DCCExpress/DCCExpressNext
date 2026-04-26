@@ -255,8 +255,8 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
                             : undefined,
                         backgroundColor:
                           loco.id === selectedId
-                            ? "var(--mantine-color-blue-0)"
-                            : undefined,
+                            ? "var(--mantine-color-default-hover)"
+                            : undefined
                       }}
                       onClick={() => setSelectedId(loco.id)}
                     >

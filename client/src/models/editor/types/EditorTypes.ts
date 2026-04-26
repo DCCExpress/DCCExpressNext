@@ -57,6 +57,7 @@ export interface DrawOptions {
   overrideY?: number;
   showHandles?: boolean;
   gridSize?: number;
+  darkMode?: boolean;
 }
 
 export interface IBaseElement {

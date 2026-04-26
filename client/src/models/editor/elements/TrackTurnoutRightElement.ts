@@ -232,9 +232,7 @@ export class TrackTurnoutRightElement extends ClickableBaseElement implements IT
 
     mouseDown(ev: MouseEvent) {
         const closed = this.turnoutClosed == this.turnoutClosedValue;
-        //const data = { address: this.turnouAddress, closed: !closed }
-        const data: SetTurnoutMessage = {type: "setTurnout", data: { address: this.turnoutAddress, closed: !closed }};
-        wsApi.setTurnout(data)
+        wsApi.setTurnout(this.turnoutAddress, !closed);
     }
 
 

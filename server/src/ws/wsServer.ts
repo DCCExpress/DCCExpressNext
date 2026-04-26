@@ -81,10 +81,10 @@ setCommandCenterConfigLoadedCallback((conf: CommandCenterConfig | null) => {
       });
       break;
     case "z21":
-      console.log("Starting command center:", "Z21");
+      log("Starting command center:", "Z21");
       commandCenter = new Z21CommandCenter("Z21", conf.z21.host!, conf.z21.port!);
       commandCenter.start().then(() => {
-        console.log("Command center started:", conf?.type);
+        log("Command center started:", conf?.type);
       }).catch(err => {
         console.error("Failed to start command center:", err);
       });
@@ -115,7 +115,7 @@ export function setupWebSocketServer(server: http.Server) {
   });
 
   wss.on("connection", (ws, req) => {
-    console.log("WebSocket client connected:", req.socket.remoteAddress);
+    log("WebSocket client connected:", req.socket.remoteAddress);
 
     sendToClient(ws, {
       type: "ws:welcome",
@@ -128,16 +128,46 @@ export function setupWebSocketServer(server: http.Server) {
     } as CommandCenterInfo)
 
     ws.on("message", (message) => {
+
+      const text = message.toString();
+      log("WS message:", text);
+
       if (commandCenter) {
         log("Current command center:", commandCenter.getName());
-        log("Received message from client:", message);
         try {
-          const text = message.toString();
-          console.log("WS message:", text);
 
           const msg = JSON.parse(text) as WsMessage;
 
           switch (msg.type) {
+
+            //===============================
+            // getLoco
+            //===============================
+            case "getLoco": {
+              const address = msg.data?.address;  
+              if (typeof address !== "number") {
+                sendToClient(ws, {
+                  type: "error",  
+                  data: { message: "Invalid getLoco payload" },
+                });
+                return;
+              }
+              commandCenter.getLoco(address).then(loco => {
+                sendToClient(ws, {
+                  type: "locoState",
+                  data: { loco },
+                });
+              }).catch(err => {
+                logError("Failed to get loco:", err);
+                sendToClient(ws, {    
+                  type: "error",
+                  data: { message: "Failed to get loco" },
+                });
+              });
+              return;
+            }
+
+
             case "setTurnout": {
               const address = msg.data?.address;
               const closed = msg.data?.closed;
@@ -150,41 +180,21 @@ export function setupWebSocketServer(server: http.Server) {
                 return;
               }
 
-              // Itt később majd valódi hardver/logika kezelés jöhet
-              // pl. setTurnout(address, closed);
-              // broadcast(wss, {
-              //   type: "turnoutChanged",
-              //   data: {
-              //     address,
-              //     closed,
-              //   },
-              // });
-
-              commandCenter?.setTurnout(address, closed).then(success => {
-                console.log("Turnout set result:", success);
+              commandCenter.setTurnout(address, closed).then(success => {
+                log("Turnout set result:", success);
                 if (!success) {
                   broadcast(wss, {
                     type: "error",
                     data: { message: "Failed to set turnout" },
                   });
-                } else {
-                  // broadcast(wss, {
-                  //   type: "turnoutChanged",
-                  //   data: {
-                  //     address,
-                  //     closed,
-                  //   },
-                  // });
                 }
               });
-
               return;
             }
 
             case "setSensor": {
               const address = msg.data?.address;
               const on = msg.data?.on;
-
               if (typeof address !== "number" || typeof on !== "boolean") {
                 sendToClient(ws, {
                   type: "error",
@@ -192,23 +202,10 @@ export function setupWebSocketServer(server: http.Server) {
                 });
                 return;
               }
-
-              // Itt később majd valódi hardver/logika kezelés jöhet
-              // pl. setSensor(address, on);
-
-              broadcast(wss, {
-                type: "sensorChanged",
-                data: {
-                  address,
-                  on,
-                },
-              });
-
               return;
             }
 
             default: {
-              // minden más mehet tovább, ha akarod
               broadcast(wss, msg, ws);
               return;
             }
@@ -228,7 +225,7 @@ export function setupWebSocketServer(server: http.Server) {
     });
 
     ws.on("close", () => {
-      console.log("WebSocket client disconnected");
+      log("WebSocket client disconnected");
     });
 
     ws.on("error", (error) => {

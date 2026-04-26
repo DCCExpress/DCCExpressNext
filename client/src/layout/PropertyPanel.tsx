@@ -316,7 +316,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                         //const data: SetTurnoutMessage = { address: t.turnoutAddress, closed: t.turnoutClosedValue };
                         const data: SetTurnoutMessage = {type: "setTurnout", data: { address: t.turnoutAddress, closed: t.turnoutClosedValue }};
                         console.log("WSAPI:", data)
-                        wsApi.setTurnout(data)
+                        wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
                       }}
                       />
                       <BitToggleElement
@@ -328,7 +328,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                       <ElementPreview element={getPreviewTurnout(selectedElement, false)} label="Opened" width={40} height={40} onClick={() => {
                         const t = selectedElement as TrackTurnoutLeftElement
                         const data: SetTurnoutMessage = {type: "setTurnout", data: { address: t.turnoutAddress, closed: !t.turnoutClosedValue }};
-                        wsApi.setTurnout(data)
+                        wsApi.setTurnout(t.turnoutAddress, !t.turnoutClosedValue);
                       }}
                       />
                       <BitToggleElement

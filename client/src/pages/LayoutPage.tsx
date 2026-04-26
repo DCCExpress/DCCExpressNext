@@ -396,6 +396,7 @@ const [commandCenterPower, setCommandCenterPower] = useState(false);
     return () => {
       unsubscribeSensor();
       unsubscribeTurnout();
+      unsubscribeCommandCenter();
       wsApi.disconnect();
     };
   }, []);

@@ -19,6 +19,8 @@ import {
 import LocoImage from "../components/loco/LocoImage";
 import LocoPicker from "../components/loco/LocoPicker";
 import { Loco } from "../../../common/src/types";
+import { wsApi } from "../services/wsApi";
+import { wsClient } from "../services/wsClient";
 
 type Direction = "forward" | "reverse";
 
@@ -60,12 +62,31 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
     setSpeed(0);
     setDirection("forward");
     setActiveFunctions({});
+    wsApi.getLoco(loco.address);
   };
 
-  const handleForward = () => setDirection("forward");
-  const handleReverse = () => setDirection("reverse");
-  const handleStop = () => setSpeed(0);
-  const handleEmergencyStop = () => setSpeed(0);
+  const handleForward = () => {
+    setDirection("forward");
+    if(currentLoco) {
+      wsApi.setLoco(currentLoco.address, speed, "forward");
+    }
+  };
+  const handleReverse = () => {
+    setDirection("reverse")
+    if(currentLoco) {
+      wsApi.setLoco(currentLoco.address, speed, "reverse");
+    }
+  };
+  const handleStop = () => {setSpeed(0);
+    if(currentLoco) {
+      wsApi.setLoco(currentLoco.address, 0, direction);
+    }
+  };
+  const handleEmergencyStop = () => {setSpeed(0);
+    if(currentLoco) {
+      wsApi.emergencyStop();
+    }
+  };
 
   const setSpeedByPercent = (percent: number) => {
     if (!currentLoco) return;
@@ -92,6 +113,17 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
     }));
   };
 
+  useEffect(() => {
+    wsClient.on("locoState", (data) => {
+      const loco = data.loco;
+      if (loco.address === currentLoco?.address) {
+        setSpeed(loco.speed);
+        setDirection(loco.direction);
+        setActiveFunctions(loco.functions);
+      }
+    }); 
+  }, []);
+    
   return (
     <Card withBorder radius="sm" p="xs" h="100%">
       <div style={{ position: "relative", height: "100%" }}>
@@ -124,7 +156,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                       #{currentLoco.address} {currentLoco.name || "Névtelen mozdony"}
                     </Text>
 
-                  <Group grow>
+                  <Group grow gap={4} w="100%">
                     <Button
                       size="xs"
                       variant={direction === "reverse" ? "filled" : "light"}
@@ -136,7 +168,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
 
                     <Button
                       size="xs"
-                      variant="light"
+                      variant={speed > 0 ? "light" : "filled"}
                       color="yellow"
                       leftSection={<IconPlayerStop size={14} />}
                       onClick={handleStop}
@@ -153,8 +185,6 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                     </Button>
 
                   </Group>
-
-                  
                     <Button
                       size="xs"
                       style={{width: "100%"}}
@@ -164,7 +194,6 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                     >
                       Emergency
                     </Button>
-                  
 
                   <div style={{ width: "100%" }}>
                     <Group justify="space-between" mb={6}>
@@ -178,7 +207,12 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
 
                     <Slider
                       value={speed}
-                      onChange={setSpeed}
+                      onChange={(s) => {
+                        setSpeed(s);
+                        if (currentLoco) {
+                          wsApi.setLoco(currentLoco.address, s, direction);
+                        }
+                      }}
                       min={0}
                       max={currentLoco.maxSpeed || 100}
                     />
@@ -190,7 +224,14 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                         key={preset}
                         size="xs"
                         variant="light"
-                        onClick={() => setSpeedByPercent(preset)}
+                        onClick={() => {
+                          setSpeedByPercent(preset);
+                          if (currentLoco) {
+                            const max = currentLoco.maxSpeed || 100;
+                            const calculated = Math.round((max * preset) / 100);
+                            wsApi.setLoco(currentLoco.address, calculated, direction);
+                              }}
+                            }
                       >
                         {preset}
                       </Button>
@@ -220,7 +261,19 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                               paddingTop: 2,
                               paddingBottom: 2,
                             }}
-                            onClick={() => toggleFunction(i, fn?.momentary ?? false)}
+                            //onClick={() => toggleFunction(i, fn?.momentary ?? false)}
+                            onMouseDown={() => {
+                              if(fn?.momentary) {
+                                wsApi.setLocoFunction(currentLoco.address, i, true);
+                              } else {
+                                wsApi.setLocoFunction(currentLoco.address, i, fn?.active ?? false);
+                              }
+                            }}
+                            onMouseUp={() => {
+                              if(fn?.momentary) {
+                                wsApi.setLocoFunction(currentLoco.address, i, false);
+                              } 
+                            }}
                           >
                             <div style={{ textAlign: "center", lineHeight: 1.2 }}>
                               <div

@@ -35,7 +35,7 @@ export class BlockElement extends BaseElement implements IBlockElement {
 
         const r = this.getBounds();
 
-        let bg = "#eee";  // A színe lehet más is
+        let bg = options?.darkMode ? "#888888" : "#f0f0f0";  // A színe lehet más is
         let fg = "black";
 
         ctx.fillStyle = bg!;  // A színe lehet más is
@@ -59,7 +59,7 @@ export class BlockElement extends BaseElement implements IBlockElement {
 
         const c = Math.ceil(this.w / 2);
 
-        let bg = "#eee";  // A színe lehet más is
+        let bg = "#868686";  // A színe lehet más is
         let fg = "black";
         let text = ""
         if (this.locoAddress > 0) {
@@ -87,7 +87,7 @@ export class BlockElement extends BaseElement implements IBlockElement {
         ctx.rotate(this.rotation * Math.PI / 180);
         ctx.translate(-this.centerX, -this.centerY);
 
-        ctx.fillStyle = bg!;  // A színe lehet más is
+        ctx.fillStyle = "red";  // A színe lehet más is
         ctx.strokeStyle = fg!;
 
         ctx.fillRect(this.posLeft + 10, this.centerY - h, this.width - 20, 2 * h);

@@ -5,6 +5,9 @@
  * This class defines the interface for controlling model railway hardware.
  */
 
+import { Dir } from "node:fs";
+import { Direction } from "../../../common/src/types.js";
+
 export interface PowerInfo {
   trackVoltageOn: boolean;
   emergencyStop: boolean;
@@ -12,10 +15,10 @@ export interface PowerInfo {
   current: number;
 }
 
-export interface LocoInfo {
+export interface LocoState {
   address: number;
   speed: number;
-  direction: "forward" | "reverse";
+  direction: Direction;
   functions: { [fn: number]: boolean };
 }
 
@@ -38,7 +41,7 @@ export abstract class CommandCenter {
     current: 0,
   };
 
-  protected locos: Map<number, LocoInfo> = new Map();
+  protected locos: Map<number, LocoState> = new Map();
   protected turnouts: Map<number, TurnoutInfo> = new Map();
   protected sensors: Map<number, SensorInfo> = new Map();
 
@@ -56,7 +59,25 @@ export abstract class CommandCenter {
 
   abstract setLoco(address: number, speed: number, direction: "forward" | "reverse"): Promise<boolean>;
   abstract setLocoFunction(address: number, fn: number, active: boolean): Promise<boolean>;
-  abstract getLoco(address: number): Promise<LocoInfo | null>;
+
+  protected getOrCreateLoco(address: number): LocoState {
+    let loco = this.locos.get(address);
+
+    if (!loco) {
+      loco = {
+        address,
+        speed: 0,
+        direction: "forward",
+        functions: {},
+      };
+
+      this.locos.set(address, loco);
+    }
+
+    return loco;
+  }
+
+  abstract getLoco(address: number): Promise<LocoState | null>;
 
   abstract setTrackPower(on: boolean): Promise<boolean>;
   abstract emergencyStop(): Promise<boolean>;
@@ -67,7 +88,7 @@ export abstract class CommandCenter {
     return this.powerInfo;
   }
 
-  getLocoInfo(address: number): LocoInfo | undefined {
+  getLocoInfo(address: number): LocoState | undefined {
     return this.locos.get(address);
   }
 

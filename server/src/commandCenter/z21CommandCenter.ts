@@ -1,5 +1,5 @@
 import { RemoteInfo } from "dgram";
-import { CommandCenter, LocoInfo, SensorInfo, TurnoutInfo } from "./CommandCenter.js";
+import { CommandCenter, LocoState, SensorInfo, TurnoutInfo } from "./CommandCenter.js";
 import { UDPClient } from "./udpClient.js";
 import { log, logError } from "../utility.js";
 
@@ -235,7 +235,7 @@ export class Z21CommandCenter extends CommandCenter {
     setLocoFunction(address: number, fn: number, active: boolean): Promise<boolean> {
         throw new Error("Method not implemented.");
     }
-    getLoco(address: number): Promise<LocoInfo | null> {
+    getLoco(address: number): Promise<LocoState | null> {
         throw new Error("Method not implemented.");
     }
     setTrackPower(on: boolean): Promise<boolean> {

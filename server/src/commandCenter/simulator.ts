@@ -1,6 +1,6 @@
 import { Console } from "node:console";
-import { Loco, LocoState, SetLocoFunctionMessage, SetLocoMessage, TurnoutChangedMessage, WsMessage } from "../../../common/src/types.js";
-import { CommandCenter, LocoInfo, SensorInfo, TurnoutInfo } from "./CommandCenter.js";
+import { Loco, SetLocoFunctionMessage, SetLocoMessage, TurnoutChangedMessage, WsMessage } from "../../../common/src/types.js";
+import { CommandCenter, LocoState, SensorInfo, TurnoutInfo } from "./CommandCenter.js";
 import { log } from "../utility.js";
 import { broadcastAll } from "../ws/wsServer.js";
 
@@ -70,13 +70,18 @@ export class CommandCenterSimulator extends CommandCenter {
     throw new Error("Method not implemented.");
   }
   setLoco(address: number, speed: number, direction: "forward" | "reverse"): Promise<boolean> {
-    throw new Error("Method not implemented.");
+    const loco = this.getOrCreateLoco(address);
+    loco.speed = speed;
+    loco.direction = direction; 
+    return Promise.resolve(true);
   }
   setLocoFunction(address: number, fn: number, active: boolean): Promise<boolean> {
-    throw new Error("Method not implemented.");
+    const loco = this.getOrCreateLoco(address);
+    loco.functions[fn] = active;
+    return Promise.resolve(true);
   }
-  getLoco(address: number): Promise<LocoInfo | null> {
-    throw new Error("Method not implemented.");
+  getLoco(address: number): Promise<LocoState | null> {
+    return Promise.resolve(this.getOrCreateLoco(address) ?? null);
   }
   setTrackPower(on: boolean): Promise<boolean> {
     throw new Error("Method not implemented.");

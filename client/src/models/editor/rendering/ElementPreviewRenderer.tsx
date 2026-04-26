@@ -91,7 +91,7 @@ export default function ElementPreview({
       ? theme.colors.dark[6]
       : theme.colors.gray[0];
   return (
-    <Box
+    <Box className=""
       onClick={onClick}
       bg={bg}
       style={{
@@ -105,7 +105,7 @@ export default function ElementPreview({
         justifyContent: "center",
         boxSizing: "border-box",
         padding: "0px",
-
+        userSelect: "none"
       }}
     >
       <Box

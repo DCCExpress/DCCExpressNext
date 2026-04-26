@@ -47,14 +47,15 @@ async function writeCommandCenter(item) {
     }
 }
 function isValidCommandCenterType(value) {
-    return value === "z21" || value === "dcc-ex-tcp" || value === "dcc-ex-serial";
+    return value === "z21" || value === "dcc-ex-tcp" || value === "dcc-ex-serial" || value === "simulator";
 }
 function normalizeCommandCenter(input) {
     return {
         name: typeof input.name === "string" ? input.name : "",
-        type: isValidCommandCenterType(input.type) ? input.type : "z21",
+        type: isValidCommandCenterType(input.type) ? input.type : "simulator",
+        simulator: {},
         z21: {
-            host: typeof input.z21?.host === "string" ? input.z21.host : "",
+            host: typeof input.z21?.host === "string" ? input.z21.host : "192.168.1.100",
             port: typeof input.z21?.port === "number" ? input.z21.port : 21105,
         },
         dccexTcp: {
@@ -104,6 +105,9 @@ commandCenterRoutes.put("/", async (req, res) => {
             return;
         }
         await writeCommandCenter(item);
+        if (cbCommandCenterConfigLoaded) {
+            cbCommandCenterConfigLoaded(item);
+        }
         res.json({
             success: true,
             item,

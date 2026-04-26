@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { readCommandCenter, setCommandCenterConfigLoadedCallback } from "../routes/commandCenterRoutes.js";
 import { CommandCenterSimulator } from "../commandCenter/simulator.js";
 import { Z21CommandCenter } from "../commandCenter/z21CommandCenter.js";
+import { log, logError } from "../utility.js";
 // type SetTurnoutMessage = {
 //   type: "setTurnout";
 //   data: {
@@ -45,18 +46,27 @@ function broadcast(wss, message, exclude) {
 }
 let commandCenter = null; //new CommandCenterSimulator("Simulator");
 setCommandCenterConfigLoadedCallback((conf) => {
-    console.log("Command center config loaded:", conf);
+    log("Command center config loaded:", conf);
     if (commandCenter) {
         commandCenter.stop().then(() => {
-            console.log("Previous command center stopped");
+            log("Previous command center stopped");
         });
     }
     switch (conf?.type) {
-        case "z21":
-            console.log("Starting command center:", conf.type);
-            commandCenter = new Z21CommandCenter(conf.name, conf.z21.host, conf.z21.port);
+        case "simulator":
+            log("Starting command center:", conf.type);
+            commandCenter = new CommandCenterSimulator("Simulator");
             commandCenter.start().then(() => {
-                console.log("Command center started:", conf?.type);
+                log("Command center started:", conf.type);
+            }).catch(err => {
+                console.error("Failed to start command center:", err);
+            });
+            break;
+        case "z21":
+            log("Starting command center:", "Z21");
+            commandCenter = new Z21CommandCenter("Z21", conf.z21.host, conf.z21.port);
+            commandCenter.start().then(() => {
+                log("Command center started:", conf?.type);
             }).catch(err => {
                 console.error("Failed to start command center:", err);
             });
@@ -66,18 +76,22 @@ setCommandCenterConfigLoadedCallback((conf) => {
             break;
     }
 });
+let wss;
+export function broadcastAll(message, exclude) {
+    broadcast(wss, message, exclude);
+}
 export function setupWebSocketServer(server) {
     readCommandCenter().then(conf => {
-        console.log("Initial command center config:", conf);
+        log("Initial command center config:", conf);
     }).catch(err => {
-        console.error("Failed to read initial command center config:", err);
+        logError("Failed to read initial command center config:", err);
     });
-    const wss = new WebSocketServer({
+    wss = new WebSocketServer({
         server,
         path: "/ws",
     });
     wss.on("connection", (ws, req) => {
-        console.log("WebSocket client connected:", req.socket.remoteAddress);
+        log("WebSocket client connected:", req.socket.remoteAddress);
         sendToClient(ws, {
             type: "ws:welcome",
             data: { message: "Connected" },
@@ -87,10 +101,11 @@ export function setupWebSocketServer(server) {
             data: { alive: false }
         });
         ws.on("message", (message) => {
-            if (commandCenter && false) {
+            const text = message.toString();
+            log("WS message:", text);
+            if (commandCenter) {
+                log("Current command center:", commandCenter.getName());
                 try {
-                    const text = message.toString();
-                    console.log("WS message:", text);
                     const msg = JSON.parse(text);
                     switch (msg.type) {
                         case "setTurnout": {
@@ -103,30 +118,12 @@ export function setupWebSocketServer(server) {
                                 });
                                 return;
                             }
-                            // Itt később majd valódi hardver/logika kezelés jöhet
-                            // pl. setTurnout(address, closed);
-                            broadcast(wss, {
-                                type: "turnoutChanged",
-                                data: {
-                                    address,
-                                    closed,
-                                },
-                            });
-                            commandCenter?.setTurnout(address, closed).then(success => {
-                                console.log("Turnout set result:", success);
+                            commandCenter.setTurnout(address, closed).then(success => {
+                                log("Turnout set result:", success);
                                 if (!success) {
                                     broadcast(wss, {
                                         type: "error",
                                         data: { message: "Failed to set turnout" },
-                                    });
-                                }
-                                else {
-                                    broadcast(wss, {
-                                        type: "turnoutChanged",
-                                        data: {
-                                            address,
-                                            closed,
-                                        },
                                     });
                                 }
                             });
@@ -142,19 +139,9 @@ export function setupWebSocketServer(server) {
                                 });
                                 return;
                             }
-                            // Itt később majd valódi hardver/logika kezelés jöhet
-                            // pl. setSensor(address, on);
-                            broadcast(wss, {
-                                type: "sensorChanged",
-                                data: {
-                                    address,
-                                    on,
-                                },
-                            });
                             return;
                         }
                         default: {
-                            // minden más mehet tovább, ha akarod
                             broadcast(wss, msg, ws);
                             return;
                         }
@@ -175,7 +162,7 @@ export function setupWebSocketServer(server) {
             }
         });
         ws.on("close", () => {
-            console.log("WebSocket client disconnected");
+            log("WebSocket client disconnected");
         });
         ws.on("error", (error) => {
             console.error("WebSocket client error:", error);

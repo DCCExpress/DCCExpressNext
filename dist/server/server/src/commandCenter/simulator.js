@@ -1,10 +1,44 @@
 import { CommandCenter } from "./CommandCenter.js";
+import { log } from "../utility.js";
+import { broadcastAll } from "../ws/wsServer.js";
 export class CommandCenterSimulator extends CommandCenter {
+    alive = false;
+    aliveTask = null;
     start() {
-        throw new Error("Method not implemented.");
+        log("Starting command center simulator...");
+        this.alive = true;
+        this.power = true;
+        this.aliveTask = setInterval(() => {
+            const msg = {
+                type: "commandCenterInfo",
+                data: {
+                    alive: this.alive,
+                    power: this.power,
+                    type: "simulator",
+                }
+            };
+            broadcastAll(msg);
+        }, 1000);
+        return Promise.resolve(true);
     }
     stop() {
-        throw new Error("Method not implemented.");
+        log("Stopping command center simulator...");
+        this.alive = false;
+        this.power = false;
+        if (this.aliveTask) {
+            clearInterval(this.aliveTask);
+            this.aliveTask = null;
+            const msg = {
+                type: "commandCenterInfo",
+                data: {
+                    alive: this.alive,
+                    power: this.power,
+                    type: "simulator",
+                }
+            };
+            broadcastAll(msg);
+        }
+        return Promise.resolve(true);
     }
     getConnectionString() {
         throw new Error("Method not implemented.");
@@ -14,7 +48,14 @@ export class CommandCenterSimulator extends CommandCenter {
     }
     setTurnout(address, closed) {
         console.log("Sim: setTurnout", { address, closed });
-        //throw new Error("Method not implemented.");
+        const msg = {
+            type: "turnoutChanged",
+            data: {
+                address,
+                closed,
+            },
+        };
+        broadcastAll(msg);
         return Promise.resolve(true);
     }
     getTurnout(address) {

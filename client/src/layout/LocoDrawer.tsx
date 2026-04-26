@@ -21,6 +21,7 @@ import {
 import LocoImage from "../components/loco/LocoImage";
 import LocoPicker from "../components/loco/LocoPicker";
 import { Loco } from "../../../common/src/types";
+import { wsApi } from "../services/wsApi";
 
 type Direction = "forward" | "reverse";
 
@@ -240,7 +241,11 @@ export default function LocoDrawer({
                               paddingTop: 4,
                               paddingBottom: 4,
                             }}
-                            onClick={() => toggleFunction(i, fn?.momentary ?? false)}
+                            //onClick={() => toggleFunction(i, fn?.momentary ?? false)}
+                            onMouseDown={() => {
+                              alert("mouse down" + i);
+                              wsApi.setLocoFunction(currentLoco.address, i, true);
+                            }}
                           >
                             <div style={{ textAlign: "center", lineHeight: 1.15 }}>
                               <div style={{ fontSize: 12, fontWeight: 700 }}>F{i}</div>

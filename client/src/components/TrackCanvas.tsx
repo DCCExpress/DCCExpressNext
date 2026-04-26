@@ -1377,6 +1377,7 @@ function drawScene(
     showSensorAddress: settings.showSensorAddress,
     showTurnoutAddress: settings.showTurnoutAddress,
     showSignalAddress: settings.showSignalAddress,
+    darkMode: isDark,
   };
 
   layout.draw(ctx, opt);
