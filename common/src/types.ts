@@ -84,7 +84,8 @@ export type LocoState = {
   address: number;
   speed: number;
   direction: Direction;
-  functions: number;
+  //functions: number;
+  functions: Record<number, boolean>;
 };
 
 export type CommandCenterType = "z21" | "dcc-ex-tcp" | "dcc-ex-serial" | "simulator";

@@ -28,18 +28,18 @@ export const wsApi = {
     return wsClient.send({ type: "emergencyStop" });
   },
 
-  setLoco( address: number, speed: number, direction: Direction ) {
-    const data = { address, speed, direction };
+  setLoco( locoAddress: number, speed: number, direction: Direction ) {
+    const data = { locoAddress, speed, direction };
     return wsClient.send({ type: "setLoco", data });
   },
 
-  getLoco(address: number) {
-    return wsClient.send({ type: "getLoco", data: { address } });
+  getLoco(locoAddress: number) {
+    return wsClient.send({ type: "getLoco", data: { locoAddress } });
   },
 
   setLocoFunction22(data: {
     locoId: string;
-    address: number;
+    locoAddress: number;
     functionNumber: number;
     active: boolean;
     momentary?: boolean;

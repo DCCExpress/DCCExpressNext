@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   Card,
@@ -18,7 +18,7 @@ import {
 
 import LocoImage from "../components/loco/LocoImage";
 import LocoPicker from "../components/loco/LocoPicker";
-import { Loco } from "../../../common/src/types";
+import { Loco, LocoState } from "../../../common/src/types";
 import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
 
@@ -32,6 +32,7 @@ const SPEED_PRESETS = [5, 10, 20, 40, 80, 100];
 
 export default function LocoPanel({ locos = [] }: LocoPanelProps) {
   const [selectedLocoId, setSelectedLocoId] = useState<string>("");
+  const currentAddressRef = useRef<number | null>(null);
   const [pickerOpened, setPickerOpened] = useState(false);
   const [speed, setSpeed] = useState(0);
   const [direction, setDirection] = useState<Direction>("forward");
@@ -47,6 +48,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
     }
   }, [locos, selectedLocoId]);
 
+
   const currentLoco = useMemo(() => {
     if (selectedLocoId) {
       const found = locos.find((l) => l.id === selectedLocoId);
@@ -55,6 +57,10 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
 
     return locos.length > 0 ? locos[0] : null;
   }, [locos, selectedLocoId]);
+
+  useEffect(() => {
+    currentAddressRef.current = currentLoco?.address ?? null;
+  }, [currentLoco]);
 
   const handleSelectLoco = (loco: Loco) => {
     setSelectedLocoId(loco.id);
@@ -67,23 +73,25 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
 
   const handleForward = () => {
     setDirection("forward");
-    if(currentLoco) {
+    if (currentLoco) {
       wsApi.setLoco(currentLoco.address, speed, "forward");
     }
   };
   const handleReverse = () => {
     setDirection("reverse")
-    if(currentLoco) {
+    if (currentLoco) {
       wsApi.setLoco(currentLoco.address, speed, "reverse");
     }
   };
-  const handleStop = () => {setSpeed(0);
-    if(currentLoco) {
+  const handleStop = () => {
+    setSpeed(0);
+    if (currentLoco) {
       wsApi.setLoco(currentLoco.address, 0, direction);
     }
   };
-  const handleEmergencyStop = () => {setSpeed(0);
-    if(currentLoco) {
+  const handleEmergencyStop = () => {
+    setSpeed(0);
+    if (currentLoco) {
       wsApi.emergencyStop();
     }
   };
@@ -113,17 +121,19 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
     }));
   };
 
-  useEffect(() => {
-    wsClient.on("locoState", (data) => {
-      const loco = data.loco;
-      if (loco.address === currentLoco?.address) {
-        setSpeed(loco.speed);
-        setDirection(loco.direction);
-        setActiveFunctions(loco.functions);
-      }
-    }); 
-  }, []);
-    
+useEffect(() => {
+  const unsubscribe = wsClient.on("locoState", (data) => {
+    const loco = data.loco as LocoState;
+
+    if (loco.address === currentAddressRef.current) {
+      setSpeed(loco.speed);
+      setDirection(loco.direction);
+      setActiveFunctions(loco.functions ?? {});
+    }
+  });
+
+  return unsubscribe;
+}, []);
   return (
     <Card withBorder radius="sm" p="xs" h="100%">
       <div style={{ position: "relative", height: "100%" }}>
@@ -152,9 +162,9 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                     clickable
                     onClick={() => setPickerOpened(true)}
                   />
-                    <Text fw={700} ta="center">
-                      #{currentLoco.address} {currentLoco.name || "Névtelen mozdony"}
-                    </Text>
+                  <Text fw={700} ta="center">
+                    #{currentLoco.address} {currentLoco.name || "Névtelen mozdony"}
+                  </Text>
 
                   <Group grow gap={4} w="100%">
                     <Button
@@ -185,15 +195,15 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                     </Button>
 
                   </Group>
-                    <Button
-                      size="xs"
-                      style={{width: "100%"}}
-                      color="red"
-                      leftSection={<IconAlertTriangle size={14} />}
-                      onClick={handleEmergencyStop}
-                    >
-                      Emergency
-                    </Button>
+                  <Button
+                    size="xs"
+                    style={{ width: "100%" }}
+                    color="red"
+                    leftSection={<IconAlertTriangle size={14} />}
+                    onClick={handleEmergencyStop}
+                  >
+                    Emergency
+                  </Button>
 
                   <div style={{ width: "100%" }}>
                     <Group justify="space-between" mb={6}>
@@ -230,8 +240,9 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                             const max = currentLoco.maxSpeed || 100;
                             const calculated = Math.round((max * preset) / 100);
                             wsApi.setLoco(currentLoco.address, calculated, direction);
-                              }}
-                            }
+                          }
+                        }
+                        }
                       >
                         {preset}
                       </Button>
@@ -263,16 +274,17 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                             }}
                             //onClick={() => toggleFunction(i, fn?.momentary ?? false)}
                             onMouseDown={() => {
-                              if(fn?.momentary) {
+                              if (fn?.momentary) {
                                 wsApi.setLocoFunction(currentLoco.address, i, true);
                               } else {
-                                wsApi.setLocoFunction(currentLoco.address, i, fn?.active ?? false);
+                                const a = activeFunctions[i];
+                                wsApi.setLocoFunction(currentLoco.address, i, !a);
                               }
                             }}
                             onMouseUp={() => {
-                              if(fn?.momentary) {
+                              if (fn?.momentary) {
                                 wsApi.setLocoFunction(currentLoco.address, i, false);
-                              } 
+                              }
                             }}
                           >
                             <div style={{ textAlign: "center", lineHeight: 1.2 }}>

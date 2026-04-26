@@ -55,17 +55,9 @@ function broadcast(wss: WebSocketServer, message: unknown, exclude?: WebSocket) 
   }
 }
 
-
-
-
-let commandCenter: CommandCenter | null = null; //new CommandCenterSimulator("Simulator");
-
-setCommandCenterConfigLoadedCallback((conf: CommandCenterConfig | null) => {
-
-  log("Command center config loaded:", conf);
-
+function initCommandCenter(conf: CommandCenterConfig | null) {
   if (commandCenter) {
-    commandCenter.stop().then(() => {
+    commandCenter!.stop().then(() => {
       log("Previous command center stopped");
     });
   }
@@ -93,6 +85,14 @@ setCommandCenterConfigLoadedCallback((conf: CommandCenterConfig | null) => {
       commandCenter = new CommandCenterSimulator("Simulator");
       break;
   }
+
+}
+
+let commandCenter: CommandCenter | null = null; //new CommandCenterSimulator("Simulator");
+
+setCommandCenterConfigLoadedCallback((conf: CommandCenterConfig | null) => {
+  log("Command center config loaded:", conf);
+  initCommandCenter(conf);
 });
 
 let wss: WebSocketServer;
@@ -105,6 +105,7 @@ export function setupWebSocketServer(server: http.Server) {
 
   readCommandCenter().then(conf => {
     log("Initial command center config:", conf);
+    initCommandCenter(conf);
   }).catch(err => {
     logError("Failed to read initial command center config:", err);
   });
@@ -127,39 +128,121 @@ export function setupWebSocketServer(server: http.Server) {
       data: { alive: false }
     } as CommandCenterInfo)
 
+    if (commandCenter) {
+      const locos = commandCenter.getLocos();
+
+      for (const loco of locos) {
+        sendToClient(ws, {
+          type: "locoState",
+          data: { loco },
+        });
+      }
+    }
+
     ws.on("message", (message) => {
 
       const text = message.toString();
-      log("WS message:", text);
+      log("WS incoming:", text);
 
       if (commandCenter) {
-        log("Current command center:", commandCenter.getName());
+        //log("Current command center:", commandCenter.getName());
         try {
 
           const msg = JSON.parse(text) as WsMessage;
-
+          log("Received message of type:", msg.type);
           switch (msg.type) {
+
+            //===============================
+            // setLoco
+            //===============================
+            case "setLoco": {
+              const address = msg.data?.locoAddress;
+              const speed = msg.data?.speed;
+              const direction = msg.data?.direction;
+              if (typeof address !== "number" || typeof speed !== "number" || (direction !== "forward" && direction !== "reverse")) {
+                logError("Invalid setLoco payload:", msg.data);
+                sendToClient(ws, {
+                  type: "error",
+                  data: { message: "Invalid setLoco payload" },
+                });
+                return;
+              }
+              commandCenter.setLoco(address, speed, direction).then(success => {
+                log("Set loco result:", success);
+                if (!success) {
+                  broadcast(wss, {
+                    type: "error",
+                    data: { message: "Failed to set loco" },
+                  });
+                } else {
+                  // Optionally, broadcast the new loco state to all clients
+                  commandCenter!.getLoco(address).then(loco => {
+                    broadcast(wss, {
+                      type: "locoState",
+                      data: { loco },
+                    });
+                  });
+                }
+              });
+              return;
+            }
+            //===============================
+            // setLocoFunction
+            //===============================
+            case "setLocoFunction": {
+              const address = msg.data?.locoAddress;
+              const fn = msg.data?.functionNumber;
+              const active = msg.data?.active;
+              if (typeof address !== "number" || typeof fn !== "number" || typeof active !== "boolean") {
+                logError("Invalid setLocoFunction payload:", msg.data);
+                sendToClient(ws, {
+                  type: "error",
+                  data: { message: "Invalid setLocoFunction payload" },
+                });
+                return;
+              }
+              commandCenter.setLocoFunction(address, fn, active).then(success => {
+                log("Set loco function result:", success);
+                if (!success) {
+                  broadcast(wss, {
+                    type: "error",
+                    data: { message: "Failed to set loco function" },
+                  });
+                } else {
+                  // Optionally, broadcast the new loco state to all clients
+                  commandCenter!.getLoco(address).then(loco => {
+                    log("Broadcasting loco state after function change:", loco);
+                    broadcast(wss, {
+                      type: "locoState",
+                      data: { loco },
+                    });
+                  });
+                }
+              });
+              return;
+            }
 
             //===============================
             // getLoco
             //===============================
             case "getLoco": {
-              const address = msg.data?.address;  
+              const address = msg.data?.locoAddress;
               if (typeof address !== "number") {
                 sendToClient(ws, {
-                  type: "error",  
+                  type: "error",
                   data: { message: "Invalid getLoco payload" },
                 });
                 return;
               }
               commandCenter.getLoco(address).then(loco => {
+                log("getLoco result:", loco);
                 sendToClient(ws, {
                   type: "locoState",
                   data: { loco },
                 });
               }).catch(err => {
                 logError("Failed to get loco:", err);
-                sendToClient(ws, {    
+                sendToClient(ws, {
                   type: "error",
                   data: { message: "Failed to get loco" },
                 });

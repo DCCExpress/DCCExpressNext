@@ -51,9 +51,9 @@ export async function readCommandCenter(): Promise<CommandCenterConfig | null> {
       CurrentCommandCenterConfig = null;
     }
   }
-  if (cbCommandCenterConfigLoaded) {
-    cbCommandCenterConfigLoaded(CurrentCommandCenterConfig);
-  }
+  // if (cbCommandCenterConfigLoaded) {
+  //   cbCommandCenterConfigLoaded(CurrentCommandCenterConfig);
+  // }
   return CurrentCommandCenterConfig;
 }
 

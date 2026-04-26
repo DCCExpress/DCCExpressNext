@@ -78,7 +78,9 @@ export abstract class CommandCenter {
   }
 
   abstract getLoco(address: number): Promise<LocoState | null>;
-
+  getLocos(): LocoState[] {
+    return Array.from(this.locos.values());
+  }
   abstract setTrackPower(on: boolean): Promise<boolean>;
   abstract emergencyStop(): Promise<boolean>;
 
