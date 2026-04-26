@@ -273,6 +273,8 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                               paddingBottom: 2,
                               touchAction: "none",
                               userSelect: "none",
+                              WebkitUserSelect: "none",
+                              WebkitTouchCallout: "none",
                             }}
                             //onClick={() => toggleFunction(i, fn?.momentary ?? false)}
                             onPointerDown={(ev) => {
@@ -301,6 +303,9 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                                 setActiveFunctions((prev) => ({ ...prev, [i]: false }));
                                 wsApi.setLocoFunction(currentLoco.address, i, false);
                               }
+                            }}
+                            onContextMenu={(ev) => {
+                              ev.preventDefault();
                             }}
                           >
                             <div style={{ textAlign: "center", lineHeight: 1.2 }}>
