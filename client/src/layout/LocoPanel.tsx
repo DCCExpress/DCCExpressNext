@@ -121,19 +121,19 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
     }));
   };
 
-useEffect(() => {
-  const unsubscribe = wsClient.on("locoState", (data) => {
-    const loco = data.loco as LocoState;
+  useEffect(() => {
+    const unsubscribe = wsClient.on("locoState", (data) => {
+      const loco = data.loco as LocoState;
 
-    if (loco.address === currentAddressRef.current) {
-      setSpeed(loco.speed);
-      setDirection(loco.direction);
-      setActiveFunctions(loco.functions ?? {});
-    }
-  });
+      if (loco.address === currentAddressRef.current) {
+        setSpeed(loco.speed);
+        setDirection(loco.direction);
+        setActiveFunctions(loco.functions ?? {});
+      }
+    });
 
-  return unsubscribe;
-}, []);
+    return unsubscribe;
+  }, []);
   return (
     <Card withBorder radius="sm" p="xs" h="100%">
       <div style={{ position: "relative", height: "100%" }}>
@@ -271,9 +271,12 @@ useEffect(() => {
                               height: 48,
                               paddingTop: 2,
                               paddingBottom: 2,
+                              touchAction: "none",
+                              userSelect: "none",
                             }}
                             //onClick={() => toggleFunction(i, fn?.momentary ?? false)}
-                            onMouseDown={() => {
+                            onPointerDown={(ev) => {
+                              ev.preventDefault();
                               if (fn?.momentary) {
                                 wsApi.setLocoFunction(currentLoco.address, i, true);
                               } else {
@@ -281,8 +284,21 @@ useEffect(() => {
                                 wsApi.setLocoFunction(currentLoco.address, i, !a);
                               }
                             }}
-                            onMouseUp={() => {
+                            onPointerUp={(ev) => {
+                              ev.preventDefault();
                               if (fn?.momentary) {
+                                wsApi.setLocoFunction(currentLoco.address, i, false);
+                              }
+                            }}
+                            onPointerCancel={() => {
+                              if (fn?.momentary) {
+                                setActiveFunctions((prev) => ({ ...prev, [i]: false }));
+                                wsApi.setLocoFunction(currentLoco.address, i, false);
+                              }
+                            }}
+                            onPointerLeave={() => {
+                              if (fn?.momentary) {
+                                setActiveFunctions((prev) => ({ ...prev, [i]: false }));
                                 wsApi.setLocoFunction(currentLoco.address, i, false);
                               }
                             }}
