@@ -105,6 +105,30 @@ type SelectionState = {
   endGridY: number;
 };
 
+const CursorTrackElement = new TrackElement(0, 0);
+const CursorTrackEndElement = new TrackEndElement(0, 0);
+const CursorTrackCornerElement = new TrackCornerElement(0, 0);  
+const CursorTrackCurveElement = new TrackCurveElement(0, 0);  
+const CursorTrackTurnoutLeftElement = new TrackTurnoutLeftElement(0, 0);  
+const CursorTrackTurnoutRightElement = new TrackTurnoutRightElement(0, 0);  
+const CursorTrackTurnoutTwoWayElement = new TrackTurnoutTwoWayElement(0, 0);  
+const CursorTrackTurnoutDoubleElement = new TrackTurnoutDoubleElement(0, 0);  
+const CursorTrackSensorElement = new TrackSensorElement(0, 0);
+const CursorTrackSignal2Element = new TrackSignalElement(0, 0);
+CursorTrackSignal2Element.aspect = 2;
+const CursorTrackSignal3Element = new TrackSignalElement(0, 0);
+CursorTrackSignal3Element.aspect = 3 ;
+const CursorTrackSignal4Element = new TrackSignalElement(0, 0);
+CursorTrackSignal4Element.aspect = 4;
+const CursorTrackCrossingElement = new TrackCrossingElement(0, 0);
+const CursorButtonElement = new ButtonElement(0, 0);
+const CursorRouteButtonElement = new RouteButtonElement(0, 0);
+const CursorAudioButtonElement = new AudioButtonElement(0, 0);
+const CursorClockElement = new ClockElement(0, 0);
+const CursorTreeElement = new TreeElement(0, 0);
+const CursorBlockElement = new BlockElement(0, 0);
+
+
 const VIEW_STORAGE_KEY = "dcc-express.editor.trackCanvas.view";
 
 function loadSavedViewState(): ViewState {
@@ -1259,67 +1283,61 @@ export default function TrackCanvas({
 function createCursorElement(tool: EditorTool): BaseElement | null {
   switch (tool.elementType) {
     case ELEMENT_TYPES.TRACK:
-      return new TrackElement(0, 0);
+      return CursorTrackElement;
 
     case ELEMENT_TYPES.TRACK_END:
-      return new TrackEndElement(0, 0);
+      return CursorTrackEndElement;
 
     case ELEMENT_TYPES.TRACK_CORNER:
-      return new TrackCornerElement(0, 0);
+      return CursorTrackCornerElement;
 
     case ELEMENT_TYPES.TRACK_CURVE:
-      return new TrackCurveElement(0, 0);
+      return CursorTrackCurveElement;
 
     case ELEMENT_TYPES.TRACK_CROSSING:
-      return new TrackCrossingElement(0, 0);
+      return CursorTrackCrossingElement;
 
     case ELEMENT_TYPES.TRACK_TURNOUT_LEFT:
-      return new TrackTurnoutLeftElement(0, 0);
+      return CursorTrackTurnoutLeftElement;
 
     case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT:
-      return new TrackTurnoutRightElement(0, 0);
+      return CursorTrackTurnoutRightElement;
 
     case ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY:
-      return new TrackTurnoutTwoWayElement(0, 0);
+      return CursorTrackTurnoutTwoWayElement;
 
     case ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE:
-      return new TrackTurnoutDoubleElement(0, 0);
+      return CursorTrackTurnoutDoubleElement;
 
     case ELEMENT_TYPES.TRACK_SENSOR:
-      return new TrackSensorElement(0, 0);
+      return CursorTrackSensorElement;
 
     case ELEMENT_TYPES.BUTTON:
-      return new ButtonElement(0, 0);
+      return CursorButtonElement  ;
 
     case ELEMENT_TYPES.BUTTON_AUDIO:
-      return new AudioButtonElement(0, 0);
+      return CursorAudioButtonElement ;
 
     case ELEMENT_TYPES.BUTTON_ROUTE:
-      return new RouteButtonElement(0, 0);
+      return CursorRouteButtonElement;
 
     case ELEMENT_TYPES.CLOCK:
-      return new ClockElement(0, 0);
+      return CursorClockElement;
 
     case ELEMENT_TYPES.TREE:
-      return new TreeElement(0, 0);
+      return CursorTreeElement;
 
     case ELEMENT_TYPES.TRACK_BLOCK:
-      return new BlockElement(0, 0);
+      return CursorBlockElement;
 
     case ELEMENT_TYPES.TRACK_SIGNAL2:
-      return new TrackSignalElement(0, 0);
+      return CursorTrackSignal2Element;
 
-    case ELEMENT_TYPES.TRACK_SIGNAL3: {
-      const s3 = new TrackSignalElement(0, 0);
-      s3.aspect = 3;
-      return s3;
-    }
+    case ELEMENT_TYPES.TRACK_SIGNAL3:
+      return CursorTrackSignal3Element;
 
-    case ELEMENT_TYPES.TRACK_SIGNAL4: {
-      const s4 = new TrackSignalElement(0, 0);
-      s4.aspect = 4;
-      return s4;
-    }
+    case ELEMENT_TYPES.TRACK_SIGNAL4:
+      return CursorTrackSignal4Element;
 
     default:
       return null;
