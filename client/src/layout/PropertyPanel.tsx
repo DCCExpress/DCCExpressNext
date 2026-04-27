@@ -126,6 +126,32 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     return trackturnoutleft1 as BaseElement;
   }
 
+  const getPreviewSignal = function (elem: BaseElement, color: number) {
+    if (selectedElement) {
+      if (selectedElement.type === ELEMENT_TYPES.TRACK_SIGNAL2) {
+        const t = new TrackSignalElement(0, 0)
+        t.aspect = 2;
+        t.rotation = 90; //selectedElement.rotation;
+        t.setGreen();
+        return t as BaseElement;
+      }
+      else if (selectedElement.type === ELEMENT_TYPES.TRACK_SIGNAL3) {
+        const t = new TrackSignalElement(0, 0)
+        t.aspect = 3;
+        t.rotation = 90; //selectedElement.rotation;
+        return t as BaseElement;
+      }
+      else if (selectedElement.type === ELEMENT_TYPES.TRACK_SIGNAL4) {
+        const t = new TrackSignalElement(0, 0)
+        t.aspect = 4;
+        t.rotation = 90; //selectedElement.rotation;
+        return t as BaseElement;
+      }
+    }
+    return trackturnoutleft1 as BaseElement;
+  }
+
+
   const handleChange = (prop: IEditableProperty, rawValue: any) => {
     if (selectedElement != null) {
 
@@ -345,7 +371,12 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                   <Group>
                     <Text>{prop.label}</Text>
                     <Text>{(selectedElement as TrackSignalElement).aspect}</Text>
-                    </Group>
+                    <ElementPreview element={getPreviewSignal(selectedElement, 1)} label="Closed" width={40} height={40} onClick={() => {
+                      const t = selectedElement as TrackSignalElement;
+                      //wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
+                    }}
+                    />
+                  </Group>
                 )}
               </Card >
 
