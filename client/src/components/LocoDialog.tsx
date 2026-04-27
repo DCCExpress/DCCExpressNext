@@ -35,6 +35,7 @@ const createEmptyLoco = (): Loco => ({
   maxSpeed: 100,
   invert: false,
   image: "",
+  length: 200,
   functions: [],
 });
 
@@ -355,6 +356,7 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
                   <Tabs.List>
                     <Tabs.Tab value="general">General</Tabs.Tab>
                     <Tabs.Tab value="functions">Functions</Tabs.Tab>
+                    <Tabs.Tab value="extended">Extended params</Tabs.Tab>
                   </Tabs.List>
 
                   <Tabs.Panel value="general" pt="md" style={{ flex: 1 }}>
@@ -417,40 +419,44 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
                         </Stack>
                       </Group>
 
-                      <TextInput
-                        label="Név"
-                        value={selectedLoco.name}
-                        onChange={(e) =>
-                          updateSelectedLoco({ name: e.currentTarget.value })
-                        }
-                      />
+                      <ScrollArea>
+                        <Stack gap="xs" w="50%">
+                        <TextInput
+                          label="Név"
+                          value={selectedLoco.name}
+                          onChange={(e) =>
+                            updateSelectedLoco({ name: e.currentTarget.value })
+                          }
+                        />
 
-                      <NumberInput
-                        label="Cím"
-                        value={selectedLoco.address}
-                        min={1}
-                        onChange={(value) =>
-                          updateSelectedLoco({ address: Number(value) || 0 })
-                        }
-                      />
+                        <NumberInput
+                          label="Cím"
+                          value={selectedLoco.address}
+                          min={1}
+                          onChange={(value) =>
+                            updateSelectedLoco({ address: Number(value) || 0 })
+                          }
+                        />
 
-                      <NumberInput
-                        label="Max sebesség"
-                        value={selectedLoco.maxSpeed}
-                        min={1}
-                        max={1000}
-                        onChange={(value) =>
-                          updateSelectedLoco({ maxSpeed: Number(value) || 0 })
-                        }
-                      />
+                        <NumberInput
+                          label="Max sebesség"
+                          value={selectedLoco.maxSpeed}
+                          min={1}
+                          max={1000}
+                          onChange={(value) =>
+                            updateSelectedLoco({ maxSpeed: Number(value) || 0 })
+                          }
+                        />
 
-                      <Checkbox
-                        label="Invert"
-                        checked={selectedLoco.invert}
-                        onChange={(e) =>
-                          updateSelectedLoco({ invert: e.currentTarget.checked })
-                        }
-                      />
+                        <Checkbox
+                          label="Invert"
+                          checked={selectedLoco.invert}
+                          onChange={(e) =>
+                            updateSelectedLoco({ invert: e.currentTarget.checked })
+                          }
+                        />
+                        </Stack>
+                      </ScrollArea>
                     </Stack>
                   </Tabs.Panel>
 
@@ -538,6 +544,27 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
                       </ScrollArea>
                     </Stack>
                   </Tabs.Panel>
+
+                   <Tabs.Panel value="extended" pt="md" style={{ flex: 1, minHeight: 0 }}>
+                      <Stack gap="md" style={{ height: "100%" }}>
+                        <Group justify="space-between">
+                          <Text fw={600}>Extended params</Text>
+                        </Group>
+                        <ScrollArea style={{ flex: 1 }}>
+                          <Stack gap="sm">
+                            <NumberInput 
+                              label="Hossz (mm)"
+                              value={selectedLoco.length}
+                              min={1}
+                              onChange={(value) =>
+                                 updateSelectedLoco({ length: Number(value) || 0 })
+                              }
+                            />
+                          </Stack>
+                        </ScrollArea>
+                      </Stack> 
+
+                   </Tabs.Panel>
                 </Tabs>
               )}
             </Card>

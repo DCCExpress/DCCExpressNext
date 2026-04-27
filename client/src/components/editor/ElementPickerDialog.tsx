@@ -153,10 +153,10 @@ export default function ElementPickerDialog({
               onPick(ELEMENT_TYPES.TRACK_BLOCK);
               onClose();
             }} />
-            
-            
-
-
+            <ElementPreview element={tree} label="Tree" width={40} height={40} onClick={() => {
+              onPick(ELEMENT_TYPES.TREE);
+              onClose();
+            }} />
           </Group>
         </Card>
 

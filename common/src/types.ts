@@ -76,6 +76,7 @@ export type Loco = {
   maxSpeed: number;
   invert: boolean;
   image?: string;
+  length: number;
   functions: LocoFunction[];
 };
 
