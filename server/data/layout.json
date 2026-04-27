@@ -503,7 +503,8 @@
           "rotationStep": 45,
           "bg": "black",
           "fg": "white",
-          "address": 0
+          "length": 200,
+          "address": 10
         },
         {
           "id": "eafe1112-e06f-44d9-b9c4-849d451a99e5",

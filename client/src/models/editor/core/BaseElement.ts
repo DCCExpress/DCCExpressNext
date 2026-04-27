@@ -253,7 +253,7 @@ export abstract class BaseElement implements IBaseElement {
 
     getEditableProperties(): IEditableProperty[] {
         return [
-            { label: "Név", key: "name", type: "string", readonly: false },
+            { label: "Name", key: "name", type: "string", readonly: false },
             // { label: "Forgatás", key: "rotation", type: "number", readonly: true },
         ];
     }
