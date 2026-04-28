@@ -357,6 +357,8 @@ export class TrackSignalElement extends BaseElement implements ITrackSignalEleme
             ...super.toJSON(),
             type: ELEMENT_TYPES.TRACK_SIGNAL2,
             aspect: this.aspect,
+            address: this.address,
+            addressLength: this.addressLength,
             dispalyAsSingleLamp: this.dispalyAsSingleLamp,
             valueGreen: this.valueGreen,
             valueRed: this.valueRed,
@@ -372,6 +374,8 @@ export class TrackSignalElement extends BaseElement implements ITrackSignalEleme
         copy.rotationStep = this.rotationStep;
         copy.selected = this.selected;
         copy.aspect = this.aspect;
+        copy.address = this.address;
+        copy.addressLength = this.addressLength;
         copy.dispalyAsSingleLamp = this.dispalyAsSingleLamp;
         copy.valueGreen = this.valueGreen;
         copy.valueRed = this.valueRed;
@@ -386,6 +390,8 @@ export class TrackSignalElement extends BaseElement implements ITrackSignalEleme
             // { label: "Forgatás", key: "rotation", type: "number" },
             ...super.getEditableProperties(),
             { label: "Single", key: "dispalyAsSingleLamp", type: "checkbox", readonly: false },
+            { label: "Start Address", key: "address", type: "number", readonly: false },
+            { label: "Length", key: "addressLength", type: "number", readonly: false },
             { label: "Singnal", key: "aspect", type: "signal2", readonly: true },
         ];
     }
