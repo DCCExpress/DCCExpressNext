@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
-import { useMantineColorScheme } from "@mantine/core";
+import { Box, Group, Popover, Text, Stack, useMantineColorScheme } from "@mantine/core";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { DrawOptions, ELEMENT_TYPES, EditorTool } from "../models/editor/types/EditorTypes";
 import { TrackElement } from "../models/editor/elements/TrackElement";
@@ -25,6 +25,7 @@ import { RouteButtonElement } from "../models/editor/elements/RouteButtonElement
 import { TrackCrossingElement } from "../models/editor/elements/TrackCrossingElement";
 import { ClickableBaseElement } from "../models/editor/core/ClickableBaseElement";
 import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
+import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -107,17 +108,17 @@ type SelectionState = {
 
 const CursorTrackElement = new TrackElement(0, 0);
 const CursorTrackEndElement = new TrackEndElement(0, 0);
-const CursorTrackCornerElement = new TrackCornerElement(0, 0);  
-const CursorTrackCurveElement = new TrackCurveElement(0, 0);  
-const CursorTrackTurnoutLeftElement = new TrackTurnoutLeftElement(0, 0);  
-const CursorTrackTurnoutRightElement = new TrackTurnoutRightElement(0, 0);  
-const CursorTrackTurnoutTwoWayElement = new TrackTurnoutTwoWayElement(0, 0);  
-const CursorTrackTurnoutDoubleElement = new TrackTurnoutDoubleElement(0, 0);  
+const CursorTrackCornerElement = new TrackCornerElement(0, 0);
+const CursorTrackCurveElement = new TrackCurveElement(0, 0);
+const CursorTrackTurnoutLeftElement = new TrackTurnoutLeftElement(0, 0);
+const CursorTrackTurnoutRightElement = new TrackTurnoutRightElement(0, 0);
+const CursorTrackTurnoutTwoWayElement = new TrackTurnoutTwoWayElement(0, 0);
+const CursorTrackTurnoutDoubleElement = new TrackTurnoutDoubleElement(0, 0);
 const CursorTrackSensorElement = new TrackSensorElement(0, 0);
 const CursorTrackSignal2Element = new TrackSignalElement(0, 0);
 CursorTrackSignal2Element.aspect = 2;
 const CursorTrackSignal3Element = new TrackSignalElement(0, 0);
-CursorTrackSignal3Element.aspect = 3 ;
+CursorTrackSignal3Element.aspect = 3;
 const CursorTrackSignal4Element = new TrackSignalElement(0, 0);
 CursorTrackSignal4Element.aspect = 4;
 const CursorTrackCrossingElement = new TrackCrossingElement(0, 0);
@@ -127,6 +128,16 @@ const CursorAudioButtonElement = new AudioButtonElement(0, 0);
 const CursorClockElement = new ClockElement(0, 0);
 const CursorTreeElement = new TreeElement(0, 0);
 const CursorBlockElement = new BlockElement(0, 0);
+
+const PreviewSignal1 = new TrackSignalElement(0, 0);
+PreviewSignal1.setGreen();
+const PreviewSignal2 = new TrackSignalElement(0, 0);
+PreviewSignal2.setRed();
+const PreviewSignal3 = new TrackSignalElement(0, 0);
+PreviewSignal3.setYellow();
+const PreviewSignal4 = new TrackSignalElement(0, 0);
+PreviewSignal4.setWhite();
+
 
 
 const VIEW_STORAGE_KEY = "dcc-express.editor.trackCanvas.view";
@@ -175,6 +186,15 @@ function saveViewState(view: ViewState): void {
   }
 }
 
+type SignalAspectValue = 1 | 2 | 3 | 4;
+
+type SignalAspectPopoverState = {
+  opened: boolean;
+  x: number;
+  y: number;
+  signal: TrackSignalElement | null;
+};
+
 export default function TrackCanvas({
   editMode = false,
   tool,
@@ -199,13 +219,11 @@ export default function TrackCanvas({
   });
   const touchPointsRef = useRef<Map<number, TouchPoint>>(new Map());
   const viewRef = useRef<ViewState>(loadSavedViewState());
-
   const panRef = useRef<PanState>({
     isPanning: false,
     lastX: 0,
     lastY: 0,
   });
-
   const dragRef = useRef<DragState>({
     isDraggingElement: false,
     elementId: null,
@@ -246,6 +264,19 @@ export default function TrackCanvas({
   const editModeRef = useRef(editMode);
   const selectedElementRef = useRef<BaseElement | null>(selectedElement);
   const currentCursorRef = useRef<BaseElement | null>(currentCursor);
+
+  const [signalAspectPopover, setSignalAspectPopover] =
+    useState<SignalAspectPopoverState>({
+      opened: false,
+      x: 0,
+      y: 0,
+      signal: null,
+    });
+
+  const signalAspectPopoverRef = useRef(signalAspectPopover);
+  useEffect(() => {
+    signalAspectPopoverRef.current = signalAspectPopover;
+  }, [signalAspectPopover]);
 
   const invalidate = () => {
     setDrawVersion((prev) => prev + 1);
@@ -436,6 +467,7 @@ export default function TrackCanvas({
       invalidate();
     };
 
+
     const handleMouseDown = (ev: MouseEvent) => {
       const currentLayout = layoutRef.current;
       const currentTool = toolRef.current;
@@ -466,6 +498,10 @@ export default function TrackCanvas({
 
       const hitElement = currentLayout.getElement(grid.x, grid.y);
 
+      if (!editModeRef.current && hitElement instanceof TrackSignalElement) {
+        openSignalAspectPopover(hitElement, ev.clientX, ev.clientY);
+        return;
+      }
 
       // A klikkelést lehet csak Control módban kellene engedélyezni!
       if (toolRef.current.mode == "cursor" && hitElement && !editModeRef.current) {
@@ -807,7 +843,13 @@ export default function TrackCanvas({
       }
 
       if (!editModeRef.current) {
-        if (hoveredElement instanceof ClickableBaseElement) {
+        if (hoveredElement instanceof TrackTurnoutLeftElement ||
+          hoveredElement instanceof TrackTurnoutRightElement ||
+          hoveredElement instanceof TrackTurnoutTwoWayElement ||
+          hoveredElement instanceof TrackTurnoutDoubleElement ||
+          hoveredElement instanceof TrackSignalElement
+
+        ) {
           canvas.style.cursor = "pointer";
         } else {
           canvas.style.cursor = "default";
@@ -1277,7 +1319,154 @@ export default function TrackCanvas({
     };
   }, [onLayoutChange, onBeforeLayoutChange]);
 
-  return <canvas tabIndex={0} ref={canvasRef} className="track-canvas" />;
+
+  // =======================================================
+  // popover
+  // =======================================================
+  const openSignalAspectPopover = (
+    signal: TrackSignalElement,
+    clientX: number,
+    clientY: number
+  ) => {
+
+    PreviewSignal1.aspect =
+      PreviewSignal2.aspect =
+      PreviewSignal3.aspect =
+      PreviewSignal4.aspect = signal.aspect;
+
+
+    setSignalAspectPopover({
+      opened: true,
+      x: clientX,
+      y: clientY,
+      signal,
+    });
+  };
+
+  const closeSignalAspectPopover = () => {
+    setSignalAspectPopover((prev) => ({
+      ...prev,
+      opened: false,
+      signal: null,
+    }));
+  };
+
+  return (
+    <>
+      <canvas tabIndex={0} ref={canvasRef} className="track-canvas" />
+
+      <Popover
+        opened={signalAspectPopover.opened}
+        onChange={(opened) => {
+          if (!opened) closeSignalAspectPopover();
+        }}
+        
+        withArrow
+        shadow="xl"
+        closeOnClickOutside
+        closeOnEscape
+        withinPortal
+        offset={18}
+      >
+        <Popover.Target>
+          <Box p={4}
+            style={{
+              position: "fixed",
+              left: signalAspectPopover.x,
+              top: signalAspectPopover.y,
+              width: 0,
+              height: 0,
+              pointerEvents: "none",
+            }}
+          />
+        </Popover.Target>
+
+        <Popover.Dropdown
+          p={4}
+          
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <Stack gap="xs">
+            {/* <Text p={2} bg={"blue"}>Signal aspect</Text> */}
+            <Group gap={4}>
+              <Box className="signal-aspect-button"
+                onClick={() => {
+                  closeSignalAspectPopover();
+                  signalAspectPopover.signal?.sendGreen();
+                }}
+              >
+                <ElementPreview style={{ cursor: "pointer" }}
+                  element={PreviewSignal1}
+                  label="Green"
+                  width={40}
+                  height={40}
+                  translateX={-10}
+                />
+              </Box>
+
+              <Box className="signal-aspect-button"
+                onClick={() => {
+                  closeSignalAspectPopover();
+                  signalAspectPopover.signal?.sendRed();
+                }}
+              >
+                <ElementPreview
+                  element={PreviewSignal2}
+                  label="Red"
+                  width={40}
+                  height={40}
+                  translateX={-10}
+                />
+              </Box>
+
+              {signalAspectPopover.signal && signalAspectPopover.signal.aspect > 2 && (
+                <Box className="signal-aspect-button"
+                  onClick={() => {
+                    closeSignalAspectPopover();
+                    signalAspectPopover.signal?.sendYellow();
+                  }}
+                >
+                  <ElementPreview
+                    element={PreviewSignal3}
+                    label="Yellow"
+                    width={40}
+                    height={40}
+                    translateX={-10}
+                  />
+                </Box>)}
+
+              {signalAspectPopover.signal && signalAspectPopover.signal!.aspect > 3 && (
+                <Box className="signal-aspect-button"
+                  onClick={() => {
+                    closeSignalAspectPopover();
+                    signalAspectPopover.signal?.sendWhite();
+                  }}
+                >
+                  <ElementPreview
+                    element={PreviewSignal4}
+                    label="White"
+                    width={40}
+                    height={40}
+                    translateX={-10}
+                  />
+                </Box>
+              )}
+
+
+            </Group>
+          </Stack>
+        </Popover.Dropdown>
+      </Popover>
+    </>
+  );
 }
 
 function createCursorElement(tool: EditorTool): BaseElement | null {
@@ -1313,10 +1502,10 @@ function createCursorElement(tool: EditorTool): BaseElement | null {
       return CursorTrackSensorElement;
 
     case ELEMENT_TYPES.BUTTON:
-      return CursorButtonElement  ;
+      return CursorButtonElement;
 
     case ELEMENT_TYPES.BUTTON_AUDIO:
-      return CursorAudioButtonElement ;
+      return CursorAudioButtonElement;
 
     case ELEMENT_TYPES.BUTTON_ROUTE:
       return CursorRouteButtonElement;

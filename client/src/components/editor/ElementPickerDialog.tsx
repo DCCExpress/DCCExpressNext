@@ -112,15 +112,15 @@ export default function ElementPickerDialog({
 
         <Card padding="xs" withBorder >
           <Group>
-            <ElementPreview element={signal2} label="Signal 2" width={40} height={40} onClick={() => {
+            <ElementPreview element={signal2} label="Signal 2" width={40} height={40} translateX={-10} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SIGNAL2);
               onClose();
             }} />
-            <ElementPreview element={signal3} label="Signal 3" width={40} height={40} onClick={() => {
+            <ElementPreview element={signal3} label="Signal 3" width={40} height={40} translateX={-10} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SIGNAL3);
               onClose();
             }} />
-            <ElementPreview element={signal4} label="Signal 4" width={40} height={40} onClick={() => {
+            <ElementPreview element={signal4} label="Signal 4" width={40} height={40} translateX={-10} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SIGNAL4);
               onClose();
             }} />

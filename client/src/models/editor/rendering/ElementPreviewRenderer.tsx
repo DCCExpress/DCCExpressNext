@@ -61,6 +61,8 @@ type ElementPreviewProps = {
   height?: number;
   options?: DrawOptions;
   scale?: number;
+  translateX?: number;
+  translateY?: number;
   className?: string;
   onClick?: () => void;
   style?: CSSProperties;
@@ -73,6 +75,8 @@ export default function ElementPreview({
   height = 80,
   options,
   scale = 0.9,
+  translateX = 0,
+  translateY = 0,
   className,
   onClick,
 }: ElementPreviewProps) {
@@ -102,6 +106,10 @@ export default function ElementPreview({
       style={{
         width: "76px",
         height: "76px",
+
+        // width: `${width+10}px`,
+        // height: `${height+10}px`,
+
         border: "1px solid " + bbg,
         borderRadius: "4px",
         cursor: onClick ? "pointer" : "default",
@@ -136,6 +144,7 @@ export default function ElementPreview({
             height: `${height}px`,
             display: "block",
             flex: "0 0 auto",
+            transform: `translate(${translateX}px, ${translateY}px)`,
           }}
         />
         {label && (

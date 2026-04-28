@@ -15,6 +15,7 @@ export class CommandCenter {
     locos = new Map();
     turnouts = new Map();
     sensors = new Map();
+    accessories = new Map();
     constructor(name) {
         this.name = name;
     }
@@ -45,5 +46,24 @@ export class CommandCenter {
     }
     getName() {
         return this.name;
+    }
+    getOrCreateAccessory(address) {
+        let accessory = this.accessories.get(address);
+        if (!accessory) {
+            accessory = {
+                address,
+                active: false,
+            };
+            this.accessories.set(address, accessory);
+        }
+        return accessory;
+    }
+    setBasicAccessory(address, active) {
+        const accessory = this.getOrCreateAccessory(address);
+        accessory.active = active;
+        return Promise.resolve(true);
+    }
+    getAccessories() {
+        return Array.from(this.accessories.values());
     }
 }

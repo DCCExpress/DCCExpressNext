@@ -75,6 +75,20 @@ export class CommandCenterSimulator extends CommandCenter {
     getLoco(address) {
         return Promise.resolve(this.getOrCreateLoco(address) ?? null);
     }
+    setBasicAccessory(address, active) {
+        log("Sim: setBasicAccessory", { address, active });
+        const accessory = this.getOrCreateAccessory(address);
+        accessory.active = active;
+        const msg = {
+            type: "accessoryChanged",
+            data: {
+                address,
+                active,
+            },
+        };
+        broadcastAll(msg);
+        return Promise.resolve(true);
+    }
     setTrackPower(on) {
         throw new Error("Method not implemented.");
     }

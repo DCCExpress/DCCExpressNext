@@ -112,6 +112,17 @@ export function setupWebSocketServer(server) {
                     data: { loco },
                 });
             }
+            const accessories = commandCenter.getAccessories();
+            for (const accessory of accessories) {
+                const msg = {
+                    type: "accessoryChanged",
+                    data: {
+                        address: accessory.address,
+                        active: accessory.active,
+                    },
+                };
+                sendToClient(ws, msg);
+            }
         }
         ws.on("message", (message) => {
             const text = message.toString();
@@ -220,6 +231,9 @@ export function setupWebSocketServer(server) {
                             });
                             return;
                         }
+                        //===============================
+                        // setTurnout
+                        //===============================
                         case "setTurnout": {
                             const address = msg.data?.address;
                             const closed = msg.data?.closed;
@@ -241,6 +255,9 @@ export function setupWebSocketServer(server) {
                             });
                             return;
                         }
+                        //===============================
+                        // getSensor
+                        //===============================
                         case "setSensor": {
                             const address = msg.data?.address;
                             const on = msg.data?.on;
@@ -253,8 +270,37 @@ export function setupWebSocketServer(server) {
                             }
                             return;
                         }
+                        //===============================
+                        // setBasicAccessory
+                        //===============================
+                        case "setBasicAccessory": {
+                            const address = msg.data?.address;
+                            const active = msg.data?.active;
+                            if (typeof address !== "number" || typeof active !== "boolean") {
+                                sendToClient(ws, {
+                                    type: "error",
+                                    data: { message: "Invalid setBasicAccessory payload" },
+                                });
+                                return;
+                            }
+                            commandCenter.setBasicAccessory(address, active).then(success => {
+                                log("Basic accessory set result:", success);
+                                if (!success) {
+                                    broadcast(wss, {
+                                        type: "error",
+                                        data: { message: "Failed to set basic accessory" },
+                                    });
+                                }
+                            });
+                            return;
+                        }
                         default: {
-                            broadcast(wss, msg, ws);
+                            logError("Unknown message type:", msg.type);
+                            sendToClient(ws, {
+                                type: "error",
+                                data: { message: "Unknown message type" },
+                            });
+                            //broadcast(wss, msg, ws);
                             return;
                         }
                     }

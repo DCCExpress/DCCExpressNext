@@ -380,7 +380,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                     {/* GREEN */}
                     <Group>
 
-                      <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 1)} label="Green" width={40} height={40} onClick={() => {
+                      <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 1)} label="Green" width={40} height={40} translateX={-10} onClick={() => {
                         const t = selectedElement as TrackSignalElement;
                         t.sendGreen();
                         //wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
@@ -400,7 +400,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                     {/* RED */}
                     <Group>
 
-                      <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 2)} label="Red" width={40} height={40} onClick={() => {
+                      <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 2)} label="Red" width={40} height={40} translateX={-10} onClick={() => {
                         const t = selectedElement as TrackSignalElement;
                         t.sendRed();
                       }}
@@ -420,7 +420,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                     {(selectedElement as TrackSignalElement).aspect >= 3 && (
                       <Group>
 
-                        <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 3)} label="Yellow" width={40} height={40} onClick={() => {
+                        <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 3)} label="Yellow" width={40} height={40} translateX={-10} onClick={() => {
                           const t = selectedElement as TrackSignalElement;
                           t.sendYellow();
                         }}
@@ -440,7 +440,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                     {(selectedElement as TrackSignalElement).aspect >= 4 && (
                     <Group>
 
-                      <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 4)} label="White" width={40} height={40} onClick={() => {
+                      <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 4)} label="White" width={40} height={40} translateX={-10} onClick={() => {
                         const t = selectedElement as TrackSignalElement;
                         t.sendWhite();
                       }}

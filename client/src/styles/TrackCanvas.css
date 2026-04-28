@@ -12,3 +12,16 @@
   outline: none;
   box-shadow: none;
 }
+
+.signal-aspect-button {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  line-height: 0;
+}
+
+.signal-aspect-button * {
+  cursor: pointer !important;
+}
