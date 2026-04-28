@@ -57,6 +57,11 @@ export const wsApi = {
      return wsClient.send(data);
   },
 
+  setBasicAccessory(address: number, active: boolean) {
+    const data = { address, active };
+    return wsClient.send({ type: "setBasicAccessory", data });
+  },
+  
   setTurnout22(t: SetTurnoutMessage) {
     return wsClient.send(t);
     return wsClient.send({ type: t.type, data: t.data });

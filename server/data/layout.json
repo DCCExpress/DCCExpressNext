@@ -469,7 +469,7 @@
           "bg": "black",
           "fg": "white",
           "aspect": 4,
-          "address": 0,
+          "address": 32,
           "addressLength": 5,
           "dispalyAsSingleLamp": "",
           "valueGreen": 6,
@@ -501,7 +501,7 @@
           "addressLength": 4,
           "dispalyAsSingleLamp": false,
           "valueGreen": 1,
-          "valueRed": 0,
+          "valueRed": 2,
           "valueYellow": 0,
           "valueWhite": 0
         },

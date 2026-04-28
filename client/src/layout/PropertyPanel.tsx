@@ -382,6 +382,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
 
                       <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 1)} label="Green" width={40} height={40} onClick={() => {
                         const t = selectedElement as TrackSignalElement;
+                        t.sendGreen();
                         //wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
                       }}
                       />
@@ -401,7 +402,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
 
                       <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 2)} label="Red" width={40} height={40} onClick={() => {
                         const t = selectedElement as TrackSignalElement;
-                        //wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
+                        t.sendRed();
                       }}
                       />
 
@@ -421,7 +422,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
 
                         <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 3)} label="Yellow" width={40} height={40} onClick={() => {
                           const t = selectedElement as TrackSignalElement;
-                          //wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
+                          t.sendYellow();
                         }}
                         />
 
@@ -441,7 +442,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
 
                       <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 4)} label="White" width={40} height={40} onClick={() => {
                         const t = selectedElement as TrackSignalElement;
-                        //wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
+                        t.sendWhite();
                       }}
                       />
 

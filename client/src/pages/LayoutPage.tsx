@@ -24,6 +24,7 @@ import CommandCenterDialog from "../components/CommandCenterDialog";
 import { CommandCenter, loadCommandCenters, saveCommandCenters } from "../api/commandCentersApi";
 import { ICommandCenter, Loco } from "../../../common/src/types";
 import { WsEvents } from "../../../common/src/wsEvents";
+import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -49,7 +50,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [commandCenterOpened, setCommandCenterOpened] = useState(false);
   const [commandCenter, setCommandCenter] = useState<CommandCenter>(new CommandCenter());
   const [commandCenterAlive, setCommandCenterAlive] = useState(false);
-const [commandCenterPower, setCommandCenterPower] = useState(false);
+  const [commandCenterPower, setCommandCenterPower] = useState(false);
 
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
@@ -255,7 +256,7 @@ const [commandCenterPower, setCommandCenterPower] = useState(false);
     const onKeyDown = (ev: KeyboardEvent) => {
 
       const isCtrl = ev.ctrlKey || ev.metaKey;
-       if (isCtrl && ev.key.toLowerCase() === "s") {
+      if (isCtrl && ev.key.toLowerCase() === "s") {
         ev.preventDefault();
         saveLayoutToServer();
         //void saveCommandCentersToServer();
@@ -284,9 +285,9 @@ const [commandCenterPower, setCommandCenterPower] = useState(false);
         return;
       }
 
-      
 
-     
+
+
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -396,10 +397,41 @@ const [commandCenterPower, setCommandCenterPower] = useState(false);
       }
     );
 
+    const unsubscribeAccessory = wsClient.on(
+      "accessoryChanged",
+      data => {
+        console.log("accessoryChanged:", data);
+
+        if (!data || typeof data.address !== "number") {
+          console.warn("Invalid accessory data:", data);
+          return;
+        }
+
+        const elements = layoutRef.current.getAllElements();
+        let changed = false;
+
+        for (const e of elements) {
+          if (e.type === ELEMENT_TYPES.TRACK_SIGNAL2) {
+            const signal = e as TrackSignalElement;
+            signal.setValue(data.address, data.active);
+            changed = true;
+            if (signal.address === data.address || signal.lastAddress <= data.address) {
+            }
+          }
+        }
+
+        if (changed) {
+          setInavalidateCounter((prev) => prev + 1);
+        }
+      }
+
+    );
+
     return () => {
       unsubscribeSensor();
       unsubscribeTurnout();
       unsubscribeCommandCenter();
+      unsubscribeAccessory();
       wsApi.disconnect();
     };
   }, []);

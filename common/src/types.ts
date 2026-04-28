@@ -34,6 +34,15 @@ export type TurnoutChangedMessage = {
   };
 };
 
+
+export type AccessoryChangedMessage = {
+  type: "accessoryChanged";
+  data: {
+    address: number;
+    active: boolean;
+  };
+};
+
 export type SetSensorMessage = {
   type: "setSensor";
   data: {

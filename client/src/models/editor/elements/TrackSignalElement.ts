@@ -1,5 +1,6 @@
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
+import { wsApi } from "../../../services/wsApi";
 import { BaseElement } from "../core/BaseElement";
 import { Layer } from "../core/Layer";
 import { DrawOptions, ELEMENT_TYPES, IBaseElement, ITrackSignalElement } from "../types/EditorTypes";
@@ -335,13 +336,13 @@ export class TrackSignalElement extends BaseElement implements ITrackSignalEleme
     }
 
     send(bits: number) {
-
         var addr = this.address;
         var len = this.addressLength;
         for (var i = 0; i < len; i++) {
 
             const value = ((bits >> i) & 1) == 1;
 
+            wsApi.setBasicAccessory(this.address + i, value);
             // if (this.outputMode == OutputModes.accessory) {
             //     var d: iSetBasicAccessory = { address: this.address + i, value: value }
             //     wsClient.send({ type: ApiCommands.setBasicAccessory, data: d } as iData);

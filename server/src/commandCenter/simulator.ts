@@ -1,5 +1,5 @@
 import { Console } from "node:console";
-import { Loco, SetLocoFunctionMessage, SetLocoMessage, TurnoutChangedMessage, WsMessage } from "../../../common/src/types.js";
+import { AccessoryChangedMessage, Loco, SetLocoFunctionMessage, SetLocoMessage, TurnoutChangedMessage, WsMessage } from "../../../common/src/types.js";
 import { CommandCenter, LocoState, SensorInfo, TurnoutInfo } from "./CommandCenter.js";
 import { log } from "../utility.js";
 import { broadcastAll } from "../ws/wsServer.js";
@@ -13,7 +13,7 @@ export class CommandCenterSimulator extends CommandCenter {
     this.alive = true;
     this.power = true;
     this.aliveTask = setInterval(() => {
-      
+
       const msg: WsMessage = {
         type: "commandCenterInfo",
         data: {
@@ -31,10 +31,10 @@ export class CommandCenterSimulator extends CommandCenter {
     log("Stopping command center simulator...");
     this.alive = false;
     this.power = false;
-    if(this.aliveTask) {
-    clearInterval(this.aliveTask);
-    this.aliveTask = null;
-    const msg: WsMessage = {
+    if (this.aliveTask) {
+      clearInterval(this.aliveTask);
+      this.aliveTask = null;
+      const msg: WsMessage = {
         type: "commandCenterInfo",
         data: {
           alive: this.alive,
@@ -52,6 +52,7 @@ export class CommandCenterSimulator extends CommandCenter {
   clientConnected(): void {
     throw new Error("Method not implemented.");
   }
+  
   setTurnout(address: number, closed: boolean): Promise<boolean> {
     console.log("Sim: setTurnout", { address, closed });
     const msg: TurnoutChangedMessage = {
@@ -72,7 +73,7 @@ export class CommandCenterSimulator extends CommandCenter {
   setLoco(address: number, speed: number, direction: "forward" | "reverse"): Promise<boolean> {
     const loco = this.getOrCreateLoco(address);
     loco.speed = speed;
-    loco.direction = direction; 
+    loco.direction = direction;
     return Promise.resolve(true);
   }
   setLocoFunction(address: number, fn: number, active: boolean): Promise<boolean> {
@@ -83,6 +84,25 @@ export class CommandCenterSimulator extends CommandCenter {
   getLoco(address: number): Promise<LocoState | null> {
     return Promise.resolve(this.getOrCreateLoco(address) ?? null);
   }
+
+  setBasicAccessory(address: number, active: boolean): Promise<boolean> {
+    log("Sim: setBasicAccessory", { address, active });
+    const accessory = this.getOrCreateAccessory(address);
+    accessory.active = active;
+
+   const msg: AccessoryChangedMessage = {
+      type: "accessoryChanged",
+      data: {
+        address,
+        active,
+      },
+    };
+
+    broadcastAll(msg);
+
+    return Promise.resolve(true);
+  }
+
   setTrackPower(on: boolean): Promise<boolean> {
     throw new Error("Method not implemented.");
   }

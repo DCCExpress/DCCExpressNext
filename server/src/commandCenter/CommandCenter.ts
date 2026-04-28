@@ -32,6 +32,11 @@ export interface SensorInfo {
   active: boolean;
 }
 
+export interface AccessoryInfo {
+  address: number;
+  active: boolean;
+}
+
 export abstract class CommandCenter {
   protected name: string;
   protected powerInfo: PowerInfo = {
@@ -44,6 +49,7 @@ export abstract class CommandCenter {
   protected locos: Map<number, LocoState> = new Map();
   protected turnouts: Map<number, TurnoutInfo> = new Map();
   protected sensors: Map<number, SensorInfo> = new Map();
+  protected accessories: Map<number, AccessoryInfo> = new Map();
 
   constructor(name: string) {
     this.name = name;
@@ -101,4 +107,26 @@ export abstract class CommandCenter {
   getName(): string {
     return this.name;
   }
+
+  protected getOrCreateAccessory(address: number): AccessoryInfo {
+    let accessory = this.accessories.get(address);
+    if (!accessory) {
+      accessory = {
+        address,
+        active: false,
+      };
+      this.accessories.set(address, accessory);
+    }
+    return accessory;
+  }
+
+  setBasicAccessory(address: number, active: boolean): Promise<boolean> {
+    const accessory = this.getOrCreateAccessory(address);
+    accessory.active = active;
+    return Promise.resolve(true);
+  }
+
+
+
+
 }
