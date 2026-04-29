@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Badge,
   Button,
   Card,
   Group,
@@ -8,6 +9,9 @@ import {
   Slider,
   Stack,
   Text,
+  Title,
+  useMantineColorScheme,
+  useMantineTheme,
 } from "@mantine/core";
 import {
   IconAlertTriangle,
@@ -21,6 +25,7 @@ import LocoPicker from "../components/loco/LocoPicker";
 import { Loco, LocoState } from "../../../common/src/types";
 import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
+import Speedometer from "../components/Speedometer";
 
 
 // TODO: Ha szerkesztve lett a mozdony újra le kell kérdezni a LocoState-t, 
@@ -42,11 +47,19 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
   const [direction, setDirection] = useState<Direction>("forward");
   const [activeFunctions, setActiveFunctions] = useState<Record<number, boolean>>({});
 
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
+
+
+  const badgeBg = colorScheme == "dark" ? theme.colors.dark[5] : theme.colors.blue[0];
+  const badgeBorder = colorScheme == "dark" ? theme.colors.dark[3] : theme.colors.blue[2];
+  const badgeText = colorScheme == "dark" ? theme.colors.blue[1] : theme.colors.blue[8];
+
   useEffect(() => {
-    
+
     if (!selectedLocoId && locos.length > 0) {
       setSelectedLocoId(locos[0]!.id);
-      
+
     }
 
     if (selectedLocoId && !locos.some((l) => l.id === selectedLocoId)) {
@@ -143,7 +156,10 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
   }, []);
   return (
     <Card withBorder radius="sm" p="xs" h="100%">
+
+
       <div style={{ position: "relative", height: "100%" }}>
+
         <LocoPicker
           opened={pickerOpened}
           locos={locos}
@@ -160,7 +176,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
           ) : (
             <>
               <Card withBorder radius="sm" p="xs">
-                <Stack gap="xs" align="center">
+                <Stack align="center" gap={0}>
                   <LocoImage
                     image={currentLoco.image}
                     name={currentLoco.name}
@@ -169,9 +185,70 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                     clickable
                     onClick={() => setPickerOpened(true)}
                   />
+                </Stack>
+
+                <Stack gap="xs" align="center">
                   <Text fw={700} ta="center">
                     #{currentLoco.address} {currentLoco.name || "Névtelen mozdony"}
                   </Text>
+
+                  <Badge
+                    radius={4}
+                    m={4}
+                    size="xl"
+                    w={120}
+                    h="auto"
+                    px="md"
+                    py={6}
+                    styles={{
+                      root: {
+                        backgroundColor: badgeBg,
+                        border: `1px solid ${badgeBorder}`,
+                      },
+                      label: {
+                        height: "auto",
+                        lineHeight: 1,
+                        textTransform: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
+                    }}
+                  >
+                    <Title order={1} fw={700} lh={1} style={{
+                      color: badgeText,
+                      fontVariantNumeric: "tabular-nums",
+                    }}>
+                      {speed}
+                    </Title>
+                  </Badge>
+
+
+                  <div style={{ width: "100%" }}>
+                    {/* <Group justify="space-between" mb={6}>
+                      <Text size="sm" fw={500}>
+                        Sebesség
+                      </Text>
+                      <Text size="sm" c="dimmed">
+                        {speed} / {currentLoco.maxSpeed || 100}
+                      </Text>
+                    </Group> */}
+
+                    <Slider
+                      value={speed}
+                      onChange={(s) => {
+                        setSpeed(s);
+                        if (currentLoco) {
+                          wsApi.setLoco(currentLoco.address, s, direction);
+                        }
+                      }}
+                      min={0}
+                      max={currentLoco.maxSpeed || 100}
+                      label={null}
+                      orientation="vertical"
+                    />
+                  </div>
+
 
                   <Group grow gap={4} w="100%">
                     <Button
@@ -212,28 +289,6 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                     Emergency
                   </Button>
 
-                  <div style={{ width: "100%" }}>
-                    <Group justify="space-between" mb={6}>
-                      <Text size="sm" fw={500}>
-                        Sebesség
-                      </Text>
-                      <Text size="sm" c="dimmed">
-                        {speed} / {currentLoco.maxSpeed || 100}
-                      </Text>
-                    </Group>
-
-                    <Slider
-                      value={speed}
-                      onChange={(s) => {
-                        setSpeed(s);
-                        if (currentLoco) {
-                          wsApi.setLoco(currentLoco.address, s, direction);
-                        }
-                      }}
-                      min={0}
-                      max={currentLoco.maxSpeed || 100}
-                    />
-                  </div>
 
                   <SimpleGrid cols={6} spacing="xs" p={0} w="100%">
                     {SPEED_PRESETS.map((preset) => (
