@@ -139,8 +139,9 @@ export function setupWebSocketServer(server: http.Server) {
 
 
       const turnouts = commandCenter.getTurnouts();
+      log("Turnouts", turnouts)
       for (const turnout of turnouts) {
-
+        
         const msg: TurnoutChangedMessage = {
           type: "turnoutChanged",
           data: {

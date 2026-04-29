@@ -364,6 +364,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
         if (!data || typeof data.address !== "number") {
           console.warn("Invalid turnout data:", data);
+          
           return;
         }
 

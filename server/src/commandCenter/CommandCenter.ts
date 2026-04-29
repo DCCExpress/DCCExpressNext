@@ -109,6 +109,18 @@ export abstract class CommandCenter {
     return this.name;
   }
 
+    protected getOrCreateTurnout(address: number): TurnoutInfo {
+    let turnout = this.turnouts.get(address);
+    if (!turnout) {
+       turnout = {
+        address,
+        closed: false,
+      };
+      this.turnouts.set(address,turnout );
+    }
+    return turnout;
+  }
+
   protected getOrCreateAccessory(address: number): AccessoryInfo {
     let accessory = this.accessories.get(address);
     if (!accessory) {
