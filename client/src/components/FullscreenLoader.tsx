@@ -21,7 +21,7 @@ export default function FullscreenLoader({
       <Center h="100vh">
         <Stack align="center" gap="sm">
           <Loader size="xl" />
-          <Text size="md" c="dimmed">
+          <Text size="md" c="dimmed" >
             {text}
           </Text>
         </Stack>

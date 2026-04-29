@@ -609,37 +609,10 @@ export default function TrackCanvas({
             const rb = hitElement as RouteButtonElement;
             const elems = currentLayout.getAllElements();
 
-            setBusy?.(true, "Route is being set...");
-            // let time = 500;
-            // for (const routeItem of rb.routeTurnouts) {
-            //   const t = elems.find((elem) => routeItem.turnoutId === elem.id)
-            //   if (t) {
-            //     setTimeout(() => {
-            //       const turnout = t as TrackTurnoutLeftElement;
-            //       wsApi.setTurnout(turnout.turnoutAddress, routeItem.closed == turnout.turnoutClosedValue);
-            //     }, time);
-            //     time += 500
-            //   }
-            // }
-            // let time = 500;
-            // let index = 0;
-            // const setT =
-            //   setTimeout(() => {
-            //     if (rb.routeTurnouts.length > 0 && index < rb.routeTurnouts.length) {
-            //       const ri: RouteTurnoutItem = rb.routeTurnouts[index]!;
-            //       const t = elems.find((elem) => ri.turnoutId === elem.id);
-            //       const turnout = t as TrackTurnoutLeftElement;
-            //       wsApi.setTurnout(turnout.turnoutAddress, ri.closed == turnout.turnoutClosedValue);
-            //       time += 500;
-            //       index++;
-            //       setT;
-            //     } else {
-            //       setBusy?.(false, "Route is being set...");
-            //     }
-            //   }, time);
+            //setBusy?.(true, "Route is being set...");
             const executeRoute = async function (rb: RouteButtonElement) {
               setBusy?.(true, "Route is being set...");
-
+              await sleep(500);
               try {
                 for (const ri of rb.routeTurnouts) {
                   const t = elems.find((elem) => ri.turnoutId === elem.id) as TrackTurnoutElement;
