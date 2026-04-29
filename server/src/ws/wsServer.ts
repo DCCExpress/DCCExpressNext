@@ -129,6 +129,16 @@ export function setupWebSocketServer(server: http.Server) {
     } as CommandCenterInfo)
 
     if (commandCenter) {
+
+      sendToClient(ws, {
+        type: "commandCenterLockChanged",
+        data: {
+          locked: commandCenter.locked,
+          lockOwner: commandCenter.lockOwnerUUID ?? null,
+          reason: commandCenter.locked ? "route" : null,
+        },
+      });
+
       const locos = commandCenter.getLocos();
       for (const loco of locos) {
         sendToClient(ws, {
@@ -211,7 +221,7 @@ export function setupWebSocketServer(server: http.Server) {
                 data: {
                   locked: true,
                   lockOwner: commandCenter.lockOwnerUUID,
-                
+
                 },
               });
 
