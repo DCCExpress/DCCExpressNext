@@ -516,7 +516,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       >
           <ActionIcon
             variant="filled"
-            size="sm"
+            size="md"
             radius="xl"
             color="blue"
             onClick={() => setToolbarOpened((v) => !v)}

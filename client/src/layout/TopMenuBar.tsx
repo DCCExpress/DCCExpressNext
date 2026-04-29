@@ -106,7 +106,7 @@ export default function TopMenuBar({
 
 
   return (
-    <Group ml={22} h="100%" px="md" justify="space-between" wrap="nowrap">
+    <Group ml={26} h="100%" px="md" justify="space-between" wrap="nowrap">
       <Group gap="sm" wrap="nowrap">
         {/* <ThemeIcon size="lg" radius="sm" variant="light">
           <TrainIcon size={18} />
