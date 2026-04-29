@@ -8,7 +8,7 @@ import { TrackCornerElement } from "../models/editor/elements/TrackCornerElement
 import { TrackCurveElement } from "../models/editor/elements/TrackCurveElement";
 import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
-import { generateId, showErrorMessage } from "../helpers";
+import { generateId, showErrorMessage, sleep } from "../helpers";
 import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
 
 import "../styles/TrackCanvas.css";
@@ -21,7 +21,7 @@ import { TreeElement } from "../models/editor/elements/TreeElement";
 import { BlockElement } from "../models/editor/elements/BlockElement";
 import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
 import { AudioButtonElement } from "../models/editor/elements/AudioButtonElement";
-import { RouteButtonElement } from "../models/editor/elements/RouteButtonElement";
+import { RouteButtonElement, RouteTurnoutItem } from "../models/editor/elements/RouteButtonElement";
 import { TrackCrossingElement } from "../models/editor/elements/TrackCrossingElement";
 import { ClickableBaseElement } from "../models/editor/core/ClickableBaseElement";
 import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
@@ -41,6 +41,7 @@ type TrackCanvasProps = {
   onInvalidate: () => void;
   fitCounter: number;
   turnoutSelectionMode: boolean;
+  setBusy?: (busy: boolean, text?: string) => void;
 };
 
 type ViewState = {
@@ -216,7 +217,8 @@ export default function TrackCanvas({
   invaildateCounter,
   onInvalidate,
   fitCounter,
-  turnoutSelectionMode
+  turnoutSelectionMode,
+  setBusy
 }: TrackCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { colorScheme } = useMantineColorScheme();
@@ -479,6 +481,8 @@ export default function TrackCanvas({
     );
   }, [canvasSize, editMode, colorScheme, mouseGrid, tool, hoverGrid, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
 
+
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -604,14 +608,62 @@ export default function TrackCanvas({
           if (hitElement instanceof RouteButtonElement) {
             const rb = hitElement as RouteButtonElement;
             const elems = currentLayout.getAllElements();
-            for (const routeItem of rb.routeTurnouts) {
-              const t = elems.find((elem) => routeItem.turnoutId === elem.id)
-              if(t) {
-                const turnout = t as TrackTurnoutLeftElement;
-                wsApi.setTurnout(turnout.turnoutAddress, routeItem.closed == turnout.turnoutClosedValue);
-                
+
+            setBusy?.(true, "Route is being set...");
+            // let time = 500;
+            // for (const routeItem of rb.routeTurnouts) {
+            //   const t = elems.find((elem) => routeItem.turnoutId === elem.id)
+            //   if (t) {
+            //     setTimeout(() => {
+            //       const turnout = t as TrackTurnoutLeftElement;
+            //       wsApi.setTurnout(turnout.turnoutAddress, routeItem.closed == turnout.turnoutClosedValue);
+            //     }, time);
+            //     time += 500
+            //   }
+            // }
+            // let time = 500;
+            // let index = 0;
+            // const setT =
+            //   setTimeout(() => {
+            //     if (rb.routeTurnouts.length > 0 && index < rb.routeTurnouts.length) {
+            //       const ri: RouteTurnoutItem = rb.routeTurnouts[index]!;
+            //       const t = elems.find((elem) => ri.turnoutId === elem.id);
+            //       const turnout = t as TrackTurnoutLeftElement;
+            //       wsApi.setTurnout(turnout.turnoutAddress, ri.closed == turnout.turnoutClosedValue);
+            //       time += 500;
+            //       index++;
+            //       setT;
+            //     } else {
+            //       setBusy?.(false, "Route is being set...");
+            //     }
+            //   }, time);
+            const executeRoute = async function (rb: RouteButtonElement) {
+              setBusy?.(true, "Route is being set...");
+
+              try {
+                for (const ri of rb.routeTurnouts) {
+                  const t = elems.find((elem) => ri.turnoutId === elem.id) as TrackTurnoutElement;
+
+                  if (
+                    t instanceof TrackTurnoutLeftElement ||
+                    t instanceof TrackTurnoutRightElement ||
+                    t instanceof TrackTurnoutTwoWayElement ||
+                    t instanceof TrackTurnoutDoubleElement
+                  ) {
+                    wsApi.setTurnout(
+                      t.turnoutAddress,
+                      ri.closed === t.turnoutClosedValue
+                    );
+
+                    await sleep(500);
+                  }
+                }
+              } finally {
+                setBusy?.(false);
               }
             }
+            executeRoute(rb)
+
           } else {
             const elem = hitElement as ClickableBaseElement
             elem.mouseDown(ev);
@@ -1934,3 +1986,4 @@ function getMidpoint(a: TouchPoint, b: TouchPoint): TouchPoint {
     y: (a.y + b.y) / 2,
   };
 }
+

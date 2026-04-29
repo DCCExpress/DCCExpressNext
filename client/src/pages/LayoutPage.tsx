@@ -25,6 +25,7 @@ import { CommandCenter, loadCommandCenters, saveCommandCenters } from "../api/co
 import { ICommandCenter, Loco } from "../../../common/src/types";
 import { WsEvents } from "../../../common/src/wsEvents";
 import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
+import FullscreenLoader from "../components/FullscreenLoader";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -58,6 +59,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const layoutRef = useRef(layout);
 
   const [turnoutSelection, setTurnoutSelection] = useState<boolean>(false);
+  const [canvasBusy, setCanvasBusy] = useState(false);
+  const [canvasBusyText, setCanvasBusyText] = useState("Loading...");
 
   const [editMode, setEditMode] = useState<boolean>(() => {
     try {
@@ -416,7 +419,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
           if (e instanceof TrackSignalElement) {
             const signal = e as TrackSignalElement;
             //if (signal.address >= data.address && signal.lastAddress <= data.address)
-               {
+            {
               signal.setValue(data.address, data.active);
               changed = true;
             }
@@ -472,6 +475,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
   return (
     <>
+      <FullscreenLoader visible={canvasBusy} text={canvasBusyText} />
       <CommandCenterDialog
         opened={commandCenterOpened}
         onClose={() => setCommandCenterOpened(false)}
@@ -594,6 +598,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       onInvalidate={() => setInavalidateCounter((v) => v + 1)}
                       fitCounter={fitCounter}
                       turnoutSelectionMode={turnoutSelection}
+                      setBusy={(busy, text) => { setCanvasBusy(busy); if (text) setCanvasBusyText(text); }}
                     />
                   </Box>
                 </Card>

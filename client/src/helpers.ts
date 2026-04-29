@@ -34,3 +34,6 @@ export function isTouchDevice(): boolean {
     window.matchMedia("(pointer: coarse)").matches
   );
 }
+
+export const sleep = (ms: number) =>
+    new Promise<void>((resolve) => window.setTimeout(resolve, ms));
