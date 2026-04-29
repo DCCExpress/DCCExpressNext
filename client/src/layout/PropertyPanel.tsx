@@ -1,4 +1,4 @@
-import { Accordion, Badge, Box, Button, Card, Checkbox, ColorInput, ColorPicker, ColorSwatch, DEFAULT_THEME, Divider, Group, NumberInput, ScrollArea, Stack, Text, TextInput, Title, useMantineColorScheme, useMantineTheme } from "@mantine/core";
+import { Accordion, ActionIcon, Badge, Box, Button, Card, Checkbox, ColorInput, ColorPicker, ColorSwatch, DEFAULT_THEME, Divider, Group, NumberInput, ScrollArea, Stack, Text, TextInput, Title, useMantineColorScheme, useMantineTheme } from "@mantine/core";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
@@ -13,9 +13,10 @@ import { SetTurnoutMessage } from "../../../common/src/types";
 import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
 import { TrackTurnoutTwoWayElement } from "../models/editor/elements/TrackTurnoutTwoWayElement";
 import TrackTurnoutDoubleElement from "../models/editor/elements/TrackTurnoutDoubleElement";
-import { Layout } from "../models/editor/core/Layout";
-import { RouteTurnoutItem } from "../models/editor/elements/RouteButtonElement";
-
+import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
+import { RouteButtonElement, RouteTurnoutItem } from "../models/editor/elements/RouteButtonElement";
+import { IconTrash } from "@tabler/icons-react";
+import "../styles/propertypanel.css"
 
 type PropertyPanelProps = {
   selectedElement: BaseElement | null;
@@ -39,14 +40,7 @@ const ColorsDefault = [
   "#fd7e14",
 ]
 
-function isTurnoutElement(el: BaseElement | null | undefined) {
-  return (
-    el instanceof TrackTurnoutLeftElement ||
-    el instanceof TrackTurnoutRightElement ||
-    el instanceof TrackTurnoutTwoWayElement ||
-    el instanceof TrackTurnoutDoubleElement
-  );
-}
+
 
 function findElementById(layout: Layout, id: string) {
   return layout.getAllElements().find((el) => el.id === id) ?? null;
@@ -539,7 +533,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                         </Text>
                       ) : (
                         <Stack gap={6}>
-                          {items.map((item) => {
+                          {/* {items.map((item) => {
                             const turnout = findElementById(layout, item.turnoutId);
 
                             if (!isTurnoutElement(turnout)) {
@@ -608,7 +602,102 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                                 </Badge>
                               </Group>
                             );
-                          })}
+                          })} */}
+
+                          {items.map((item) => {
+  const turnout = findElementById(layout, item.turnoutId);
+
+  if (!turnout) {
+    return (
+      <Group key={item.turnoutId} justify="space-between" gap="xs">
+        <Text size="xs" c="red">
+          Missing turnout: {item.turnoutId}
+        </Text>
+
+        <ActionIcon
+          size="sm"
+          color="red"
+          variant="subtle"
+          onClick={() => {
+            if (!selectedElement) return;
+
+            const routeButton = selectedElement as RouteButtonElement;
+            routeButton.removeTurnout(item.turnoutId);
+
+            onUpdateSelectedElement(selectedElement);
+          }}
+        >
+          <IconTrash size={14} />
+        </ActionIcon>
+      </Group>
+    );
+  }
+
+  const previewTurnout = turnout.clone();
+  previewTurnout.id = turnout.id;
+  previewTurnout.x = 0;
+  previewTurnout.y = 0;
+  previewTurnout.selected = false;
+  previewTurnout.enabled = true;
+  (previewTurnout as any).closed = item.closed;
+
+  return (
+    <Group
+      key={item.turnoutId}
+      gap="xs"
+      wrap="nowrap"
+      align="center"
+    >
+      <Box
+        className="route-turnout-preview-button"
+        onClick={() => {
+          item.closed = !item.closed;
+          onUpdateSelectedElement(selectedElement);
+        }}
+      >
+        <ElementPreview
+          element={previewTurnout}
+          label={"#" + (previewTurnout as any).turnoutAddress}
+          width={40}
+          height={40}
+        />
+      </Box>
+
+      <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+        <Text size="xs" fw={500} truncate>
+          {turnout.name || "Turnout"}
+        </Text>
+
+        <Text size="10px" c="dimmed" ff="monospace" truncate>
+          {item.turnoutId}
+        </Text>
+
+        <Badge size="xs" variant="light">
+          {item.closed ? "closed" : "thrown"}
+        </Badge>
+      </Stack>
+
+      <ActionIcon
+        size="sm"
+        color="red"
+        variant="subtle"
+        title="Remove turnout"
+        onClick={(e) => {
+          e.stopPropagation();
+
+          if (!selectedElement) return;
+
+          const routeButton = selectedElement as RouteButtonElement;
+          routeButton.removeTurnout(item.turnoutId);
+
+          onUpdateSelectedElement(selectedElement);
+        }}
+      >
+        <IconTrash size={14} />
+      </ActionIcon>
+    </Group>
+  );
+})}
                         </Stack>
                       )}
                     </Stack>

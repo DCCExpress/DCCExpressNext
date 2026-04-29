@@ -1,9 +1,21 @@
 import { TrackElement } from "../elements/TrackElement";
+import TrackTurnoutDoubleElement from "../elements/TrackTurnoutDoubleElement";
+import { TrackTurnoutLeftElement } from "../elements/TrackTurnoutLeftElement";
+import { TrackTurnoutRightElement } from "../elements/TrackTurnoutRightElement";
+import { TrackTurnoutTwoWayElement } from "../elements/TrackTurnoutTwoWayElement";
 import { DrawOptions } from "../types/EditorTypes";
 import { BaseElement } from "./BaseElement";
 import { ElementFactory } from "./ElementFactory";
 import { Layer, LayerId } from "./Layer";
 
+export function isTurnoutElement(el: BaseElement | null | undefined) {
+  return (
+    el instanceof TrackTurnoutLeftElement ||
+    el instanceof TrackTurnoutRightElement ||
+    el instanceof TrackTurnoutTwoWayElement ||
+    el instanceof TrackTurnoutDoubleElement
+  );
+}
 
 export class Layout {
     private layers: Layer[] = [];

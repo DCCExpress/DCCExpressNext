@@ -591,6 +591,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       selectedElement={selectedElement}
                       onSelectedElementChange={selectedElementChanged}
                       invaildateCounter={invaildateCounter}
+                      onInvalidate={() => setInavalidateCounter((v) => v + 1)}
                       fitCounter={fitCounter}
                       turnoutSelectionMode={turnoutSelection}
                     />

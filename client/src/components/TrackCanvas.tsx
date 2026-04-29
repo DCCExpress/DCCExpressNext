@@ -9,7 +9,7 @@ import { TrackCurveElement } from "../models/editor/elements/TrackCurveElement";
 import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
 import { generateId, showErrorMessage } from "../helpers";
-import { Layout } from "../models/editor/core/Layout";
+import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
 
 import "../styles/TrackCanvas.css";
 import { TrackTurnoutTwoWayElement } from "../models/editor/elements/TrackTurnoutTwoWayElement";
@@ -36,6 +36,7 @@ type TrackCanvasProps = {
   selectedElement: BaseElement | null;
   onSelectedElementChange: (element: BaseElement | null) => void;
   invaildateCounter: number;
+  onInvalidate: () => void;
   fitCounter: number;
   turnoutSelectionMode: boolean;
 };
@@ -211,6 +212,7 @@ export default function TrackCanvas({
   selectedElement,
   onSelectedElementChange,
   invaildateCounter,
+  onInvalidate,
   fitCounter,
   turnoutSelectionMode
 }: TrackCanvasProps) {
@@ -222,7 +224,7 @@ export default function TrackCanvas({
   const [currentCursor, setCurrentCursor] = useState<BaseElement | null>(null);
   const [drawVersion, setDrawVersion] = useState(0);
   const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0, });
-  
+
   const turnoutSelectionModeRef = useRef(false);
 
   const touchPointsRef = useRef<Map<number, TouchPoint>>(new Map());
@@ -415,7 +417,6 @@ export default function TrackCanvas({
 
   useEffect(() => {
 
-    
     turnoutSelectionModeRef.current = turnoutSelectionMode;
 
     if (layoutRef.current) {
@@ -526,7 +527,7 @@ export default function TrackCanvas({
       const currentTool = toolRef.current;
       const currentEditMode = editModeRef.current;
       const currentTurnouSelection = turnoutSelectionModeRef.current;
-
+      const currentElement = selectedElementRef.current;
       //if (ev.button !== 0 && ev.button !== 1) return;
 
       // Canvas mozgatása
@@ -558,10 +559,25 @@ export default function TrackCanvas({
 
 
       if (currentEditMode) {
-
         if (currentTurnouSelection) {
-        }
+          if (hitElement) {
 
+
+            if (currentElement instanceof RouteButtonElement) {
+              if (isTurnoutElement(hitElement)) {
+                const rb = currentElement as RouteButtonElement;
+
+                rb.addOrUpdateTurnout(hitElement.id, true);
+                onInvalidate();
+              }
+            } else {
+              alert("Nincs aktív RouteButton")
+            }
+
+            return;
+          }
+          return;
+        }
       }
 
       if (!editModeRef.current) {
