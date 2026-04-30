@@ -3,78 +3,71 @@
 import { Direction, SetTurnoutMessage } from "../../../common/src/types";
 import { wsClient } from "./wsClient";
 
-export const wsApi = {
 
-  
+class WebscoketApi {
+
+
+  uuid = crypto.randomUUID().toString();
+  constructor() {}
+
   connect(url: string) {
     wsClient.connect(url);
-  },
+  };
 
   disconnect() {
     wsClient.disconnect();
-  },
+  };
 
-  send(type: string, data?: any) {
-    return wsClient.send({ type, data });
-  },
+  send(type: string, data: any) {
+    return wsClient.send({ type, data, uuid: this.uuid });
+  };
 
   powerOn() {
-    return wsClient.send({ type: "powerOn" });
-  },
+    return wsClient.send({ type: "powerOn", uuid: this.uuid });
+  };
 
   powerOff() {
-    return wsClient.send({ type: "powerOff" });
-  },
+    return wsClient.send({ type: "powerOff", uuid: this.uuid });
+  };
 
   emergencyStop() {
-    return wsClient.send({ type: "emergencyStop" });
-  },
+    return wsClient.send({ type: "emergencyStop", uuid: this.uuid });
+  };
 
-  setLoco( locoAddress: number, speed: number, direction: Direction ) {
+  setLoco(locoAddress: number, speed: number, direction: Direction) {
     const data = { locoAddress, speed, direction };
-    return wsClient.send({ type: "setLoco", data });
-  },
+    return wsClient.send({ type: "setLoco", data, uuid: this.uuid });
+  };
 
   getLoco(locoAddress: number) {
-    return wsClient.send({ type: "getLoco", data: { locoAddress } });
-  },
+    return wsClient.send({ type: "getLoco", data: { locoAddress }, uuid: this.uuid });
+  };
 
-  setLocoFunction22(data: {
-    locoId: string;
-    locoAddress: number;
-    functionNumber: number;
-    active: boolean;
-    momentary?: boolean;
-  }) {
-    return wsClient.send({ type: "setLocoFunction", data });
-  },
-
+  
   setLocoFunction(locoAddress: number, functionNumber: number, active: boolean) {
     const data = { locoAddress, functionNumber, active };
-    return wsClient.send({ type: "setLocoFunction", data });
-  },
+    return wsClient.send({ type: "setLocoFunction", data, uuid: this.uuid });
+  };
 
-  setTurnout(address: number, closed: boolean ) {
-    const data = {type: "setTurnout", data: { address: address, closed: closed }};
-     return wsClient.send(data);
-  },
+  setTurnout(address: number, closed: boolean) {
+    const data = { type: "setTurnout", data: { address: address, closed: closed }, uuid: this.uuid };
+    return wsClient.send(data);
+  };
 
   setBasicAccessory(address: number, active: boolean) {
     const data = { address, active };
-    return wsClient.send({ type: "setBasicAccessory", data });
-  },
-  
+    return wsClient.send({ type: "setBasicAccessory", data, uuid: this.uuid });
+  };
+
   routeLock() {
-    return wsClient.send({type: "routeLock"})
-  },
+    return wsClient.send({ type: "routeLock", uuid: this.uuid })
+  };
 
   routeUnlock() {
-    return wsClient.send({type: "routeUnlock"})
+    return wsClient.send({ type: "routeUnlock", uuid: this.uuid })
 
-  },
+  };
 
-  setTurnout22(t: SetTurnoutMessage) {
-    return wsClient.send(t);
-    return wsClient.send({ type: t.type, data: t.data });
-  }
-};
+}
+
+export const wsApi = new WebscoketApi();
