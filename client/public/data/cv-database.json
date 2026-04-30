@@ -1,0 +1,161 @@
+[
+  {
+    "cv": 1,
+    "name": "Short address",
+    "description": "A mozdony rövid DCC címe. Általában 1–127 között használható.",
+    "decoderTypes": ["loco"],
+    "min": 1,
+    "max": 127,
+    "defaultValue": 3,
+    "notes": [
+      "Ha hosszú címet használsz, akkor a CV17/CV18 és CV29 is érintett.",
+      "Sok dekóder gyári alap címe: 3."
+    ]
+  },
+  {
+    "cv": 2,
+    "name": "Start voltage",
+    "description": "Indulási feszültség / minimális sebesség.",
+    "decoderTypes": ["loco"],
+    "min": 0,
+    "max": 255,
+    "notes": [
+      "Ha a mozdony nehezen indul, ezen lehet emelni.",
+      "Túl magas értéknél a mozdony hirtelen indulhat."
+    ]
+  },
+  {
+    "cv": 3,
+    "name": "Acceleration",
+    "description": "Gyorsítási késleltetés.",
+    "decoderTypes": ["loco"],
+    "min": 0,
+    "max": 255,
+    "notes": [
+      "Nagyobb érték lassabb, életszerűbb gyorsítást ad.",
+      "Tolatáshoz sokszor alacsonyabb érték praktikus."
+    ]
+  },
+  {
+    "cv": 4,
+    "name": "Deceleration",
+    "description": "Lassítási / fékezési késleltetés.",
+    "decoderTypes": ["loco"],
+    "min": 0,
+    "max": 255,
+    "notes": [
+      "Nagyobb érték hosszabb kifutást jelent.",
+      "Automata útvonalaknál túl nagy érték problémás lehet."
+    ]
+  },
+  {
+    "cv": 5,
+    "name": "Maximum speed",
+    "description": "Maximális sebesség / végfeszültség.",
+    "decoderTypes": ["loco"],
+    "min": 0,
+    "max": 255
+  },
+  {
+    "cv": 6,
+    "name": "Mid speed",
+    "description": "Középső sebességpont.",
+    "decoderTypes": ["loco"],
+    "min": 0,
+    "max": 255
+  },
+  {
+    "cv": 7,
+    "name": "Version number",
+    "description": "Dekóder firmware/verzió információ. Általában csak olvasható.",
+    "decoderTypes": ["loco", "accessory"],
+    "min": 0,
+    "max": 255
+  },
+  {
+    "cv": 8,
+    "name": "Manufacturer ID / Reset",
+    "description": "Gyártóazonosító. Sok dekódernél ide írt speciális érték gyári resetet indít.",
+    "decoderTypes": ["loco", "accessory"],
+    "min": 0,
+    "max": 255,
+    "notes": [
+      "Reset előtt mindig nézd meg a dekóder kézikönyvét.",
+      "Sok dekódernél CV8 = 8 gyári reset, de nem univerzális szabály."
+    ]
+  },
+  {
+    "cv": 17,
+    "name": "Long address high byte",
+    "description": "Hosszú mozdonycím felső byte-ja.",
+    "decoderTypes": ["loco"],
+    "min": 192,
+    "max": 231,
+    "notes": [
+      "A hosszú címhez CV17 és CV18 együtt kell.",
+      "CV29-ben be kell kapcsolni a hosszú cím használatát."
+    ]
+  },
+  {
+    "cv": 18,
+    "name": "Long address low byte",
+    "description": "Hosszú mozdonycím alsó byte-ja.",
+    "decoderTypes": ["loco"],
+    "min": 0,
+    "max": 255
+  },
+  {
+    "cv": 29,
+    "name": "Basic configuration",
+    "description": "Alap dekóder konfiguráció. Itt bitek kapcsolják a fő funkciókat.",
+    "decoderTypes": ["loco"],
+    "min": 0,
+    "max": 255,
+    "bits": [
+      {
+        "bit": 7,
+        "label": "Reserved",
+        "description": "Általában nem használt."
+      },
+      {
+        "bit": 6,
+        "label": "Reserved",
+        "description": "Általában nem használt."
+      },
+      {
+        "bit": 5,
+        "label": "Long address",
+        "description": "Hosszú cím használata CV17/CV18 alapján."
+      },
+      {
+        "bit": 4,
+        "label": "Speed table",
+        "description": "Sebességtábla használata CV67–CV94 alapján."
+      },
+      {
+        "bit": 3,
+        "label": "RailCom",
+        "description": "Dekóderfüggő, nem minden gyártónál ezt jelenti."
+      },
+      {
+        "bit": 2,
+        "label": "Analog mode",
+        "description": "Analóg DC üzemben is működjön."
+      },
+      {
+        "bit": 1,
+        "label": "28/128 steps",
+        "description": "14 helyett 28/128 sebességfokozat."
+      },
+      {
+        "bit": 0,
+        "label": "Reverse direction",
+        "description": "Menetirány megfordítása."
+      }
+    ],
+    "notes": [
+      "CV29-et óvatosan írd, mert címzés és irány is itt áll.",
+      "Hosszú címhez a bit 5 legyen bekapcsolva."
+    ]
+  }
+]

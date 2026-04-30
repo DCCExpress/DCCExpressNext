@@ -10,12 +10,12 @@ import { CommandCenterProvider } from "./context/CommandCenterContext";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ColorSchemeScript />
-      <CommandCenterProvider>
-    <EditorSettingsProvider>
-      <MantineProvider defaultColorScheme="dark">
-        <App />
-      </MantineProvider>
-    </EditorSettingsProvider>
+    <CommandCenterProvider>
+      <EditorSettingsProvider>
+        <MantineProvider defaultColorScheme="dark">
+          <App />
+        </MantineProvider>
+      </EditorSettingsProvider>
     </CommandCenterProvider>
   </React.StrictMode>
 );

@@ -89,4 +89,12 @@ class WebscoketApi {
 
 }
 
+export function getDefaultWsUrl(): string {
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const host = window.location.hostname;
+  const port = 3000;
+
+  return `${protocol}://${host}:${port}/ws`;
+}
+
 export const wsApi = new WebscoketApi();

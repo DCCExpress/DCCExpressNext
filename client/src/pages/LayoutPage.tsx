@@ -325,12 +325,11 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   }, [undo, redo]);
 
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const host = window.location.hostname;
-    const port = 3000;
-    const url = `${protocol}://${host}:${port}/ws`;
-
-    wsApi.connect(url);
+    // const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    // const host = window.location.hostname;
+    // const port = 3000;
+    // const url = `${protocol}://${host}:${port}/ws`;
+    // wsApi.connect(url);
 
     const unsubscribeSensor = wsClient.on(
       "sensorChanged",
@@ -454,7 +453,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       unsubscribeCommandCenter();
       unsubscribeAccessory();
       unsubscribeCommandRejected();
-      wsApi.disconnect();
+      //wsApi.disconnect();
     };
   }, []);
 
