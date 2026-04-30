@@ -128,6 +128,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     if (!editMode) {
       setTool({ mode: "cursor", elementType: "general" });
       setPickerOpened(false);
+      setTurnoutSelection(false);
     }
   }, [editMode]);
 

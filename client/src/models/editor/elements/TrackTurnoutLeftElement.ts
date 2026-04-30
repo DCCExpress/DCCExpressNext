@@ -242,11 +242,11 @@ export class TrackTurnoutLeftElement extends TrackTurnoutElement implements ITra
         return copy;
     }
 
-    override getEditableProperties(): IEditableProperty[] {
-        return [
-            ...super.getEditableProperties(),
-            { label: "Turnout Address", key: "turnoutAddress", type: "number", readonly: false, validate: (v) => { return true } },
-            { label: "Closed Value", key: "turnoutClosedValue", type: "bittoggle", readonly: false, validate: (v) => { return true } },
-        ];
-    }
+    // override getEditableProperties(): IEditableProperty[] {
+    //     return [
+    //         ...super.getEditableProperties(),
+    //         { label: "Turnout Address", key: "turnoutAddress", type: "number", readonly: false, validate: (v) => { return true } },
+    //         { label: "Closed Value", key: "turnoutClosedValue", type: "bittoggle", readonly: false, validate: (v) => { return true } },
+    //     ];
+    // }
 }

@@ -593,14 +593,17 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                                   onClick={() => {
                                     //item.closed = !item.closed;
                                     const elem = layout.getElementById(item.turnoutId);
-                                    if(elem instanceof TrackTurnoutElement) {
-                                      const turnout = elem as TrackTurnoutElement;  
-                                      turnout.toggle();
-                                      item.closed = turnout.turnoutClosed == turnout.turnoutClosedValue;
+                                    if (elem) {
+                                      if (elem instanceof TrackTurnoutElement) {
+                                        const turnout = elem as TrackTurnoutElement;
+                                        turnout.toggle();
+                                        item.closed = turnout.turnoutClosed == turnout.turnoutClosedValue;
+                                      } else {
+                                        alert("Not instance of Turnout!")
+                                      }
                                     } else {
-                                      alert("Not instance of Turnout!")
+                                      alert("Could not find element by id:" + item.turnoutId);
                                     }
-                                    
 
                                     onUpdateSelectedElement(selectedElement);
                                   }}
@@ -699,8 +702,8 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   }
   return (
     <>
-    
-    <ControlPanel />
+
+      <ControlPanel />
     </>
   )
 }
