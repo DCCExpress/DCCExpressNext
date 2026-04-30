@@ -33,7 +33,7 @@ export abstract class BaseElement implements IBaseElement {
     fg: string = "white";
     occupied: boolean = false;
 
-    railState: RailStates = RailStates.free;
+    state: RailStates = RailStates.free;
     //length: number = 1;
 
     constructor(x: number, y: number) {
@@ -118,7 +118,7 @@ export abstract class BaseElement implements IBaseElement {
     }
 
     get stateColor(): string {
-        switch (this.railState) {
+        switch (this.state) {
             case RailStates.selected: return RailColors.selected;
             case RailStates.occupied: return RailColors.occupied;
         }

@@ -300,7 +300,7 @@ export class TrackSignalElement extends BaseElement implements ITrackSignalEleme
             this.drawCircle(ctx,
                 x, y,
                 r,
-                this.lights[this.railState]!.color)
+                this.lights[this.signalState]!.color)
         } else {
             for (var i = 0; i < aa; i++) {
 
@@ -313,7 +313,7 @@ export class TrackSignalElement extends BaseElement implements ITrackSignalEleme
                     this.drawCircle(ctx,
                         x + i * d, y,
                         r,
-                        i == this.railState ? this.lights[this.railState]!.color : 'gray')
+                        i == this.signalState ? this.lights[this.signalState]!.color : 'gray')
                 }
             }
         }
