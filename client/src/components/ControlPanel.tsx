@@ -163,10 +163,26 @@ function CommandCenterTab(p: CommandCenterTabProps) {
 
         <Button
           size="xs"
-          color="red"
+          color={powerInfo?.emergencyStop ? "red" : "gray"}
+          className={powerInfo?.emergencyStop ? "blinkBadge" : ""}
           variant="filled"
           leftSection={<IconAlertTriangle size={16} />}
-          onClick={p.onEmergencyStop}
+          onClick={(ev) => {
+            if (powerInfo?.emergencyStop) {
+              if (p.onPowerOn) {
+                p.onPowerOn();
+              }
+            } else {
+              if (p.onEmergencyStop) {
+                p.onEmergencyStop()
+              }
+
+            }
+
+          }
+
+
+          }
           disabled={!alive}
         >
           EMERGENCY STOP
@@ -428,8 +444,8 @@ function ScriptsTab(p: ScriptsTabProps) {
   return (
     <Stack gap="xs">
       <Text size="sm" fw={700}>
-          Script
-        </Text>
+        Script
+      </Text>
       <Textarea
         value={p.script}
         onChange={(e) => p.onScriptChange(e.currentTarget.value)}

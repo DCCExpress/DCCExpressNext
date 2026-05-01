@@ -4,6 +4,7 @@ import { getWsColor } from "./TopMenuBar";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { useBrowserStats } from "../hooks/useBrowserStats";
 import "../styles/global.css"
+import { wsApi } from "../services/wsApi";
 
 export default function StatusBar() {
   const wsStatus = useWsStatus();
@@ -34,6 +35,23 @@ export default function StatusBar() {
         <Badge color={trackPowerOn ? "green" : "red"} variant="filled">
           PWR
         </Badge>
+        <Badge
+          style={{cursor: "pointer"}}
+          color={powerInfo?.emergencyStop ? "red" : "gray"}
+          className={powerInfo?.emergencyStop ? "blinkBadge" : ""}
+          onClick={() => {
+            if (powerInfo) {
+              if (powerInfo.emergencyStop) {
+                wsApi.powerOn();
+              } else {
+                wsApi.emergencyStop();
+              }
+            }
+          }}
+
+          variant="filled">
+          ESTOP
+        </Badge>
 
 
         <Badge
@@ -48,7 +66,7 @@ export default function StatusBar() {
 
         <Badge color={getMemoryColor(browserStats.memoryUsedMb)} variant="filled">
           JS {browserStats.memoryUsedMb ?? "-"} MB
-          
+
         </Badge>
 
         <Badge color={getFpsColor(browserStats.fps)} variant="filled">

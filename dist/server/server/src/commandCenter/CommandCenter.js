@@ -1,9 +1,5 @@
-/**
- * Abstract CommandCenter Base Class
- *
- * All command center implementations (Z21, DCC-EX TCP, DCC-EX Serial) must extend this class.
- * This class defines the interface for controlling model railway hardware.
- */
+import { readLocos } from "../routes/locoRoutes.js";
+import { log } from "../utility.js";
 export class CommandCenter {
     name;
     powerInfo = {
@@ -77,5 +73,19 @@ export class CommandCenter {
     }
     getTurnouts() {
         return Array.from(this.turnouts.values());
+    }
+    // Ha csatlakozott a commandcenter a 
+    // locos layout belvasása és lekérni az állapotokat
+    async init() {
+        log("========================================");
+        log("COMMANDCENTER INIT");
+        log("========================================");
+        const locos = await readLocos();
+        if (locos) {
+            for (const loco of locos) {
+                log("getLoco:", loco.address);
+                this.getLoco(loco.address);
+            }
+        }
     }
 }

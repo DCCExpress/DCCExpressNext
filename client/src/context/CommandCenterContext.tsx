@@ -36,7 +36,7 @@
 //     const unsubscribeLockChanged = wsClient.on<CommandCenterLockState>(
 //       "commandCenterLockChanged",
 //       (data) => {
-        
+
 //         setLockState({
 //           locked: data.locked,
 //           lockOwner: data.lockOwner ?? null,
@@ -178,7 +178,40 @@ export function CommandCenterProvider({
   const [z21SystemState, setZ21SystemState] =
     useState<Z21SystemState | null>(null);
 
+  // useEffect(() => {
+  //   if(commandCenterInfo.alive) {
+  //     alert("ONLINE")
+  //   }
+  //   else {
+  //     alert("OFFLINE")
+  //   }
+  // }, [commandCenterInfo.alive])
+
   useEffect(() => {
+
+    const unsubscribeWsStatus = wsClient.subscribeStatus((status) => {
+      if (
+        status === "disconnected" ||
+        status === "reconnecting" ||
+        status === "connecting" ||
+        status === "error"
+      ) {
+        setCommandCenterInfo((prev) => ({
+          ...prev,
+          alive: false,
+        }));
+
+        setPowerInfo(null);
+        setZ21SystemState(null);
+
+        setLockState({
+          locked: false,
+          lockOwner: null,
+          reason: null,
+        });
+      }
+    });
+
     const unsubscribeLockChanged = wsClient.on<CommandCenterLockState>(
       "commandCenterLockChanged",
       (data) => {
@@ -225,6 +258,7 @@ export function CommandCenterProvider({
     );
 
     return () => {
+      unsubscribeWsStatus();
       unsubscribeLockChanged();
       unsubscribeCommandCenterInfo();
       unsubscribePowerInfo();

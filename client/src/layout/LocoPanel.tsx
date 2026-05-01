@@ -27,6 +27,7 @@ import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
 import Speedometer from "../components/Speedometer";
 import { useWsStatus } from "../hooks/useWsStatus";
+import { useCommandCenter } from "../context/CommandCenterContext";
 
 
 // TODO: Ha szerkesztve lett a mozdony újra le kell kérdezni a LocoState-t, 
@@ -47,7 +48,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
   const [speed, setSpeed] = useState(0);
   const [direction, setDirection] = useState<Direction>("forward");
   const [activeFunctions, setActiveFunctions] = useState<Record<number, boolean>>({});
-
+  const { powerInfo } = useCommandCenter();
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
 
@@ -309,9 +310,20 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                   <Button
                     size="md"
                     style={{ width: "100%" }}
-                    color="red"
+
+                    color={powerInfo?.emergencyStop ? "red" : "gray"}
+                    className={powerInfo?.emergencyStop ? "blinkBadge" : ""}
+
                     leftSection={<IconAlertTriangle size={14} />}
-                    onClick={handleEmergencyStop}
+                    onClick={() => {
+                      if (powerInfo) {
+                        if (powerInfo.emergencyStop) {
+                          wsApi.powerOn();
+                        } else {
+                          wsApi.emergencyStop();
+                        }
+                      }
+                    }}
                   >
                     Emergency
                   </Button>
@@ -416,6 +428,6 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
           )}
         </Stack>
       </div>
-    </Card>
+    </Card >
   );
 }

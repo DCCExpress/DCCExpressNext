@@ -8,7 +8,7 @@ function resolveLocosFilePath() {
     const candidate2 = path.resolve(cwd, "server", "data", "locos.json");
     return { candidate1, candidate2 };
 }
-async function readLocos() {
+export async function readLocos() {
     const { candidate1, candidate2 } = resolveLocosFilePath();
     try {
         const content = await fs.readFile(candidate1, "utf8");

@@ -6,3 +6,4 @@ Undo/Redo visszaállítja a váltók, jelzők állapotát:
 Ha leállt a szerver és újraindítjuk nincsenek mozdonyok, váltók:
     a commandcenter csatlakozása után le kell kérni mindent
 
+Ha leállt a wsClient tegyük offlineba a command centert is!
