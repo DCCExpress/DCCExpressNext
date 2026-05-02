@@ -1370,7 +1370,8 @@ export default function TrackCanvas({
       canvas.removeEventListener("pointerup", handlePointerUp);
       canvas.removeEventListener("pointercancel", handlePointerCancel);
     };
-  }, [onLayoutChange, tool, onBeforeLayoutChange]);
+  // }, [onLayoutChange, tool, onBeforeLayoutChange]);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (ev: KeyboardEvent) => {
@@ -1467,7 +1468,8 @@ export default function TrackCanvas({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onLayoutChange, onBeforeLayoutChange]);
+  //}, [onLayoutChange, onBeforeLayoutChange]);
+  }, []);
 
 
   // =======================================================
