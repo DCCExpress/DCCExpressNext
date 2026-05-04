@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   ActionIcon,
   Box,
@@ -17,10 +17,11 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconPhoto, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconPhoto, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { getLocos, saveLocos } from "../api/http";
 import { generateId } from "../helpers";
 import { Loco, LocoFunction } from "../../../common/src/types";
+import { wsApi } from "../services/wsApi";
 
 type LocoDialogProps = {
   opened: boolean;
@@ -147,6 +148,47 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
     });
   };
 
+  const sendFunction = async (fn: LocoFunction, active: boolean) => {
+    if (!selectedLoco) return;
+
+    try {
+      setMessage("");
+      await wsApi.setLocoFunction(selectedLoco.address, fn.number, active);
+      setMessage(`F${fn.number} ${active ? "ON" : "OFF"} elküldve.`);
+    } catch (error) {
+      console.error(error);
+      setMessage(`F${fn.number} parancs nem sikerült.`);
+    }
+  };
+
+  const handleFunctionPointerDown = (e: ReactPointerEvent<HTMLButtonElement>, fn: LocoFunction) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+
+    void sendFunction(fn, true);
+  };
+
+  const handleFunctionPointerUp = (e: ReactPointerEvent<HTMLButtonElement>, fn: LocoFunction) => {
+    e.preventDefault();
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+
+    if (fn.momentary) {
+      void sendFunction(fn, false);
+    }
+  };
+
+  const handleFunctionPointerCancel = (
+    e: ReactPointerEvent<HTMLButtonElement>,
+    fn: LocoFunction
+  ) => {
+    e.preventDefault();
+
+    if (fn.momentary) {
+      void sendFunction(fn, false);
+    }
+  };
+
+
   const setImageFromFile = (file: File | null) => {
     if (!file || !selectedLoco) return;
 
@@ -209,6 +251,15 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
               Mozdony törzsadatok és funkciók szerkesztése
             </Text>
           </div>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="lg"
+            aria-label="Bezárás"
+            onClick={onClose}
+          >
+            <IconX size={20} />
+          </ActionIcon>
 
         </Group>
 
@@ -421,40 +472,40 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
 
                       <ScrollArea>
                         <Stack gap="xs" w="50%">
-                        <TextInput
-                          label="Név"
-                          value={selectedLoco.name}
-                          onChange={(e) =>
-                            updateSelectedLoco({ name: e.currentTarget.value })
-                          }
-                        />
+                          <TextInput
+                            label="Név"
+                            value={selectedLoco.name}
+                            onChange={(e) =>
+                              updateSelectedLoco({ name: e.currentTarget.value })
+                            }
+                          />
 
-                        <NumberInput
-                          label="Cím"
-                          value={selectedLoco.address}
-                          min={1}
-                          onChange={(value) =>
-                            updateSelectedLoco({ address: Number(value) || 0 })
-                          }
-                        />
+                          <NumberInput
+                            label="Cím"
+                            value={selectedLoco.address}
+                            min={1}
+                            onChange={(value) =>
+                              updateSelectedLoco({ address: Number(value) || 0 })
+                            }
+                          />
 
-                        <NumberInput
-                          label="Max sebesség"
-                          value={selectedLoco.maxSpeed}
-                          min={1}
-                          max={1000}
-                          onChange={(value) =>
-                            updateSelectedLoco({ maxSpeed: Number(value) || 0 })
-                          }
-                        />
+                          <NumberInput
+                            label="Max sebesség"
+                            value={selectedLoco.maxSpeed}
+                            min={1}
+                            max={1000}
+                            onChange={(value) =>
+                              updateSelectedLoco({ maxSpeed: Number(value) || 0 })
+                            }
+                          />
 
-                        <Checkbox
-                          label="Invert"
-                          checked={selectedLoco.invert}
-                          onChange={(e) =>
-                            updateSelectedLoco({ invert: e.currentTarget.checked })
-                          }
-                        />
+                          <Checkbox
+                            label="Invert"
+                            checked={selectedLoco.invert}
+                            onChange={(e) =>
+                              updateSelectedLoco({ invert: e.currentTarget.checked })
+                            }
+                          />
                         </Stack>
                       </ScrollArea>
                     </Stack>
@@ -523,6 +574,22 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
                                   }
                                 />
 
+                                <Button
+                                  mt={24}
+                                  size="xs"
+                                  variant="light"
+                                  onPointerDown={(e) => handleFunctionPointerDown(e, fn)}
+                                  onPointerUp={(e) => handleFunctionPointerUp(e, fn)}
+                                  onPointerCancel={(e) => handleFunctionPointerCancel(e, fn)}
+                                  onPointerLeave={(e) => {
+                                    if (fn.momentary && e.buttons === 1) {
+                                      handleFunctionPointerCancel(e, fn);
+                                    }
+                                  }}
+                                >
+                                  Teszt
+                                </Button>
+
                                 <ActionIcon
                                   mt={28}
                                   color="red"
@@ -545,26 +612,26 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
                     </Stack>
                   </Tabs.Panel>
 
-                   <Tabs.Panel value="extended" pt="md" style={{ flex: 1, minHeight: 0 }}>
-                      <Stack gap="md" style={{ height: "100%" }}>
-                        <Group justify="space-between">
-                          <Text fw={600}>Extended params</Text>
-                        </Group>
-                        <ScrollArea style={{ flex: 1 }}>
-                          <Stack gap="sm">
-                            <NumberInput 
-                              label="Hossz (mm)"
-                              value={selectedLoco.length}
-                              min={1}
-                              onChange={(value) =>
-                                 updateSelectedLoco({ length: Number(value) || 0 })
-                              }
-                            />
-                          </Stack>
-                        </ScrollArea>
-                      </Stack> 
+                  <Tabs.Panel value="extended" pt="md" style={{ flex: 1, minHeight: 0 }}>
+                    <Stack gap="md" style={{ height: "100%" }}>
+                      <Group justify="space-between">
+                        <Text fw={600}>Extended params</Text>
+                      </Group>
+                      <ScrollArea style={{ flex: 1 }}>
+                        <Stack gap="sm">
+                          <NumberInput
+                            label="Hossz (mm)"
+                            value={selectedLoco.length}
+                            min={1}
+                            onChange={(value) =>
+                              updateSelectedLoco({ length: Number(value) || 0 })
+                            }
+                          />
+                        </Stack>
+                      </ScrollArea>
+                    </Stack>
 
-                   </Tabs.Panel>
+                  </Tabs.Panel>
                 </Tabs>
               )}
             </Card>
@@ -575,7 +642,7 @@ export default function LocoDialog({ opened, onClose, onSaved }: LocoDialogProps
 
         <Group justify="space-between">
           <Text size="sm" c={message.includes("sikerült") ? "green" : "dimmed"}>
-            {message || "A módosításokat el tudod menteni a szerverre."}
+            {message || ""}
           </Text>
 
           <Group>

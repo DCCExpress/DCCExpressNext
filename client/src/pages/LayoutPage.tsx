@@ -678,6 +678,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       invalidate={invaildateCounter}
                       onUpdateSelectedElement={handleUpdateSelectedElement}
                       editMode={editMode}
+                      opened={!propertyPanelCollapsed}
                       turnoutSelectionMode={turnoutSelection}
                       setTurnoutSelectionMode={setTurnoutSelection}
                       layout={layout}

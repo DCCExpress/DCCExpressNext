@@ -336,7 +336,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
               <Card withBorder radius="xs" p="xs" style={{ flex: 1, minHeight: 0 }}>
                 <Stack gap="sm" h="100%">
 
-                  <ScrollArea style={{ flex: 1 }}>
+                  <ScrollArea style={{ flex: 1 }} type="auto">
                     <SimpleGrid cols={5} spacing="xs" verticalSpacing="xs">
                       {Array.from({ length: 28 }, (_, i) => {
                         const fn = currentLoco.functions.find((f) => f.number === i);
@@ -404,7 +404,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                               {hasName && (
                                 <div
                                   style={{
-                                    fontSize: 12,
+                                    fontSize: 10,
                                     opacity: 0.85,
                                     marginTop: 2,
                                     overflow: "hidden",

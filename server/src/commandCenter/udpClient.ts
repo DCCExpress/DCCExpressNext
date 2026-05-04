@@ -1,5 +1,6 @@
 import dgram, { type RemoteInfo, type Socket } from "node:dgram";
 import { EventEmitter } from "node:events";
+import { log } from "../utility.js";
 
 export type UdpClientOptions = {
   host: string;
@@ -47,9 +48,18 @@ export class UdpClient extends EventEmitter {
   }
 
   async open(): Promise<void> {
+    log("=======================================");
+    log("              UDP OPEN");
+    log("=======================================");
+
     if (this.connected) return;
 
     this.socket = dgram.createSocket("udp4");
+
+    this.socket.on("listening", () => {
+      console.log("UDP Client Listening!");
+      this.emit("listening");
+    });
 
     this.socket.on("message", (data, remote) => {
       const message: UdpMessage = { data, remote };
