@@ -1,3 +1,6 @@
+Jelzőknél felvenni váltókat a színekhez és a váltóállástól függően
+  állítani a jelzőket + rbus? Vagy külön automatika?
+ 
 Undo/Redo visszaállítja a váltók, jelzők állapotát:
     1. kérjük le az állapotokat újra?
     2. vagy csak ha kilépünk a szerkesztő módból?

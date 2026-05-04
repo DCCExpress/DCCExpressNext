@@ -1,7 +1,8 @@
 import { Dir } from "node:fs";
-import { Direction } from "../../../common/src/types.js";
+import { Direction, Loco, } from "../../../common/src/types.js";
 import { readLocos } from "../routes/locoRoutes.js";
 import { log } from "../utility.js";
+import { onLocosChanged } from "../services/locoChangeNotifier.js";
 
 export interface PowerInfo {
   trackVoltageOn: boolean;
@@ -68,8 +69,25 @@ export abstract class CommandCenter {
 
   constructor(name: string) {
     this.name = name;
-  }
 
+    onLocosChanged(async () => {
+      const llocos = await readLocos();
+
+      this.setLocos(llocos);
+    });
+  }
+  setLocos(llocos: Loco[]): void {
+    this.locos.clear();
+
+    for (const loco of llocos) {
+      this.locos.set(loco.address, {
+        ...loco,
+        speed: 0,
+        direction: "forward",
+        functions: {},
+      });
+    }
+  }
   abstract getConnectionString(): string;
   abstract start(): Promise<boolean>;
   abstract stop(): Promise<boolean>;

@@ -48,7 +48,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
   const [speed, setSpeed] = useState(0);
   const [direction, setDirection] = useState<Direction>("forward");
   const [activeFunctions, setActiveFunctions] = useState<Record<number, boolean>>({});
-  const { powerInfo } = useCommandCenter();
+  const { powerInfo, alive } = useCommandCenter();
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
 
@@ -166,7 +166,9 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
     return unsubscribe;
   }, []);
   return (
-    <Card withBorder radius="sm" p="xs" h="100%">
+    <Card withBorder radius="sm" p="xs" h="100%"
+      opacity={alive ? 1 : 0.75}
+    >
 
 
       <div style={{ position: "relative", height: "100%" }}>
@@ -180,6 +182,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
         />
 
         <Stack gap="xs" h="100%">
+
           {!currentLoco ? (
             <Text size="sm" c="dimmed">
               Nincs még mozdony betöltve.
@@ -233,6 +236,10 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                       {speed}
                     </Title>
                   </Badge>
+                  {!alive && (
+                    <Badge color="red" variant="light">
+                      OFFLINE
+                    </Badge>)}
 
 
                   <div style={{ width: "100%" }}>
