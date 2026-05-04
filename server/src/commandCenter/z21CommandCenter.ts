@@ -145,6 +145,8 @@ export class Z21CommandCenter extends CommandCenter {
         });
 
         this.udpClient.on("listening", () => {
+            this.initZ21Connection();
+
             log("Z21 Connection Listening");
         });
     }
