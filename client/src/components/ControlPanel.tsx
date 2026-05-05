@@ -195,9 +195,9 @@ function CommandCenterTab(p: CommandCenterTabProps) {
               Command Center
             </Text>
 
-            <Text size="xs" c="dimmed">
+            {/* <Text size="xs" c="dimmed">
               Z21 állapota
-            </Text>
+            </Text> */}
           </Box>
 
           <Badge color={alive ? "green" : "red"} variant="light">
@@ -208,10 +208,14 @@ function CommandCenterTab(p: CommandCenterTabProps) {
         <Divider />
 
         <InfoSection title="Connection">
-          <InfoRow label="Name" value={name ?? "-"} />
+          {/* <InfoRow label="Name" value={name ?? "-"} /> */}
           <InfoRow label="Type" value={type ?? "-"} />
-          <InfoRow label="IP" value={ip ?? "-"} />
-          <InfoRow label="Port" value={port ?? "-"} />
+          {type === "z21" && (
+            <>
+              <InfoRow label="IP" value={ip ?? "-"} />
+              <InfoRow label="Port" value={port ?? "-"} />
+            </>
+          )}
         </InfoSection>
 
         <InfoSection title="Lock">
@@ -267,125 +271,128 @@ function CommandCenterTab(p: CommandCenterTabProps) {
           />
         </InfoSection>
 
-        <InfoSection title="Z21 System">
-          <InfoRow
-            label="Main current"
-            value={
-              z21SystemState
-                ? `${z21SystemState.mainCurrentMa} mA`
-                : "-"
-            }
-          />
+        {type === "z21" && (
+          <>
+            <InfoSection title="Z21 System">
+              <InfoRow
+                label="Main current"
+                value={
+                  z21SystemState
+                    ? `${z21SystemState.mainCurrentMa} mA`
+                    : "-"
+                }
+              />
 
-          <InfoRow
-            label="Prog current"
-            value={
-              z21SystemState
-                ? `${z21SystemState.progCurrentMa} mA`
-                : "-"
-            }
-          />
+              <InfoRow
+                label="Prog current"
+                value={
+                  z21SystemState
+                    ? `${z21SystemState.progCurrentMa} mA`
+                    : "-"
+                }
+              />
 
-          <InfoRow
-            label="Filtered current"
-            value={
-              z21SystemState
-                ? `${z21SystemState.filteredMainCurrentMa} mA`
-                : "-"
-            }
-          />
+              <InfoRow
+                label="Filtered current"
+                value={
+                  z21SystemState
+                    ? `${z21SystemState.filteredMainCurrentMa} mA`
+                    : "-"
+                }
+              />
 
-          <InfoRow
-            label="Temperature"
-            value={
-              z21SystemState
-                ? `${z21SystemState.temperatureC} °C`
-                : "-"
-            }
-            valueColor={
-              z21SystemState?.flags.highTemperature ? "red" : undefined
-            }
-          />
+              <InfoRow
+                label="Temperature"
+                value={
+                  z21SystemState
+                    ? `${z21SystemState.temperatureC} °C`
+                    : "-"
+                }
+                valueColor={
+                  z21SystemState?.flags.highTemperature ? "red" : undefined
+                }
+              />
 
-          <InfoRow
-            label="Supply voltage"
-            value={
-              z21SystemState
-                ? `${z21SystemState.supplyVoltageMv} mV`
-                : "-"
-            }
-          />
+              <InfoRow
+                label="Supply voltage"
+                value={
+                  z21SystemState
+                    ? `${z21SystemState.supplyVoltageMv} mV`
+                    : "-"
+                }
+              />
 
-          <InfoRow
-            label="VCC voltage"
-            value={
-              z21SystemState
-                ? `${z21SystemState.vccVoltageMv} mV`
-                : "-"
-            }
-          />
+              <InfoRow
+                label="VCC voltage"
+                value={
+                  z21SystemState
+                    ? `${z21SystemState.vccVoltageMv} mV`
+                    : "-"
+                }
+              />
 
-          <InfoRow
-            label="Central state"
-            value={
-              z21SystemState
-                ? toHex8(z21SystemState.centralState)
-                : "-"
-            }
-          />
+              <InfoRow
+                label="Central state"
+                value={
+                  z21SystemState
+                    ? toHex8(z21SystemState.centralState)
+                    : "-"
+                }
+              />
 
-          <InfoRow
-            label="Central state EX"
-            value={
-              z21SystemState
-                ? toHex8(z21SystemState.centralStateEx)
-                : "-"
-            }
-          />
+              <InfoRow
+                label="Central state EX"
+                value={
+                  z21SystemState
+                    ? toHex8(z21SystemState.centralStateEx)
+                    : "-"
+                }
+              />
 
-          <InfoRow
-            label="Capabilities"
-            value={
-              z21SystemState
-                ? toHex8(z21SystemState.capabilities)
-                : "-"
-            }
-          />
-        </InfoSection>
+              <InfoRow
+                label="Capabilities"
+                value={
+                  z21SystemState
+                    ? toHex8(z21SystemState.capabilities)
+                    : "-"
+                }
+              />
+            </InfoSection>
 
-        <InfoSection title="Z21 Flags">
-          <FlagRow label="High temp" value={z21SystemState?.flags.highTemperature} />
-          <FlagRow label="Power lost" value={z21SystemState?.flags.powerLost} />
-          <FlagRow
-            label="Short external"
-            value={z21SystemState?.flags.shortCircuitExternal}
-          />
-          <FlagRow
-            label="Short internal"
-            value={z21SystemState?.flags.shortCircuitInternal}
-          />
-          <FlagRow label="RCN-213" value={z21SystemState?.flags.rcn213} />
-        </InfoSection>
+            <InfoSection title="Z21 Flags">
+              <FlagRow label="High temp" value={z21SystemState?.flags.highTemperature} />
+              <FlagRow label="Power lost" value={z21SystemState?.flags.powerLost} />
+              <FlagRow
+                label="Short external"
+                value={z21SystemState?.flags.shortCircuitExternal}
+              />
+              <FlagRow
+                label="Short internal"
+                value={z21SystemState?.flags.shortCircuitInternal}
+              />
+              <FlagRow label="RCN-213" value={z21SystemState?.flags.rcn213} />
+            </InfoSection>
 
-        <InfoSection title="Capabilities">
-          <FlagRow label="DCC" value={z21SystemState?.flags.capDcc} />
-          <FlagRow label="MM" value={z21SystemState?.flags.capMm} />
-          <FlagRow label="RailCom" value={z21SystemState?.flags.capRailCom} />
-          <FlagRow label="Loco cmds" value={z21SystemState?.flags.capLocoCmds} />
-          <FlagRow
-            label="Accessory cmds"
-            value={z21SystemState?.flags.capAccessoryCmds}
-          />
-          <FlagRow
-            label="Detector cmds"
-            value={z21SystemState?.flags.capDetectorCmds}
-          />
-          <FlagRow
-            label="Needs unlock"
-            value={z21SystemState?.flags.capNeedsUnlockCode}
-          />
-        </InfoSection>
-
+            <InfoSection title="Capabilities">
+              <FlagRow label="DCC" value={z21SystemState?.flags.capDcc} />
+              <FlagRow label="MM" value={z21SystemState?.flags.capMm} />
+              <FlagRow label="RailCom" value={z21SystemState?.flags.capRailCom} />
+              <FlagRow label="Loco cmds" value={z21SystemState?.flags.capLocoCmds} />
+              <FlagRow
+                label="Accessory cmds"
+                value={z21SystemState?.flags.capAccessoryCmds}
+              />
+              <FlagRow
+                label="Detector cmds"
+                value={z21SystemState?.flags.capDetectorCmds}
+              />
+              <FlagRow
+                label="Needs unlock"
+                value={z21SystemState?.flags.capNeedsUnlockCode}
+              />
+            </InfoSection>
+          </>
+        )}
         {/* <Group grow mt="xs">
           <Button
             size="xs"
