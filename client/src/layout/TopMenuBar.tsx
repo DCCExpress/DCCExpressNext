@@ -31,7 +31,7 @@ import {
 } from "@tabler/icons-react";
 import TrainIcon from "../icons/TrainIcon";
 import { EditorTool } from "../models/editor/types/EditorTypes";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../styles/help.css";
 import { useWsStatus } from "../hooks/useWsStatus";
 import { useTranslation } from "react-i18next";
@@ -106,7 +106,8 @@ export default function TopMenuBar({
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const touchOnly = isTouchDevice();
   const [fullscreen, setFullscreen] = useState(false);
-  //const wsStatus = useWsStatus();
+   
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -120,6 +121,16 @@ export default function TopMenuBar({
     };
   }, []);
 
+   useEffect(() => {
+    iframeRef.current?.contentWindow?.postMessage(
+      {
+        type: "DCCEXPRESS_THEME_CHANGED",
+        theme: colorScheme,
+      },
+      window.location.origin
+    );
+  }, [colorScheme, helpOpened]);
+  
   const toggleFullscreen = async () => {
     try {
       if (document.fullscreenElement) {
@@ -278,9 +289,19 @@ export default function TopMenuBar({
           centered
         >
           <iframe
+          ref={iframeRef}
             src="/quickhelp.html"
             title="Quick Help"
             className="help-iframe"
+            onLoad={() => {
+          iframeRef.current?.contentWindow?.postMessage(
+            {
+              type: "DCCEXPRESS_THEME_CHANGED",
+              theme: colorScheme,
+            },
+            window.location.origin
+          );
+        }}
           />
         </Modal>
 

@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="color-scheme" content="light dark" />
@@ -123,10 +124,10 @@
     }
   </style>
 </head>
+
 <body>
   <div class="topbar">
     <h1>🚆 Quick Help</h1>
-    <button class="theme-toggle" id="themeToggle" type="button">Toggle theme</button>
   </div>
 
   <div class="section">
@@ -224,21 +225,57 @@
   </div>
 
   <script>
-    const storageKey = "dcc-express.quickhelp.theme";
+
+    const quickHelpStorageKey = "dcc-express.quickhelp.theme";
+    const mantineStorageKey = "mantine-color-scheme-value";
+
     const html = document.documentElement;
     const button = document.getElementById("themeToggle");
 
-    const savedTheme = localStorage.getItem(storageKey);
-    if (savedTheme === "light" || savedTheme === "dark") {
-      html.setAttribute("data-theme", savedTheme);
+    function normalizeTheme(theme) {
+      return theme === "dark" || theme === "light" ? theme : null;
     }
+
+    function applyTheme(theme) {
+      const normalized = normalizeTheme(theme);
+
+      if (normalized) {
+        html.setAttribute("data-theme", normalized);
+      } else {
+        html.removeAttribute("data-theme");
+      }
+    }
+
+    function getInitialTheme() {
+      return (
+        normalizeTheme(localStorage.getItem(mantineStorageKey)) ||
+        normalizeTheme(localStorage.getItem(quickHelpStorageKey))
+      );
+    }
+
+    applyTheme(getInitialTheme());
 
     button.addEventListener("click", () => {
       const current = html.getAttribute("data-theme");
       const next = current === "dark" ? "light" : "dark";
-      html.setAttribute("data-theme", next);
-      localStorage.setItem(storageKey, next);
+
+      applyTheme(next);
+
+      localStorage.setItem(quickHelpStorageKey, next);
+      localStorage.setItem(mantineStorageKey, next);
+    });
+
+    window.addEventListener("message", (event) => {
+      if (event.origin !== window.location.origin) return;
+
+      const message = event.data;
+
+      if (!message || message.type !== "DCCEXPRESS_THEME_CHANGED") return;
+
+      applyTheme(message.theme);
     });
   </script>
+  </script>
 </body>
+
 </html>
