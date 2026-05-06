@@ -2,6 +2,7 @@ import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CommandCenterType } from "../../../common/src/types.js";
+import { dataDir } from "../paths.js";
 
 //export type CommandCenterType = "z21" | "dcc-ex-tcp" | "dcc-ex-serial" | "simulator";
 
@@ -17,13 +18,8 @@ export interface CommandCenterConfig {
 
 export const commandCenterRoutes = Router();
 
-function resolveCommandCentersFilePath() {
-  const cwd = process.cwd();
-
-  const candidate1 = path.resolve(cwd, "data", "command-centers.json");
-  const candidate2 = path.resolve(cwd, "server", "data", "command-centers.json");
-
-  return { candidate1, candidate2 };
+function resolveFilePath() {
+    return path.resolve(dataDir, "command-centers.json");
 }
 
 export let CurrentCommandCenterConfig: CommandCenterConfig | null = null;
@@ -33,7 +29,7 @@ export function setCommandCenterConfigLoadedCallback(cb: (conf: CommandCenterCon
 }
 
 export async function readCommandCenter(): Promise<CommandCenterConfig | null> {
-  const { candidate1, candidate2 } = resolveCommandCentersFilePath();
+  const candidate1 = resolveFilePath();
 
   try {
     console.log("COMMAND CENTER:", candidate1);
@@ -42,15 +38,8 @@ export async function readCommandCenter(): Promise<CommandCenterConfig | null> {
 
   }
   catch {
-    try {
-      const content = await fs.readFile(candidate2, "utf8");
-      CurrentCommandCenterConfig = JSON.parse(content) as CommandCenterConfig;
-      return CurrentCommandCenterConfig;
-    }
-    catch {
       CurrentCommandCenterConfig = null;
-    }
-  }
+      console.log("READCOMMANDCENTER:", "Nem sikerült beolvasni a parancsközpontot.", candidate1);}
   // if (cbCommandCenterConfigLoaded) {
   //   cbCommandCenterConfigLoaded(CurrentCommandCenterConfig);
   // }
@@ -58,15 +47,13 @@ export async function readCommandCenter(): Promise<CommandCenterConfig | null> {
 }
 
 async function writeCommandCenter(item: CommandCenterConfig) {
-  const { candidate1, candidate2 } = resolveCommandCentersFilePath();
+  const candidate1 = resolveFilePath();
 
   try {
     await fs.mkdir(path.dirname(candidate1), { recursive: true });
     await fs.writeFile(candidate1, JSON.stringify(item, null, 2), "utf8");
   } catch {
-    await fs.mkdir(path.dirname(candidate2), { recursive: true });
-    await fs.writeFile(candidate2, JSON.stringify(item, null, 2), "utf8");
-  }
+    console.log("WRITCOMMANDCENTER:", "Nem sikerült elmenteni a parancsközpontot:", candidate1);}
 }
 
 function isValidCommandCenterType(value: unknown): value is CommandCenterType {

@@ -1,33 +1,30 @@
 import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { dataDir } from "../paths.js";
 export const layoutRoutes = Router();
-function resolveLayoutFilePath() {
-    const cwd = process.cwd();
-    const candidate1 = path.resolve(cwd, "data", "layout.json");
-    const candidate2 = path.resolve(cwd, "server", "data", "layout.json");
-    return { candidate1, candidate2 };
+function resolveFilePath() {
+    return path.resolve(dataDir, "layout.json");
 }
 async function readLayout() {
-    const { candidate1, candidate2 } = resolveLayoutFilePath();
+    const candidate1 = resolveFilePath();
     try {
         const content = await fs.readFile(candidate1, "utf8");
         return JSON.parse(content);
     }
     catch {
-        const content = await fs.readFile(candidate2, "utf8");
-        return JSON.parse(content);
+        console.log("READLAYOUT:", "Nem sikerült beolvasni a pályát.", candidate1);
+        return [];
     }
 }
 async function writeLayout(elements) {
-    const { candidate1, candidate2 } = resolveLayoutFilePath();
+    const candidate1 = resolveFilePath();
     try {
         await fs.mkdir(path.dirname(candidate1), { recursive: true });
         await fs.writeFile(candidate1, JSON.stringify(elements, null, 2), "utf8");
     }
     catch {
-        await fs.mkdir(path.dirname(candidate2), { recursive: true });
-        await fs.writeFile(candidate2, JSON.stringify(elements, null, 2), "utf8");
+        console.log("WRITELAYOUT:", "Nem sikerült elmenteni a pályát.");
     }
 }
 layoutRoutes.get("/", async (_req, res) => {
