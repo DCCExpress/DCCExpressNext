@@ -36,6 +36,7 @@ import {
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { wsApi } from "../services/wsApi";
 import CodeMirror from "@uiw/react-codemirror";
+import { indentMore, indentLess, defaultKeymap, toggleLineComment, } from "@codemirror/commands";
 import { keymap } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
 import prettier from "prettier/standalone";
@@ -567,7 +568,21 @@ function ScriptsTab(p: ScriptsTabProps) {
     }
   };
 
-  const formatKeymap = keymap.of([
+  const editorKeymap = keymap.of([
+    ...defaultKeymap,
+
+    {
+      key: "Tab",
+      run: indentMore,
+    },
+    {
+      key: "Shift-Tab",
+      run: indentLess,
+    },
+    {
+      key: "Mod-/",
+      run: toggleLineComment,
+    },
     {
       key: "Shift-Alt-f",
       run: () => {
@@ -755,86 +770,100 @@ function ScriptsTab(p: ScriptsTabProps) {
             flexDirection: "column",
           }}
         >
-          <div
+          <Stack
+            gap="xs"
             style={{
               flex: 1,
               minHeight: 0,
-              overflow: "hidden",
-              border: "1px solid var(--mantine-color-default-border)",
-              borderRadius: 4,
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            <CodeMirror
-              value={p.script}
-              height="100%"
-              theme={cmTheme}
-              extensions={[
-                javascript({
-                  jsx: false,
-                  typescript: false,
-                }),
-                formatKeymap,
-              ]}
-              onChange={(value) => p.onScriptChange(value)}
-              basicSetup={{
-                lineNumbers: true,
-                foldGutter: true,
-                highlightActiveLine: true,
-                bracketMatching: true,
-                autocompletion: true,
-              }}
+            <Group
+              justify="space-between"
+              align="center"
+              style={{ flexShrink: 0 }}
+            >
+              <Group gap={4}>
+                <Button size="xs" variant="light" onClick={handleSaveScript} loading={savingScript}>
+                  Save
+                </Button>
+
+                <Button size="xs" variant="light" onClick={handleLoadScript} loading={loadingScript}>
+                  Load
+                </Button>
+                <Button size="xs" variant="light" onClick={handleFormatScript}>
+                  Format
+                </Button>
+
+              </Group>
+
+              <Group gap={4}>
+                <Text size="xs" c="dimmed">
+                  {scriptStatus}
+                </Text>
+
+                <Button disabled={scriptIsRunning} size="xs" onClick={handleStartScript}>
+                  Start
+                </Button>
+
+                <Button
+                  color="red"
+                  size="xs"
+                  disabled={scriptStatus !== "running"}
+                  onClick={handleStopScript}
+                >
+                  Stop
+                </Button>
+              </Group>
+            </Group>
+
+            <div
               style={{
-                height: "100%",
-                fontSize: 14,
+                flex: 1,
+                minHeight: 0,
+                overflow: "hidden",
+                border: "1px solid var(--mantine-color-default-border)",
+                borderRadius: 4,
               }}
-            />
-          </div>
+            >
+              <CodeMirror
+                value={p.script}
+                height="100%"
+                theme={cmTheme}
+                extensions={[
+                  javascript({
+                    jsx: false,
+                    typescript: false,
+                  }),
+                  editorKeymap,
+                ]}
+                onChange={(value) => p.onScriptChange(value)}
+                basicSetup={{
+                  lineNumbers: true,
+                  foldGutter: true,
+                  highlightActiveLine: true,
+                  bracketMatching: true,
+                  autocompletion: true,
+                }}
+                style={{
+                  height: "100%",
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+          </Stack>
 
           <Group justify="space-between" style={{ flexShrink: 0 }}>
             <Text size="xs" c="dimmed">
-              Script status: {scriptStatus}
+                Shift+Alt+F: format · Ctrl+Shift+/: comment · Tab: indent
             </Text>
 
-            <Group>
-              <Button
-                variant="subtle"
-                size="xs"
-                onClick={handleLoadScript}
-                loading={loadingScript}
-              >
-                Load
-              </Button>
-
-              <Button
-                variant="subtle"
-                size="xs"
-                onClick={handleSaveScript}
-                loading={savingScript}
-              >
-                Save
-              </Button>
-
-              <Button
-                variant="subtle"
-                size="xs"
-                onClick={handleFormatScript}
-              >
-                Format
-              </Button>
-
-              <Button
-                variant="subtle"
-                size="xs"
-                leftSection={<IconX size={16} />}
-                onClick={() => setMaximized(false)}
-              >
-                Close
-              </Button>
-
+            {/* <Group>
               <Button disabled={scriptIsRunning} onClick={handleStartScript}>
                 Start
               </Button>
-
               <Button
                 color="red"
                 disabled={scriptStatus !== "running"}
@@ -842,7 +871,7 @@ function ScriptsTab(p: ScriptsTabProps) {
               >
                 Stop
               </Button>
-            </Group>
+            </Group> */}
           </Group>
         </Stack>
       </Modal>

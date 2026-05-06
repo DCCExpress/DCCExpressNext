@@ -52,6 +52,7 @@ export class ScriptSession {
     private state: ScriptState;
     private listeners = new Set<ScriptStateListener>();
     private stopRequested = false;
+    private timers = new Set<number>();
 
     constructor(
         private readonly script: string,
@@ -123,6 +124,8 @@ export class ScriptSession {
 
             await fn(api);
 
+            this.clearTimers();
+
             this.setState({
                 status: this.stopRequested ? "stopped" : "finished",
                 finishedAt: new Date(),
@@ -130,6 +133,7 @@ export class ScriptSession {
 
             this.log(this.stopRequested ? "Script stopped" : "Script finished");
         } catch (error) {
+            this.clearTimers();
             if (error instanceof ScriptStoppedError) {
                 this.setState({
                     status: "stopped",
@@ -154,6 +158,14 @@ export class ScriptSession {
         }
     }
 
+    private clearTimers() {
+        for (const timerId of this.timers) {
+            window.clearInterval(timerId);
+            window.clearTimeout(timerId);
+        }
+
+        this.timers.clear();
+    }
     stop() {
         if (this.state.status !== "running") return;
 
@@ -164,6 +176,8 @@ export class ScriptSession {
         });
 
         this.log("Stopping script...");
+
+        this.clearTimers();
     }
 
     private async check() {
@@ -248,6 +262,85 @@ export class ScriptSession {
                 return wsApi.setLocoFunction(address, fn, active);
             },
 
+            setInterval: (
+                callback: () => void | Promise<void>,
+                ms: number
+            ) => {
+                const timerId = window.setInterval(async () => {
+                    try {
+                        await this.check();
+                        await callback();
+                        await this.check();
+                    } catch (error) {
+                        window.clearInterval(timerId);
+                        this.timers.delete(timerId);
+
+                        if (error instanceof ScriptStoppedError) {
+                            return;
+                        }
+
+                        const message =
+                            error instanceof Error ? error.message : String(error);
+
+                        this.setState({
+                            status: "error",
+                            error: message,
+                            finishedAt: new Date(),
+                        });
+
+                        this.log(`Script interval error: ${message}`);
+                        console.error("[ScriptEngine interval]", error);
+                    }
+                }, ms);
+
+                this.timers.add(timerId);
+                return timerId;
+            },
+
+            clearInterval: (timerId: number) => {
+                window.clearInterval(timerId);
+                this.timers.delete(timerId);
+            },
+
+
+            setTimeout: (
+                callback: () => void | Promise<void>,
+                ms: number
+            ) => {
+                const timerId = window.setTimeout(async () => {
+                    this.timers.delete(timerId);
+
+                    try {
+                        await this.check();
+                        await callback();
+                        await this.check();
+                    } catch (error) {
+                        if (error instanceof ScriptStoppedError) {
+                            return;
+                        }
+
+                        const message =
+                            error instanceof Error ? error.message : String(error);
+
+                        this.setState({
+                            status: "error",
+                            error: message,
+                            finishedAt: new Date(),
+                        });
+
+                        this.log(`Script timeout error: ${message}`);
+                        console.error("[ScriptEngine timeout]", error);
+                    }
+                }, ms);
+
+                this.timers.add(timerId);
+                return timerId;
+            },
+
+            clearTimeout: (timerId: number) => {
+                window.clearTimeout(timerId);
+                this.timers.delete(timerId);
+            },
             element: this.context.element ?? null,
 
             layout: layoutStore.getLayout(),
