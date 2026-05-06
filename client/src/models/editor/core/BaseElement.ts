@@ -156,8 +156,8 @@ export abstract class BaseElement implements IBaseElement {
     protected drawSelectionBox(ctx: CanvasRenderingContext2D): void {
         ctx.save();
         ctx.lineWidth = 2;
-        ctx.strokeStyle = "#f63bda";
-        ctx.fillStyle = "#f63bda33";
+        ctx.strokeStyle = "#f6b83b";
+        ctx.fillStyle = "#f6b83b33";
         ctx.strokeRect(this.posLeft, this.posTop, this.width, this.height);
         ctx.fillRect(this.posLeft, this.posTop, this.width, this.height);
         ctx.restore();
