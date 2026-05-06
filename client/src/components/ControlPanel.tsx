@@ -7,12 +7,14 @@ import {
   Card,
   Divider,
   Group,
+  Modal,
   ScrollArea,
   Stack,
   Tabs,
   Text,
   Textarea,
   Tooltip,
+  useMantineColorScheme,
 
 } from "@mantine/core";
 import {
@@ -25,10 +27,14 @@ import {
   IconPower,
   IconAlertTriangle,
   IconDeviceGamepad2,
+  IconX,
+  IconArrowsMaximize,
 } from "@tabler/icons-react";
 
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { wsApi } from "../services/wsApi";
+import CodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
 
 type ControlPanelProps = {
   onConnectCommandCenter?: () => void;
@@ -447,7 +453,7 @@ type ScriptsTabProps = {
   onRun: () => void;
 };
 
-function ScriptsTab(p: ScriptsTabProps) {
+function ScriptsTab2(p: ScriptsTabProps) {
   return (
     <Stack gap="xs">
       <Text size="sm" fw={700}>
@@ -479,6 +485,145 @@ function ScriptsTab(p: ScriptsTabProps) {
         </Button>
       </Group>
     </Stack>
+  );
+}
+
+function ScriptsTab(p: ScriptsTabProps) {
+  const [maximized, setMaximized] = useState(false);
+  const { colorScheme } = useMantineColorScheme();
+
+  const monoFont =
+    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+
+  const cmTheme = colorScheme === "dark" ? "dark" : "light";
+
+  return (
+    <>
+      <Stack gap="xs">
+        <Group justify="space-between" align="center">
+          <Text size="sm" fw={700}>
+            Script
+          </Text>
+
+          <Tooltip label="Maximize editor">
+            <ActionIcon
+              size="sm"
+              variant="subtle"
+              onClick={() => setMaximized(true)}
+              aria-label="Maximize script editor"
+            >
+              <IconArrowsMaximize size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+
+        <Textarea
+          value={p.script}
+          onChange={(e) => p.onScriptChange(e.currentTarget.value)}
+          autosize
+          minRows={8}
+          maxRows={16}
+          styles={{
+            input: {
+              fontFamily: monoFont,
+              fontSize: 12,
+            },
+          }}
+        />
+
+        <Group justify="flex-end">
+          <Button
+            disabled
+            size="xs"
+            leftSection={<IconPlayerPlay size={16} />}
+            onClick={p.onRun}
+          >
+            Run script
+          </Button>
+        </Group>
+      </Stack>
+
+      <Modal
+        opened={maximized}
+        onClose={() => setMaximized(false)}
+        title="Script editor"
+        size="90vw"
+        centered
+        closeOnEscape
+        styles={{
+          content: {
+            height: "90vh",
+            display: "flex",
+            flexDirection: "column",
+          },
+          body: {
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          },
+        }}
+      >
+        <Stack
+          gap="xs"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflow: "hidden",
+              border: "1px solid var(--mantine-color-default-border)",
+              borderRadius: 4,
+            }}
+          >
+            <CodeMirror
+              value={p.script}
+              height="100%"
+              theme={cmTheme}
+              extensions={[javascript()]}
+              onChange={(value) => p.onScriptChange(value)}
+              basicSetup={{
+                lineNumbers: true,
+                foldGutter: true,
+                highlightActiveLine: true,
+                bracketMatching: true,
+                autocompletion: true,
+              }}
+              style={{
+                height: "100%",
+                fontSize: 13,
+              }}
+            />
+          </div>
+
+          <Group justify="space-between" style={{ flexShrink: 0 }}>
+            <Button
+              variant="subtle"
+              size="xs"
+              leftSection={<IconX size={16} />}
+              onClick={() => setMaximized(false)}
+            >
+              Close
+            </Button>
+
+            <Button
+              disabled
+              size="xs"
+              leftSection={<IconPlayerPlay size={16} />}
+              onClick={p.onRun}
+            >
+              Run script
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </>
   );
 }
 
