@@ -34,8 +34,10 @@ export default function LocoPicker({
                 alignItems: "flex-start",
                 justifyContent: "center",
                 padding: 12,
+
             }}
         >
+
             <Card
                 withBorder
                 radius="sm"
@@ -43,12 +45,12 @@ export default function LocoPicker({
                 style={{
                     width: "100%",
                     maxWidth: 360,
-                    maxHeight: "70vh",
+                    height: "70vh",
                     display: "flex",
                     flexDirection: "column",
                 }}
             >
-                <Group justify="space-between" mb="sm">
+                <Group justify="space-between" mb="sm" style={{ flexShrink: 0 }}>
                     <Text fw={700}>{title}</Text>
                     <Button
                         size="xs"
@@ -60,7 +62,13 @@ export default function LocoPicker({
                     </Button>
                 </Group>
 
-                <ScrollArea style={{ flex: 1 }}>
+                <ScrollArea
+                    type="hover"
+                    style={{
+                        flex: 1,
+                        minHeight: 0,
+                    }}
+                >
                     <Stack gap="sm">
                         {locos.map((loco) => (
                             <Card
