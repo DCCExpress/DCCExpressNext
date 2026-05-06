@@ -602,7 +602,7 @@ function ScriptsTab(p: ScriptsTabProps) {
             />
           </div>
 
-          <Group justify="space-between" style={{ flexShrink: 0 }}>
+          <Group justify="flex-end" style={{ flexShrink: 0 }}>
             <Button
               variant="subtle"
               size="xs"
