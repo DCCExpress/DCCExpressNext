@@ -1,4 +1,4 @@
-# DCCExpress2 - Model Railway Control System
+# DCCExpressNext - Model Railway Control System
 
 ⚠️ **Early Alpha Version - Under Development** ⚠️
 
