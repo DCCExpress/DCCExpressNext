@@ -17,6 +17,7 @@
     "@tabler/icons-react": "^3.0.0",
     "@uiw/react-codemirror": "^4.25.9",
     "i18next": "^26.0.5",
+    "prettier": "^3.8.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^17.0.3",

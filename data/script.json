@@ -1,0 +1,4 @@
+{
+  "content": "for(var i = 0; i < 10; i++) {\n  setTurnout(10, true);\n  await sleep(1000);\n  setTurnout(10, false);\n  await sleep(1000);\n}",
+  "updatedAt": "2026-05-06T15:12:22.376Z"
+}

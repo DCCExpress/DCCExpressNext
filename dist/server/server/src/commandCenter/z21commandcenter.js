@@ -804,6 +804,13 @@ export class Z21CommandCenter extends CommandCenter {
             if (diff > this.timeoutMs) {
                 this.LAN_SYSTEMSTATE_GETDATA();
                 this.LAN_SET_BROADCASTFLAGS();
+                if (diff > this.timeoutMs * 2) {
+                    logError("Z21 connection seems lost, no response for", {
+                        diff,
+                        timeoutMs: this.timeoutMs,
+                    });
+                    this.broadcastCommandCenterInfo(false);
+                }
             }
         }, 1000);
     }

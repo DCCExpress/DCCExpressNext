@@ -1,10 +1,12 @@
-import { Badge, Divider, Group } from "@mantine/core";
+import { ActionIcon, Badge, Divider, Group, Tooltip } from "@mantine/core";
 import { useWsStatus } from "../hooks/useWsStatus";
 import { getWsColor } from "./TopMenuBar";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { useBrowserStats } from "../hooks/useBrowserStats";
 import "../styles/global.css"
 import { wsApi } from "../services/wsApi";
+import { useScriptStatus } from "../hooks/useScriptStatus";
+import { IconPlayerStopFilled } from "@tabler/icons-react";
 
 export default function StatusBar() {
   const wsStatus = useWsStatus();
@@ -21,6 +23,24 @@ export default function StatusBar() {
   const commandCenterOnline = alive && wsConnected;
   const trackPowerOn = powerInfo?.trackVoltageOn === true && wsConnected;
 
+  const { scriptState, stopScript } = useScriptStatus();
+  const scriptStatus = scriptState?.status ?? "idle";
+  const scriptRunning =
+    scriptStatus === "running" || scriptStatus === "stopping";
+
+  const scriptBadgeColor =
+    scriptStatus === "running"
+      ? "green"
+      : scriptStatus === "stopping"
+        ? "orange"
+        : scriptStatus === "error"
+          ? "red"
+          : scriptStatus === "finished"
+            ? "blue"
+            : scriptStatus === "stopped"
+              ? "gray"
+              : "gray";
+
   return (
     <Group h="100%" px="md" justify="space-between">
       <Group gap="md">
@@ -36,7 +56,7 @@ export default function StatusBar() {
           PWR
         </Badge>
         <Badge
-          style={{cursor: "pointer"}}
+          style={{ cursor: "pointer" }}
           color={powerInfo?.emergencyStop ? "red" : "gray"}
           className={powerInfo?.emergencyStop ? "blinkBadge" : ""}
           onClick={() => {
@@ -61,6 +81,27 @@ export default function StatusBar() {
         >
           {locked ? "LOCK" : "FREE"}
         </Badge>
+
+        <Divider orientation="vertical" />
+
+        <Badge
+          color={scriptBadgeColor}
+          variant="filled"
+          
+        >
+          SCRIPT {scriptStatus.toUpperCase()}
+        </Badge>
+        <Tooltip label="Stop running script">
+          <ActionIcon
+            size="sm"
+            color="red"
+            variant="filled"
+            disabled={scriptStatus !== "running"}
+            onClick={stopScript}
+          >
+            <IconPlayerStopFilled size={14} />
+          </ActionIcon>
+        </Tooltip>
 
         <Divider orientation="vertical" />
 

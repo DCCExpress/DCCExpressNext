@@ -1,4 +1,4 @@
-import { Loco } from "../../../common/src/types";
+import { Loco, SingleScriptFile } from "../../../common/src/types";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Layout } from "../models/editor/core/Layout";
 
@@ -64,42 +64,33 @@ export async function saveLayout(elements: Layout): Promise<void> {
   }
 }
 
-//import { TrackElement } from "../models/editor/elements/TrackElement";
-//import { TrackEndElement } from "../models/editor/elements/TrackEndElement";
-
-// export function serializeLayout(elements: BaseElement[]): LayoutElementDto[] {
-//   return elements.map((el) => ({
-//     id: el.id,
-//     type: el.type,
-//     x: el.x,
-//     y: el.y,
-//     rotation: el.rotation,
-//     width: el.width,
-//     height: el.height,
-//   }));
-// }
 
 
-// export function deserializeLayout(data: LayoutElementDto[]): BaseElement[] {
-//   return data.map((item) => {
-//     switch (item.type) {
-//       case "track": {
-//         const track = new TrackElement(item.x, item.y)
-//         //   id: "ghost-track",
-//         //   type: ELEMENT_TYPES.TRACK,
-//         //   name: "Ghost Track",
-//         //   x: 0,
-//         //   y: 0,
-//         //   rotation: 0,
-//         //   rotationStep: 45,
-//         //   trackType: "straight",
-//         // });
-//         return track;
-//       }
 
+export async function getScript(): Promise<SingleScriptFile> {
+  const res = await fetch("/api/script");
 
-//       default:
-//         throw new Error(`Unknown layout element type: ${item.type}`);
-//     }
-//   });
-// }
+  if (!res.ok) {
+    throw new Error("Failed to load script");
+  }
+
+  return await res.json();
+}
+
+export async function saveScript(content: string): Promise<SingleScriptFile> {
+  const res = await fetch("/api/script", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to save script");
+  }
+
+  return await res.json();
+}

@@ -136,3 +136,10 @@ export interface PowerInfo {
   shortCircuit: boolean;
   current: number;
 }
+
+
+
+export type SingleScriptFile = {
+  content: string;
+  updatedAt?: string;
+};
