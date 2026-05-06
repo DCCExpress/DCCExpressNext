@@ -1,3 +1,5 @@
+import { showWarningMessage } from "../../../helpers";
+import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackElement } from "../elements/TrackElement";
 import TrackTurnoutDoubleElement from "../elements/TrackTurnoutDoubleElement";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
@@ -10,13 +12,13 @@ import { ElementFactory } from "./ElementFactory";
 import { Layer, LayerId } from "./Layer";
 
 export function isTurnoutElement(el: BaseElement | null | undefined) {
-  return (
-    el instanceof TrackTurnoutElement ||
-    el instanceof TrackTurnoutLeftElement ||
-    el instanceof TrackTurnoutRightElement ||
-    el instanceof TrackTurnoutTwoWayElement ||
-    el instanceof TrackTurnoutDoubleElement
-  );
+    return (
+        el instanceof TrackTurnoutElement ||
+        el instanceof TrackTurnoutLeftElement ||
+        el instanceof TrackTurnoutRightElement ||
+        el instanceof TrackTurnoutTwoWayElement ||
+        el instanceof TrackTurnoutDoubleElement
+    );
 }
 
 export class Layout {
@@ -115,6 +117,22 @@ export class Layout {
     }
 
     public removeElement(element: BaseElement): void {
+        const elems = this.getAllElements();
+        for (const el of elems) {
+            if (el instanceof RouteButtonElement) {
+                console.log("CHECKING ROUTE BUTTON: ", el, element);
+                const rb = el as RouteButtonElement;
+                for (const t of rb.routeTurnouts) {
+                    console.log("CHECKING TURNOUT: ", t, element);
+                    if (t.turnoutId === element.id) {
+                        console.log("REMOVING ROUTE BUTTON: ", el);
+                        rb.removeTurnout(element.id);
+                        showWarningMessage(rb.name,  " A váltó törlésre került, ezért a hozzá tartozó útvonal gombból is eltávolításra került.");
+                        break
+                    }
+                }
+            }
+        }
         for (const layer of this.layers) {
             const index = layer.elements.indexOf(element);
             if (index >= 0) {
@@ -144,6 +162,7 @@ export class Layout {
         return [
             ...this.track.elements,
             ...this.blocks.elements,
+            ...this.signals.elements,
             ...this.sensors.elements,
             ...this.buildings.elements,
         ];

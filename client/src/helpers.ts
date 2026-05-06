@@ -30,6 +30,7 @@ export function showWarningMessage(title: string, message: string) {
     title: title,
     message: message,
     color: "yellow",
+    autoClose: 5000,
   });
 }
 
