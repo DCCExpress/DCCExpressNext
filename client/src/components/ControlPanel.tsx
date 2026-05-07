@@ -9,46 +9,40 @@ import {
   Group,
   Modal,
   ScrollArea,
-  Select,
   Stack,
   Tabs,
   Text,
   Textarea,
   Tooltip,
   useMantineColorScheme,
-
 } from "@mantine/core";
 import {
+  IconAlertTriangle,
+  IconArrowsMaximize,
   IconBolt,
   IconCode,
-  IconPlayerPlay,
-  IconPlugConnected,
-  IconPlugConnectedX,
-  IconRefresh,
-  IconPower,
-  IconAlertTriangle,
   IconDeviceGamepad2,
-  IconX,
-  IconArrowsMaximize,
-  IconTrash,
+  IconPower,
 } from "@tabler/icons-react";
 
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { wsApi } from "../services/wsApi";
+
 import CodeMirror from "@uiw/react-codemirror";
-import { indentMore, indentLess, defaultKeymap, toggleLineComment, } from "@codemirror/commands";
+import {
+  defaultKeymap,
+  indentLess,
+  indentMore,
+  toggleLineComment,
+} from "@codemirror/commands";
 import { keymap } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
+
 import prettier from "prettier/standalone";
 import babelPlugin from "prettier/plugins/babel";
 import estreePlugin from "prettier/plugins/estree";
 
-import {
-  scriptEngine,
-  ScriptSession,
-  ScriptState,
-} from "../services/scriptEngine";
-import { getScript, saveScript } from "../api/http";
+import { scriptEngine } from "../services/scriptEngine";
 import { useScriptStatus } from "../hooks/useScriptStatus";
 
 type ControlPanelProps = {
@@ -65,15 +59,23 @@ type ControlPanelProps = {
 
 export default function ControlPanel(p: ControlPanelProps) {
   const [activeTab, setActiveTab] = useState<string | null>("command-center");
-  const [script, setScript] = useState(
-    `for(var i = 0; i < 10; i++) {
-  setTurnout(10, true);
-  await sleep(1000);
-  setTurnout(10, false);
-  await sleep(1000);
-}`
-  );
+  const [script, setScript] = useState(scriptEngine.getScript());
 
+  useEffect(() => {
+    const unsubscribe = scriptEngine.subscribeScript((scriptDocument) => {
+      setScript(scriptDocument.content);
+    });
+
+    void scriptEngine.loadScript().catch((error) => {
+      console.error("Failed to load script:", error);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const handleScriptChange = (value: string) => {
+    scriptEngine.setScript(value);
+  };
 
   return (
     <Card withBorder radius="md" p="xs">
@@ -114,11 +116,7 @@ export default function ControlPanel(p: ControlPanelProps) {
         </Tabs.Panel>
 
         <Tabs.Panel value="scripts" pt="sm">
-          <ScriptsTab
-            script={script}
-            onScriptChange={setScript}
-            onRun={() => p.onRunScript?.(script)}
-          />
+          <ScriptsTab script={script} onScriptChange={handleScriptChange} />
         </Tabs.Panel>
       </Tabs>
     </Card>
@@ -138,7 +136,6 @@ function CommandCenterTab(p: CommandCenterTabProps) {
   const {
     alive,
     type,
-    name,
     ip,
     port,
 
@@ -187,37 +184,23 @@ function CommandCenterTab(p: CommandCenterTabProps) {
           className={powerInfo?.emergencyStop ? "blinkBadge" : ""}
           variant="filled"
           leftSection={<IconAlertTriangle size={16} />}
-          onClick={(ev) => {
+          onClick={() => {
             if (powerInfo?.emergencyStop) {
-              if (p.onPowerOn) {
-                p.onPowerOn();
-              }
+              p.onPowerOn?.();
             } else {
-              if (p.onEmergencyStop) {
-                p.onEmergencyStop()
-              }
-
+              p.onEmergencyStop?.();
             }
-
-          }
-
-
-          }
+          }}
           disabled={!alive}
         >
           EMERGENCY STOP
         </Button>
-
 
         <Group justify="space-between" align="center">
           <Box>
             <Text size="sm" fw={700}>
               Command Center
             </Text>
-
-            {/* <Text size="xs" c="dimmed">
-              Z21 állapota
-            </Text> */}
           </Box>
 
           <Badge color={alive ? "green" : "red"} variant="light">
@@ -228,7 +211,6 @@ function CommandCenterTab(p: CommandCenterTabProps) {
         <Divider />
 
         <InfoSection title="Connection">
-          {/* <InfoRow label="Name" value={name ?? "-"} /> */}
           <InfoRow label="Type" value={type ?? "-"} />
           {type === "z21" && (
             <>
@@ -256,13 +238,7 @@ function CommandCenterTab(p: CommandCenterTabProps) {
         <InfoSection title="Power">
           <InfoRow
             label="Track power"
-            value={
-              powerInfo
-                ? powerInfo.trackVoltageOn
-                  ? "ON"
-                  : "OFF"
-                : "-"
-            }
+            value={powerInfo ? (powerInfo.trackVoltageOn ? "ON" : "OFF") : "-"}
             valueColor={
               powerInfo
                 ? powerInfo.trackVoltageOn
@@ -297,18 +273,14 @@ function CommandCenterTab(p: CommandCenterTabProps) {
               <InfoRow
                 label="Main current"
                 value={
-                  z21SystemState
-                    ? `${z21SystemState.mainCurrentMa} mA`
-                    : "-"
+                  z21SystemState ? `${z21SystemState.mainCurrentMa} mA` : "-"
                 }
               />
 
               <InfoRow
                 label="Prog current"
                 value={
-                  z21SystemState
-                    ? `${z21SystemState.progCurrentMa} mA`
-                    : "-"
+                  z21SystemState ? `${z21SystemState.progCurrentMa} mA` : "-"
                 }
               />
 
@@ -324,9 +296,7 @@ function CommandCenterTab(p: CommandCenterTabProps) {
               <InfoRow
                 label="Temperature"
                 value={
-                  z21SystemState
-                    ? `${z21SystemState.temperatureC} °C`
-                    : "-"
+                  z21SystemState ? `${z21SystemState.temperatureC} °C` : "-"
                 }
                 valueColor={
                   z21SystemState?.flags.highTemperature ? "red" : undefined
@@ -345,9 +315,7 @@ function CommandCenterTab(p: CommandCenterTabProps) {
               <InfoRow
                 label="VCC voltage"
                 value={
-                  z21SystemState
-                    ? `${z21SystemState.vccVoltageMv} mV`
-                    : "-"
+                  z21SystemState ? `${z21SystemState.vccVoltageMv} mV` : "-"
                 }
               />
 
@@ -380,8 +348,14 @@ function CommandCenterTab(p: CommandCenterTabProps) {
             </InfoSection>
 
             <InfoSection title="Z21 Flags">
-              <FlagRow label="High temp" value={z21SystemState?.flags.highTemperature} />
-              <FlagRow label="Power lost" value={z21SystemState?.flags.powerLost} />
+              <FlagRow
+                label="High temp"
+                value={z21SystemState?.flags.highTemperature}
+              />
+              <FlagRow
+                label="Power lost"
+                value={z21SystemState?.flags.powerLost}
+              />
               <FlagRow
                 label="Short external"
                 value={z21SystemState?.flags.shortCircuitExternal}
@@ -396,8 +370,14 @@ function CommandCenterTab(p: CommandCenterTabProps) {
             <InfoSection title="Capabilities">
               <FlagRow label="DCC" value={z21SystemState?.flags.capDcc} />
               <FlagRow label="MM" value={z21SystemState?.flags.capMm} />
-              <FlagRow label="RailCom" value={z21SystemState?.flags.capRailCom} />
-              <FlagRow label="Loco cmds" value={z21SystemState?.flags.capLocoCmds} />
+              <FlagRow
+                label="RailCom"
+                value={z21SystemState?.flags.capRailCom}
+              />
+              <FlagRow
+                label="Loco cmds"
+                value={z21SystemState?.flags.capLocoCmds}
+              />
               <FlagRow
                 label="Accessory cmds"
                 value={z21SystemState?.flags.capAccessoryCmds}
@@ -413,36 +393,6 @@ function CommandCenterTab(p: CommandCenterTabProps) {
             </InfoSection>
           </>
         )}
-        {/* <Group grow mt="xs">
-          <Button
-            size="xs"
-            variant="light"
-            leftSection={<IconPlugConnected size={16} />}
-            onClick={p.onConnect}
-            disabled={alive}
-          >
-            Connect
-          </Button>
-
-          <Button
-            size="xs"
-            variant="light"
-            color="red"
-            leftSection={<IconPlugConnectedX size={16} />}
-            onClick={p.onDisconnect}
-            disabled={!alive}
-          >
-            Disconnect
-          </Button>
-        </Group> */}
-
-        {/* <Group justify="flex-end">
-          <Tooltip label="Állapot frissítése">
-            <ActionIcon variant="subtle" onClick={p.onRefresh}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group> */}
       </Stack>
     </ScrollArea.Autosize>
   );
@@ -455,7 +405,6 @@ function ControllerTab() {
         <Text size="sm" fw={700}>
           Controller
         </Text>
-
       </Stack>
     </ScrollArea.Autosize>
   );
@@ -464,43 +413,7 @@ function ControllerTab() {
 type ScriptsTabProps = {
   script: string;
   onScriptChange: (value: string) => void;
-  onRun: () => void;
 };
-
-function ScriptsTab2(p: ScriptsTabProps) {
-  return (
-    <Stack gap="xs">
-      <Text size="sm" fw={700}>
-        Script
-      </Text>
-      <Textarea
-        value={p.script}
-        onChange={(e) => p.onScriptChange(e.currentTarget.value)}
-        autosize
-        minRows={8}
-        maxRows={16}
-        styles={{
-          input: {
-            fontFamily:
-              "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-            fontSize: 12,
-          },
-        }}
-      />
-
-      <Group justify="flex-end">
-        <Button
-          disabled
-          size="xs"
-          leftSection={<IconPlayerPlay size={16} />}
-          onClick={p.onRun}
-        >
-          Run script
-        </Button>
-      </Group>
-    </Stack>
-  );
-}
 
 async function formatScriptBody(script: string): Promise<string> {
   const wrapped = `async function __script__() { \n${script} \n }`;
@@ -521,7 +434,7 @@ function ScriptsTab(p: ScriptsTabProps) {
   const [maximized, setMaximized] = useState(false);
   const { colorScheme } = useMantineColorScheme();
 
-  const { scriptSession, scriptState, stopScript } = useScriptStatus();
+  const { scriptState, stopScript } = useScriptStatus();
 
   const [loadingScript, setLoadingScript] = useState(false);
   const [savingScript, setSavingScript] = useState(false);
@@ -546,9 +459,7 @@ function ScriptsTab(p: ScriptsTabProps) {
   const handleLoadScript = async () => {
     try {
       setLoadingScript(true);
-
-      const scriptFile = await getScript();
-      p.onScriptChange(scriptFile.content ?? "");
+      await scriptEngine.loadScript();
     } catch (error) {
       console.error("Failed to load script:", error);
     } finally {
@@ -559,8 +470,8 @@ function ScriptsTab(p: ScriptsTabProps) {
   const handleSaveScript = async () => {
     try {
       setSavingScript(true);
-
-      await saveScript(String(p.script ?? ""));
+      scriptEngine.setScript(String(p.script ?? ""));
+      await scriptEngine.saveScript();
     } catch (error) {
       console.error("Failed to save script:", error);
     } finally {
@@ -600,10 +511,10 @@ function ScriptsTab(p: ScriptsTabProps) {
   ]);
 
   const handleStartScript = () => {
-    const script = String(p.script ?? "");
+    scriptEngine.setScript(String(p.script ?? ""));
 
-    scriptEngine.run(script, {
-      source: "property-panel",
+    scriptEngine.runCurrent({
+      source: "control-panel",
     });
   };
 
@@ -612,6 +523,7 @@ function ScriptsTab(p: ScriptsTabProps) {
   };
 
   const scriptStatus = scriptState?.status ?? "idle";
+
   useEffect(() => {
     if (scriptState?.status !== "error") return;
     if (!scriptState.error) return;
@@ -620,12 +532,10 @@ function ScriptsTab(p: ScriptsTabProps) {
     setScriptErrorOpened(true);
   }, [scriptState?.status, scriptState?.error]);
 
-
   const scriptIsRunning =
     scriptStatus === "running" || scriptStatus === "stopping";
 
   return (
-
     <>
       <Modal
         opened={scriptErrorOpened}
@@ -651,10 +561,7 @@ function ScriptsTab(p: ScriptsTabProps) {
           </Text>
 
           <Group justify="flex-end">
-            <Button
-              variant="light"
-              onClick={() => setScriptErrorOpened(false)}
-            >
+            <Button variant="light" onClick={() => setScriptErrorOpened(false)}>
               Close
             </Button>
           </Group>
@@ -686,11 +593,7 @@ function ScriptsTab(p: ScriptsTabProps) {
               Save
             </Button>
 
-            <Button
-              size="xs"
-              variant="subtle"
-              onClick={handleFormatScript}
-            >
+            <Button size="xs" variant="subtle" onClick={handleFormatScript}>
               Format
             </Button>
 
@@ -785,17 +688,27 @@ function ScriptsTab(p: ScriptsTabProps) {
               style={{ flexShrink: 0 }}
             >
               <Group gap={4}>
-                <Button size="xs" variant="light" onClick={handleSaveScript} loading={savingScript}>
+                <Button
+                  size="xs"
+                  variant="light"
+                  onClick={handleSaveScript}
+                  loading={savingScript}
+                >
                   Save
                 </Button>
 
-                <Button size="xs" variant="light" onClick={handleLoadScript} loading={loadingScript}>
+                <Button
+                  size="xs"
+                  variant="light"
+                  onClick={handleLoadScript}
+                  loading={loadingScript}
+                >
                   Load
                 </Button>
+
                 <Button size="xs" variant="light" onClick={handleFormatScript}>
                   Format
                 </Button>
-
               </Group>
 
               <Group gap={4}>
@@ -803,7 +716,11 @@ function ScriptsTab(p: ScriptsTabProps) {
                   {scriptStatus}
                 </Text>
 
-                <Button disabled={scriptIsRunning} size="xs" onClick={handleStartScript}>
+                <Button
+                  disabled={scriptIsRunning}
+                  size="xs"
+                  onClick={handleStartScript}
+                >
                   Start
                 </Button>
 
@@ -852,26 +769,12 @@ function ScriptsTab(p: ScriptsTabProps) {
                 }}
               />
             </div>
-
           </Stack>
 
           <Group justify="space-between" style={{ flexShrink: 0 }}>
             <Text size="xs" c="dimmed">
-                Shift+Alt+F: format · Ctrl+Shift+/: comment · Tab: indent
+              Shift+Alt+F: format · Ctrl+/: comment · Tab: indent
             </Text>
-
-            {/* <Group>
-              <Button disabled={scriptIsRunning} onClick={handleStartScript}>
-                Start
-              </Button>
-              <Button
-                color="red"
-                disabled={scriptStatus !== "running"}
-                onClick={handleStopScript}
-              >
-                Stop
-              </Button>
-            </Group> */}
           </Group>
         </Stack>
       </Modal>
@@ -937,11 +840,7 @@ function FlagRow({
         {label}
       </Text>
 
-      <Badge
-        size="xs"
-        variant="light"
-        color={value ? "green" : "gray"}
-      >
+      <Badge size="xs" variant="light" color={value ? "green" : "gray"}>
         {value === undefined ? "-" : value ? "YES" : "NO"}
       </Badge>
     </Group>

@@ -3,6 +3,8 @@
 import { wsApi } from "./wsApi";
 import { layoutStore } from "./layoutStore";
 import { BaseElement } from "../models/editor/core/BaseElement";
+import { loadJsonFile, saveJsonFile } from "../api/fileApi";
+
 
 export type ScriptRunSource =
     | "property-panel"
@@ -97,25 +99,28 @@ export class ScriptSession {
             const fn = new Function(
                 "api",
                 `
-        const {
-          log,
-          sleep,
-          check,
-          powerOn,
-          powerOff,
-          emergencyStop,
-          setTurnout,
-          getTurnout,
-          getTurnoutState,
-          setLocoFunction,
-          setSignalGreen,
-          setSignalYellow,
-          setSignalRed,
-          setSignalWhite,
-          element,
-          layout
-        } = api;
-
+const {
+  log,
+  sleep,
+  check,
+  powerOn,
+  powerOff,
+  emergencyStop,
+  setTurnout,
+  getTurnout,
+  getTurnoutState,
+  setLocoFunction,
+  setSignalGreen,
+  setSignalYellow,
+  setSignalRed,
+  setSignalWhite,
+  setTimeout,
+  clearTimeout,
+  setInterval,
+  clearInterval,
+  element,
+  layout
+} = api;
         return (async () => {
           await check();
 
@@ -400,9 +405,78 @@ export class ScriptSession {
 
 type CurrentSessionListener = (session: ScriptSession | null) => void;
 
+// class ScriptEngine2 {
+//     private currentSession: ScriptSession | null = null;
+//     private listeners = new Set<CurrentSessionListener>();
+
+//     subscribe(listener: CurrentSessionListener) {
+//         this.listeners.add(listener);
+//         listener(this.currentSession);
+
+//         return () => {
+//             this.listeners.delete(listener);
+//         };
+//     }
+
+//     private emit() {
+//         for (const listener of this.listeners) {
+//             listener(this.currentSession);
+//         }
+//     }
+
+//     run(script: string, context: ScriptContext = {}) {
+//         const currentState = this.currentSession?.getState();
+
+//         if (
+//             currentState?.status === "running" ||
+//             currentState?.status === "stopping"
+//         ) {
+//             throw new Error("A script is already running");
+//         }
+
+//         const session = new ScriptSession(script, context);
+//         this.currentSession = session;
+
+//         this.emit();
+
+//         void session.start();
+
+//         return session;
+//     }
+
+//     stopCurrent() {
+//         this.currentSession?.stop();
+//     }
+
+//     getCurrentSession() {
+//         return this.currentSession;
+//     }
+// }
+
+
+export type ScriptDocument = {
+    content: string;
+    updatedAt?: string;
+};
+
+type ScriptDocumentListener = (script: ScriptDocument) => void;
+
+const DEFAULT_SCRIPT = `for (var i = 0; i < 10; i++) {
+  setTurnout(10, true);
+  await sleep(1000);
+  setTurnout(10, false);
+  await sleep(1000);
+}`;
+
 class ScriptEngine {
     private currentSession: ScriptSession | null = null;
     private listeners = new Set<CurrentSessionListener>();
+
+    private script: ScriptDocument = {
+        content: DEFAULT_SCRIPT,
+    };
+
+    private scriptListeners = new Set<ScriptDocumentListener>();
 
     subscribe(listener: CurrentSessionListener) {
         this.listeners.add(listener);
@@ -411,6 +485,68 @@ class ScriptEngine {
         return () => {
             this.listeners.delete(listener);
         };
+    }
+
+    subscribeScript(listener: ScriptDocumentListener) {
+        this.scriptListeners.add(listener);
+        listener(this.getScriptDocument());
+
+        return () => {
+            this.scriptListeners.delete(listener);
+        };
+    }
+
+    getScript(): string {
+        return this.script.content;
+    }
+
+    getScriptDocument(): ScriptDocument {
+        return {
+            ...this.script,
+        };
+    }
+
+    setScript(content: string) {
+        this.script = {
+            content,
+            updatedAt: new Date().toISOString(),
+        };
+
+        this.emitScript();
+    }
+
+    async loadScript() {
+        const scriptFile = await loadJsonFile<ScriptDocument>("script.json");
+
+        this.script = {
+            content: scriptFile.content ?? "",
+            updatedAt: new Date().toISOString(),
+        };
+
+        this.emitScript();
+
+        return this.getScriptDocument();
+    }
+
+    async saveScript() {
+        await saveJsonFile("script.json", this.script);
+
+        this.script = {
+            ...this.script,
+            updatedAt: new Date().toISOString(),
+        };
+
+        this.emitScript();
+
+        return this.getScriptDocument();
+    }
+
+    private emitScript() {
+        const snapshot = this.getScriptDocument();
+
+        for (const listener of this.scriptListeners) {
+            listener(snapshot);
+        }
     }
 
     private emit() {
@@ -439,6 +575,10 @@ class ScriptEngine {
         return session;
     }
 
+    runCurrent(context: ScriptContext = {}) {
+        return this.run(this.script.content, context);
+    }
+
     stopCurrent() {
         this.currentSession?.stop();
     }
@@ -447,5 +587,6 @@ class ScriptEngine {
         return this.currentSession;
     }
 }
+
 
 export const scriptEngine = new ScriptEngine();

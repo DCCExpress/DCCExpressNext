@@ -187,8 +187,11 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   };
 
   const loadScriptFromServer = () => {
+    return;
     const script = loadJsonFile("script.json").then(script => {
       setScript((script as any).content);
+      scriptEngine.setScript((script as any).content);
+
       showOkMessage("", "Script loaded!");
     }).catch(error => {
       console.error("Nem sikerült betölteni a scriptet:", error);
