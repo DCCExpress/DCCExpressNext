@@ -28,6 +28,7 @@ import { wsClient } from "../services/wsClient";
 import Speedometer from "../components/Speedometer";
 import { useWsStatus } from "../hooks/useWsStatus";
 import { useCommandCenter } from "../context/CommandCenterContext";
+import { showErrorMessage } from "../helpers";
 
 
 // TODO: Ha szerkesztve lett a mozdony újra le kell kérdezni a LocoState-t, 
@@ -155,11 +156,15 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
   useEffect(() => {
     const unsubscribe = wsClient.on("locoState", (data) => {
       const loco = data.loco as LocoState;
-
-      if (loco.address === currentAddressRef.current) {
-        setSpeed(loco.speed);
-        setDirection(loco.direction);
-        setActiveFunctions(loco.functions ?? {});
+      if (loco) {
+        if (loco.address === currentAddressRef.current) {
+          setSpeed(loco.speed);
+          setDirection(loco.direction);
+          setActiveFunctions(loco.functions ?? {});
+        }
+      }
+      else {
+        showErrorMessage("LocoState", "Nem sikerült a locoState konvertálása!");
       }
     });
 
@@ -358,16 +363,29 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                             color={active ? "blue" : "gray"}
                             style={{
                               height: 48,
-                              paddingTop: 2,
-                              paddingBottom: 2,
+                              padding: 2,
                               touchAction: "none",
                               userSelect: "none",
                               WebkitUserSelect: "none",
                               WebkitTouchCallout: "none",
                             }}
-                            //onClick={() => toggleFunction(i, fn?.momentary ?? false)}
+                            styles={{
+                              inner: {
+                                width: "100%",
+                                height: "100%",
+                                justifyContent: "center",
+                              },
+                              label: {
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              },
+                            }}
                             onPointerDown={(ev) => {
                               ev.preventDefault();
+
                               if (fn?.momentary) {
                                 wsApi.setLocoFunction(currentLoco.address, i, true);
                               } else {
@@ -377,6 +395,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                             }}
                             onPointerUp={(ev) => {
                               ev.preventDefault();
+
                               if (fn?.momentary) {
                                 wsApi.setLocoFunction(currentLoco.address, i, false);
                               }
@@ -397,33 +416,50 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
                               ev.preventDefault();
                             }}
                           >
-                            <div style={{ textAlign: "center", lineHeight: 1.2 }}>
-                              <div
+                            <span
+                              style={{
+                                width: "100%",
+                                minWidth: 0,
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                textAlign: "center",
+                                lineHeight: 1.15,
+                              }}
+                            >
+                              <span
                                 style={{
+                                  display: "block",
+                                  width: "100%",
                                   fontSize: 12,
                                   fontWeight: 700,
                                   textAlign: "center",
                                 }}
                               >
                                 F{i}
-                              </div>
+                              </span>
 
                               {hasName && (
-                                <div
+                                <span
                                   style={{
+                                    display: "block",
+                                    width: "100%",
+                                    minWidth: 0,
                                     fontSize: 10,
                                     opacity: 0.85,
                                     marginTop: 2,
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
                                     textAlign: "center",
                                   }}
                                 >
                                   {fn?.name}
                                   {fn?.momentary ? " *" : ""}
-                                </div>
+                                </span>
                               )}
-                            </div>
+                            </span>
                           </Button>
                         );
                       })}

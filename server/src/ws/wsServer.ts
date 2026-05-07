@@ -324,13 +324,13 @@ export function setupWebSocketServer(server: http.Server) {
                   });
                 } else {
                   // Optionally, broadcast the new loco state to all clients
-                  commandCenter!.getLoco(address).then(loco => {
-                    log("Broadcasting loco state after function change:", loco);
-                    broadcast(wss, {
-                      type: "locoState",
-                      data: { loco },
-                    });
-                  });
+                  // commandCenter!.getLoco(address).then(loco => {
+                  //   log("Broadcasting loco state after function change:", loco);
+                  //   broadcast(wss, {
+                  //     type: "locoState",
+                  //     data: { loco },
+                  //   });
+                  // });
                 }
               });
               return;
@@ -350,10 +350,10 @@ export function setupWebSocketServer(server: http.Server) {
               }
               commandCenter.getLoco(address).then(loco => {
                 log("getLoco result:", loco);
-                sendToClient(ws, {
-                  type: "locoState",
-                  data: { loco },
-                });
+                // sendToClient(ws, {
+                //   type: "locoState",
+                //   data: { loco },
+                // });
               }).catch(err => {
                 logError("Failed to get loco:", err);
                 sendToClient(ws, {

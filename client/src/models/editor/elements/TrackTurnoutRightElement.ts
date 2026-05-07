@@ -12,10 +12,8 @@ import { TrackTurnoutElement } from "./TrackTurnoutElement";
 
 export class TrackTurnoutRightElement extends TrackTurnoutElement implements ITrackTurnoutRightElement {
     override type: typeof ELEMENT_TYPES.TRACK_TURNOUT_RIGHT = ELEMENT_TYPES.TRACK_TURNOUT_RIGHT;
-    address: number = 0;
-    turnoutAddress: number = 0;
-    turnoutClosedValue: boolean = false;
-    turnoutClosed: boolean = false;
+    
+    
 
     constructor(x: number, y: number) {
         super(x, y);
@@ -33,7 +31,7 @@ export class TrackTurnoutRightElement extends TrackTurnoutElement implements ITr
             this.drawSelectionBox(ctx);
         }
 
-        this.drawTurnout(ctx, this.turnoutClosed == this.turnoutClosedValue);
+        this.drawTurnout(ctx, this.turnoutClosed);
 
         this.endDraw(ctx);
 

@@ -37,19 +37,19 @@
           "routeTurnouts": [
             {
               "turnoutId": "da23d9c-4ebe-44e6-9190-0165f734",
-              "closed": true
+              "closed": false
             },
             {
               "turnoutId": "28394d0-1c70-4ca7-8c39-3a925ae0",
-              "closed": true
+              "closed": false
             },
             {
               "turnoutId": "c6bc4282-a7fd-4c70-817a-6b2fe6a2a765",
-              "closed": true
+              "closed": false
             },
             {
               "turnoutId": "489067cf-c95f-4893-9050-8c0e2a7a7d58",
-              "closed": true
+              "closed": false
             }
           ]
         },
@@ -69,15 +69,19 @@
           "routeTurnouts": [
             {
               "turnoutId": "da23d9c-4ebe-44e6-9190-0165f734",
-              "closed": false
+              "closed": true
             },
             {
               "turnoutId": "28394d0-1c70-4ca7-8c39-3a925ae0",
-              "closed": false
+              "closed": true
             },
             {
               "turnoutId": "c6bc4282-a7fd-4c70-817a-6b2fe6a2a765",
-              "closed": false
+              "closed": true
+            },
+            {
+              "turnoutId": "489067cf-c95f-4893-9050-8c0e2a7a7d58",
+              "closed": true
             }
           ]
         }
@@ -323,7 +327,7 @@
           "aspect": 4,
           "address": 120,
           "addressLength": 5,
-          "dispalyAsSingleLamp": false,
+          "dispalyAsSingleLamp": "checked",
           "valueGreen": 1,
           "valueRed": 2,
           "valueYellow": 4,
@@ -383,7 +387,7 @@
           "aspect": 4,
           "address": 140,
           "addressLength": 5,
-          "dispalyAsSingleLamp": false,
+          "dispalyAsSingleLamp": "checked",
           "valueGreen": 1,
           "valueRed": 2,
           "valueYellow": 4,
@@ -403,7 +407,67 @@
           "aspect": 4,
           "address": 135,
           "addressLength": 5,
-          "dispalyAsSingleLamp": false,
+          "dispalyAsSingleLamp": "checked",
+          "valueGreen": 1,
+          "valueRed": 2,
+          "valueYellow": 4,
+          "valueWhite": 8
+        },
+        {
+          "id": "7833e12-f6c2-4d03-92be-8e38fc30",
+          "type": "tracksignal2",
+          "name": "element",
+          "layerName": "sensors",
+          "x": 29,
+          "y": 5,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "aspect": 4,
+          "address": 145,
+          "addressLength": 5,
+          "dispalyAsSingleLamp": "checked",
+          "valueGreen": 1,
+          "valueRed": 2,
+          "valueYellow": 4,
+          "valueWhite": 8
+        },
+        {
+          "id": "7e64e52-90c2-44cc-9f76-eb7c0f33",
+          "type": "tracksignal2",
+          "name": "element",
+          "layerName": "sensors",
+          "x": 29,
+          "y": 6,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "aspect": 4,
+          "address": 150,
+          "addressLength": 5,
+          "dispalyAsSingleLamp": "checked",
+          "valueGreen": 1,
+          "valueRed": 2,
+          "valueYellow": 4,
+          "valueWhite": 8
+        },
+        {
+          "id": "98856fe-f153-44ec-9276-1bf6a964",
+          "type": "tracksignal2",
+          "name": "element",
+          "layerName": "sensors",
+          "x": 29,
+          "y": 7,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "aspect": 4,
+          "address": 155,
+          "addressLength": 5,
+          "dispalyAsSingleLamp": "checked",
           "valueGreen": 1,
           "valueRed": 2,
           "valueYellow": 4,
@@ -496,7 +560,7 @@
           "type": "trackturnoutright",
           "name": "T2",
           "layerName": "track",
-          "x": 28,
+          "x": 27,
           "y": 6,
           "rotation": 0,
           "rotationStep": 45,
@@ -511,8 +575,8 @@
           "type": "track",
           "name": "element",
           "layerName": "track",
-          "x": 27,
-          "y": 6,
+          "x": 29,
+          "y": 7,
           "rotation": 0,
           "rotationStep": 45,
           "bg": "black",
@@ -550,7 +614,7 @@
           "type": "trackcurve",
           "name": "element",
           "layerName": "track",
-          "x": 29,
+          "x": 28,
           "y": 7,
           "rotation": 0,
           "rotationStep": 45,
@@ -1247,17 +1311,30 @@
           "type": "buttonscript",
           "name": "element",
           "layerName": "track",
-          "x": 18,
-          "y": 3,
+          "x": 16,
+          "y": 14,
           "rotation": 0,
           "rotationStep": 0,
           "bg": "black",
           "fg": "white",
-          "colorOn": "#4c6ef5",
+          "colorOn": "#12b886",
           "colorOff": "green",
           "textOn": "JS",
           "textOff": "JS",
           "script": ""
+        },
+        {
+          "id": "08b40a5-9040-4d58-91f5-918d55c2",
+          "type": "track",
+          "name": "element",
+          "layerName": "track",
+          "x": 28,
+          "y": 6,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "address": 0
         }
       ]
     }
