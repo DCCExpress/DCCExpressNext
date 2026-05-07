@@ -24,6 +24,7 @@ export const ELEMENT_TYPES = {
   TRACK_SIGNAL4: "tracksignal4",
   TRACK_BLOCK: "trackblock",
   BUTTON: "button",
+  BUTTON_SCRIPT: "buttonscript",
   BUTTON_AUDIO: "audiobutton",
   BUTTON_ROUTE: "routebutton",
   CLOCK: "clcok",
@@ -152,6 +153,15 @@ export interface IButtonElement extends IBaseElement {
   address: number;
 }
 
+export interface IButtonScriptElement extends IBaseElement {
+  type: typeof ELEMENT_TYPES.BUTTON_SCRIPT;
+  colorOn: string;
+  colorOff: string;
+  textOn: string;
+  textOff: string;
+  script: string;
+}
+
 
 export interface IAudioButtonElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.BUTTON_AUDIO;
@@ -214,6 +224,7 @@ export type EditorElementData =
   | ITrackTurnoutThreeWayElement
   | ITrackSensorElement
   | IButtonElement
+  | IButtonScriptElement
   | IAudioButtonElement
   | IRouteButtonElement
   | IClockElement

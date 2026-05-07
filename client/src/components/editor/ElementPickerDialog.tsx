@@ -19,6 +19,7 @@ import { TrackSignalElement } from "../../models/editor/elements/TrackSignalElem
 import { AudioButtonElement } from "../../models/editor/elements/AudioButtonElement";
 import { RouteButtonElement } from "../../models/editor/elements/RouteButtonElement";
 import { TrackCrossingElement } from "../../models/editor/elements/TrackCrossingElement";
+import { ButtonScriptElement } from "../../models/editor/elements/ButtonScriptElement";
 
 type ElementPickerDialogProps = {
   opened: boolean;
@@ -44,6 +45,7 @@ export default function ElementPickerDialog({
   const trackturnoutdouble = new TrackTurnoutDoubleElement(0, 0);
   const tracksensor = new TrackSensorElement(0, 0);
   const button = new ButtonElement(0, 0);
+  const buttonscript = new ButtonScriptElement(0, 0);
   const audiobutton = new AudioButtonElement(0, 0);
   const routebutton = new RouteButtonElement(0, 0);
   const clock = new ClockElement(0, 0);
@@ -135,6 +137,10 @@ export default function ElementPickerDialog({
             }} />
             <ElementPreview element={button} label="Button" width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.BUTTON);
+              onClose();
+            }} />
+            <ElementPreview element={buttonscript} label="Script Button" width={40} height={40} onClick={() => {
+              onPick(ELEMENT_TYPES.BUTTON_SCRIPT);
               onClose();
             }} />
             <ElementPreview element={routebutton} label="Route" width={40} height={40} onClick={() => {

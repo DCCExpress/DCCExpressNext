@@ -30,6 +30,7 @@ import { wsApi } from "../services/wsApi";
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { is } from "zod/v4/locales/index.js";
+import { ButtonScriptElement } from "../models/editor/elements/ButtonScriptElement";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -130,6 +131,7 @@ const CursorTrackSignal4Element = new TrackSignalElement(0, 0);
 CursorTrackSignal4Element.aspect = 4;
 const CursorTrackCrossingElement = new TrackCrossingElement(0, 0);
 const CursorButtonElement = new ButtonElement(0, 0);
+const CursorButtonScriptElement = new ButtonScriptElement(0, 0);
 const CursorRouteButtonElement = new RouteButtonElement(0, 0);
 const CursorAudioButtonElement = new AudioButtonElement(0, 0);
 const CursorClockElement = new ClockElement(0, 0);
@@ -1719,6 +1721,9 @@ function createCursorElement(tool: EditorTool): BaseElement | null {
 
     case ELEMENT_TYPES.BUTTON:
       return CursorButtonElement;
+
+      case ELEMENT_TYPES.BUTTON_SCRIPT:
+      return CursorButtonScriptElement;
 
     case ELEMENT_TYPES.BUTTON_AUDIO:
       return CursorAudioButtonElement;

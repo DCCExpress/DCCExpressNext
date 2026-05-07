@@ -153,6 +153,34 @@ export abstract class BaseElement implements IBaseElement {
         ctx.restore();
     }
 
+    drawIconPath(
+        ctx: CanvasRenderingContext2D,
+        path: string,
+        x: number,
+        y: number,
+        size: number,
+        color = "black",
+        strokeWidth = 2
+    ) {
+        ctx.save();
+
+        // Tabler ikonok alap viewBox-a általában 24x24
+        const scale = size / 24;
+
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        const p = new Path2D(path);
+        ctx.stroke(p);
+
+        ctx.restore();
+    }
+    
     protected drawSelectionBox(ctx: CanvasRenderingContext2D): void {
         ctx.save();
         ctx.lineWidth = 2;

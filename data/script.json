@@ -1,4 +1,4 @@
 {
-  "content": "  while (true) {\n    const t10 = getTurnoutState(10);\n\n    if (t10) {\n      setSignalRed(120);\n    } else {\n      setSignalGreen(120);\n    }\n    await sleep(1000);\n  }",
-  "updatedAt": "2026-05-07T06:38:14.671Z"
+  "content": "  while (true) {\n    let t10Closed = getTurnoutState(10);\n    let t11Closed = getTurnoutState(11);\n\n    // Signal #135\n  if(!t10Closed && t11Closed) {\n    setSignalGreen(135);\n  } else {\n    setSignalRed(135);\n  }\n    \n    if (t10Closed) {\n      setSignalRed(120);\n    } else {\n      setSignalGreen(120);\n    }\n    await sleep(1000);\n  }",
+  "updatedAt": "2026-05-07T08:32:44.545Z"
 }

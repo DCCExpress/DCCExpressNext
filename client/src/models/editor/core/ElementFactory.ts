@@ -17,6 +17,7 @@ import { TrackSignalElement } from "../elements/TrackSignalElement";
 import { AudioButtonElement } from "../elements/AudioButtonElement";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackCrossingElement } from "../elements/TrackCrossingElement";
+import { ButtonScriptElement } from "../elements/ButtonScriptElement";
 
 export class ElementFactory {
   static create(data: EditorElementData): BaseElement {
@@ -191,6 +192,21 @@ export class ElementFactory {
         button.colorOff = data.colorOff;
         button.textOn = data.textOn;
         button.textOff = data.textOff;
+        return button;
+      }
+
+      case ELEMENT_TYPES.BUTTON_SCRIPT: {
+        const button = new ButtonScriptElement(data.x, data.y);
+        button.id = data.id;
+        button.name = data.name;
+        button.rotation = data.rotation;
+        button.bg = data.bg;
+        button.fg = data.fg;
+        button.colorOn = data.colorOn;
+        button.colorOff = data.colorOff;
+        button.textOn = data.textOn;
+        button.textOff = data.textOff;
+        button.script = data.script;
         return button;
       }
 
