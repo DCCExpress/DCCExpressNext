@@ -28,6 +28,8 @@ import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement
 import FullscreenLoader from "../components/FullscreenLoader";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { layoutStore } from "../services/layoutStore";
+import { scriptEngine } from "../services/scriptEngine";
+import { loadJsonFile } from "../api/fileApi";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -57,6 +59,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [commandCenter, setCommandCenter] = useState<CommandCenter>(new CommandCenter());
   const [commandCenterAlive, setCommandCenterAlive] = useState(false);
   const [commandCenterPower, setCommandCenterPower] = useState(false);
+
+  const [script, setScript] = useState<string>("");
 
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
@@ -182,6 +186,18 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     }
   };
 
+  const loadScriptFromServer = () => {
+
+    const script = loadJsonFile("script.json").then(script => {
+      setScript((script as any).content);
+      showOkMessage("", "Script loaded!");
+    }).catch(error => {
+      console.error("Nem sikerült betölteni a scriptet:", error);
+      showErrorMessage("Error", "Failed to load script: " + name);
+      return "";
+    });
+  }
+
   const saveCommandCentersToServer = async (items?: ICommandCenter) => {
     try {
       // const list = items ?? commandCenterConfig;
@@ -197,6 +213,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     void refreshLocos();
     void loadLayoutFromServer();
     void loadCommandCentersFromServer();
+    void loadScriptFromServer();
   }, []);
 
   const createLayoutSnapshot = useCallback((source: Layout): string => {
@@ -425,8 +442,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         for (const e of elements) {
           if (e instanceof TrackSignalElement) {
             const signal = e as TrackSignalElement;
-            if (signal.address <= data.address && signal.lastAddress >= data.address)
-            {
+            if (signal.address <= data.address && signal.lastAddress >= data.address) {
               signal.setValue(data.address, data.active);
               changed = true;
             }
