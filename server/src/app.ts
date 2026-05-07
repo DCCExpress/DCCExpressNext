@@ -7,6 +7,7 @@ import { layoutRoutes } from "./routes/layoutRoutes.js";
 import { commandCenterRoutes } from "./routes/commandCenterRoutes.js";
 import { clientDir, dataDir } from "./paths.js";
 import { createScriptRouter } from "./routes/scriptRoute.js";
+import { fileRoutes } from "./routes/fileRoutes.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,6 +25,7 @@ app.use("/api/locos", locoRoutes);
 app.use("/api/layout", layoutRoutes);
 app.use("/api/command-centers", commandCenterRoutes);
 app.use("/api/script", createScriptRouter(dataDir));
+app.use("/api/files", fileRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
