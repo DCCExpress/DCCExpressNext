@@ -27,6 +27,7 @@ import { WsEvents } from "../../../common/src/wsEvents";
 import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
 import FullscreenLoader from "../components/FullscreenLoader";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import { layoutStore } from "../services/layoutStore";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -149,6 +150,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       const nextLayout = Layout.fromJSON(loaded);
 
       setLayout(nextLayout);
+      layoutStore.setLayout(nextLayout);
       setUndoStack([]);
       setRedoStack([]);
 

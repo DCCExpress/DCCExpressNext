@@ -108,6 +108,10 @@ export class ScriptSession {
           getTurnout,
           getTurnoutState,
           setLocoFunction,
+          setSignalGreen,
+          setSignalYellow,
+          setSignalRed,
+          setSignalWhite,
           element,
           layout
         } = api;
@@ -247,13 +251,27 @@ export class ScriptSession {
                 await this.check();
             },
 
-            getTurnout: async (address: number) => {
-                await this.check();
+            getTurnout: (address: number) => {
+                //await this.check();
                 return layoutStore.findTurnoutByAddress(address);
             },
 
-            getTurnoutState: async (address: number) => {
-                await this.check();
+            setSignalGreen: (address: number) => {
+                return layoutStore.setSignalGreenByAddress(address);
+            },
+            setSignalYellow: (address: number) => {
+                
+                return layoutStore.setSignalYellowByAddress(address);
+            },
+            setSignalRed: (address: number) => {
+                return layoutStore.setSignalRedByAddress(address);
+            },
+            setSignalWhite: (address: number) => {
+                return layoutStore.setSignalWhiteByAddress(address);
+            },
+
+            getTurnoutState: (address: number) => {
+                //await this.check();
                 return layoutStore.getTurnoutStateByAddress(address);
             },
 

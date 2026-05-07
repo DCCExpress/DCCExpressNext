@@ -1,4 +1,4 @@
 {
-  "content": "for(var i = 0; i < 10; i++) {\n  setTurnout(10, true);\n  await sleep(1000);\n  setTurnout(10, false);\n  await sleep(1000);\n}",
-  "updatedAt": "2026-05-06T16:03:50.696Z"
+  "content": "  while (true) {\n    const t10 = getTurnoutState(10);\n\n    if (t10) {\n      setSignalRed(120);\n    } else {\n      setSignalGreen(120);\n    }\n    await sleep(1000);\n  }",
+  "updatedAt": "2026-05-07T06:38:14.671Z"
 }
