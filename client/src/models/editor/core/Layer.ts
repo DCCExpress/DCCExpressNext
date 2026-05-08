@@ -34,6 +34,10 @@ export class Layer {
     this.elements.forEach(e => e.draw(ctx, options));
   }
 
+  drawMarked(ctx: CanvasRenderingContext2D) {
+    this.elements.forEach(e => e.draw(ctx));
+  }
+
   hitTest(x: number, y: number): boolean {
     this.elements.forEach((e) => {
       if (e.hitTest(x, y)) {

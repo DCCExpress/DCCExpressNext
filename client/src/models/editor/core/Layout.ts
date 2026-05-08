@@ -292,10 +292,13 @@ export class Layout {
 
     draw(ctx: CanvasRenderingContext2D, options: DrawOptions) {
         this.track.draw(ctx, options);
+
         this.sensors.draw(ctx, options);
         this.signals.draw(ctx, options);
         this.blocks.draw(ctx, options);
         this.buildings.draw(ctx, options);
+
+        this.getAllElements().forEach(e => e.drawMarked(ctx));
     }
 
     getLayoutBounds() {
@@ -370,13 +373,13 @@ export class Layout {
             rb.routeTurnouts.forEach(t => {
                 const turnout = this.getElementById(t.turnoutId) as TrackTurnoutElement;
                 if (turnout && turnout.turnoutClosed === t.closed) {
-                    
+
                 } else {
                     active = false;
                 }
             });
             rb.active = active;
-            if(active && rb.routeTurnouts.length > 0) {
+            if (active && rb.routeTurnouts.length > 0) {
                 const turnout = this.getElementById(rb.routeTurnouts[0]!.turnoutId) as TrackTurnoutElement;
                 this.startWalk(turnout);
             }

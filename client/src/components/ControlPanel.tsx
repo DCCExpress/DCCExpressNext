@@ -57,8 +57,18 @@ type ControlPanelProps = {
   onRunScript?: (script: string) => void;
 };
 
+const CONTROL_PANEL_ACTIVE_TAB_KEY = "dcc-express.control-panel.active-tab";
+const DEFAULT_CONTROL_PANEL_TAB = "command-center";
+
 export default function ControlPanel(p: ControlPanelProps) {
-  const [activeTab, setActiveTab] = useState<string | null>("command-center");
+  //const [activeTab, setActiveTab] = useState<string | null>("command-center");
+  const [activeTab, setActiveTab] = useState<string | null>(() => {
+    return (
+      window.localStorage.getItem(CONTROL_PANEL_ACTIVE_TAB_KEY) ??
+      DEFAULT_CONTROL_PANEL_TAB
+    );
+  });
+
   const [script, setScript] = useState(scriptEngine.getScript());
 
   useEffect(() => {
@@ -77,9 +87,16 @@ export default function ControlPanel(p: ControlPanelProps) {
     scriptEngine.setScript(value);
   };
 
+  const handleActiveTabChange = (value: string | null) => {
+    const nextValue = value ?? DEFAULT_CONTROL_PANEL_TAB;
+
+    setActiveTab(nextValue);
+    window.localStorage.setItem(CONTROL_PANEL_ACTIVE_TAB_KEY, nextValue);
+  };
+
   return (
     <Card withBorder radius="md" p="xs">
-      <Tabs value={activeTab} onChange={setActiveTab} keepMounted={false}>
+      <Tabs value={activeTab} onChange={handleActiveTabChange} keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab
             value="command-center"

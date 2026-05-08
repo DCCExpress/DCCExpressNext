@@ -123,7 +123,7 @@ export abstract class BaseElement implements IBaseElement {
     }
 
     get stateColor(): string {
-        if(this.isRoute) {
+        if (this.isRoute) {
             return "yellow";
         }
 
@@ -159,6 +159,10 @@ export abstract class BaseElement implements IBaseElement {
 
     protected endDraw(ctx: CanvasRenderingContext2D): void {
         ctx.restore();
+
+        // if(this.marked) {
+        //     this.drawMarked(ctx);
+        // }
         if (this.debug) {
             this.drawNeighbors(ctx);
         }
@@ -193,15 +197,16 @@ export abstract class BaseElement implements IBaseElement {
         ctx.restore();
     }
 
-    protected drawSelectionBox(ctx: CanvasRenderingContext2D): void {
-        ctx.save();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#f6b83b";
-        ctx.fillStyle = "#f6b83b33";
-        ctx.strokeRect(this.posLeft, this.posTop, this.width, this.height);
-        ctx.fillRect(this.posLeft, this.posTop, this.width, this.height);
-        ctx.restore();
-
+    public drawMarked(ctx: CanvasRenderingContext2D): void {
+        if (this.marked) {
+            ctx.save();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#f6b83b";
+            ctx.fillStyle = "#f6b83b33";
+            ctx.strokeRect(this.posLeft, this.posTop, this.width, this.height);
+            ctx.fillRect(this.posLeft, this.posTop, this.width, this.height);
+            ctx.restore();
+        }
     }
 
     protected drawOccupied(ctx: CanvasRenderingContext2D): void {
