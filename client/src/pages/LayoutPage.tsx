@@ -141,9 +141,10 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     try {
       const data = await getLocos();
       setLocos(data);
-      showOkMessage("", "Locomotives loaded!");
+      //showOkMessage("", "Locomotives loaded!");
     } catch (error) {
       console.error("Nem sikerült betölteni a mozdonyokat:", error);
+      showErrorMessage("Error", "Failed to load locomotives: " + error);
       setLocos([]);
     }
   };
@@ -158,10 +159,10 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       setUndoStack([]);
       setRedoStack([]);
 
-      showOkMessage("", "Layout loaded!");
+      //showOkMessage("", "Layout loaded!");
     } catch (error) {
       console.error(error);
-      alert("Error: " + error);
+      showErrorMessage("Error", "Failed to load layout: " + error);
     }
   };
 
@@ -180,9 +181,10 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       }
 
       setCommandCenter(new CommandCenter(data));
-      showOkMessage("", "Command center loaded!");
+      //showOkMessage("", "Command center loaded!");
     } catch (error) {
       console.error("Nem sikerült betölteni a parancsközpontot:", error);
+      showErrorMessage("Error", "Failed to load command center: " + error);
     }
   };
 
