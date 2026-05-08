@@ -65,10 +65,10 @@ function createPreviewElement<T extends BaseElement>(element: T): T {
 export default function RightPropertyPanel({ selectedElement, onUpdateSelectedElement, invalidate, editMode, opened, turnoutSelectionMode, setTurnoutSelectionMode, layout, onLayoutChange }: PropertyPanelProps) {
 
   const trackturnoutleft1 = new TrackTurnoutLeftElement(0, 0);
-  trackturnoutleft1.turnoutClosed = true;
+  trackturnoutleft1.turnoutClosed = true == trackturnoutleft1.turnoutClosedValue;
 
   const trackturnoutleft2 = new TrackTurnoutLeftElement(0, 0);
-  trackturnoutleft2.turnoutClosed = false;
+  trackturnoutleft2.turnoutClosed = false == trackturnoutleft2.turnoutClosedValue;
 
   const trackturnoutright = new TrackTurnoutRightElement(0, 0);
 
@@ -147,12 +147,12 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
       if (selectedElement.type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT) {
         const t = new TrackTurnoutLeftElement(0, 0)
         t.rotation = selectedElement.rotation;
-        t.turnoutClosed = closed;
+        t.turnoutClosed = closed == t.turnoutClosedValue;
         return t as BaseElement;
       } else if (selectedElement.type === ELEMENT_TYPES.TRACK_TURNOUT_RIGHT) {
         const t = new TrackTurnoutRightElement(0, 0)
         t.rotation = selectedElement.rotation;
-        t.turnoutClosed = closed;
+        t.turnoutClosed = closed == t.turnoutClosedValue;
         return t as BaseElement;
       }
     }

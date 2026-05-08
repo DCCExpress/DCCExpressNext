@@ -20,26 +20,26 @@ export class TrackTurnoutLeftElement extends TrackTurnoutElement implements ITra
     //     this.rotationStep = 45;
     // }
 
-    override draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
-        if (!this.visible) return;
+    // override draw2(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
+    //     if (!this.visible) return;
 
-        this.beginDraw(ctx, options);
+    //     this.beginDraw(ctx, options);
 
-        if (this.marked) {
-            this.drawSelectionBox(ctx);
-        }
+    //     if (this.marked) {
+    //         this.drawSelectionBox(ctx);
+    //     }
 
-        this.drawTurnout(ctx, this.turnoutClosed);
-        this.endDraw(ctx);
+    //     this.drawTurnout(ctx, this.isClosed);
+    //     this.endDraw(ctx);
 
-        this.beginDraw(ctx);
-        if (options?.showTurnoutAddress) {
-            drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.turnoutAddress.toString())
-        }
-        this.endDraw(ctx);
+    //     this.beginDraw(ctx);
+    //     if (options?.showTurnoutAddress) {
+    //         drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.turnoutAddress.toString())
+    //     }
+    //     this.endDraw(ctx);
 
-        super.drawSelection(ctx);
-    }
+    //     super.drawSelection(ctx);
+    // }
 
     public drawTurnout(ctx: CanvasRenderingContext2D, t1Closed: boolean): void {
 

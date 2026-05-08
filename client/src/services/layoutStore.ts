@@ -70,7 +70,7 @@ class LayoutStore {
     if (!turnout) return undefined;
 
     // Nálad itt lehet más mezőnév, ezt igazítsuk a konkrét váltó osztályhoz
-    return (turnout as TrackTurnoutElement).turnoutClosed;
+    return (turnout as TrackTurnoutElement).isClosed;
   }
 
   setTurnoutStateByAddress(address: number, closed: boolean): boolean {

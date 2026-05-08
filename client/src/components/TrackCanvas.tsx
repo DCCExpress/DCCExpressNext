@@ -609,7 +609,7 @@ export default function TrackCanvas({
           ) {
             wsApi.setTurnout(
               t.turnoutAddress,
-              ri.closed === t.turnoutClosedValue
+              ri.closed // === t.turnoutClosedValue
             );
 
             await sleep(1500);

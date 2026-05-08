@@ -29,7 +29,7 @@ export abstract class  TrackTurnoutElement extends ClickableBaseElement {
         if (!this.visible) return;
 
         this.beginDraw(ctx, options);
-        this.drawTurnout(ctx, this.turnoutClosed);
+        this.drawTurnout(ctx, this.isClosed);
         this.endDraw(ctx);
         
         this.beginDraw(ctx);
@@ -44,13 +44,13 @@ export abstract class  TrackTurnoutElement extends ClickableBaseElement {
     abstract drawTurnout(ctx: CanvasRenderingContext2D, t1Closed: boolean): void;
 
     mouseDown(ev: MouseEvent) {
-        const closed = this.turnoutClosed == this.turnoutClosedValue;
-        wsApi.setTurnout(this.turnoutAddress, !closed);
+        //const closed = this.turnoutClosed == this.turnoutClosedValue;
+        wsApi.setTurnout(this.turnoutAddress, !this.turnoutClosed);
     }
 
     toggle() {
-        const closed = this.turnoutClosed == this.turnoutClosedValue;
-        wsApi.setTurnout(this.turnoutAddress, !closed);
+        //const closed = this.turnoutClosed == this.turnoutClosedValue;
+        wsApi.setTurnout(this.turnoutAddress, !this.turnoutClosed);
     }
 
     mouseUp(ev: MouseEvent) {
@@ -58,7 +58,9 @@ export abstract class  TrackTurnoutElement extends ClickableBaseElement {
     }
 
     
-
+    get isClosed(): boolean {
+        return this.turnoutClosed == this.turnoutClosedValue;
+    }
 
 
     override getEditableProperties(): IEditableProperty[] {

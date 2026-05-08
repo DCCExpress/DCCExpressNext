@@ -401,14 +401,14 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
             const turnout = e as TrackTurnoutLeftElement;
 
             if (turnout.turnoutAddress === data.address) {
-              turnout.turnoutClosed = data.closed === turnout.turnoutClosedValue;
+              turnout.turnoutClosed = data.closed; // === turnout.turnoutClosedValue;
               changed = true;
             }
           } else if (e.type === ELEMENT_TYPES.TRACK_TURNOUT_RIGHT) {
             const turnout = e as TrackTurnoutRightElement;
 
             if (turnout.turnoutAddress === data.address) {
-              turnout.turnoutClosed = data.closed === turnout.turnoutClosedValue;
+              turnout.turnoutClosed = data.closed; // === turnout.turnoutClosedValue;
               changed = true;
             }
           }
