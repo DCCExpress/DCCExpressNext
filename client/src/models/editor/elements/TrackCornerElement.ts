@@ -3,7 +3,9 @@ import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { AddressedElement } from "../core/AddressedElement";
 import { BaseElement } from "../core/BaseElement";
+import { getDirectionXy } from "../core/helpers";
 import { LayerId } from "../core/Layer";
+import { Point } from "../core/Rect";
 import { sampleLayout } from "../sample/sampleLayout";
 import { ELEMENT_TYPES, ElementType } from "../types/EditorTypes";
 import { DrawOptions, ITrackCornerElement } from "../types/EditorTypes";
@@ -111,6 +113,13 @@ export class TrackCornerElement extends AddressedElement implements ITrackCorner
         //super.draw(ctx)
     }
 
+    override  getNextItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation + 0 )
+    }
+
+    override getPrevItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation + 225 )
+    }
     // getBounds(): Rect {
     //     return {
     //         x: this.x - this.GridSizeX,

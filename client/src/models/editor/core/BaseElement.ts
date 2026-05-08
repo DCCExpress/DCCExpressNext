@@ -3,8 +3,9 @@ import { IEditableProperty } from "../elements/PropertyDescriptor";
 import { sampleLayout } from "../sample/sampleLayout";
 import { ELEMENT_TYPES, ElementType } from "../types/EditorTypes";
 import { DrawOptions, IBaseElement, RotationStep } from "../types/EditorTypes";
+import { getDirectionXy } from "./helpers";
 import { LayerId } from "./Layer";
-import { IRect } from "./Rect";
+import { IRect, Point } from "./Rect";
 
 export enum RailStates {
     free, selected, occupied
@@ -26,15 +27,18 @@ export abstract class BaseElement implements IBaseElement {
     rotation: number = 0;
     rotationStep: RotationStep = 0;
     selected: boolean = false;
-    marked: boolean = false; // Pl benne van egy kiválaszási listában...
+    marked: boolean = false; // benne van egy kiválaszási listában...
     enabled: boolean = true;
     locked: boolean = false;
     visible: boolean = true;
+    isVisited: boolean = false; // 
+    isRoute: boolean = false; // útvonal => sárgára
     bg: string = "black";
     fg: string = "white";
     occupied: boolean = false;
     alpha: number = 0.5;
     state: RailStates = RailStates.free;
+    debug: boolean = false;
     //length: number = 1;
 
     constructor(x: number, y: number) {
@@ -119,6 +123,10 @@ export abstract class BaseElement implements IBaseElement {
     }
 
     get stateColor(): string {
+        if(this.isRoute) {
+            return "yellow";
+        }
+
         switch (this.state) {
             case RailStates.selected: return RailColors.selected;
             case RailStates.occupied: return RailColors.occupied;
@@ -151,6 +159,10 @@ export abstract class BaseElement implements IBaseElement {
 
     protected endDraw(ctx: CanvasRenderingContext2D): void {
         ctx.restore();
+        if (this.debug) {
+            this.drawNeighbors(ctx);
+        }
+
     }
 
     drawIconPath(
@@ -180,7 +192,7 @@ export abstract class BaseElement implements IBaseElement {
 
         ctx.restore();
     }
-    
+
     protected drawSelectionBox(ctx: CanvasRenderingContext2D): void {
         ctx.save();
         ctx.lineWidth = 2;
@@ -258,7 +270,9 @@ export abstract class BaseElement implements IBaseElement {
     }
 
     draw(ctx: CanvasRenderingContext2D, options?: DrawOptions) {
-
+        // if (this.debug) {
+        //     this.drawNeighbors(ctx);
+        // }
     }
 
 
@@ -316,6 +330,44 @@ export abstract class BaseElement implements IBaseElement {
     }
 
     abstract clone(): BaseElement;
+
+    get pos(): Point {
+        var p = new Point(this.x, this.y)
+        return p;
+    }
+
+    getNextItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation);
+    }
+
+    getPrevItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation + 180);
+    }
+
+    getNeigbordsXy(): Point[] {
+        var points: Point[] = [];
+        points.push(this.getNextItemXy());
+        points.push(this.getPrevItemXy());
+        return points;
+    }
+
+    drawNeighbors(ctx: CanvasRenderingContext2D) {
+        ctx.save();
+
+        //var neighbors = this.getNeigbordsXy();
+
+        const neighbors: Point[] = [];
+        neighbors.push(this.getNextItemXy());
+        neighbors.push(this.getPrevItemXy());
+
+        ctx.fillStyle = "blue";
+        neighbors.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x * this.GridSizeX + this.GridSizeX / 2, p.y * this.GridSizeY + this.GridSizeY / 2, 5, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.restore();
+    }
 
     getEditableProperties(): IEditableProperty[] {
         return [

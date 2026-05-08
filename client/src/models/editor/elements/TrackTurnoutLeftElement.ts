@@ -7,6 +7,8 @@ import { wsApi } from "../../../services/wsApi";
 import { AddressedElement } from "../core/AddressedElement";
 import { BaseElement } from "../core/BaseElement";
 import { ClickableBaseElement } from "../core/ClickableBaseElement";
+import { getDirectionXy } from "../core/helpers";
+import { Point } from "../core/Rect";
 import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackCornerElement, ITrackTurnoutLeftElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 import { TrackTurnoutElement } from "./TrackTurnoutElement";
@@ -242,6 +244,24 @@ export class TrackTurnoutLeftElement extends TrackTurnoutElement implements ITra
         return copy;
     }
 
+ getNextItemXy(): Point {
+        if (this.isClosed) {
+            return getDirectionXy(this.pos, -this.rotation)
+        }
+        return getDirectionXy(this.pos, -this.rotation - 45)
+    }
+
+    getPrevItemXy(): Point {
+        return getDirectionXy(this.pos, -this.rotation + 180)
+    }
+
+    getNeigbordsXy(): Point[] {
+        var points: Point[] = [];
+        points.push(getDirectionXy(this.pos, -this.rotation))
+        points.push(getDirectionXy(this.pos, -this.rotation - 45))
+        points.push(getDirectionXy(this.pos, -this.rotation + 180))
+        return points;
+    }
     // override getEditableProperties(): IEditableProperty[] {
     //     return [
     //         ...super.getEditableProperties(),

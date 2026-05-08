@@ -3,6 +3,8 @@ import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { AddressedElement } from "../core/AddressedElement";
 import { BaseElement } from "../core/BaseElement";
+import { getDirectionXy } from "../core/helpers";
+import { Point } from "../core/Rect";
 import { sampleLayout } from "../sample/sampleLayout";
 import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackCurveElement } from "../types/EditorTypes";
 
@@ -160,6 +162,14 @@ export class TrackCurveElement extends AddressedElement implements ITrackCurveEl
 
         this.endDraw(ctx);
         super.drawSelection(ctx);
+    }
+
+    override getNextItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation + 0)
+    }
+
+    override getPrevItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation + 225)
     }
 
     // getBounds(): Rect {

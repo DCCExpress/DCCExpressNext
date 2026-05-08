@@ -1,3 +1,4 @@
+import e from "cors";
 import { showWarningMessage } from "../../../helpers";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackElement } from "../elements/TrackElement";
@@ -10,6 +11,7 @@ import { DrawOptions } from "../types/EditorTypes";
 import { BaseElement } from "./BaseElement";
 import { ElementFactory } from "./ElementFactory";
 import { Layer, LayerId } from "./Layer";
+import { Point } from "./Rect";
 
 export function isTurnoutElement(el: BaseElement | null | undefined) {
     return (
@@ -127,7 +129,7 @@ export class Layout {
                     if (t.turnoutId === element.id) {
                         console.log("REMOVING ROUTE BUTTON: ", el);
                         rb.removeTurnout(element.id);
-                        showWarningMessage(rb.name,  " A váltó törlésre került, ezért a hozzá tartozó útvonal gombból is eltávolításra került.");
+                        showWarningMessage(rb.name, " A váltó törlésre került, ezért a hozzá tartozó útvonal gombból is eltávolításra került.");
                         break
                     }
                 }
@@ -344,5 +346,67 @@ export class Layout {
         }
 
         return layout;
+    }
+
+    getObjectXy(point: Point) {
+        var elem = this.getAllElements().find((elem: BaseElement) => {
+            return elem.x == point.x && elem.y == point.y
+        })
+        return elem
+    }
+
+
+    checkRoutes() {
+        const elems = this.getAllElements();
+
+        elems.forEach((elem: BaseElement) => {
+            elem.isVisited = false;
+            elem.isRoute = false;
+        })
+
+        const routeButtons = this.getAllElements().filter((elem: BaseElement) => elem instanceof RouteButtonElement) as RouteButtonElement[];
+        routeButtons.forEach(rb => {
+            let active = true;
+            rb.routeTurnouts.forEach(t => {
+                const turnout = this.getElementById(t.turnoutId) as TrackTurnoutElement;
+                if (turnout && turnout.turnoutClosed === t.closed) {
+                    
+                } else {
+                    active = false;
+                }
+            });
+            rb.active = active;
+            if(active && rb.routeTurnouts.length > 0) {
+                const turnout = this.getElementById(rb.routeTurnouts[0]!.turnoutId) as TrackTurnoutElement;
+                this.startWalk(turnout);
+            }
+        });
+
+    }
+    startWalk(obj: BaseElement) {
+        // Lehet meg kellene vizsgálni, hogy a következő elem az
+        // a route váltóiban szerepel e?
+        // vagy váltótól váltói kellene vizsgálódni??
+        obj.isVisited = true;
+        obj.isRoute = true
+
+        var p1 = obj.getNextItemXy()
+        var p2 = obj.getPrevItemXy()
+
+        var next = this.getObjectXy(p1)
+        if (next) {
+            if (!next.isVisited && (obj.pos.isEqual(next.getNextItemXy()) || obj.pos.isEqual(next.getPrevItemXy()))) {
+                next.isRoute = true
+                this.startWalk(next)
+            }
+        }
+
+        var prev = this.getObjectXy(p2)
+        if (prev) {
+            if (!prev.isVisited && (obj.pos.isEqual(prev.getNextItemXy()) || obj.pos.isEqual(prev.getPrevItemXy()))) {
+                prev.isRoute = true
+                this.startWalk(prev)
+            }
+        }
     }
 }

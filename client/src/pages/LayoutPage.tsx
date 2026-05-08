@@ -415,6 +415,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         }
 
         if (changed) {
+          layoutRef.current.checkRoutes();
           setInavalidateCounter((prev) => prev + 1);
         }
       }

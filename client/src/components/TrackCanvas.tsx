@@ -612,7 +612,7 @@ export default function TrackCanvas({
               ri.closed // === t.turnoutClosedValue
             );
 
-            await sleep(1500);
+            await sleep(500);
           }
         }
       } finally {

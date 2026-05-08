@@ -14,6 +14,15 @@ export interface IRect {
 export class Point implements IPoint {
   x: number = 0;
   y: number = 0;
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  isEqual(p: Point): boolean {
+    return this.x == p.x && this.y == p.y;
+  }
+
 }
 
 export class Rect implements IRect {
@@ -22,7 +31,7 @@ export class Rect implements IRect {
     public y: number,
     public width: number,
     public height: number
-  ) {}
+  ) { }
 
   // --- derived ---
   get right(): number {
@@ -112,15 +121,14 @@ export class Rect implements IRect {
 
   // --- corners ---
 
-  getCorners(): Point[] {
-    return [
-      { x: this.x, y: this.y },
-      { x: this.right, y: this.y },
-      { x: this.right, y: this.bottom },
-      { x: this.x, y: this.bottom },
-    ];
-  }
-
+getCorners(): Point[] {
+  return [
+    new Point(this.x, this.y),
+    new Point(this.right, this.y),
+    new Point(this.right, this.bottom),
+    new Point(this.x, this.bottom),
+  ];
+}
   // --- union / intersection rect ---
 
   union(r: Rect): Rect {
@@ -145,20 +153,24 @@ export class Rect implements IRect {
 
   // --- rotate helpers ---
 
-  getRotatedCorners(angleRad: number, cx = this.centerX, cy = this.centerY): Point[] {
-    const cos = Math.cos(angleRad);
-    const sin = Math.sin(angleRad);
+  getRotatedCorners(
+  angleRad: number,
+  cx = this.centerX,
+  cy = this.centerY
+): Point[] {
+  const cos = Math.cos(angleRad);
+  const sin = Math.sin(angleRad);
 
-    return this.getCorners().map(p => {
-      const dx = p.x - cx;
-      const dy = p.y - cy;
+  return this.getCorners().map(p => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
 
-      return {
-        x: cx + dx * cos - dy * sin,
-        y: cy + dx * sin + dy * cos,
-      };
-    });
-  }
+    return new Point(
+      cx + dx * cos - dy * sin,
+      cy + dx * sin + dy * cos
+    );
+  });
+}
 
   getRotatedBounds(angleRad: number, cx = this.centerX, cy = this.centerY): Rect {
     const pts = this.getRotatedCorners(angleRad, cx, cy);
@@ -173,8 +185,6 @@ export class Rect implements IRect {
 
     return new Rect(left, top, right - left, bottom - top);
   }
-
-  // --- debug draw (nagyon jól fog jönni neked) ---
 
   draw(ctx: CanvasRenderingContext2D, color = "red") {
     ctx.save();
