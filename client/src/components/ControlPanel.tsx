@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Badge,
@@ -35,7 +35,7 @@ import {
   indentMore,
   toggleLineComment,
 } from "@codemirror/commands";
-import { keymap } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
 
 import prettier from "prettier/standalone";
@@ -431,6 +431,7 @@ async function formatScriptBody(script: string): Promise<string> {
 }
 
 function ScriptsTab(p: ScriptsTabProps) {
+  const editorViewRef = useRef<EditorView | null>(null);
   const [maximized, setMaximized] = useState(false);
   const { colorScheme } = useMantineColorScheme();
 
@@ -454,6 +455,14 @@ function ScriptsTab(p: ScriptsTabProps) {
     } catch (error) {
       console.error("Script format error:", error);
     }
+  };
+  const handleToggleComment = () => {
+    const view = editorViewRef.current;
+
+    if (!view) return;
+
+    toggleLineComment(view);
+    view.focus();
   };
 
   const handleLoadScript = async () => {
@@ -646,10 +655,11 @@ function ScriptsTab(p: ScriptsTabProps) {
       <Modal
         opened={maximized}
         onClose={() => setMaximized(false)}
+        closeOnEscape={false}
         title="Script editor"
         size="90vw"
         centered
-        closeOnEscape
+
         styles={{
           content: {
             height: "90vh",
@@ -709,6 +719,9 @@ function ScriptsTab(p: ScriptsTabProps) {
                 <Button size="xs" variant="light" onClick={handleFormatScript}>
                   Format
                 </Button>
+                <Button size="xs" variant="light" onClick={handleToggleComment}>
+                  Comment
+                </Button>
               </Group>
 
               <Group gap={4}>
@@ -745,6 +758,7 @@ function ScriptsTab(p: ScriptsTabProps) {
               }}
             >
               <CodeMirror
+
                 value={p.script}
                 height="100%"
                 theme={cmTheme}
@@ -755,6 +769,9 @@ function ScriptsTab(p: ScriptsTabProps) {
                   }),
                   editorKeymap,
                 ]}
+                onCreateEditor={(view) => {
+                  editorViewRef.current = view;
+                }}
                 onChange={(value) => p.onScriptChange(value)}
                 basicSetup={{
                   lineNumbers: true,
