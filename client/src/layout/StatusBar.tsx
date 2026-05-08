@@ -1,5 +1,6 @@
 import { ActionIcon, Badge, Divider, Group, Tooltip } from "@mantine/core";
 import {
+    IconEdit,
   IconPlayerPlayFilled,
   IconPlayerStopFilled,
 } from "@tabler/icons-react";
@@ -13,6 +14,8 @@ import { useScriptStatus } from "../hooks/useScriptStatus";
 import { scriptEngine } from "../services/scriptEngine";
 
 import "../styles/global.css";
+import { useState } from "react";
+import ScriptEditorDialog from "../components/ScriptEditorDialog";
 
 export default function StatusBar() {
   const wsStatus = useWsStatus();
@@ -26,6 +29,7 @@ export default function StatusBar() {
     locked,
   } = useCommandCenter();
 
+  const [scriptEditorOpened, setScriptEditorOpened] = useState(false);
   const wsConnected = wsStatus === "connected";
   const commandCenterOnline = alive && wsConnected;
   const trackPowerOn = powerInfo?.trackVoltageOn === true && wsConnected;
@@ -66,6 +70,7 @@ export default function StatusBar() {
   };
 
   return (
+    <>
     <Group h="100%" px="md" justify="space-between">
       <Group gap="md">
         <Badge color={getWsColor(wsStatus)} variant="filled">
@@ -128,6 +133,18 @@ export default function StatusBar() {
           </ActionIcon>
         </Tooltip>
 
+
+        <Tooltip label="Edit script">
+          <ActionIcon
+            size="sm"
+            color="blue"
+            variant="filled"
+            onClick={() => setScriptEditorOpened(true)}
+          >
+            <IconEdit size={14} />
+          </ActionIcon>
+        </Tooltip>
+        
         <Divider orientation="vertical" />
 
         <Badge color={getMemoryColor(browserStats.memoryUsedMb)} variant="filled">
@@ -143,6 +160,12 @@ export default function StatusBar() {
         </Badge>
       </Group>
     </Group>
+     <ScriptEditorDialog
+      opened={scriptEditorOpened}
+      onClose={() => setScriptEditorOpened(false)}
+      title="Script editor"
+    />
+    </>
   );
 }
 

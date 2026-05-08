@@ -1,3 +1,4 @@
+import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
 import { DrawOptions, ELEMENT_TYPES, ILabelElement } from "../types/EditorTypes";
@@ -43,7 +44,11 @@ export class LabelElement extends BaseElement implements ILabelElement {
         // } else if (this.valign == "bottom") {
         //     y = this.posBottom - 10
         // }
-        ctx.fillText(this.text, x, y);
+        //ctx.fillText(this.text, x, y);
+
+
+        drawTextWithRoundedBackground(ctx, x, y,this.text,  this.color, this.bg, 2, 4)
+
 
         this.endDraw(ctx);
         super.drawSelection(ctx);
@@ -88,6 +93,7 @@ export class LabelElement extends BaseElement implements ILabelElement {
             ...super.getEditableProperties(),
             { label: "Text", key: "text", type: "string", readonly: false },
             { label: "Color", key: "color", type: "colorpicker", readonly: false },
+            { label: "Background", key: "bg", type: "colorpicker", readonly: false },
             { label: "Font Size", key: "fontSize", type: "number", readonly: false },
             { label: "Offset Y", key: "offsetY", type: "number", readonly: false },
             { label: "Offset X", key: "offsetX", type: "number", readonly: false },
