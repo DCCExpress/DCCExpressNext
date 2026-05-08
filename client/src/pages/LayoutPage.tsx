@@ -189,6 +189,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   };
 
   const loadScriptFromServer = () => {
+    scriptEngine.loadScript();
     return;
     const script = loadJsonFile("script.json").then(script => {
       setScript((script as any).content);
