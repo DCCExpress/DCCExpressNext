@@ -15,11 +15,10 @@
           "y": 8,
           "rotation": 0,
           "rotationStep": 45,
-          "bg": "black",
+          "bg": "#40c057",
           "fg": "white",
-          "fileName": "",
-          "label": "Audio",
-          "colorOn": "lime"
+          "fileName": "mav_szignal.mp3",
+          "label": "MÁV"
         },
         {
           "id": "5938e5dc-ef80-4f6d-a927-440fb607d426",
@@ -112,24 +111,6 @@
           "alignment": "center",
           "offsetY": 10,
           "offsetX": 1
-        },
-        {
-          "id": "25da0aa-d02b-494b-91f9-afec850d",
-          "type": "label",
-          "name": "element",
-          "layerName": "buildings",
-          "x": 24,
-          "y": 9,
-          "rotation": 0,
-          "rotationStep": 45,
-          "bg": "black",
-          "fg": "white",
-          "text": "Indul",
-          "fontSize": 9,
-          "color": "#4c6ef5",
-          "alignment": "center",
-          "offsetY": 8,
-          "offsetX": 7
         },
         {
           "id": "e29947f-a427-4c3d-86b7-2fe51bee",

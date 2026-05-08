@@ -344,8 +344,8 @@ export default function TrackCanvas({
 
   useEffect(() => {
 
-    if(selectedElementRef.current && selectedElementRef.current instanceof RouteButtonElement){
-      if(layoutRef.current){
+    if (selectedElementRef.current && selectedElementRef.current instanceof RouteButtonElement) {
+      if (layoutRef.current) {
         const elems = layoutRef.current.getAllElements();
         elems.forEach(elem => { elem.marked = false; })
       }
@@ -512,9 +512,9 @@ export default function TrackCanvas({
 
 
     //if(turnoutSelectionModeRef.current){
-      if(selectedElementRef.current instanceof RouteButtonElement){
-        setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElement);
-      }
+    if (selectedElementRef.current instanceof RouteButtonElement) {
+      setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElement);
+    }
     //}
 
 
@@ -685,6 +685,16 @@ export default function TrackCanvas({
 
       const hitElement = currentLayout.getElement(grid.x, grid.y);
 
+
+      if (!editModeRef.current && hitElement?.type === ELEMENT_TYPES.BUTTON_AUDIO) {
+        const audioButton = hitElement as AudioButtonElement;
+
+        audioButton.press(() => {
+          invalidate();
+        });
+
+        return;
+      }
 
       if (currentEditMode) {
         if (currentTurnouSelection) {
@@ -876,7 +886,7 @@ export default function TrackCanvas({
     };
 
     const handleMouseMove = (ev: MouseEvent) => {
-      
+
       const currentLayout = layoutRef.current;
       const currentTool = toolRef.current;
 
@@ -897,12 +907,12 @@ export default function TrackCanvas({
 
       const hoveredElement = currentLayout.getElement(grid.x, grid.y);
 
-      
+
       if (toolRef.current.mode === "draw" && currentCursorRef.current) {
-        
+
         const occupied = currentLayout.getLayeredElement(currentCursorRef.current, grid.x, grid.y);
         if (occupied != null) {
-          
+
           setHoverGrid({ x: grid.x, y: grid.y });
         } else {
           setHoverGrid(null);
@@ -992,7 +1002,8 @@ export default function TrackCanvas({
           hoveredElement instanceof TrackTurnoutTwoWayElement ||
           hoveredElement instanceof TrackTurnoutDoubleElement ||
           hoveredElement instanceof TrackSignalElement ||
-          hoveredElement instanceof ClickableBaseElement
+          hoveredElement instanceof ClickableBaseElement ||
+          hoveredElement instanceof AudioButtonElement
 
         ) {
           canvas.style.cursor = "pointer";
@@ -1729,7 +1740,7 @@ function createCursorElement(tool: EditorTool): BaseElement | null {
     case ELEMENT_TYPES.BUTTON:
       return CursorButtonElement;
 
-      case ELEMENT_TYPES.BUTTON_SCRIPT:
+    case ELEMENT_TYPES.BUTTON_SCRIPT:
       return CursorButtonScriptElement;
 
     case ELEMENT_TYPES.BUTTON_AUDIO:

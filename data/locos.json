@@ -63,14 +63,14 @@
       {
         "id": "300deef-856e-46d8-9509-9a922b4d",
         "number": 18,
-        "name": "3V Tolat",
+        "name": "V3 Tolat",
         "icon": "💡",
         "momentary": true
       },
       {
         "id": "3268f8f-4137-4abd-85f6-0f72a86f",
         "number": 19,
-        "name": "2VGép Köz",
+        "name": "V2 Gép",
         "icon": "💡",
         "momentary": true
       }

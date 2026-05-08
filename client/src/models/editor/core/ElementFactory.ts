@@ -221,7 +221,6 @@ export class ElementFactory {
         button.bg = data.bg;
         button.fg = data.fg;
         button.fileName = data.fileName;
-        button.colorOn = data.colorOn;
         button.label = data.label;
         return button;
       }

@@ -8,29 +8,30 @@ export function generateId() {
     return v.toString(16);
   });
 }
-export function showOkMessage(title: string, message: string) {
+export function showOkMessage(title: string, message: string, autoClose: number = 5000) {
   notifications.show({
     title: title == "" ? "SUCCESSFULL" : title,
     message: message,
     color: "green",
-    autoClose: 2000,
+    autoClose: autoClose,
   });
 }
 
-export function showErrorMessage(title: string, message: string) {
+export function showErrorMessage(title: string, message: string, autoClose: number = 5000) {
   notifications.show({
     title: title,
     message: message,
     color: "red",
+    autoClose: autoClose
   });
 }
 
-export function showWarningMessage(title: string, message: string) {
+export function showWarningMessage(title: string, message: string, autoClose: number = 5000) {
   notifications.show({
     title: title,
     message: message,
     color: "yellow",
-    autoClose: 5000,
+    autoClose: autoClose,
   });
 }
 
@@ -44,5 +45,21 @@ export function isTouchDevice(): boolean {
   );
 }
 
+export function errorToString(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
 export const sleep = (ms: number) =>
-    new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+  new Promise<void>((resolve) => window.setTimeout(resolve, ms));

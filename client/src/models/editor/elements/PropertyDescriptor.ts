@@ -1,5 +1,5 @@
 export type PropertyEditorType = 
-"string" | "number" | "boolean" | "checkbox" | "colorpicker" | "bittoggle" | "signal2" | "turnoutSelection";
+"string" | "number" | "boolean" | "checkbox" | "colorpicker" | "bittoggle" | "signal2" | "turnoutSelection" | "audiofile";
 
 
 export interface IEditableProperty {
@@ -10,4 +10,5 @@ export interface IEditableProperty {
   validate?: (value: any) => boolean;
   min?: number;
   max?: number;
+  callback?: () => void;
 }

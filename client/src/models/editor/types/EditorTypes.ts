@@ -167,7 +167,6 @@ export interface IButtonScriptElement extends IBaseElement {
 
 export interface IAudioButtonElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.BUTTON_AUDIO;
-  colorOn: string;
   fileName: string;
   label: string;
 }

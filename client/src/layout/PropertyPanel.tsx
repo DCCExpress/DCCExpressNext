@@ -15,7 +15,7 @@ import { TrackTurnoutTwoWayElement } from "../models/editor/elements/TrackTurnou
 import TrackTurnoutDoubleElement from "../models/editor/elements/TrackTurnoutDoubleElement";
 import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
 import { RouteButtonElement, RouteTurnoutItem } from "../models/editor/elements/RouteButtonElement";
-import { IconTrash } from "@tabler/icons-react";
+import { IconPlayerPlayFilled, IconTrash } from "@tabler/icons-react";
 import "../styles/propertypanel.css"
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import ControlPanel from "../components/ControlPanel";
@@ -224,430 +224,378 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     setPanelOpen(opened)
   }, [opened])
 
-  
-    if (editMode) {
-      return (
-        <ScrollArea h="100%" style={{ margin: 0, padding: 0 }}>
-          <div className="property-panel">
-            <Text c="blue" tt="capitalize">Properties</Text>
-            {!selectedElement &&
-              (
-                <>
-                  <Card withBorder p="xs">
-                    <Group mb="sm">
-                      <Text fw={500}>Editor</Text>
-                    </Group>
-                    <Checkbox
-                      mb={4}
-                      label="Show occupancy address"
-                      checked={settings.showOccupacySensorAddress}
-                      onChange={(e) =>
-                        updateSettings({ showOccupacySensorAddress: e.currentTarget.checked })
-                      }
-                    />
-                    <Checkbox
-                      mb={4}
-                      label="Show sensor address"
-                      checked={settings.showSensorAddress}
-                      onChange={(e) =>
-                        updateSettings({ showSensorAddress: e.currentTarget.checked })
-                      }
-                    />
 
-                    <Checkbox
-                      mb={4}
-                      label="Show turnout address"
-                      checked={settings.showTurnoutAddress}
-                      onChange={(e) =>
-                        updateSettings({ showTurnoutAddress: e.currentTarget.checked })
-                      }
-                    />
-
-                    <Checkbox
-                      mb={4}
-                      label="Show signal address"
-                      checked={settings.showSignalAddress}
-                      onChange={(e) =>
-                        updateSettings({ showSignalAddress: e.currentTarget.checked })
-                      }
-                    />
-
-                    <Checkbox
-                      mb={4}
-                      label="Show grid"
-                      checked={settings.showGrid}
-                      onChange={(e) =>
-                        updateSettings({ showGrid: e.currentTarget.checked })
-                      }
-                    />
-                  </Card>
-                </>
-              )
-            }
-
-            {selectedElement && properties && properties.map((prop) => (
-              <div key={prop.key}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  marginBottom: 12,
-                  marginLeft: 0,
-                  marginRight: 16
-                }}>
+  if (editMode) {
+    return (
+      <ScrollArea h="100%" style={{ margin: 0, padding: 0 }}>
+        <div className="property-panel">
+          <Text c="blue" tt="capitalize">Properties</Text>
+          {!selectedElement &&
+            (
+              <>
                 <Card withBorder p="xs">
-                  {prop.type === "string" && (
-                    <>
-                      {/* <label>{prop.label}</label> */}
-                      <TextInput
-                        label={prop.label}
-                        readOnly={prop.readonly}
-                        type="text"
-                        value={(selectedElement as any)[prop.key] ?? ""}
-                        onChange={(e) => handleChange(prop, e.target.value)}
-                      />
-                    </>
-                  )}
+                  <Group mb="sm">
+                    <Text fw={500}>Editor</Text>
+                  </Group>
+                  <Checkbox
+                    mb={4}
+                    label="Show occupancy address"
+                    checked={settings.showOccupacySensorAddress}
+                    onChange={(e) =>
+                      updateSettings({ showOccupacySensorAddress: e.currentTarget.checked })
+                    }
+                  />
+                  <Checkbox
+                    mb={4}
+                    label="Show sensor address"
+                    checked={settings.showSensorAddress}
+                    onChange={(e) =>
+                      updateSettings({ showSensorAddress: e.currentTarget.checked })
+                    }
+                  />
 
-                  {prop.type === "number" && (
-                    <>
-                      {/* <label>{prop.label}</label> */}
-                      <NumberInput
-                        label={prop.label}
-                        disabled={prop.readonly!}
-                        //type="number"
-                        min={prop.min}
-                        max={prop.max}
-                        value={(selectedElement as any)[prop.key] ?? 0}
-                        onChange={(e) => handleChange(prop, e)}
-                      //onBlur={(e) => handleChange(prop, e.target.value)}
-                      />
-                    </>
-                  )}
+                  <Checkbox
+                    mb={4}
+                    label="Show turnout address"
+                    checked={settings.showTurnoutAddress}
+                    onChange={(e) =>
+                      updateSettings({ showTurnoutAddress: e.currentTarget.checked })
+                    }
+                  />
 
-                  {prop.type === "boolean" && (
-                    <>
-                      <label>{prop.label}</label>
-                      <input aria-label="input Field"
-                        disabled={prop.readonly}
-                        type="checkbox"
-                        checked={Boolean((selectedElement as any)[prop.key])}
-                        onChange={(e) => handleChange(prop, e.target.checked)}
-                      />
-                    </>
-                  )}
-                  {prop.type === "checkbox" && (
-                    <Checkbox
+                  <Checkbox
+                    mb={4}
+                    label="Show signal address"
+                    checked={settings.showSignalAddress}
+                    onChange={(e) =>
+                      updateSettings({ showSignalAddress: e.currentTarget.checked })
+                    }
+                  />
+
+                  <Checkbox
+                    mb={4}
+                    label="Show grid"
+                    checked={settings.showGrid}
+                    onChange={(e) =>
+                      updateSettings({ showGrid: e.currentTarget.checked })
+                    }
+                  />
+                </Card>
+              </>
+            )
+          }
+
+          {selectedElement && properties && properties.map((prop) => (
+            <div key={prop.key}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                marginBottom: 12,
+                marginLeft: 0,
+                marginRight: 16
+              }}>
+              <Card withBorder p="xs">
+                {prop.type === "string" && (
+                  <>
+                    {/* <label>{prop.label}</label> */}
+                    <TextInput
                       label={prop.label}
+                      readOnly={prop.readonly}
+                      type="text"
+                      value={(selectedElement as any)[prop.key] ?? ""}
+                      onChange={(e) => handleChange(prop, e.target.value)}
+                    />
+                  </>
+                )}
+
+                {prop.type === "audiofile" && (
+                  <TextInput
+                    label="Audio file"
+                    value={(selectedElement as any)[prop.key] ?? ""}
+                    onChange={(e) => handleChange(prop, e.target.value)}
+                    rightSection={
+                      <ActionIcon
+                        size="sm"
+                        variant="subtle"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if(prop.callback) {
+                            prop.callback();
+                          }
+                          // openAudioFileDialog({
+                          //   currentValue: String(value ?? ""),
+                          //   onSelected: (fileName) => updateProperty(prop.key, fileName),
+                          // });
+                        }}
+                      >
+                        <IconPlayerPlayFilled size={16} />
+                      </ActionIcon>
+                    }
+                    rightSectionWidth={38}
+                  />)}
+
+                {prop.type === "number" && (
+                  <>
+                    {/* <label>{prop.label}</label> */}
+                    <NumberInput
+                      label={prop.label}
+                      disabled={prop.readonly!}
+                      //type="number"
+                      min={prop.min}
+                      max={prop.max}
+                      value={(selectedElement as any)[prop.key] ?? 0}
+                      onChange={(e) => handleChange(prop, e)}
+                    //onBlur={(e) => handleChange(prop, e.target.value)}
+                    />
+                  </>
+                )}
+
+                {prop.type === "boolean" && (
+                  <>
+                    <label>{prop.label}</label>
+                    <input aria-label="input Field"
+                      disabled={prop.readonly}
+                      type="checkbox"
                       checked={Boolean((selectedElement as any)[prop.key])}
                       onChange={(e) => handleChange(prop, e.target.checked)}
                     />
-                  )}
+                  </>
+                )}
+                {prop.type === "checkbox" && (
+                  <Checkbox
+                    label={prop.label}
+                    checked={Boolean((selectedElement as any)[prop.key])}
+                    onChange={(e) => handleChange(prop, e.target.checked)}
+                  />
+                )}
 
-                  {prop.type == "colorpicker" && (
-                    <>
-                      <label>{prop.label}</label>
+                {prop.type == "colorpicker" && (
+                  <>
+                    <label>{prop.label}</label>
 
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(8, 24px)",
-                          gap: 8,
-                          marginTop: 8,
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(8, 24px)",
+                        gap: 8,
+                        marginTop: 8,
+                      }}
+                    >
+                      {ColorsDefault.map((color) => {
+                        const selectedColor = ((selectedElement as any)[prop.key] ?? "").toLowerCase();
+                        const isSelected = selectedColor === color.toLowerCase();
+
+                        return (
+                          <div
+                            key={color}
+                            onClick={() => {
+                              if (!prop.readonly) {
+                                handleChange(prop, color);
+                              }
+                            }}
+                            style={{
+                              width: 32,
+                              padding: 3,
+                              border: isSelected ? "2px solid #339af0" : "2px solid transparent",
+                              borderRadius: 2,
+                              cursor: prop.readonly ? "default" : "pointer",
+                            }}
+                          >
+                            <ColorSwatch color={color} size={22} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {prop.type === "bittoggle" && (
+                  <Group>
+                    <Group>
+                      <Box className="route-turnout-preview-button">
+                        <ElementPreview element={getPreviewTurnout(selectedElement, true)} label="Closed" width={40} height={40} onClick={() => {
+                          const t = selectedElement as TrackTurnoutLeftElement
+                          //const data: SetTurnoutMessage = { address: t.turnoutAddress, closed: t.turnoutClosedValue };
+                          //const data: SetTurnoutMessage = {type: "setTurnout", data: { address: t.turnoutAddress, closed: t.turnoutClosedValue }};
+                          //console.log("WSAPI:", data)
+                          wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
                         }}
-                      >
-                        {ColorsDefault.map((color) => {
-                          const selectedColor = ((selectedElement as any)[prop.key] ?? "").toLowerCase();
-                          const isSelected = selectedColor === color.toLowerCase();
-
-                          return (
-                            <div
-                              key={color}
-                              onClick={() => {
-                                if (!prop.readonly) {
-                                  handleChange(prop, color);
-                                }
-                              }}
-                              style={{
-                                width: 32,
-                                padding: 3,
-                                border: isSelected ? "2px solid #339af0" : "2px solid transparent",
-                                borderRadius: 2,
-                                cursor: prop.readonly ? "default" : "pointer",
-                              }}
-                            >
-                              <ColorSwatch color={color} size={22} />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-
-                  {prop.type === "bittoggle" && (
-                    <Group>
-                      <Group>
-                        <Box className="route-turnout-preview-button">
-                          <ElementPreview element={getPreviewTurnout(selectedElement, true)} label="Closed" width={40} height={40} onClick={() => {
-                            const t = selectedElement as TrackTurnoutLeftElement
-                            //const data: SetTurnoutMessage = { address: t.turnoutAddress, closed: t.turnoutClosedValue };
-                            //const data: SetTurnoutMessage = {type: "setTurnout", data: { address: t.turnoutAddress, closed: t.turnoutClosedValue }};
-                            //console.log("WSAPI:", data)
-                            wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
-                          }}
-                          />
-                        </Box>
-                        <BitToggleElement
-                          value={(selectedElement as any)[prop.key]}
-                          onChange={(e) => handleChange(prop, e)}
                         />
-                      </Group>
-                      <Group>
-                        <Box className="route-turnout-preview-button">
-                          <ElementPreview element={getPreviewTurnout(selectedElement, false)} label="Opened" width={40} height={40} onClick={() => {
-                            const t = selectedElement as TrackTurnoutLeftElement
-                            //const data: SetTurnoutMessage = {type: "setTurnout", data: { address: t.turnoutAddress, closed: !t.turnoutClosedValue }};
-                            wsApi.setTurnout(t.turnoutAddress, !t.turnoutClosedValue);
-                          }}
-                          />
-                        </Box>
-
-                        <BitToggleElement
-                          value={!((selectedElement as any)[prop.key])}
-                          onChange={(e) => handleChange(prop, (!e))}
-                        />
-                      </Group>
-
+                      </Box>
+                      <BitToggleElement
+                        value={(selectedElement as any)[prop.key]}
+                        onChange={(e) => handleChange(prop, e)}
+                      />
                     </Group>
-                  )}
-
-                  {prop.type === "signal2" && (
                     <Group>
-                      {/* GREEN */}
+                      <Box className="route-turnout-preview-button">
+                        <ElementPreview element={getPreviewTurnout(selectedElement, false)} label="Opened" width={40} height={40} onClick={() => {
+                          const t = selectedElement as TrackTurnoutLeftElement
+                          //const data: SetTurnoutMessage = {type: "setTurnout", data: { address: t.turnoutAddress, closed: !t.turnoutClosedValue }};
+                          wsApi.setTurnout(t.turnoutAddress, !t.turnoutClosedValue);
+                        }}
+                        />
+                      </Box>
+
+                      <BitToggleElement
+                        value={!((selectedElement as any)[prop.key])}
+                        onChange={(e) => handleChange(prop, (!e))}
+                      />
+                    </Group>
+
+                  </Group>
+                )}
+
+                {prop.type === "signal2" && (
+                  <Group>
+                    {/* GREEN */}
+                    <Group>
+                      <Box className="route-turnout-preview-button">
+                        <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 1)} label="Green" width={40} height={40} translateX={-10} onClick={() => {
+                          const t = selectedElement as TrackSignalElement;
+                          t.sendGreen();
+                          //wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
+                        }}
+                        />
+                      </Box>
+
+                      <NumberInput w="50%"
+                        value={(selectedElement as TrackSignalElement).valueGreen}
+                        onChange={(e) => {
+                          const t = selectedElement as TrackSignalElement;
+                          t.valueGreen = Number(e) ?? 1;
+                          onUpdateSelectedElement(t);
+                        }}
+                      />
+                    </Group>
+
+                    {/* RED */}
+                    <Group>
+
+                      <Box className="route-turnout-preview-button">
+                        <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 2)} label="Red" width={40} height={40} translateX={-10} onClick={() => {
+                          const t = selectedElement as TrackSignalElement;
+                          t.sendRed();
+                        }}
+                        />
+                      </Box>
+
+                      <NumberInput w="50%"
+                        value={(selectedElement as TrackSignalElement).valueRed}
+                        onChange={(e) => {
+                          const t = selectedElement as TrackSignalElement;
+                          t.valueRed = Number(e) ?? 1;
+                          onUpdateSelectedElement(t);
+                        }}
+                      />
+                    </Group>
+
+                    {/* YELLOW */}
+                    {(selectedElement as TrackSignalElement).aspect >= 3 && (
                       <Group>
                         <Box className="route-turnout-preview-button">
-                          <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 1)} label="Green" width={40} height={40} translateX={-10} onClick={() => {
+                          <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 3)} label="Yellow" width={40} height={40} translateX={-10} onClick={() => {
                             const t = selectedElement as TrackSignalElement;
-                            t.sendGreen();
-                            //wsApi.setTurnout(t.turnoutAddress, t.turnoutClosedValue);
+                            t.sendYellow();
                           }}
                           />
                         </Box>
-
                         <NumberInput w="50%"
-                          value={(selectedElement as TrackSignalElement).valueGreen}
+                          value={(selectedElement as TrackSignalElement).valueYellow}
                           onChange={(e) => {
                             const t = selectedElement as TrackSignalElement;
-                            t.valueGreen = Number(e) ?? 1;
+                            t.valueYellow = Number(e) ?? 1;
+                            onUpdateSelectedElement(t);
+                          }}
+                        />
+                      </Group>)}
+
+                    {/* WHITE */}
+                    {(selectedElement as TrackSignalElement).aspect >= 4 && (
+                      <Group>
+                        <Box className="route-turnout-preview-button">
+                          <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 4)} label="White" width={40} height={40} translateX={-10} onClick={() => {
+                            const t = selectedElement as TrackSignalElement;
+                            t.sendWhite();
+                          }}
+                          />
+                        </Box>
+                        <NumberInput w="50%"
+                          value={(selectedElement as TrackSignalElement).valueWhite}
+                          onChange={(e) => {
+                            const t = selectedElement as TrackSignalElement;
+                            t.valueWhite = Number(e) ?? 1;
                             onUpdateSelectedElement(t);
                           }}
                         />
                       </Group>
+                    )}
 
-                      {/* RED */}
-                      <Group>
+                  </Group>
+                )}
 
-                        <Box className="route-turnout-preview-button">
-                          <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 2)} label="Red" width={40} height={40} translateX={-10} onClick={() => {
-                            const t = selectedElement as TrackSignalElement;
-                            t.sendRed();
-                          }}
-                          />
-                        </Box>
+                {prop.type === "turnoutSelection" && (() => {
+                  const items = Array.isArray((selectedElement as any)[prop.key])
+                    ? ((selectedElement as any)[prop.key] as RouteTurnoutItem[])
+                    : [];
 
-                        <NumberInput w="50%"
-                          value={(selectedElement as TrackSignalElement).valueRed}
-                          onChange={(e) => {
-                            const t = selectedElement as TrackSignalElement;
-                            t.valueRed = Number(e) ?? 1;
-                            onUpdateSelectedElement(t);
-                          }}
-                        />
-                      </Group>
+                  const setRouteTurnoutClosed = (turnoutId: string, closed: boolean) => {
+                    if (!selectedElement) return;
 
-                      {/* YELLOW */}
-                      {(selectedElement as TrackSignalElement).aspect >= 3 && (
-                        <Group>
-                          <Box className="route-turnout-preview-button">
-                            <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 3)} label="Yellow" width={40} height={40} translateX={-10} onClick={() => {
-                              const t = selectedElement as TrackSignalElement;
-                              t.sendYellow();
-                            }}
-                            />
-                          </Box>
-                          <NumberInput w="50%"
-                            value={(selectedElement as TrackSignalElement).valueYellow}
-                            onChange={(e) => {
-                              const t = selectedElement as TrackSignalElement;
-                              t.valueYellow = Number(e) ?? 1;
-                              onUpdateSelectedElement(t);
-                            }}
-                          />
-                        </Group>)}
-
-                      {/* WHITE */}
-                      {(selectedElement as TrackSignalElement).aspect >= 4 && (
-                        <Group>
-                          <Box className="route-turnout-preview-button">
-                            <ElementPreview style={{ width: "50%" }} element={getPreviewSignal(selectedElement, 4)} label="White" width={40} height={40} translateX={-10} onClick={() => {
-                              const t = selectedElement as TrackSignalElement;
-                              t.sendWhite();
-                            }}
-                            />
-                          </Box>
-                          <NumberInput w="50%"
-                            value={(selectedElement as TrackSignalElement).valueWhite}
-                            onChange={(e) => {
-                              const t = selectedElement as TrackSignalElement;
-                              t.valueWhite = Number(e) ?? 1;
-                              onUpdateSelectedElement(t);
-                            }}
-                          />
-                        </Group>
-                      )}
-
-                    </Group>
-                  )}
-
-                  {prop.type === "turnoutSelection" && (() => {
-                    const items = Array.isArray((selectedElement as any)[prop.key])
+                    const routeItems = Array.isArray((selectedElement as any)[prop.key])
                       ? ((selectedElement as any)[prop.key] as RouteTurnoutItem[])
                       : [];
 
-                    const setRouteTurnoutClosed = (turnoutId: string, closed: boolean) => {
-                      if (!selectedElement) return;
+                    const item = routeItems.find((x) => x.turnoutId === turnoutId);
+                    if (!item) return;
 
-                      const routeItems = Array.isArray((selectedElement as any)[prop.key])
-                        ? ((selectedElement as any)[prop.key] as RouteTurnoutItem[])
-                        : [];
+                    item.closed = closed;
 
-                      const item = routeItems.find((x) => x.turnoutId === turnoutId);
-                      if (!item) return;
+                    onLayoutChange((prev) => prev);
+                  };
 
-                      item.closed = closed;
+                  const toggleRouteTurnout = (turnoutId: string) => {
+                    const item = items.find((x) => x.turnoutId === turnoutId);
+                    if (!item) return;
 
-                      onLayoutChange((prev) => prev);
-                    };
+                    setRouteTurnoutClosed(turnoutId, !item.closed);
+                  };
 
-                    const toggleRouteTurnout = (turnoutId: string) => {
-                      const item = items.find((x) => x.turnoutId === turnoutId);
-                      if (!item) return;
+                  return (
+                    <Stack gap="xs">
+                      <Button
+                        size="xs"
+                        variant={turnoutSelectionMode ? "filled" : "light"}
+                        onClick={() => {
+                          setTurnoutSelectionMode(!turnoutSelectionMode);
+                        }}
+                      >
+                        {turnoutSelectionMode ? "Finish selection" : "Add turnouts"}
+                      </Button>
 
-                      setRouteTurnoutClosed(turnoutId, !item.closed);
-                    };
+                      {items.length === 0 ? (
+                        <Text size="xs" c="dimmed">
+                          No turnouts selected
+                        </Text>
+                      ) : (
+                        <Stack gap={6}>
 
-                    return (
-                      <Stack gap="xs">
-                        <Button
-                          size="xs"
-                          variant={turnoutSelectionMode ? "filled" : "light"}
-                          onClick={() => {
-                            setTurnoutSelectionMode(!turnoutSelectionMode);
-                          }}
-                        >
-                          {turnoutSelectionMode ? "Finish selection" : "Add turnouts"}
-                        </Button>
+                          {items.map((item) => {
+                            const turnout = findElementById(layout, item.turnoutId);
 
-                        {items.length === 0 ? (
-                          <Text size="xs" c="dimmed">
-                            No turnouts selected
-                          </Text>
-                        ) : (
-                          <Stack gap={6}>
-
-                            {items.map((item) => {
-                              const turnout = findElementById(layout, item.turnoutId);
-
-                              if (!turnout) {
-                                return (
-                                  <Group key={item.turnoutId} justify="space-between" gap="xs">
-                                    <Text size="xs" c="red">
-                                      Missing turnout: {item.turnoutId}
-                                    </Text>
-
-                                    <ActionIcon
-                                      size="sm"
-                                      color="red"
-                                      variant="subtle"
-                                      onClick={() => {
-                                        if (!selectedElement) return;
-
-                                        const routeButton = selectedElement as RouteButtonElement;
-                                        routeButton.removeTurnout(item.turnoutId);
-
-                                        onUpdateSelectedElement(selectedElement);
-                                      }}
-                                    >
-                                      <IconTrash size={14} />
-                                    </ActionIcon>
-                                  </Group>
-                                );
-                              }
-
-                              const previewTurnout = turnout.clone();
-                              previewTurnout.id = turnout.id;
-                              previewTurnout.x = 0;
-                              previewTurnout.y = 0;
-                              previewTurnout.selected = false;
-                              previewTurnout.enabled = true;
-                              (previewTurnout as any).turnoutClosed = item.closed;
-
+                            if (!turnout) {
                               return (
-                                <Group
-                                  key={item.turnoutId}
-                                  gap="xs"
-                                  wrap="nowrap"
-                                  align="center"
-                                >
-                                  <Box
-                                    className="route-turnout-preview-button"
-                                    onClick={() => {
-                                      //item.closed = !item.closed;
-                                      const elem = layout.getElementById(item.turnoutId);
-                                      if (elem) {
-                                        if (elem instanceof TrackTurnoutElement) {
-                                          const turnout = elem as TrackTurnoutElement;
-                                          turnout.toggle();
-                                          item.closed = turnout.turnoutClosed == turnout.turnoutClosedValue;
-                                        } else {
-                                          alert("Not instance of Turnout!")
-                                        }
-                                      } else {
-                                        alert("Could not find element by id:" + item.turnoutId);
-                                      }
-
-                                      onUpdateSelectedElement(selectedElement);
-                                    }}
-                                  >
-                                    <ElementPreview
-                                      element={previewTurnout}
-                                      label={"#" + (previewTurnout as any).turnoutAddress}
-                                      width={40}
-                                      height={40}
-                                    />
-                                  </Box>
-
-                                  <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-                                    <Text size="xs" fw={500} truncate>
-                                      {turnout.name || "Turnout"}
-                                    </Text>
-
-                                    {/* <Text size="10px" c="dimmed" ff="monospace" truncate>
-                                    {item.turnoutId}
-                                  </Text> */}
-
-                                    {/* <Badge size="xs" variant="light">
-                                    {item.closed ? "closed" : "thrown"}
-                                  </Badge> */}
-                                  </Stack>
+                                <Group key={item.turnoutId} justify="space-between" gap="xs">
+                                  <Text size="xs" c="red">
+                                    Missing turnout: {item.turnoutId}
+                                  </Text>
 
                                   <ActionIcon
                                     size="sm"
                                     color="red"
                                     variant="subtle"
-                                    title="Remove turnout"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-
+                                    onClick={() => {
                                       if (!selectedElement) return;
 
                                       const routeButton = selectedElement as RouteButtonElement;
@@ -660,61 +608,140 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                                   </ActionIcon>
                                 </Group>
                               );
-                            })}
-                          </Stack>
-                        )}
-                      </Stack>
-                    );
-                  })()}
+                            }
 
-                </Card >
+                            const previewTurnout = turnout.clone();
+                            previewTurnout.id = turnout.id;
+                            previewTurnout.x = 0;
+                            previewTurnout.y = 0;
+                            previewTurnout.selected = false;
+                            previewTurnout.enabled = true;
+                            (previewTurnout as any).turnoutClosed = item.closed;
 
-              </div>
-            ))}
+                            return (
+                              <Group
+                                key={item.turnoutId}
+                                gap="xs"
+                                wrap="nowrap"
+                                align="center"
+                              >
+                                <Box
+                                  className="route-turnout-preview-button"
+                                  onClick={() => {
+                                    //item.closed = !item.closed;
+                                    const elem = layout.getElementById(item.turnoutId);
+                                    if (elem) {
+                                      if (elem instanceof TrackTurnoutElement) {
+                                        const turnout = elem as TrackTurnoutElement;
+                                        turnout.toggle();
+                                        item.closed = turnout.turnoutClosed == turnout.turnoutClosedValue;
+                                      } else {
+                                        alert("Not instance of Turnout!")
+                                      }
+                                    } else {
+                                      alert("Could not find element by id:" + item.turnoutId);
+                                    }
 
-            {(
-              <Accordion
-                value={helpOpened}
-                onChange={setHelpOpened}
-                mr={0}
-                mt={10} chevronPosition="right" variant="contained">
-                <Accordion.Item value="help">
-                  <Accordion.Control style={(theme) => ({
-                    backgroundColor:
-                      colorScheme === "dark"
-                        ? theme.colors.dark[8]
-                        : theme.colors.gray[3],
-                  })}>
-                    <Group gap={0} >
-                      <Text>❓</Text>
-                      <Text>Help</Text>
-                    </Group>
+                                    onUpdateSelectedElement(selectedElement);
+                                  }}
+                                >
+                                  <ElementPreview
+                                    element={previewTurnout}
+                                    label={"#" + (previewTurnout as any).turnoutAddress}
+                                    width={40}
+                                    height={40}
+                                  />
+                                </Box>
 
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <div
+                                <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                                  <Text size="xs" fw={500} truncate>
+                                    {turnout.name || "Turnout"}
+                                  </Text>
 
-                      dangerouslySetInnerHTML={{ __html: selectedElement ? selectedElement?.getHelp() : "GENERAL HELP" }}
+                                  {/* <Text size="10px" c="dimmed" ff="monospace" truncate>
+                                    {item.turnoutId}
+                                  </Text> */}
 
-                    />
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            )}
+                                  {/* <Badge size="xs" variant="light">
+                                    {item.closed ? "closed" : "thrown"}
+                                  </Badge> */}
+                                </Stack>
+
+                                <ActionIcon
+                                  size="sm"
+                                  color="red"
+                                  variant="subtle"
+                                  title="Remove turnout"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    if (!selectedElement) return;
+
+                                    const routeButton = selectedElement as RouteButtonElement;
+                                    routeButton.removeTurnout(item.turnoutId);
+
+                                    onUpdateSelectedElement(selectedElement);
+                                  }}
+                                >
+                                  <IconTrash size={14} />
+                                </ActionIcon>
+                              </Group>
+                            );
+                          })}
+                        </Stack>
+                      )}
+                    </Stack>
+                  );
+                })()}
+
+              </Card >
+
+            </div>
+          ))}
+
+          {(
+            <Accordion
+              value={helpOpened}
+              onChange={setHelpOpened}
+              mr={0}
+              mt={10} chevronPosition="right" variant="contained">
+              <Accordion.Item value="help">
+                <Accordion.Control style={(theme) => ({
+                  backgroundColor:
+                    colorScheme === "dark"
+                      ? theme.colors.dark[8]
+                      : theme.colors.gray[3],
+                })}>
+                  <Group gap={0} >
+                    <Text>❓</Text>
+                    <Text>Help</Text>
+                  </Group>
+
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <div
+
+                    dangerouslySetInnerHTML={{ __html: selectedElement ? selectedElement?.getHelp() : "GENERAL HELP" }}
+
+                  />
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
+          )}
 
 
-          </div>
+        </div>
 
 
 
-        </ScrollArea>
-      );
-    }
-    return (
-      <>
-        <ControlPanel />
-      </>
-    )
-  
-  
+      </ScrollArea>
+    );
+  }
+  return (
+    <>
+      <ControlPanel />
+    </>
+  )
+
+
 }
