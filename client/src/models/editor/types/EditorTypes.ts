@@ -29,6 +29,7 @@ export const ELEMENT_TYPES = {
   BUTTON_ROUTE: "routebutton",
   CLOCK: "clcok",
   TREE: "tree",
+  LABEL: "label"
 
 } as const;
 
@@ -195,6 +196,17 @@ export interface ITreeElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.TREE;
 }
 
+export interface ILabelElement extends IBaseElement {
+  type: typeof ELEMENT_TYPES.LABEL;
+  text: string;
+  fontSize: number;
+  color: string;
+  alignment: "left" | "center" | "right";
+  offsetY: number;
+  offsetX: number;
+  
+}
+
 export interface ITrackSignalElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.TRACK_SIGNAL2;
   aspect: number;
@@ -231,7 +243,8 @@ export type EditorElementData =
   | IBlockElement
   | ITreeElement
   | ITrackSignalElement
-  ;
+  | ILabelElement
+  
   ;
   // | ITrackSignal3Element
   // | ITrackSignal4Element

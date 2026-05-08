@@ -31,6 +31,7 @@ import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutEleme
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { is } from "zod/v4/locales/index.js";
 import { ButtonScriptElement } from "../models/editor/elements/ButtonScriptElement";
+import { LabelElement } from "../models/editor/elements/LabelElement";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -137,6 +138,7 @@ const CursorAudioButtonElement = new AudioButtonElement(0, 0);
 const CursorClockElement = new ClockElement(0, 0);
 const CursorTreeElement = new TreeElement(0, 0);
 const CursorBlockElement = new BlockElement(0, 0);
+const CursorLabelElement = new LabelElement(0, 0);
 
 // const PreviewSignal1 = new TrackSignalElement(0, 0);
 // PreviewSignal1.setGreen();
@@ -1748,6 +1750,9 @@ function createCursorElement(tool: EditorTool): BaseElement | null {
 
     case ELEMENT_TYPES.TRACK_SIGNAL4:
       return CursorTrackSignal4Element;
+
+    case ELEMENT_TYPES.LABEL:
+      return CursorLabelElement;
 
     default:
       return null;

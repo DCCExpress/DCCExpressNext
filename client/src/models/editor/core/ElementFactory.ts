@@ -18,6 +18,8 @@ import { AudioButtonElement } from "../elements/AudioButtonElement";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackCrossingElement } from "../elements/TrackCrossingElement";
 import { ButtonScriptElement } from "../elements/ButtonScriptElement";
+import ca from "zod/v4/locales/ca.cjs";
+import { LabelElement } from "../elements/LabelElement";
 
 export class ElementFactory {
   static create(data: EditorElementData): BaseElement {
@@ -275,6 +277,21 @@ export class ElementFactory {
         tree.bg = data.bg;
         tree.fg = data.fg;
         return tree;
+      }
+
+      case ELEMENT_TYPES.LABEL: {
+        const label = new LabelElement(data.x, data.y);
+        label.id = data.id;
+        label.text = data.text;
+        label.fontSize = data.fontSize;
+        label.color = data.color;
+        label.alignment = data.alignment;
+        label.offsetY = data.offsetY ?? 14;
+        label.offsetX = data.offsetX ?? 0;
+        label.rotation = data.rotation;
+        label.bg = data.bg;
+        label.fg = data.fg;
+        return label;
       }
 
 
