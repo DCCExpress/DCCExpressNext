@@ -1,4 +1,5 @@
 {
   "content": "  while (true) {\n    \n    let t10Closed = getTurnoutState(10);\n    let t11Closed = getTurnoutState(11);\n    let t12Closed = getTurnoutState(12);\n    let t13Closed = getTurnoutState(13);\n\n    // Signal #135\n    if (!t10Closed && t11Closed) {\n      setSignalYellow(135);\n    } else {\n      setSignalRed(135);\n    }\n\n    // Signal #120\n    if (t10Closed && t11Closed) {\n      setSignalGreen(120);\n    } else {\n      setSignalRed(120);\n    }\n\n    // Signal #140\n    if (!t11Closed) {\n      setSignalYellow(140);\n    } else {\n      setSignalRed(140);\n    }\n\n    // Signal #145\n    if (!t12Closed) {\n      setSignalYellow(145);\n    } else {\n      setSignalRed(145);\n    }\n\n    // Signal #150\n    if (t12Closed && t13Closed) {\n      setSignalGreen(150);\n    } else {\n      setSignalRed(150);\n    }\n\n    // Signal #155\n    if (t12Closed && !t13Closed) {\n      setSignalYellow(155);\n    } else {\n      setSignalRed(155);\n    }\n\n    await sleep(500);\n  }",
-  "updatedAt": "2026-05-08T10:41:46.539Z"
+  "autoStart": true,
+  "updatedAt": "2026-05-08T12:29:58.008Z"
 }

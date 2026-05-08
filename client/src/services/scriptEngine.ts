@@ -457,6 +457,7 @@ type CurrentSessionListener = (session: ScriptSession | null) => void;
 
 export type ScriptDocument = {
     content: string;
+    autoStart: boolean;
     updatedAt?: string;
 };
 
@@ -475,6 +476,7 @@ class ScriptEngine {
 
     private script: ScriptDocument = {
         content: DEFAULT_SCRIPT,
+        autoStart: false,
     };
 
     private scriptListeners = new Set<ScriptDocumentListener>();
@@ -501,6 +503,16 @@ class ScriptEngine {
         return this.script.content;
     }
 
+    getAutoStart(): boolean {
+        return this.script.autoStart;
+    }
+
+    setAutoStart(autoStart: boolean) {
+        this.script.autoStart = autoStart;
+        this.script.updatedAt = new Date().toISOString();
+        this.emitScript();
+    }
+
     getScriptDocument(): ScriptDocument {
         return {
             ...this.script,
@@ -510,6 +522,7 @@ class ScriptEngine {
     setScript(content: string) {
         this.script = {
             content,
+            autoStart: this.script.autoStart,
             updatedAt: new Date().toISOString(),
         };
 
@@ -521,8 +534,13 @@ class ScriptEngine {
 
         this.script = {
             content: scriptFile.content ?? "",
+            autoStart: scriptFile.autoStart ?? false,
             updatedAt: new Date().toISOString(),
         };
+
+        if(this.script.autoStart) {
+            this.runCurrent();
+        }
 
         this.emitScript();
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Button,
+  Checkbox,
   Divider,
   Group,
   Modal,
@@ -75,6 +76,8 @@ export default function ScriptEditorDialog({
   const [scriptErrorOpened, setScriptErrorOpened] = useState(false);
   const [shownError, setShownError] = useState<string | null>(null);
 
+  const [autoStart, setAutoStart] = useState(scriptEngine.getAutoStart());
+
   const scriptStatus = scriptState?.status ?? "idle";
   const scriptIsRunning =
     scriptStatus === "running" || scriptStatus === "stopping";
@@ -93,11 +96,16 @@ export default function ScriptEditorDialog({
     if (!opened) return;
 
     setCode(scriptEngine.getScript());
-
+    setAutoStart(scriptEngine.getAutoStart());
     setTimeout(() => {
       editorViewRef.current?.focus();
     }, 0);
   }, [opened]);
+
+  const handleAutoStartChange = (checked: boolean) => {
+    setAutoStart(checked);
+    scriptEngine.setAutoStart(checked);
+  };
 
   useEffect(() => {
     if (scriptState?.status !== "error") return;
@@ -231,73 +239,64 @@ export default function ScriptEditorDialog({
   return (
 
     <>
-    <Modal
-      opened={scriptErrorOpened}
-      onClose={() => setScriptErrorOpened(false)}
-      title="Script error"
-      centered
-      size="lg"
-      zIndex={10000}
-    >
-      <Stack gap="sm">
-        <Text size="sm" c="red" fw={700}>
-          The script stopped because of an error.
-        </Text>
+      <Modal
+        opened={scriptErrorOpened}
+        onClose={() => setScriptErrorOpened(false)}
+        title="Script error"
+        centered
+        size="lg"
+        zIndex={10000}
+      >
+        <Stack gap="sm">
+          <Text size="sm" c="red" fw={700}>
+            The script stopped because of an error.
+          </Text>
 
-        <Text
-          size="sm"
-          style={{
-            whiteSpace: "pre-wrap",
-            fontFamily:
-              "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          }}
-        >
-          {shownError}
-        </Text>
-
-        <Group justify="flex-end">
-          <Button
-            variant="light"
-            onClick={() => setScriptErrorOpened(false)}
+          <Text
+            size="sm"
+            style={{
+              whiteSpace: "pre-wrap",
+              fontFamily:
+                "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            }}
           >
-            Close
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      closeOnEscape={false}
-      closeOnClickOutside={false}
-      title={title}
-      size="90vw"
-      centered
-      styles={{
-        content: {
-          height: "90vh",
-          display: "flex",
-          flexDirection: "column",
-        },
-        body: {
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-        },
-      }}
-    >
-      <div
-        onKeyDownCapture={stopEditorShortcuts}
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
+            {shownError}
+          </Text>
+
+          <Group justify="flex-end">
+            <Button
+              variant="light"
+              onClick={() => setScriptErrorOpened(false)}
+            >
+              Close
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+      <Modal
+        opened={opened}
+        onClose={onClose}
+        closeOnEscape={false}
+        closeOnClickOutside={false}
+        title={title}
+        size="90vw"
+        centered
+        styles={{
+          content: {
+            height: "90vh",
+            display: "flex",
+            flexDirection: "column",
+          },
+          body: {
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          },
         }}
       >
-        <Stack
-          gap="xs"
+        <div
+          onKeyDownCapture={stopEditorShortcuts}
           style={{
             flex: 1,
             minHeight: 0,
@@ -305,134 +304,154 @@ export default function ScriptEditorDialog({
             flexDirection: "column",
           }}
         >
-          <Group justify="space-between" align="center" style={{ flexShrink: 0 }}>
-            <Group gap={4}>
+          <Stack
+            gap="xs"
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Group justify="space-between" align="center" style={{ flexShrink: 0 }}>
+              <Group gap={4}>
 
-              <Tooltip label="Load script">
-                <ActionIcon
-                  size="sm"
-                  variant="light"
-                  onClick={handleLoadScript}
-                  loading={loadingScript}
-                >
-                  <IconReload size={16} />
-                </ActionIcon>
-              </Tooltip>
+                <Tooltip label="Load script">
+                  <ActionIcon
+                    size="sm"
+                    variant="light"
+                    onClick={handleLoadScript}
+                    loading={loadingScript}
+                  >
+                    <IconReload size={16} />
+                  </ActionIcon>
+                </Tooltip>
 
-              <Tooltip label="Save script">
-                <ActionIcon
-                  size="sm"
-                  variant="light"
-                  onClick={handleSaveScript}
-                  loading={savingScript}
-                >
-                  <IconDeviceFloppy size={16} />
-                </ActionIcon>
-              </Tooltip>
+                <Tooltip label="Save script">
+                  <ActionIcon
+                    size="sm"
+                    variant="light"
+                    onClick={handleSaveScript}
+                    loading={savingScript}
+                  >
+                    <IconDeviceFloppy size={16} />
+                  </ActionIcon>
+                </Tooltip>
 
-              <Divider orientation="vertical" />
+                <Divider orientation="vertical" />
 
-              <Tooltip label="Format script">
-                <ActionIcon
-                  size="sm"
-                  variant="light"
-                  onClick={handleFormatScript}
-                >
-                  <IconWand size={16} />
-                </ActionIcon>
-              </Tooltip>
+                <Tooltip label="Format script">
+                  <ActionIcon
+                    size="sm"
+                    variant="light"
+                    onClick={handleFormatScript}
+                  >
+                    <IconWand size={16} />
+                  </ActionIcon>
+                </Tooltip>
 
-              <Tooltip label="Comment / uncomment">
-                <ActionIcon
-                  size="sm"
-                  variant="light"
-                  onClick={handleToggleComment}
-                >
-                  <IconMessageCode size={16} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
+                <Tooltip label="Comment / uncomment">
+                  <ActionIcon
+                    size="sm"
+                    variant="light"
+                    onClick={handleToggleComment}
+                  >
+                    <IconMessageCode size={16} />
+                  </ActionIcon>
+                </Tooltip>
 
-            {/* <Group gap={6}>
+                <Divider orientation="vertical" />
+
+                <Checkbox
+                  size="xs"
+                  label="Auto start"
+                  checked={autoStart}
+                  onChange={(event) =>
+                    handleAutoStartChange(event.currentTarget.checked)
+                  }
+                />
+              </Group>
+
+              {/* <Group gap={6}>
               <Text size="xs" c="dimmed">
                 {scriptStatus}
               </Text>
 
             </Group> */}
-          </Group>
-
-          <div
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflow: "hidden",
-              border: "1px solid var(--mantine-color-default-border)",
-              borderRadius: 4,
-            }}
-          >
-            <CodeMirror
-              value={code}
-              height="100%"
-              theme={cmTheme}
-              extensions={[
-                javascript({
-                  jsx: false,
-                  typescript: false,
-                }),
-                editorKeymap,
-              ]}
-              onCreateEditor={(view) => {
-                editorViewRef.current = view;
-              }}
-              onChange={handleChange}
-              basicSetup={{
-                lineNumbers: true,
-                foldGutter: true,
-                highlightActiveLine: true,
-                highlightSelectionMatches: true,
-                bracketMatching: true,
-                closeBrackets: true,
-                autocompletion: true,
-              }}
-              style={{
-                height: "100%",
-                fontSize: 14,
-              }}
-            />
-          </div>
-
-          <Group justify="space-between" style={{ flexShrink: 0 }}>
-            <Text size="xs" c="dimmed">
-              Shift+Alt+F: format · Ctrl+/: comment · Ctrl+S: save · Tab: indent
-            </Text>
-            <Group gap={6}>
-              <Button
-                size="xs"
-                leftSection={<IconPlayerPlay size={14} />}
-                disabled={scriptIsRunning}
-                onClick={handleStartScript}
-              >
-                Start
-              </Button>
-
-              <Button
-                size="xs"
-                color="red"
-                leftSection={<IconPlayerStop size={14} />}
-                disabled={scriptStatus !== "running"}
-                onClick={handleStopScript}
-              >
-                Stop
-              </Button>
-
-              <Button variant="default" size="xs" onClick={onClose}>
-                Close
-              </Button>
             </Group>
-          </Group>
-        </Stack>
-      </div>
-    </Modal>
+
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflow: "hidden",
+                border: "1px solid var(--mantine-color-default-border)",
+                borderRadius: 4,
+              }}
+            >
+              <CodeMirror
+                value={code}
+                height="100%"
+                theme={cmTheme}
+                extensions={[
+                  javascript({
+                    jsx: false,
+                    typescript: false,
+                  }),
+                  editorKeymap,
+                ]}
+                onCreateEditor={(view) => {
+                  editorViewRef.current = view;
+                }}
+                onChange={handleChange}
+                basicSetup={{
+                  lineNumbers: true,
+                  foldGutter: true,
+                  highlightActiveLine: true,
+                  highlightSelectionMatches: true,
+                  bracketMatching: true,
+                  closeBrackets: true,
+                  autocompletion: true,
+                }}
+                style={{
+                  height: "100%",
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <Group justify="space-between" style={{ flexShrink: 0 }}>
+              <Text size="xs" c="dimmed">
+                Shift+Alt+F: format · Ctrl+/: comment · Ctrl+S: save · Tab: indent
+              </Text>
+              <Group gap={6}>
+                <Button
+                  size="xs"
+                  leftSection={<IconPlayerPlay size={14} />}
+                  disabled={scriptIsRunning}
+                  onClick={handleStartScript}
+                >
+                  Start
+                </Button>
+
+                <Button
+                  size="xs"
+                  color="red"
+                  leftSection={<IconPlayerStop size={14} />}
+                  disabled={scriptStatus !== "running"}
+                  onClick={handleStopScript}
+                >
+                  Stop
+                </Button>
+
+                <Button variant="default" size="xs" onClick={onClose}>
+                  Close
+                </Button>
+              </Group>
+            </Group>
+          </Stack>
+        </div>
+      </Modal>
     </>
   );
 }
