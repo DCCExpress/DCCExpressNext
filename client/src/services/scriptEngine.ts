@@ -251,6 +251,7 @@ const {
                 await this.check();
 
                 wsApi.setTurnout(address, closed);
+                //const layout = layoutStore.getLayout();
                 layoutStore.setTurnoutStateByAddress(address, closed);
 
                 await this.check();
