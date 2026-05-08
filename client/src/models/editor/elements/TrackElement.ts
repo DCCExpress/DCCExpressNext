@@ -14,8 +14,6 @@ export class TrackElement extends AddressedElement implements ITrackElement {
         this.type = ELEMENT_TYPES.TRACK;
         this.rotationStep = 45;
         this.length = 200;
-        //this.trackType = data.trackType;
-        //this.length = data.length ?? 80;
     }
 
     draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {

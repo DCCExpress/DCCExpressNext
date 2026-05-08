@@ -598,7 +598,7 @@ export default function TrackCanvas({
       const elems = layoutRef.current.getAllElements();
       wsApi.routeLock();
       setBusy?.(true, "Route is being set...");
-      await sleep(500);
+      await sleep(1000);
       try {
         for (const ri of rb.routeTurnouts) {
           const t = elems.find((elem) => ri.turnoutId === elem.id) as TrackTurnoutElement;
@@ -614,7 +614,7 @@ export default function TrackCanvas({
               ri.closed // === t.turnoutClosedValue
             );
 
-            await sleep(500);
+            await sleep(1000);
           }
         }
       } finally {
@@ -876,6 +876,7 @@ export default function TrackCanvas({
     };
 
     const handleMouseMove = (ev: MouseEvent) => {
+      
       const currentLayout = layoutRef.current;
       const currentTool = toolRef.current;
 
@@ -896,13 +897,17 @@ export default function TrackCanvas({
 
       const hoveredElement = currentLayout.getElement(grid.x, grid.y);
 
-      if (tool.mode === "draw" && currentCursorRef.current) {
+      
+      if (toolRef.current.mode === "draw" && currentCursorRef.current) {
+        
         const occupied = currentLayout.getLayeredElement(currentCursorRef.current, grid.x, grid.y);
         if (occupied != null) {
+          
           setHoverGrid({ x: grid.x, y: grid.y });
         } else {
           setHoverGrid(null);
         }
+        invalidate();
       }
 
       if (panRef.current.isPanning) {

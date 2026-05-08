@@ -205,6 +205,9 @@ export class Layout {
     getLayeredElement(be: BaseElement, x: number, y: number): BaseElement | null {
         for (const l of this.layers) {
             for (const e of l.elements) {
+                // if(e.hitTest(x,y)) {
+                //     return e;
+                // }
                 if (e.hitTest(x, y) && e.layerName == be.layerName) {
                     return e;
                 }
