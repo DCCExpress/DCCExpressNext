@@ -136,7 +136,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 13,
+          "x": 14,
           "y": 5,
           "rotation": 0,
           "rotationStep": 45,
@@ -154,7 +154,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 13,
+          "x": 14,
           "y": 6,
           "rotation": 0,
           "rotationStep": 45,
@@ -172,7 +172,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 13,
+          "x": 14,
           "y": 7,
           "rotation": 0,
           "rotationStep": 45,
@@ -344,7 +344,7 @@
           "type": "tracksensor",
           "name": "element",
           "layerName": "sensors",
-          "x": 14,
+          "x": 13,
           "y": 6,
           "rotation": 0,
           "rotationStep": 0,
@@ -353,14 +353,15 @@
           "address": 1,
           "kind": 1,
           "colorOn": "#40c057",
-          "colorOff": "green"
+          "colorOff": "green",
+          "radius": 6
         },
         {
           "id": "ac74d0fa-5202-46de-a510-a7ef1a4eafc9",
           "type": "tracksensor",
           "name": "Sensor1",
           "layerName": "sensors",
-          "x": 14,
+          "x": 13,
           "y": 5,
           "rotation": 0,
           "rotationStep": 0,
@@ -369,14 +370,15 @@
           "address": 1,
           "kind": 1,
           "colorOn": "#fa5252",
-          "colorOff": "green"
+          "colorOff": "green",
+          "radius": 6
         },
         {
           "id": "4bde19c-2f65-4a14-8f3d-9d43d576",
           "type": "tracksensor",
           "name": "element",
           "layerName": "sensors",
-          "x": 14,
+          "x": 13,
           "y": 7,
           "rotation": 0,
           "rotationStep": 0,
@@ -385,7 +387,8 @@
           "address": 0,
           "kind": 1,
           "colorOn": "#228be6",
-          "colorOff": "green"
+          "colorOff": "green",
+          "radius": 6
         },
         {
           "id": "45ae56a-5af1-426d-b6f9-6f2106b1",
@@ -401,7 +404,8 @@
           "address": 0,
           "kind": 1,
           "colorOn": "#e64980",
-          "colorOff": "green"
+          "colorOff": "green",
+          "radius": 6
         },
         {
           "id": "2107297-b5f9-4d5e-b5c4-d471350f",
@@ -417,7 +421,8 @@
           "address": 0,
           "kind": 1,
           "colorOn": "#fab005",
-          "colorOff": "green"
+          "colorOff": "green",
+          "radius": 6
         },
         {
           "id": "0572e36-df8e-466b-90f2-65f2aca3",
@@ -433,7 +438,8 @@
           "address": 0,
           "kind": 1,
           "colorOn": "lime",
-          "colorOff": "green"
+          "colorOff": "green",
+          "radius": 6
         },
         {
           "id": "657ea08-11b2-498b-bea4-883e9833",
@@ -449,7 +455,8 @@
           "address": 0,
           "kind": 1,
           "colorOn": "#ffffff",
-          "colorOff": "green"
+          "colorOff": "green",
+          "radius": 6
         },
         {
           "id": "bf3be57-a5a2-4b07-80c3-a24a5c21",
@@ -465,7 +472,8 @@
           "address": 0,
           "kind": 1,
           "colorOn": "#82c91e",
-          "colorOff": "green"
+          "colorOff": "green",
+          "radius": 6
         },
         {
           "id": "bb31f1c-9be0-4b31-ab69-283fd9d7",

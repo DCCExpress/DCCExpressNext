@@ -141,6 +141,7 @@ export interface ITrackSensorElement extends IBaseElement {
   colorOn: string;
   colorOff: string;
   address: number;
+  radius: number;
   // textOn: string;
   // textOff: string;
 }

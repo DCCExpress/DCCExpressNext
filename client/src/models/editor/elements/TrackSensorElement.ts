@@ -16,6 +16,7 @@ export class TrackSensorElement extends BaseElement implements ITrackSensorEleme
     colorOff: string = "green";
     textOn: string = "ON";
     textOff: string = "OFF";
+    radius: number = 6;
 
     constructor(x: number, y: number) {
         super(x, y);
@@ -33,7 +34,7 @@ export class TrackSensorElement extends BaseElement implements ITrackSensorEleme
         ctx.fillStyle = this.on ? this.colorOn : "gray";
 
         ctx.beginPath();
-        ctx.arc(this.centerX, this.centerY, 6, 0, Math.PI * 2);
+        ctx.arc(this.centerX, this.centerY, this.radius, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.strokeStyle = "black"
@@ -58,6 +59,7 @@ export class TrackSensorElement extends BaseElement implements ITrackSensorEleme
             kind: this.kind,
             colorOn: this.colorOn,
             colorOff: this.colorOff,
+            radius: this.radius,
             // textOn: this.textOn,
             // textOff: this.textOff,
         };
@@ -85,6 +87,7 @@ export class TrackSensorElement extends BaseElement implements ITrackSensorEleme
             // { label: "Text ON", key: "textOn", type: "string", readonly: false },
             // { label: "Text OFF", key: "textOff", type: "string", readonly: false },
             { label: "Color ON", key: "colorOn", type: "colorpicker", readonly: false },
+            { label: "Radius", key: "radius", type: "number", min: 4, max: 12, readonly: false },
         ];
     }
 

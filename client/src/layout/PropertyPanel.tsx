@@ -315,6 +315,8 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                         label={prop.label}
                         disabled={prop.readonly!}
                         //type="number"
+                        min={prop.min}
+                        max={prop.max}
                         value={(selectedElement as any)[prop.key] ?? 0}
                         onChange={(e) => handleChange(prop, e)}
                       //onBlur={(e) => handleChange(prop, e.target.value)}

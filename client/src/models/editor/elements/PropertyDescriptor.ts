@@ -8,4 +8,6 @@ export interface IEditableProperty {
   type: PropertyEditorType;
   readonly?: boolean;
   validate?: (value: any) => boolean;
+  min?: number;
+  max?: number;
 }

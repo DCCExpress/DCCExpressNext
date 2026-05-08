@@ -160,6 +160,7 @@ export class ElementFactory {
         sensor.kind = data.kind;
         sensor.colorOn = data.colorOn;
         sensor.colorOff = data.colorOff;
+        sensor.radius = data.radius ?? 6;
         // sensor.textOn = data.textOn;
         // sensor.textOff = data.textOff;
         return sensor;
