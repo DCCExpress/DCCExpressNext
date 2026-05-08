@@ -1,16 +1,23 @@
 import { ActionIcon, Badge, Divider, Group, Tooltip } from "@mantine/core";
+import {
+  IconPlayerPlayFilled,
+  IconPlayerStopFilled,
+} from "@tabler/icons-react";
+
 import { useWsStatus } from "../hooks/useWsStatus";
 import { getWsColor } from "./TopMenuBar";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { useBrowserStats } from "../hooks/useBrowserStats";
-import "../styles/global.css"
 import { wsApi } from "../services/wsApi";
 import { useScriptStatus } from "../hooks/useScriptStatus";
-import { IconPlayerStopFilled } from "@tabler/icons-react";
+import { scriptEngine } from "../services/scriptEngine";
+
+import "../styles/global.css";
 
 export default function StatusBar() {
   const wsStatus = useWsStatus();
   const browserStats = useBrowserStats(1000);
+
   const {
     alive,
     type,
@@ -24,8 +31,10 @@ export default function StatusBar() {
   const trackPowerOn = powerInfo?.trackVoltageOn === true && wsConnected;
 
   const { scriptState, stopScript } = useScriptStatus();
+
   const scriptStatus = scriptState?.status ?? "idle";
-  const scriptRunning =
+
+  const scriptIsRunning =
     scriptStatus === "running" || scriptStatus === "stopping";
 
   const scriptBadgeColor =
@@ -41,6 +50,21 @@ export default function StatusBar() {
               ? "gray"
               : "gray";
 
+  const handleStartScript = () => {
+    scriptEngine.runCurrent({
+      source: "control-panel",
+    });
+  };
+
+  const handleToggleScript = () => {
+    if (scriptIsRunning) {
+      stopScript();
+      return;
+    }
+
+    handleStartScript();
+  };
+
   return (
     <Group h="100%" px="md" justify="space-between">
       <Group gap="md">
@@ -55,24 +79,24 @@ export default function StatusBar() {
         <Badge color={trackPowerOn ? "green" : "red"} variant="filled">
           PWR
         </Badge>
+
         <Badge
           style={{ cursor: "pointer" }}
           color={powerInfo?.emergencyStop ? "red" : "gray"}
           className={powerInfo?.emergencyStop ? "blinkBadge" : ""}
           onClick={() => {
-            if (powerInfo) {
-              if (powerInfo.emergencyStop) {
-                wsApi.powerOn();
-              } else {
-                wsApi.emergencyStop();
-              }
+            if (!powerInfo) return;
+
+            if (powerInfo.emergencyStop) {
+              wsApi.powerOn();
+            } else {
+              wsApi.emergencyStop();
             }
           }}
-
-          variant="filled">
+          variant="filled"
+        >
           ESTOP
         </Badge>
-
 
         <Badge
           color={locked ? "orange" : "gray"}
@@ -84,22 +108,23 @@ export default function StatusBar() {
 
         <Divider orientation="vertical" />
 
-        <Badge
-          color={scriptBadgeColor}
-          variant="filled"
-          
-        >
+        <Badge color={scriptBadgeColor} variant="filled">
           SCRIPT {scriptStatus.toUpperCase()}
         </Badge>
-        <Tooltip label="Stop running script">
+
+        <Tooltip label={scriptIsRunning ? "Stop running script" : "Start script"}>
           <ActionIcon
             size="sm"
-            color="red"
+            color={scriptIsRunning ? "red" : "green"}
             variant="filled"
-            disabled={scriptStatus !== "running"}
-            onClick={stopScript}
+            disabled={scriptStatus === "stopping"}
+            onClick={handleToggleScript}
           >
-            <IconPlayerStopFilled size={14} />
+            {scriptIsRunning ? (
+              <IconPlayerStopFilled size={14} />
+            ) : (
+              <IconPlayerPlayFilled size={14} />
+            )}
           </ActionIcon>
         </Tooltip>
 
@@ -107,7 +132,6 @@ export default function StatusBar() {
 
         <Badge color={getMemoryColor(browserStats.memoryUsedMb)} variant="filled">
           JS {browserStats.memoryUsedMb ?? "-"} MB
-
         </Badge>
 
         <Badge color={getFpsColor(browserStats.fps)} variant="filled">
@@ -117,7 +141,6 @@ export default function StatusBar() {
         <Badge color="blue" variant="filled">
           CPU {browserStats.cpuThreads ?? "-"}
         </Badge>
-
       </Group>
     </Group>
   );

@@ -535,7 +535,7 @@
         {
           "id": "c6bc4282-a7fd-4c70-817a-6b2fe6a2a765",
           "type": "trackturnoutleft",
-          "name": "T11",
+          "name": "T12",
           "layerName": "track",
           "x": 26,
           "y": 6,
@@ -550,7 +550,7 @@
         {
           "id": "489067cf-c95f-4893-9050-8c0e2a7a7d58",
           "type": "trackturnoutright",
-          "name": "T2",
+          "name": "T13",
           "layerName": "track",
           "x": 27,
           "y": 6,
@@ -981,7 +981,7 @@
         {
           "id": "28394d0-1c70-4ca7-8c39-3a925ae0",
           "type": "trackturnoutleft",
-          "name": "element",
+          "name": "T11",
           "layerName": "track",
           "x": 18,
           "y": 6,
@@ -996,7 +996,7 @@
         {
           "id": "da23d9c-4ebe-44e6-9190-0165f734",
           "type": "trackturnoutright",
-          "name": "element",
+          "name": "T10",
           "layerName": "track",
           "x": 17,
           "y": 6,
@@ -1303,8 +1303,8 @@
           "type": "buttonscript",
           "name": "element",
           "layerName": "track",
-          "x": 20,
-          "y": 4,
+          "x": 14,
+          "y": 10,
           "rotation": 0,
           "rotationStep": 0,
           "bg": "black",
