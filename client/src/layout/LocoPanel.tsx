@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Button,
@@ -41,49 +41,52 @@ type LocoPanelProps = {
 };
 
 const SPEED_PRESETS = [5, 10, 20, 40, 80, 100];
+const SELECTED_LOCO_STORAGE_KEY = "dcc-express.loco-panel.selected-loco-id";
 
 export default function LocoPanel({ locos = [] }: LocoPanelProps) {
-  const [selectedLocoId, setSelectedLocoId] = useState<string>("");
+
+  const [selectedLocoId, setSelectedLocoId] = useState<string>(() => {
+    return window.localStorage.getItem(SELECTED_LOCO_STORAGE_KEY) ?? "";
+  });
+
   const currentAddressRef = useRef<number | null>(null);
   const [pickerOpened, setPickerOpened] = useState(false);
   const [speed, setSpeed] = useState(0);
   const [direction, setDirection] = useState<Direction>("forward");
   const [activeFunctions, setActiveFunctions] = useState<Record<number, boolean>>({});
+
   const { powerInfo, alive } = useCommandCenter();
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
-
 
   const badgeBg = colorScheme == "dark" ? theme.colors.dark[5] : theme.colors.blue[0];
   const badgeBorder = colorScheme == "dark" ? theme.colors.dark[3] : theme.colors.blue[2];
   const badgeText = colorScheme == "dark" ? theme.colors.blue[1] : theme.colors.blue[8];
 
-  // const wsStatus = useWsStatus();
-  // useEffect(() => {
-  //   if(wsStatus == "connected") {
-  //     if(currentLoco) {
-  //      wsApi.getLoco(currentLoco.address);
-  //     }
-  //   }
-  // }, [wsStatus])
+  const selectLocoId = useCallback((id: string) => {
+    setSelectedLocoId(id);
+    if (id) {
+      window.localStorage.setItem(SELECTED_LOCO_STORAGE_KEY, id);
+    } else {
+      window.localStorage.removeItem(SELECTED_LOCO_STORAGE_KEY);
+    }
+  }, []);
 
   useEffect(() => {
-
-    if (!selectedLocoId && locos.length > 0) {
-      setSelectedLocoId(locos[0]!.id);
-
+    if (locos.length === 0) {
+      return;
     }
 
-    if (selectedLocoId && !locos.some((l) => l.id === selectedLocoId)) {
-      setSelectedLocoId(locos[0]?.id ?? "");
+    if (selectedLocoId && locos.some((l) => l.id === selectedLocoId)) {
+      return;
     }
-  }, [locos, selectedLocoId]);
 
-
+    selectLocoId(locos[0]?.id ?? "");
+  }, [locos, selectedLocoId, selectLocoId]);
+  
   const currentLoco = useMemo(() => {
     if (selectedLocoId) {
       const found = locos.find((l) => l.id === selectedLocoId);
-      wsApi.getLoco(found?.address ?? 0);
       if (found) return found;
     }
 
@@ -92,16 +95,21 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
 
   useEffect(() => {
     currentAddressRef.current = currentLoco?.address ?? null;
+
+    if (currentLoco) {
+      wsApi.getLoco(currentLoco.address);
+    }
   }, [currentLoco]);
 
   const handleSelectLoco = (loco: Loco) => {
-    setSelectedLocoId(loco.id);
+    selectLocoId(loco.id);
     setPickerOpened(false);
     setSpeed(0);
     setDirection("forward");
     setActiveFunctions({});
     wsApi.getLoco(loco.address);
   };
+
 
   const handleForward = () => {
     setDirection("forward");
@@ -170,6 +178,8 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
 
     return unsubscribe;
   }, []);
+
+
   return (
     <Card withBorder radius="sm" p="xs" h="100%"
       opacity={alive ? 1 : 0.75}

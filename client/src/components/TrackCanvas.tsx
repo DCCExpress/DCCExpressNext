@@ -654,7 +654,7 @@ export default function TrackCanvas({
       const currentLayout = layoutRef.current;
       const currentTool = toolRef.current;
       const currentEditMode = editModeRef.current;
-      const currentTurnouSelection = turnoutSelectionModeRef.current;
+      const currentTurnoutSelection = turnoutSelectionModeRef.current;
       const currentElement = selectedElementRef.current;
       //if (ev.button !== 0 && ev.button !== 1) return;
 
@@ -697,7 +697,7 @@ export default function TrackCanvas({
       }
 
       if (currentEditMode) {
-        if (currentTurnouSelection) {
+        if (currentTurnoutSelection) {
           if (hitElement) {
 
 
@@ -705,7 +705,7 @@ export default function TrackCanvas({
               if (isTurnoutElement(hitElement)) {
                 const rb = currentElement as RouteButtonElement;
                 const t = hitElement as TrackTurnoutElement;
-                const closed = t.turnoutClosed == t.turnoutClosedValue;
+                const closed = t.turnoutClosed; // == t.turnoutClosedValue;
                 rb.addOrUpdateTurnout(hitElement.id, closed);
                 setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElement);
                 onInvalidate();
