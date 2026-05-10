@@ -13,6 +13,31 @@
     "cancel": "Cancel",
     "save": "Save"
   },
+  "locodialog": {
+    "close": "Close",
+    "couldnotloadlocos": "Could not load locomotives!",
+    "delete": "Delete",
+    "extended_params": "Advanced settings",
+    "function_momentary": "Momentary",
+    "function_number": "Function No.",
+    "function_test": "Test",
+    "functionname": "Name",
+    "functions_empty": "No functions defined",
+    "loco_direction_invert": "Invert direction",
+    "loco_functions": "Functions",
+    "loco_length_mm": "Length (mm)",
+    "loco_max_speed": "Maximum speed",
+    "loco_speed_max": "Max.",
+    "locoaddress": "Address",
+    "locomotives": "Locomotives",
+    "loconame": "Name",
+    "mozdonylista": "Locomotive list",
+    "new_function": "New function",
+    "newloco": "New locomotive",
+    "noimage": "No image",
+    "save": "Save",
+    "selectimage": "Select image"
+  },
   "settings": {
     "language": "Language",
     "languages": {

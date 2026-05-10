@@ -27,6 +27,7 @@ import { getLocos, saveLocos } from "../api/http";
 import { generateId } from "../helpers";
 import { Loco, LocoFunction } from "../../../common/src/types";
 import { wsApi } from "../services/wsApi";
+import { useTranslation } from "react-i18next";
 
 type LocoDialogProps = {
   opened: boolean;
@@ -63,6 +64,7 @@ export default function LocoDialog({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string>("");
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!opened) return;
@@ -82,7 +84,7 @@ export default function LocoDialog({
         }
       } catch (error) {
         console.error(error);
-        setMessage("Nem sikerült betölteni a mozdonyokat.");
+        setMessage(t("locodialog.couldnotloadlocos"));
       } finally {
         setLoading(false);
       }
@@ -223,11 +225,11 @@ export default function LocoDialog({
       setMessage("");
 
       await saveLocos(locos);
-      setMessage("Mentés sikerült.");
+      setMessage(t("locodialg.successful"));
       onSaved?.();
     } catch (error) {
       console.error(error);
-      setMessage("Nem sikerült elmenteni a mozdonyokat.");
+      setMessage(t("locodialog.couldnotsave"));
     } finally {
       setSaving(false);
     }
@@ -262,10 +264,10 @@ export default function LocoDialog({
       >
         <Group justify="space-between" mb="md" style={{ flexShrink: 0 }}>
           <div>
-            <Title order={3}>Mozdonyok</Title>
-            <Text size="sm" c="dimmed">
+            <Title order={3}>{t("locodialog.locomotives")}</Title>
+            {/* <Text size="sm" c="dimmed">
               Mozdony törzsadatok és funkciók szerkesztése
-            </Text>
+            </Text> */}
           </div>
 
           <ActionIcon
@@ -292,7 +294,7 @@ export default function LocoDialog({
           >
             <Loader />
             <Text size="sm" c="dimmed">
-              Mozdonyok betöltése...
+              {t("locodialog.loading")}
             </Text>
           </Stack>
         ) : (
@@ -318,14 +320,14 @@ export default function LocoDialog({
               }}
             >
               <Group justify="space-between" mb="sm" style={{ flexShrink: 0 }}>
-                <Text fw={600}>Mozdony lista</Text>
+                <Text fw={600}>{t("locodialog.mozdonylista")}</Text>
 
                 <Button
                   size="xs"
                   leftSection={<IconPlus size={14} />}
                   onClick={addLoco}
                 >
-                  Új
+                  {t("locodialog.newloco")}
                 </Button>
               </Group>
 
@@ -397,15 +399,15 @@ export default function LocoDialog({
                           }}
                         >
                           <Text fw={600} truncate>
-                            {loco.name || "Névtelen mozdony"}
+                            {loco.name || t("locodialog.unknownloco")}
                           </Text>
 
                           <Text size="sm" c="dimmed">
-                            Cím: {loco.address}
+                            {t("locodialog.locoaddress")}: {loco.address}
                           </Text>
 
                           <Text size="sm" c="dimmed">
-                            Max: {loco.maxSpeed}
+                            {t("locodialog.loco_speed_max")}: {loco.maxSpeed}
                           </Text>
                         </Stack>
                       </Group>
@@ -414,7 +416,7 @@ export default function LocoDialog({
 
                   {locos.length === 0 && (
                     <Text size="sm" c="dimmed">
-                      Nincs még mozdony.
+                      {t("locodialog.locosempty")}.
                     </Text>
                   )}
                 </Stack>
@@ -430,7 +432,7 @@ export default function LocoDialog({
                   onClick={deleteSelectedLoco}
                   disabled={!selectedLoco}
                 >
-                  Törlés
+                  {t("locodialog.delete")}
                 </Button>
               </Group>
             </Card>
@@ -456,7 +458,7 @@ export default function LocoDialog({
                     minHeight: 0,
                   }}
                 >
-                  <Text fw={600}>Nincs mozdony kiválasztva</Text>
+                  <Text fw={600}>{t("locodialog.noselectedloco")}.</Text>
                 </Stack>
               ) : (
                 <Tabs
@@ -522,7 +524,7 @@ export default function LocoDialog({
                               <Stack align="center" gap="xs">
                                 <IconPhoto size={32} />
                                 <Text size="sm" c="dimmed">
-                                  Nincs kép
+                                  {t("locodialog.noimage")}
                                 </Text>
                               </Stack>
                             )}
@@ -539,20 +541,20 @@ export default function LocoDialog({
                                   variant="light"
                                   leftSection={<IconPhoto size={16} />}
                                 >
-                                  Kép kiválasztása
+                                {t("locodialog.selectimage")}
                                 </Button>
                               )}
                             </FileButton>
 
-                            <Text size="sm" c="dimmed">
+                            {/* <Text size="sm" c="dimmed">
                               Most egyelőre Base64-ben mentjük a JSON-be.
-                            </Text>
+                            </Text> */}
                           </Stack>
                         </Group>
 
                         <Stack gap="xs" w="50%">
                           <TextInput
-                            label="Név"
+                            label={t("locodialog.loconame")}
                             value={selectedLoco.name}
                             onChange={(e) =>
                               updateSelectedLoco({
@@ -562,7 +564,7 @@ export default function LocoDialog({
                           />
 
                           <NumberInput
-                            label="Cím"
+                            label={t("locodialog.locoaddress")}
                             value={selectedLoco.address}
                             min={1}
                             onChange={(value) =>
@@ -573,7 +575,7 @@ export default function LocoDialog({
                           />
 
                           <NumberInput
-                            label="Max sebesség"
+                            label={t("locodialog.loco_max_speed")}
                             value={selectedLoco.maxSpeed}
                             min={1}
                             max={1000}
@@ -585,7 +587,7 @@ export default function LocoDialog({
                           />
 
                           <Checkbox
-                            label="Invert"
+                            label={t("locodialog.loco_direction_invert")}
                             checked={selectedLoco.invert}
                             onChange={(e) =>
                               updateSelectedLoco({
@@ -621,14 +623,14 @@ export default function LocoDialog({
                         justify="space-between"
                         style={{ flexShrink: 0 }}
                       >
-                        <Text fw={600}>Funkciók</Text>
+                        <Text fw={600}>{t("locodialog.loco_functions")}</Text>
 
                         <Button
                           size="xs"
                           leftSection={<IconPlus size={14} />}
                           onClick={addFunction}
                         >
-                          Új funkció
+                          {t("locodialog.new_function")}
                         </Button>
                       </Group>
 
@@ -644,7 +646,7 @@ export default function LocoDialog({
                             <Card key={fn.id} withBorder radius="sm" p="md">
                               <Group align="flex-start" wrap="nowrap">
                                 <NumberInput
-                                  label="Szám"
+                                  label={t("locodialog.function_number")}
                                   value={fn.number}
                                   min={0}
                                   style={{ width: 120, flexShrink: 0 }}
@@ -656,7 +658,7 @@ export default function LocoDialog({
                                 />
 
                                 <TextInput
-                                  label="Név"
+                                  label={t("locodialog.functionname")}
                                   value={fn.name}
                                   style={{ flex: 1, minWidth: 0 }}
                                   onChange={(e) =>
@@ -679,7 +681,7 @@ export default function LocoDialog({
 
                                 <Checkbox
                                   mt={30}
-                                  label="Momentary"
+                                  label={t("locodialog.function_momentary")}
                                   checked={fn.momentary}
                                   onChange={(e) =>
                                     updateFunction(fn.id, {
@@ -707,7 +709,7 @@ export default function LocoDialog({
                                     }
                                   }}
                                 >
-                                  Teszt
+                                  {t("locodialog.function_test")}
                                 </Button>
 
                                 <ActionIcon
@@ -724,7 +726,7 @@ export default function LocoDialog({
 
                           {selectedLoco.functions.length === 0 && (
                             <Text size="sm" c="dimmed">
-                              Még nincs funkció felvéve.
+                              {t("locodialog.functions_empty")}
                             </Text>
                           )}
                         </Stack>
@@ -755,7 +757,7 @@ export default function LocoDialog({
                         justify="space-between"
                         style={{ flexShrink: 0 }}
                       >
-                        <Text fw={600}>Extended params</Text>
+                        <Text fw={600}>{t("locodialog.extended_params")}</Text>
                       </Group>
 
                       <ScrollArea
@@ -767,7 +769,7 @@ export default function LocoDialog({
                       >
                         <Stack gap="sm">
                           <NumberInput
-                            label="Hossz (mm)"
+                            label={t("locodialog.loco_length_mm")}
                             value={selectedLoco.length}
                             min={1}
                             onChange={(value) =>
@@ -795,11 +797,11 @@ export default function LocoDialog({
 
           <Group>
             <Button onClick={handleSave} loading={saving}>
-              Mentés
+              {t("locodialog.save")}
             </Button>
 
             <Button variant="light" onClick={onClose}>
-              Bezárás
+              {t("locodialog.close")}
             </Button>
           </Group>
         </Group>

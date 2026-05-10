@@ -1302,23 +1302,6 @@
           "address": 0
         },
         {
-          "id": "c8a6fa4-0e33-4afb-9195-17a8232c",
-          "type": "buttonscript",
-          "name": "element",
-          "layerName": "track",
-          "x": 12,
-          "y": 10,
-          "rotation": 0,
-          "rotationStep": 0,
-          "bg": "black",
-          "fg": "white",
-          "colorOn": "#12b886",
-          "colorOff": "green",
-          "textOn": "JS",
-          "textOff": "JS",
-          "script": ""
-        },
-        {
           "id": "08b40a5-9040-4d58-91f5-918d55c2",
           "type": "track",
           "name": "element",

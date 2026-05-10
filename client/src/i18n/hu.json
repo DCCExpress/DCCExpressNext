@@ -12,6 +12,34 @@
     "cancel": "Mégsem",
     "save": "Mentés"
   },
+  "locodialog": {
+    "close": "Bezárás",
+    "couldnotloadlocos": "Nem sikerült betölteni a mozdonyokat!",
+    "delete": "Törlés",
+    "extended_params": "Kiegészítő paraméterek",
+    "function_momentary": "Nyomógomb",
+    "function_number": "Funk. szám",
+    "function_test": "Teszt",
+    "functionname": "Név",
+    "functions_empty": "Üres",
+    "loco_direction_invert": "Invert",
+    "loco_functions": "Funkciók",
+    "loco_length_mm": "Hossz (mm)",
+    "loco_max_speed": "Max. sebesség",
+    "loco_speed_max": "Max.",
+    "locoaddress": "Cím",
+    "locomotives": "Mozdonyok",
+    "loconame": "Név",
+    "mozdonylista": "Mozdony lista",
+    "new_function": "Új",
+    "newloco": "Új",
+    "noimage": "Nincs kép",
+    "save": "Mentés",
+    "selectimage": "Kép választása"
+  },
+  "locopanel": {
+    "nolocos": "Nincs mozdony"
+  },
   "settings": {
     "language": "Nyelv",
     "languages": {

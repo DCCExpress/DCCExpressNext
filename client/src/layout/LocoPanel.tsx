@@ -27,6 +27,7 @@ import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { showErrorMessage } from "../helpers";
+import { useTranslation } from "react-i18next";
 
 
 // TODO: Ha szerkesztve lett a mozdony újra le kell kérdezni a LocoState-t, 
@@ -42,7 +43,9 @@ const SPEED_PRESETS = [5, 10, 20, 40, 80, 100];
 const SELECTED_LOCO_STORAGE_KEY = "dcc-express.loco-panel.selected-loco-id";
 
 export default function LocoPanel({ locos = [] }: LocoPanelProps) {
-
+  
+  const { t } = useTranslation();
+  
   const [selectedLocoId, setSelectedLocoId] = useState<string>(() => {
     return window.localStorage.getItem(SELECTED_LOCO_STORAGE_KEY) ?? "";
   });
@@ -60,8 +63,9 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
   const badgeBg = colorScheme == "dark" ? theme.colors.dark[5] : theme.colors.blue[0];
   const badgeBorder = colorScheme == "dark" ? theme.colors.dark[3] : theme.colors.blue[2];
   const badgeText = colorScheme == "dark" ? theme.colors.blue[1] : theme.colors.blue[8];
-
   const selectLocoId = useCallback((id: string) => {
+ 
+    
     setSelectedLocoId(id);
     if (id) {
       window.localStorage.setItem(SELECTED_LOCO_STORAGE_KEY, id);
@@ -198,7 +202,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
 
           {!currentLoco ? (
             <Text size="sm" c="dimmed">
-              Nincs még mozdony betöltve.
+              {t("locopanel.nolocos")}
             </Text>
           ) : (
             <>
