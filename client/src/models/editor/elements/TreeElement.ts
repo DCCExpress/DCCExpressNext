@@ -59,6 +59,16 @@ export class TreeElement extends BaseElement implements ITreeElement {
 
     }
 
+    static fromJSON(data: ITreeElement) : TreeElement {
+        const e = new TreeElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        return e;
+    }
+
     override clone(): TreeElement {
         const copy = new TreeElement(this.x, this.y);
         copy.id = generateId();

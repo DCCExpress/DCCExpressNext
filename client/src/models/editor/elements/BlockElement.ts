@@ -206,6 +206,19 @@ export class BlockElement extends BaseElement implements IBlockElement {
         return copy;
     }
 
+    static fromJSON(data: IBlockElement) : BlockElement {
+        const e = new BlockElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        e.length = data.length;
+        e.sensorAddress = data.sensorAddress;
+        e.locoAddress = data.locoAddress;
+        return e;
+    }
+
     override getEditableProperties(): IEditableProperty[] {
         return [
             ...super.getEditableProperties(),

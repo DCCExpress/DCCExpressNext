@@ -194,6 +194,17 @@ export class TrackCurveElement extends AddressedElement implements ITrackCurveEl
         };
     }
 
+    static fromJSON(data: ITrackCurveElement): TrackCurveElement{
+        const curve = new TrackCurveElement(data.x, data.y);
+        curve.id = data.id;
+        curve.name = data.name;
+        curve.rotation = data.rotation;
+        curve.address = data.address;
+        curve.bg = data.bg;
+        curve.fg = data.fg;
+        return curve;        
+    }
+
     override clone(): TrackCurveElement {
         const copy = new TrackCurveElement(this.x, this.y);
         copy.id = generateId();

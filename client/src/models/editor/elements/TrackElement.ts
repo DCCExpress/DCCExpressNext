@@ -2,7 +2,7 @@ import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { AddressedElement } from "../core/AddressedElement";
 import { TrackBaseElement } from "../core/TrackBaseElement";
-import { DrawOptions, ELEMENT_TYPES, ITrackElement } from "../types/EditorTypes";
+import { DrawOptions, ELEMENT_TYPES, IBaseElement, ITrackElement } from "../types/EditorTypes";
 
 
 
@@ -109,6 +109,17 @@ export class TrackElement extends AddressedElement implements ITrackElement {
     //     };
     // }
 
+    static fromJSON(data: ITrackElement): TrackElement {
+        const track = new TrackElement(data.x, data.y);
+        track.id = data.id;
+        track.name = data.name;
+        track.rotation = data.rotation;
+        track.address = data.address;
+        track.bg = data.bg;
+        track.fg = data.fg;
+        
+        return track;
+    }
     override clone(): TrackElement {
         const copy = new TrackElement(this.x, this.y);
         copy.id = generateId();

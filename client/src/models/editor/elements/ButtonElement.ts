@@ -51,7 +51,21 @@ export class ButtonElement extends BaseElement implements IButtonElement {
             textOff: this.textOff,
         };
     }
-
+    
+    static fromJSON(data: IButtonElement): ButtonElement {
+        const e = new ButtonElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        e.address = data.address;
+        e.colorOn = data.colorOn;
+        e.colorOff = data.colorOff;
+        e.textOn = data.textOn;
+        e.textOff = data.textOff;
+        return e;
+    }
     override clone(): ButtonElement {
         const copy = new ButtonElement(this.x, this.y);
         copy.id = generateId();

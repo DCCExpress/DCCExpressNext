@@ -154,6 +154,17 @@ export class TrackTurnoutTwoWayElement extends AddressedElement implements ITrac
         };
     }
 
+    static fromJSON(data: ITrackTurnoutTwoWayElement) : TrackTurnoutTwoWayElement {
+        const e = new TrackTurnoutTwoWayElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.address = data.address;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        return e;
+    }
+
     override clone(): TrackTurnoutTwoWayElement {
         const copy = new TrackTurnoutTwoWayElement(this.x, this.y);
         copy.id = generateId();

@@ -113,6 +113,17 @@ export class ClockElement extends BaseElement implements IClockElement {
         ctx.lineWidth = width;
         ctx.stroke();
     }
+
+    static fromJSON(data: IClockElement) : ClockElement {
+        const e = new ClockElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        return e;
+    }
+
     override clone(): ClockElement {
         const copy = new ClockElement(this.x, this.y);
         copy.id = generateId();

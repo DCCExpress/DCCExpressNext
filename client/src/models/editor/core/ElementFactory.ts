@@ -25,117 +25,39 @@ export class ElementFactory {
   static create(data: EditorElementData): BaseElement {
     switch (data.type) {
       case ELEMENT_TYPES.TRACK: {
-        const track = new TrackElement(data.x, data.y);
-        track.id = data.id;
-        track.name = data.name;
-        track.rotation = data.rotation;
-        track.address = data.address;
-        track.bg = data.bg;
-        track.fg = data.fg;
-        
-        return track;
+        return TrackElement.fromJSON(data)
       }
 
       case ELEMENT_TYPES.TRACK_END: {
-        const end = new TrackEndElement(data.x, data.y);
-        end.id = data.id;
-        end.name = data.name;
-        end.rotation = data.rotation;
-        end.address = data.address;
-        end.bg = data.bg;
-        end.fg = data.fg;
-        
-        return end;
+        return TrackEndElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_CORNER: {
-        const corner = new TrackCornerElement(data.x, data.y);
-        corner.id = data.id;
-        corner.name = data.name;
-        corner.rotation = data.rotation;
-        corner.address = data.address;
-        corner.bg = data.bg;
-        corner.fg = data.fg;
-        
-        return corner;
+        return TrackCornerElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_CURVE: {
-        const curve = new TrackCurveElement(data.x, data.y);
-        curve.id = data.id;
-        curve.name = data.name;
-        curve.rotation = data.rotation;
-        curve.address = data.address;
-        curve.bg = data.bg;
-        curve.fg = data.fg;
-        
-        return curve;
+        return TrackCurveElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_CROSSING: {
-        const curve = new TrackCrossingElement(data.x, data.y);
-        curve.id = data.id;
-        curve.name = data.name;
-        curve.rotation = data.rotation;
-        curve.address = data.address;
-        curve.bg = data.bg;
-        curve.fg = data.fg;
-        
-        return curve;
+        return TrackCrossingElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_LEFT: {
-        const tleft = new TrackTurnoutLeftElement(data.x, data.y);
-        tleft.id = data.id;
-        tleft.name = data.name;
-        tleft.rotation = data.rotation;
-        tleft.address = data.address;
-        tleft.turnoutAddress = data.turnoutAddress ?? 0;
-        tleft.turnoutClosedValue = data.turnoutClosedValue;
-        tleft.bg = data.bg;
-        tleft.fg = data.fg;
-
-        return tleft;
+        return TrackTurnoutLeftElement.formJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT: {
-        const tright = new TrackTurnoutRightElement(data.x, data.y);
-        tright.id = data.id;
-        tright.name = data.name;
-        tright.rotation = data.rotation;
-        tright.address = data.address;
-        tright.turnoutAddress = data.turnoutAddress ?? 0;
-        tright.turnoutClosedValue = data.turnoutClosedValue;
-        tright.bg = data.bg;
-        tright.fg = data.fg;
-        
-        return tright;
+        return TrackTurnoutRightElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY: {
-        const ttw = new TrackTurnoutTwoWayElement(data.x, data.y);
-        ttw.id = data.id;
-        ttw.name = data.name;
-        ttw.rotation = data.rotation;
-        ttw.address = data.address;
-        ttw.bg = data.bg;
-        ttw.fg = data.fg;
-        
-        return ttw;
+        return TrackTurnoutTwoWayElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE: {
-        const td = new TrackTurnoutDoubleElement(data.x, data.y);
-        td.id = data.id;
-        td.name = data.name;
-        td.rotation = data.rotation;
-        td.address = data.address;
-        td.bg = data.bg;
-        td.fg = data.fg;
-        td.turnout1Address = data.turnout1Address;
-        td.turnout2Address = data.turnout2Address;
-        
-        return td;
+        return TrackTurnoutDoubleElement.fromJSON(data);
       }
 
 
@@ -150,150 +72,45 @@ export class ElementFactory {
       // }
 
       case ELEMENT_TYPES.TRACK_SENSOR: {
-        const sensor = new TrackSensorElement(data.x, data.y);
-        sensor.id = data.id;
-        sensor.name = data.name;
-        sensor.rotation = data.rotation;
-        sensor.bg = data.bg;
-        sensor.fg = data.fg;
-        sensor.address = data.address;
-        sensor.kind = data.kind;
-        sensor.colorOn = data.colorOn;
-        sensor.colorOff = data.colorOff;
-        sensor.radius = data.radius ?? 6;
-        // sensor.textOn = data.textOn;
-        // sensor.textOff = data.textOff;
-        return sensor;
+        return TrackSensorElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_SIGNAL2: {
-        const signal = new TrackSignalElement(data.x, data.y);
-        signal.id = data.id;
-        signal.name = data.name;
-        signal.rotation = data.rotation;
-        signal.aspect = data.aspect ?? 2;
-        signal.address = data.address ?? 0;
-        signal.addressLength = data.addressLength ?? 5;
-        signal.dispalyAsSingleLamp = data.dispalyAsSingleLamp ?? false;
-        signal.valueGreen = data.valueGreen ?? 0;
-        signal.valueRed = data.valueRed ?? 0;
-        signal.valueYellow = data.valueYellow ?? 0;
-        signal.valueWhite = data.valueWhite ?? 0;
-        return signal;
+        return TrackSignalElement.fromJSON(data);
       }
 
 
       case ELEMENT_TYPES.BUTTON: {
-        const button = new ButtonElement(data.x, data.y);
-        button.id = data.id;
-        button.name = data.name;
-        button.rotation = data.rotation;
-        button.bg = data.bg;
-        button.fg = data.fg;
-        button.address = data.address;
-        button.colorOn = data.colorOn;
-        button.colorOff = data.colorOff;
-        button.textOn = data.textOn;
-        button.textOff = data.textOff;
-        return button;
+        return ButtonElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.BUTTON_SCRIPT: {
-        const button = new ButtonScriptElement(data.x, data.y);
-        button.id = data.id;
-        button.name = data.name;
-        button.rotation = data.rotation;
-        button.bg = data.bg;
-        button.fg = data.fg;
-        button.colorOn = data.colorOn;
-        button.colorOff = data.colorOff;
-        button.textOn = data.textOn;
-        button.textOff = data.textOff;
-        button.script = data.script;
-        return button;
+        return ButtonScriptElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.BUTTON_AUDIO: {
-        const button = new AudioButtonElement(data.x, data.y);
-        button.id = data.id;
-        button.name = data.name;
-        button.rotation = data.rotation;
-        button.bg = data.bg;
-        button.fg = data.fg;
-        button.fileName = data.fileName;
-        button.label = data.label;
-        return button;
+        return AudioButtonElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.BUTTON_ROUTE: {
-        const button = new RouteButtonElement(data.x, data.y);
-        button.id = data.id;
-        button.name = data.name;
-        button.rotation = data.rotation;
-        button.bg = data.bg;
-        button.fg = data.fg;
-        button.colorOn = data.colorOn;
-        button.label = data.label;
-        button.routeTurnouts = Array.isArray(data.routeTurnouts)
-          ? data.routeTurnouts
-            .filter((x: any) => typeof x?.turnoutId === "string")
-            .map((x: any) => ({
-              turnoutId: x.turnoutId,
-              closed: Boolean(x.closed),
-            }))
-          : [];
-
-        return button;
+        return RouteButtonElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.CLOCK: {
-        const clock = new ClockElement(data.x, data.y);
-        clock.id = data.id;
-        clock.name = data.name;
-        clock.rotation = data.rotation;
-        clock.bg = data.bg;
-        clock.fg = data.fg;
-        return clock;
+        return ClockElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_BLOCK: {
-        const block = new BlockElement(data.x, data.y);
-        block.id = data.id;
-        block.name = data.name;
-        block.rotation = data.rotation;
-        block.bg = data.bg;
-        block.fg = data.fg;
-        block.length = data.length;
-        block.sensorAddress = data.sensorAddress;
-        block.locoAddress = data.locoAddress;
-        return block;
+        return BlockElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TREE: {
-        const tree = new TreeElement(data.x, data.y);
-        tree.id = data.id;
-        tree.name = data.name;
-        tree.rotation = data.rotation;
-        tree.bg = data.bg;
-        tree.fg = data.fg;
-        return tree;
+        return TreeElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.LABEL: {
-        const label = new LabelElement(data.x, data.y);
-        label.id = data.id;
-        label.text = data.text;
-        label.fontSize = data.fontSize;
-        label.color = data.color;
-        label.alignment = data.alignment;
-        label.offsetY = data.offsetY ?? 14;
-        label.offsetX = data.offsetX ?? 0;
-        label.rotation = data.rotation;
-        label.bg = data.bg;
-        label.fg = data.fg;
-        return label;
+        return LabelElement.fromJSON(data);
       }
-
 
       default:
         throw new Error(

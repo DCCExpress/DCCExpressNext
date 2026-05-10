@@ -113,6 +113,18 @@ export class TrackEndElement extends AddressedElement implements ITrackEndElemen
         };
     }
 
+        static fromJSON(data: ITrackEndElement): TrackEndElement {
+            const track = new TrackEndElement(data.x, data.y);
+            track.id = data.id;
+            track.name = data.name;
+            track.rotation = data.rotation;
+            track.address = data.address;
+            track.bg = data.bg;
+            track.fg = data.fg;
+            return track;
+        }
+    
+
     override clone(): TrackEndElement {
         const copy = new TrackEndElement(this.x, this.y);
         copy.id = generateId();

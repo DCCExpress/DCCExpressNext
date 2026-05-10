@@ -230,6 +230,19 @@ export class TrackTurnoutLeftElement extends TrackTurnoutElement implements ITra
         };
     }
 
+    static formJSON(data: ITrackTurnoutLeftElement): TrackTurnoutLeftElement {
+        const e = new TrackTurnoutLeftElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.address = data.address;
+        e.turnoutAddress = data.turnoutAddress ?? 0;
+        e.turnoutClosedValue = data.turnoutClosedValue;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        return e;
+    }
+
     override clone(): TrackTurnoutLeftElement {
         const copy = new TrackTurnoutLeftElement(this.x, this.y);
         copy.id = generateId();
@@ -244,7 +257,7 @@ export class TrackTurnoutLeftElement extends TrackTurnoutElement implements ITra
         return copy;
     }
 
- getNextItemXy(): Point {
+    getNextItemXy(): Point {
         if (this.isClosed) {
             return getDirectionXy(this.pos, -this.rotation)
         }

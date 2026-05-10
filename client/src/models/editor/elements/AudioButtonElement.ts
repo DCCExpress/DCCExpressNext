@@ -167,6 +167,18 @@ export class AudioButtonElement
         };
     }
 
+    static fromJSON(data: IAudioButtonElement): AudioButtonElement {
+        const e = new AudioButtonElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        e.fileName = data.fileName;
+        e.label = data.label;
+        return e;
+    }
+
     override clone(): AudioButtonElement {
         const copy = new AudioButtonElement(this.x, this.y);
 
@@ -187,9 +199,11 @@ export class AudioButtonElement
             ...super.getEditableProperties(),
             { key: "label", label: "Label", type: "string", },
             //{ key: "fileName", label: "Audio file", type: "string", },
-            { key: "fileName", label: "Audio file", type: "audiofile", callback: () => {
-                this.press()
-            }},
+            {
+                key: "fileName", label: "Audio file", type: "audiofile", callback: () => {
+                    this.press()
+                }
+            },
             { key: "bg", label: "Active color", type: "colorpicker", },
         ];
     }

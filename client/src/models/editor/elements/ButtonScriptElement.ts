@@ -61,6 +61,21 @@ export class ButtonScriptElement extends BaseElement implements IButtonScriptEle
         };
     }
 
+    static fromJSON(data: IButtonScriptElement) : ButtonScriptElement {
+        const e = new ButtonScriptElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        e.colorOn = data.colorOn;
+        e.colorOff = data.colorOff;
+        e.textOn = data.textOn;
+        e.textOff = data.textOff;
+        e.script = data.script;
+        return e;
+    }
+
     override clone(): ButtonScriptElement {
         const copy = new ButtonScriptElement(this.x, this.y);
         copy.id = generateId();

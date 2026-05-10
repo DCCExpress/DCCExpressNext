@@ -142,6 +142,17 @@ export class TrackCornerElement extends AddressedElement implements ITrackCorner
         };
     }
 
+    static fromJSON(data: ITrackCornerElement) : TrackCornerElement {
+        const corner = new TrackCornerElement(data.x, data.y);
+        corner.id = data.id;
+        corner.name = data.name;
+        corner.rotation = data.rotation;
+        corner.address = data.address;
+        corner.bg = data.bg;
+        corner.fg = data.fg;
+        return corner;
+    }
+
     override clone(): TrackCornerElement {
         const copy = new TrackCornerElement(this.x, this.y);
         copy.id = generateId();

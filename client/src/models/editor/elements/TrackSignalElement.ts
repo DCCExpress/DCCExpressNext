@@ -393,6 +393,22 @@ export class TrackSignalElement extends BaseElement implements ITrackSignalEleme
         };
     }
 
+    static fromJSON(data: ITrackSignalElement) : TrackSignalElement {
+        const e = new TrackSignalElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.aspect = data.aspect ?? 2;
+        e.address = data.address ?? 0;
+        e.addressLength = data.addressLength ?? 5;
+        e.dispalyAsSingleLamp = data.dispalyAsSingleLamp ?? false;
+        e.valueGreen = data.valueGreen ?? 0;
+        e.valueRed = data.valueRed ?? 0;
+        e.valueYellow = data.valueYellow ?? 0;
+        e.valueWhite = data.valueWhite ?? 0;
+        return e;
+    }
+
     override clone(): TrackSignalElement {
         const copy = new TrackSignalElement(this.x, this.y);
         copy.id = generateId();

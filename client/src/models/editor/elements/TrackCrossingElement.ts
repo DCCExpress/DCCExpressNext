@@ -119,6 +119,17 @@ export class TrackCrossingElement extends AddressedElement implements ITrackCros
         };
     }
 
+    static fromJSON(data: ITrackCrossingElement) : TrackCrossingElement {
+        const e = new TrackCrossingElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.address = data.address;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        return e;
+
+    }
     override clone(): TrackCrossingElement {
         const copy = new TrackCrossingElement(this.x, this.y);
         copy.id = generateId();

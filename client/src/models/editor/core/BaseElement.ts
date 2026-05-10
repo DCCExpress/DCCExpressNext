@@ -274,6 +274,10 @@ export abstract class BaseElement implements IBaseElement {
         };
     }
 
+    fromJSON(data: IBaseElement) {
+        
+    }
+
     draw(ctx: CanvasRenderingContext2D, options?: DrawOptions) {
         // if (this.debug) {
         //     this.drawNeighbors(ctx);

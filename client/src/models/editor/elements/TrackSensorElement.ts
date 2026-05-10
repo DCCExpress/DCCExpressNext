@@ -1,7 +1,7 @@
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
-import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackSensorElement } from "../types/EditorTypes";
+import { DrawOptions, ELEMENT_TYPES, ElementType, IBaseElement, ITrackSensorElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 export enum SensorTypes { circle, rect }
@@ -65,6 +65,21 @@ export class TrackSensorElement extends BaseElement implements ITrackSensorEleme
         };
     }
 
+    static fromJSON(data: ITrackSensorElement): TrackSensorElement {
+        const e = new TrackSensorElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        e.address = data.address;
+        e.kind = data.kind;
+        e.colorOn = data.colorOn;
+        e.colorOff = data.colorOff;
+        e.radius = data.radius ?? 6;
+        return e;
+       
+    }
     override clone(): TrackSensorElement {
         const copy = new TrackSensorElement(this.x, this.y);
         copy.id = generateId();

@@ -25,8 +25,6 @@ import LocoPicker from "../components/loco/LocoPicker";
 import { Loco, LocoState } from "../../../common/src/types";
 import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
-import Speedometer from "../components/Speedometer";
-import { useWsStatus } from "../hooks/useWsStatus";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { showErrorMessage } from "../helpers";
 

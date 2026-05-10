@@ -244,6 +244,19 @@ export default class TrackTurnoutDoubleElement extends AddressedElement {
         };
     }
 
+    static fromJSON(data: ITrackTurnoutDoubleElement) : TrackTurnoutDoubleElement {
+        const e = new TrackTurnoutDoubleElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.address = data.address;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        e.turnout1Address = data.turnout1Address;
+        e.turnout2Address = data.turnout2Address;
+        return e;
+    }
+
     override clone(): TrackTurnoutDoubleElement {
         const copy = new TrackTurnoutDoubleElement(this.x, this.y);
         copy.id = generateId();

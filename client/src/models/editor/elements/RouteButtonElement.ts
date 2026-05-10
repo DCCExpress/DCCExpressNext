@@ -167,6 +167,27 @@ export class RouteButtonElement extends ClickableBaseElement implements IRouteBu
         };
     }
 
+    static fromJSON(data: IRouteButtonElement) : RouteButtonElement{
+       const e = new RouteButtonElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        e.colorOn = data.colorOn;
+        e.label = data.label;
+        e.routeTurnouts = Array.isArray(data.routeTurnouts)
+          ? data.routeTurnouts
+            .filter((x: any) => typeof x?.turnoutId === "string")
+            .map((x: any) => ({
+              turnoutId: x.turnoutId,
+              closed: Boolean(x.closed),
+            }))
+          : [];
+
+        return e;      
+    }
+
     override clone(): RouteButtonElement {
         const copy = new RouteButtonElement(this.x, this.y);
         copy.id = generateId();

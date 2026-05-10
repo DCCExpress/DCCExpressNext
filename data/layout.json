@@ -35,11 +35,19 @@
           "colorOn": "lime",
           "routeTurnouts": [
             {
+              "turnoutId": "da23d9c-4ebe-44e6-9190-0165f734",
+              "closed": false
+            },
+            {
               "turnoutId": "28394d0-1c70-4ca7-8c39-3a925ae0",
-              "closed": true
+              "closed": false
             },
             {
               "turnoutId": "c6bc4282-a7fd-4c70-817a-6b2fe6a2a765",
+              "closed": false
+            },
+            {
+              "turnoutId": "489067cf-c95f-4893-9050-8c0e2a7a7d58",
               "closed": true
             }
           ]
@@ -87,7 +95,7 @@
           "rotationStep": 45,
           "bg": "black",
           "fg": "white",
-          "text": "A1 = C3",
+          "text": "A2 = C3",
           "fontSize": 8,
           "color": "#fab005",
           "alignment": "center",
@@ -105,7 +113,7 @@
           "rotationStep": 45,
           "bg": "black",
           "fg": "white",
-          "text": "A3 = C1",
+          "text": "A1 = C1",
           "fontSize": 8,
           "color": "#fab005",
           "alignment": "center",
@@ -1083,7 +1091,7 @@
           "fg": "white",
           "address": 0,
           "turnoutAddress": 10,
-          "turnoutClosedValue": false
+          "turnoutClosedValue": true
         },
         {
           "id": "f5a8c92-c44c-4cb0-a510-48a5e364",

@@ -231,6 +231,20 @@ export class TrackTurnoutRightElement extends TrackTurnoutElement implements ITr
         };
     }
 
+    static fromJSON(data: ITrackTurnoutRightElement) : TrackTurnoutRightElement{
+        const e = new TrackTurnoutRightElement(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.address = data.address;
+        e.turnoutAddress = data.turnoutAddress ?? 0;
+        e.turnoutClosedValue = data.turnoutClosedValue;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        return e;
+    }
+
+
     override clone(): TrackTurnoutRightElement {
         const copy = new TrackTurnoutRightElement(this.x, this.y);
         copy.id = generateId();

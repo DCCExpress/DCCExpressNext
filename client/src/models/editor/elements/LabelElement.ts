@@ -71,6 +71,21 @@ export class LabelElement extends BaseElement implements ILabelElement {
         };
     }
 
+    static fromJSON(data: ILabelElement) :LabelElement {
+        const e = new LabelElement(data.x, data.y);
+        e.id = data.id;
+        e.text = data.text;
+        e.fontSize = data.fontSize;
+        e.color = data.color;
+        e.alignment = data.alignment;
+        e.offsetY = data.offsetY ?? 14;
+        e.offsetX = data.offsetX ?? 0;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        return e;
+    }
+
     override clone(): LabelElement {
         const copy = new LabelElement(this.x, this.y);
         copy.id = generateId();
