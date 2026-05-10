@@ -12,7 +12,8 @@
     "dev:server": "npm --workspace server run dev",
     "build:client": "npm --workspace client run build",
     "build:server": "npm --workspace server run build",
-    "build": "npm run build:client && npm run build:server"
+    "build": "npm run build:client && npm run build:server",
+    "start":  "node ./dist/server/server/src/index.js"
   },
   "dependencies": {
     "@mantine/core": "^9.1.1",

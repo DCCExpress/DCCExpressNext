@@ -43,10 +43,6 @@ export type EditorTool =
 
 export type RotationStep = 0 | 45 | 90;
 
-
-
-
-
 export interface DrawOptions {
   showOccupancySensorAddress: boolean;
   showSensorAddress: boolean;
@@ -82,8 +78,7 @@ export interface ITrackBaseElement extends IBaseElement   {
   //length: number;
 }
 
-export interface IAddressedElement extends ITrackBaseElement {
-  
+export interface IAddressedElement extends ITrackBaseElement { 
   address: number,
 }
 
