@@ -22,7 +22,7 @@ import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutL
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
 import CommandCenterDialog from "../components/CommandCenterDialog";
 import { CommandCenter, loadCommandCenters, saveCommandCenters } from "../api/commandCentersApi";
-import { ICommandCenter, Loco } from "../../../common/src/types";
+import { BlockState, ICommandCenter, Loco } from "../../../common/src/types";
 import { WsEvents } from "../../../common/src/wsEvents";
 import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
 import FullscreenLoader from "../components/FullscreenLoader";
@@ -30,6 +30,7 @@ import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { layoutStore } from "../services/layoutStore";
 import { scriptEngine } from "../services/scriptEngine";
 import { loadJsonFile } from "../api/fileApi";
+import { BlockElement } from "../models/editor/elements/BlockElement";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -66,6 +67,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [redoStack, setRedoStack] = useState<string[]>([]);
 
   const layoutRef = useRef(layout);
+  const locosRef = useRef(locos);
 
   const [turnoutSelection, setTurnoutSelection] = useState<boolean>(false);
   const [canvasBusy, setCanvasBusy] = useState(false);
@@ -104,6 +106,10 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   useEffect(() => {
     layoutRef.current = layout;
   }, [layout]);
+
+  useEffect(() => {
+    locosRef.current = locos;
+  }, [locos]);
 
   useEffect(() => {
     try {
@@ -462,6 +468,26 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
     );
 
+   const unsubscribeBlockStateChanged = wsClient.on(
+  "blockStateChanged",
+  (data: Record<string, BlockState>, raw: any) => {
+    console.log("blockStateChanged:", data);
+
+    for (const [blockId, blockState] of Object.entries(data)) {
+      const elem = layoutRef.current.getElementById(blockId);
+
+      if (elem && elem.type === ELEMENT_TYPES.TRACK_BLOCK) {
+        const blockElement = elem as BlockElement;
+
+        blockElement.locoAddress =
+          locosRef.current.find(l => l.id === blockState.locoId)?.address ?? 0;
+      }
+    }
+
+    // Elég egyszer invalidálni, nem kell minden blokknál külön
+    setInavalidateCounter(prev => prev + 1);
+  }
+);
     const unsubscribeCommandRejected = wsClient.on(
       "commandRejected",
       (data: any, raw: any) => {
@@ -477,6 +503,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       unsubscribeCommandCenter();
       unsubscribeAccessory();
       unsubscribeCommandRejected();
+      unsubscribeBlockStateChanged();
       //wsApi.disconnect();
     };
   }, []);

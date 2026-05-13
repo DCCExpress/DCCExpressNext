@@ -545,8 +545,8 @@ export default function TrackCanvas({
       turnoutSelectionMode,
       locos || []
     );
-  //}, [canvasSize, editMode, colorScheme, mouseGrid, tool, hoverGrid, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
-  // Mouse grid és hover grid nélkül, mert az csak a hover effekt miatt van, és az nem igényel teljes újradraw-t
+    //}, [canvasSize, editMode, colorScheme, mouseGrid, tool, hoverGrid, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
+    // Mouse grid és hover grid nélkül, mert az csak a hover effekt miatt van, és az nem igényel teljes újradraw-t
   }, [canvasSize, editMode, colorScheme, tool, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
 
 
@@ -1015,7 +1015,8 @@ export default function TrackCanvas({
           hoveredElement instanceof TrackTurnoutDoubleElement ||
           hoveredElement instanceof TrackSignalElement ||
           hoveredElement instanceof ClickableBaseElement ||
-          hoveredElement instanceof AudioButtonElement
+          hoveredElement instanceof AudioButtonElement ||
+          hoveredElement instanceof BlockElement
 
         ) {
           canvas.style.cursor = "pointer";
@@ -1726,11 +1727,22 @@ export default function TrackCanvas({
         onClose={() => setLocoPickerOpen(false)}
         onSelect={(loco) => {
           if (selectedBlock) {
-            layoutRef.current.setBlockLocoAddress(selectedBlock, loco);
-            //selectedBlock.locoAddress = loco.address;
-            onLayoutChange((prev) => prev);
+            wsApi.setBlock(selectedBlock.id, loco.id);
             setLocoPickerOpen(false);
-            invalidate();
+          };
+        }}
+        onRemoveLoco={(loco) => {
+          if (selectedBlock) {
+            const id = locos.find((l) => l.address === selectedBlock.locoAddress)?.id || "";
+            
+            wsApi.setBlockRemove(selectedBlock.id, id);
+            setLocoPickerOpen(false);
+          }
+        }}
+        onRemoveAllLoco={() => {
+          if (selectedBlock) {
+            wsApi.setBlocksReset();
+            setLocoPickerOpen(false);
           }
         }}
       />

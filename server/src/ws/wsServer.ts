@@ -493,6 +493,24 @@ export function setupWebSocketServer(server: http.Server) {
 
               return;
             }
+
+            //==================================
+            // SET BLOCK
+            //==================================
+            case "setBlock" :
+              log("Setting block:", msg.data);
+              commandCenter.setBlock(msg.data);
+              break;
+            
+            case "setBlockRemove" :
+              log("Removing loco from block:", msg.data);
+              commandCenter.setBlockRemove(msg.data);
+              break;
+            
+            case "setBlocksReset" :
+              log("Resetting blocks");
+              commandCenter.setBlocksReset();
+              break;
             //==================================
             // DEFAULT
             //==================================

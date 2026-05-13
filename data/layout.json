@@ -312,7 +312,8 @@
           "rotation": 180,
           "rotationStep": 90,
           "bg": "black",
-          "fg": "white"
+          "fg": "white",
+          "locoAddress": 0
         },
         {
           "id": "389fdf2-889e-44bc-8013-d8aa373d",
@@ -324,7 +325,8 @@
           "rotation": 0,
           "rotationStep": 90,
           "bg": "black",
-          "fg": "white"
+          "fg": "white",
+          "locoAddress": 0
         },
         {
           "id": "5bac967-d1d9-42dc-a6e0-7eb4292c",
@@ -337,7 +339,7 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 13
+          "locoAddress": 0
         },
         {
           "id": "97aa3af-3ac9-4483-815a-d1ead989",
@@ -350,7 +352,7 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 7
+          "locoAddress": 0
         },
         {
           "id": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
@@ -363,7 +365,7 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 14
+          "locoAddress": 0
         },
         {
           "id": "373b352-2a53-4318-ba72-bb209d50",
@@ -375,7 +377,8 @@
           "rotation": 0,
           "rotationStep": 90,
           "bg": "black",
-          "fg": "white"
+          "fg": "white",
+          "locoAddress": 0
         },
         {
           "id": "518e54e-918c-4add-a05a-37dab832",
@@ -397,11 +400,11 @@
           "layerName": "blocks",
           "x": 22,
           "y": 11,
-          "rotation": 0,
+          "rotation": 180,
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 18
+          "locoAddress": 0
         },
         {
           "id": "2135262-c36e-4feb-92ba-c7b8176a",
@@ -414,7 +417,7 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 4
+          "locoAddress": 18
         },
         {
           "id": "c546f8e-3716-4cba-9f23-d2672fb0",
@@ -426,7 +429,8 @@
           "rotation": 0,
           "rotationStep": 90,
           "bg": "black",
-          "fg": "white"
+          "fg": "white",
+          "locoAddress": 4
         }
       ]
     },

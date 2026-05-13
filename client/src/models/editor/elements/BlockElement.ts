@@ -24,6 +24,127 @@ export class BlockElement extends BaseElement implements IBlockElement {
         this.h = 1;
     }
 
+    draw11(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
+        if (!this.visible) return;
+
+        this.beginDraw(ctx, options);
+
+        const rotationRad = this.rotation * Math.PI / 180;
+
+        const blockX = this.posLeft + 5;
+        const blockY = this.posTop + 10;
+        const blockW = this.width - 10;
+        const blockH = this.height - 20;
+
+        const bg = options?.darkMode ? "#888888" : "#f0f0f0";
+        const fg = "black";
+
+        // ----------------------------------------------------
+        // 1. BLOKK KIRAJZOLÁSA FORGATVA
+        // ----------------------------------------------------
+        ctx.save();
+
+        ctx.translate(this.centerX, this.centerY);
+        ctx.rotate(rotationRad);
+        ctx.translate(-this.centerX, -this.centerY);
+
+        ctx.fillStyle = bg;
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 1;
+
+        ctx.fillRect(blockX, blockY, blockW, blockH);
+        ctx.strokeRect(blockX, blockY, blockW, blockH);
+
+        //ctx.restore();
+
+        // ----------------------------------------------------
+        // 2. A blokk közepének forgatott pozíciója
+        // ----------------------------------------------------
+        const overlayCenterX = blockX + blockW / 2;
+        const overlayCenterY = blockY + blockH / 2;
+
+        const dx = overlayCenterX - this.centerX;
+        const dy = overlayCenterY - this.centerY;
+
+        const rotatedCenterX =
+            this.centerX + dx * Math.cos(rotationRad) - dy * Math.sin(rotationRad);
+
+        const rotatedCenterY =
+            this.centerY + dx * Math.sin(rotationRad) + dy * Math.cos(rotationRad);
+
+        // ----------------------------------------------------
+        // 3. LOCO IMAGE + SZÖVEG, DE MÁR NEM FORGATVA
+        // ----------------------------------------------------
+        if (this.locoAddress > 0) {
+            const loco = options?.locos?.find(
+                l => l.address === this.locoAddress
+            );
+
+            if (loco?.image) {
+                const img = getCanvasImage(loco.image);
+
+                if (img.naturalWidth > 0) {
+                    const padding = 3;
+
+                    const maxW = blockW - padding * 2;
+                    const maxH = blockH - padding * 2;
+
+                    const scale = Math.min(
+                        maxW / img.naturalWidth,
+                        maxH / img.naturalHeight
+                    );
+
+                    const imgW = img.naturalWidth * scale;
+                    const imgH = img.naturalHeight * scale;
+
+                    const imgX = rotatedCenterX - imgW / 2;
+                    const imgY = rotatedCenterY - imgH / 2;
+                    if (this.rotation === 180) {
+                        ctx.translate(this.centerX, this.centerY);
+                        ctx.rotate(Math.PI);
+                        ctx.translate(-this.centerX, -this.centerY);
+                    }
+                    ctx.drawImage(img, imgX, imgY, imgW, imgH);
+
+                    // Address kiírás balra a kép mellé
+                    ctx.fillStyle = fg;
+                    ctx.font = "8px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(
+                        "#" + this.locoAddress.toString(),
+                        imgX - 10,
+                        rotatedCenterY
+                    );
+                }
+            } else {
+                ctx.fillStyle = fg;
+                ctx.font = "8px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(
+                    this.locoAddress.toString(),
+                    rotatedCenterX,
+                    rotatedCenterY
+                );
+            }
+        }
+
+        // ----------------------------------------------------
+        // 4. Selection rajzolás – nálad valszeg ez is forgatva kell
+        // ----------------------------------------------------
+        ctx.save();
+
+        ctx.translate(this.centerX, this.centerY);
+        ctx.rotate(rotationRad);
+        ctx.translate(-this.centerX, -this.centerY);
+
+        this.drawSelection(ctx);
+
+        ctx.restore();
+
+        this.endDraw(ctx);
+    }
     draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
         if (!this.visible) return;
 
@@ -87,12 +208,24 @@ export class BlockElement extends BaseElement implements IBlockElement {
                     const imgX = blockX + (blockW - imgW) / 2;
                     const imgY = blockY + (blockH - imgH) / 2;
 
+                    if (this.rotation == 180) {
+                        ctx.translate(this.centerX, this.centerY);
+                        ctx.rotate( Math.PI);
+                        ctx.translate(-this.centerX, -this.centerY);
+                    }
+
                     ctx.drawImage(img, imgX, imgY, imgW, imgH);
                     ctx.fillStyle = fg;
                     ctx.font = "8px Arial";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    ctx.fillText("#" +this.locoAddress.toString(), imgX - 10, this.centerY + 1);
+                    ctx.fillText("#" + this.locoAddress.toString(), imgX - 10, this.centerY + 1);
+                    if (this.rotation == 180) {
+                        ctx.translate(this.centerX, this.centerY);
+                        ctx.rotate(-Math.PI);
+                        ctx.translate(-this.centerX, -this.centerY);
+                    }
+
 
                 }
             } else {

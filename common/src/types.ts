@@ -118,6 +118,11 @@ export type LocoState = {
   functions: Record<number, boolean>;
 };
 
+export type BlockState = {
+  blockId: string;
+  locoId: string | null;
+};
+
 export type CommandCenterType = "z21" | "dcc-ex-tcp" | "dcc-ex-serial" | "simulator";
 
 export interface ICommandCenter {

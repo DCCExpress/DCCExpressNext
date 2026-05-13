@@ -1,8 +1,9 @@
 import { Dir } from "node:fs";
-import { AccessoryInfo, Direction, Loco, LocoState, PowerInfo, SensorInfo, TurnoutInfo, } from "../../../common/src/types.js";
+import { AccessoryInfo, BlockState, Direction, Loco, LocoState, PowerInfo, SensorInfo, TurnoutInfo, } from "../../../common/src/types.js";
 import { readLocos } from "../routes/locoRoutes.js";
 import { log } from "../utility.js";
 import { onLocosChanged } from "../services/locoChangeNotifier.js";
+import { broadcastAll } from "../ws/wsServer.js";
 
 // export interface PowerInfo {
 //   trackVoltageOn: boolean;
@@ -60,6 +61,7 @@ export abstract class CommandCenter {
 
 
   protected locos: Map<number, LocoState> = new Map();
+  protected blocks: Map<string, BlockState> = new Map();
   protected turnouts: Map<number, TurnoutInfo> = new Map();
   protected sensors: Map<number, SensorInfo> = new Map();
   protected accessories: Map<number, AccessoryInfo> = new Map();
@@ -88,6 +90,47 @@ export abstract class CommandCenter {
       });
     }
   }
+  setBlocks(blocks: BlockState[]): void {
+    this.blocks.clear();
+    for (const block of blocks) {
+      this.blocks.set(block.blockId.toString(), block);
+    }
+  }
+
+  setBlock(block: BlockState): void {
+    for (const [b, v] of this.blocks) {
+      if (v.locoId === block.locoId) {
+        v.locoId = null;
+        this.blocks.set(b, v);
+      }
+    }
+    this.blocks.set(block.blockId, block);
+    const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
+    broadcastAll(data);
+  }
+
+  setBlockRemove(b: BlockState): void {
+    log("setBlockRemove", b);
+    const block = this.blocks.get(b.blockId);
+    if (block && block.locoId === block.locoId) {
+      block.locoId = null;
+      this.blocks.set(block.blockId, block);
+    }
+    const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
+    broadcastAll(data);
+
+  }
+
+  setBlocksReset(): void {
+    for (const [b, v] of this.blocks) {
+      v.locoId = null;
+      this.blocks.set(b, v);
+    }
+    const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
+    broadcastAll(data);
+  }
+
+
   abstract getConnectionString(): string;
   abstract start(): Promise<boolean>;
   abstract stop(): Promise<boolean>;

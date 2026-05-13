@@ -10,6 +10,8 @@ type LocoPickerProps = {
     selectedLocoId?: string | undefined;
     title?: string | undefined;
     onClose: () => void;
+    onRemoveLoco?: (loco: Loco) => void;
+    onRemoveAllLoco?: () => void;
     onSelect: (loco: Loco) => void;
 };
 
@@ -20,6 +22,8 @@ export default function LocoPicker({
     title = "Mozdony választó",
     onClose,
     onSelect,
+    onRemoveLoco,
+    onRemoveAllLoco,
 }: LocoPickerProps) {
     if (!opened) return null;
 
@@ -51,7 +55,26 @@ export default function LocoPicker({
                 }}
             >
                 <Group justify="space-between" mb="sm" style={{ flexShrink: 0 }}>
-                    <Text fw={700}>{title}</Text>
+                    {/* <Text fw={700}>{title}</Text> */}
+
+                    {onRemoveLoco && (
+                        <Button
+                            size="xs"
+                            variant="subtle"
+                            leftSection={<IconX size={14} />}
+                            onClick={onRemoveLoco.bind(null, locos.find((l) => l.id === selectedLocoId)!)}
+                        >
+                            Remove
+                        </Button>)}
+                    {onRemoveAllLoco && (
+                        <Button
+                            size="xs"
+                            variant="subtle"
+                            leftSection={<IconX size={14} />}
+                            onClick={onRemoveAllLoco}
+                        >
+                            RemoveAll
+                        </Button>)}
                     <Button
                         size="xs"
                         variant="subtle"

@@ -78,6 +78,20 @@ class WebscoketApi {
     return wsClient.send({ type: "setBasicAccessory", data, uuid: this.uuid });
   };
 
+  setBlock(blockId: string, locoId: string | null) {
+    const data = { blockId, locoId };
+    return wsClient.send({ type: "setBlock", data, uuid: this.uuid });
+  }
+
+  setBlockRemove(blockId: string, locoId: string | null) {
+    const data = { blockId, locoId };
+    return wsClient.send({ type: "setBlockRemove", data, uuid: this.uuid });
+  }
+
+  setBlocksReset() {
+    return wsClient.send({ type: "setBlocksReset", data: {}, uuid: this.uuid });
+  }
+
   routeLock() {
     return wsClient.send({ type: "routeLock", uuid: this.uuid })
   };
