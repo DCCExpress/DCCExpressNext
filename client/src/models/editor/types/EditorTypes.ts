@@ -1,3 +1,4 @@
+import { Loco } from "../../../../../common/src/types";
 import { RouteTurnoutItem } from "../elements/RouteButtonElement";
 import { SensorTypes } from "../elements/TrackSensorElement";
 import { TrackSignalElement as TrackSignal2Element } from "../elements/TrackSignalElement";
@@ -59,6 +60,7 @@ export interface DrawOptions {
   showHandles?: boolean;
   gridSize?: number;
   darkMode?: boolean;
+  locos: Loco[];
 }
 
 export interface IBaseElement {
@@ -180,11 +182,11 @@ export interface IClockElement extends IBaseElement {
 
 export interface IBlockElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.TRACK_BLOCK;
-  text: string;
-  length: number;
-  textColor: string;
+  //text: string;
+  // length: number;
+  // textColor: string;
   locoAddress: number;
-  sensorAddress: number;
+  //sensorAddress: number;
 }
 
 export interface ITreeElement extends IBaseElement {

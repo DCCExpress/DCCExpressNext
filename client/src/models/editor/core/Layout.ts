@@ -12,6 +12,8 @@ import { BaseElement } from "./BaseElement";
 import { ElementFactory } from "./ElementFactory";
 import { Layer, LayerId } from "./Layer";
 import { Point } from "./Rect";
+import { BlockElement } from "../elements/BlockElement";
+import { Loco } from "../../../../../common/src/types";
 
 export function isTurnoutElement(el: BaseElement | null | undefined) {
     return (
@@ -326,6 +328,19 @@ export class Layout {
         return { minX, minY, maxX, maxY };
     }
 
+    setBlockLocoAddress(selectedBlock: BlockElement, loco: Loco) {
+        const elems = this.getAllElements();
+        elems.forEach((elem: BaseElement) => {
+            if (elem instanceof BlockElement) {
+                const block = elem as BlockElement;
+                if (block.locoAddress === loco.address) {
+                    block.locoAddress = 0;
+                }   
+            }
+        });
+
+        selectedBlock.locoAddress = loco.address;
+    }
     static fromJSON(data: any): Layout {
         const layout = new Layout();
 

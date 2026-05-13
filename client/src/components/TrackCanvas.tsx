@@ -32,6 +32,9 @@ import { useCommandCenter } from "../context/CommandCenterContext";
 import { is } from "zod/v4/locales/index.js";
 import { ButtonScriptElement } from "../models/editor/elements/ButtonScriptElement";
 import { LabelElement } from "../models/editor/elements/LabelElement";
+import LocoPicker from "./loco/LocoPicker";
+import { Loco } from "../../../common/src/types";
+import { set } from "zod";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -46,6 +49,7 @@ type TrackCanvasProps = {
   fitCounter: number;
   turnoutSelectionMode: boolean;
   setBusy?: (busy: boolean, text?: string) => void;
+  locos: Loco[];
 };
 
 type ViewState = {
@@ -224,7 +228,8 @@ export default function TrackCanvas({
   onInvalidate,
   fitCounter,
   turnoutSelectionMode,
-  setBusy
+  setBusy,
+  locos,
 }: TrackCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { colorScheme } = useMantineColorScheme();
@@ -236,6 +241,9 @@ export default function TrackCanvas({
   const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0, });
 
   const turnoutSelectionModeRef = useRef(false);
+  //const [lo]
+  const [locoPickerOpen, setLocoPickerOpen] = useState(false);
+  const [selectedBlock, setSelectedBlock] = useState<BlockElement | null>(null);
 
   const touchPointsRef = useRef<Map<number, TouchPoint>>(new Map());
   const viewRef = useRef<ViewState>(loadSavedViewState());
@@ -534,9 +542,12 @@ export default function TrackCanvas({
       dragRef.current.elementId ?? undefined,
       selectedElement ?? undefined,
       getSelectionRect(selectionRef.current),
-      turnoutSelectionMode
+      turnoutSelectionMode,
+      locos || []
     );
-  }, [canvasSize, editMode, colorScheme, mouseGrid, tool, hoverGrid, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
+  //}, [canvasSize, editMode, colorScheme, mouseGrid, tool, hoverGrid, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
+  // Mouse grid és hover grid nélkül, mert az csak a hover effekt miatt van, és az nem igényel teljes újradraw-t
+  }, [canvasSize, editMode, colorScheme, tool, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
 
 
 
@@ -688,19 +699,15 @@ export default function TrackCanvas({
 
       if (!editModeRef.current && hitElement?.type === ELEMENT_TYPES.BUTTON_AUDIO) {
         const audioButton = hitElement as AudioButtonElement;
-
         audioButton.press(() => {
           invalidate();
         });
-
         return;
       }
 
       if (currentEditMode) {
         if (currentTurnoutSelection) {
           if (hitElement) {
-
-
             if (currentElement instanceof RouteButtonElement) {
               if (isTurnoutElement(hitElement)) {
                 const rb = currentElement as RouteButtonElement;
@@ -713,7 +720,6 @@ export default function TrackCanvas({
             } else {
               alert("Nincs aktív RouteButton")
             }
-
             return;
           }
           return;
@@ -721,6 +727,12 @@ export default function TrackCanvas({
       }
 
       if (!editModeRef.current) {
+        if (hitElement instanceof BlockElement) {
+          setSelectedBlock(hitElement);
+          setLocoPickerOpen(true);
+        }
+
+
         if (hitElement instanceof TrackSignalElement) {
           if (signalAspectPopoverRef.current.opened) {
             reopenSignalAspectPopover(hitElement, ev.clientX, ev.clientY);
@@ -1409,8 +1421,8 @@ export default function TrackCanvas({
     canvas.addEventListener("mouseleave", handleMouseLeave);
     canvas.addEventListener("contextmenu", handleContextMenu);
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseup", handleMouseUp);
 
     canvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
     canvas.addEventListener("pointermove", handlePointerMove, { passive: false });
@@ -1581,6 +1593,9 @@ export default function TrackCanvas({
     }));
   };
 
+  const handleLocoSelected = (locoId: string) => { };
+
+
   return (
     <>
       <canvas tabIndex={0} ref={canvasRef} className="track-canvas" />
@@ -1701,6 +1716,24 @@ export default function TrackCanvas({
           </Stack>
         </Popover.Dropdown>
       </Popover>
+
+      <LocoPicker
+        opened={locoPickerOpen}
+        locos={locos}
+        selectedLocoId={
+          selectedBlock?.locoAddress ? locos.find((l) => l.address === selectedBlock.locoAddress)?.id || "" : ""
+        }
+        onClose={() => setLocoPickerOpen(false)}
+        onSelect={(loco) => {
+          if (selectedBlock) {
+            layoutRef.current.setBlockLocoAddress(selectedBlock, loco);
+            //selectedBlock.locoAddress = loco.address;
+            onLayoutChange((prev) => prev);
+            setLocoPickerOpen(false);
+            invalidate();
+          }
+        }}
+      />
     </>
   );
 }
@@ -1792,6 +1825,7 @@ function drawScene(
   selected?: BaseElement,
   selectionRect?: SelectionRect | null,
   turnoutSelectionMode?: boolean,
+  locos?: Loco[],
 ) {
   const isDark = colorScheme !== "light";
 
@@ -1829,6 +1863,7 @@ function drawScene(
     showTurnoutAddress: settings.showTurnoutAddress,
     showSignalAddress: settings.showSignalAddress,
     darkMode: isDark,
+    locos: locos || [],
   };
 
   layout.draw(ctx, opt);
@@ -1841,7 +1876,8 @@ function drawScene(
       showOccupancySensorAddress: false,
       showSensorAddress: false,
       showSignalAddress: false,
-      showTurnoutAddress: false
+      showTurnoutAddress: false,
+      locos: [] as Loco[],
     });
   }
 

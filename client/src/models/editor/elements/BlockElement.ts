@@ -3,8 +3,10 @@ import { getRotatedRectPoints } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
 import { IRect } from "../core/Rect";
+
 import { DrawOptions, ELEMENT_TYPES, IBlockElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
+import { getCanvasImage } from "../rendering/ImageCache";
 
 export class BlockElement extends BaseElement implements IBlockElement {
     override type: typeof ELEMENT_TYPES.TRACK_BLOCK = ELEMENT_TYPES.TRACK_BLOCK;
@@ -45,95 +47,66 @@ export class BlockElement extends BaseElement implements IBlockElement {
         ctx.strokeRect(this.posLeft + 5, this.posTop + 10, this.width - 10, this.height - 20);
         //ctx.strokeRect(this.posLeft + 10, this.centerY - h, this.width - 20, 2 * h);
 
+        // if (this.locoAddress > 0) {
+        //     ctx.fillStyle = fg;
+        //     ctx.font = "8px Arial";
+        //     ctx.textAlign = "center";
+        //     ctx.textBaseline = "middle";
+        //     ctx.fillText(this.locoAddress?.toString(), this.centerX, this.centerY + 1);
+        // }
+
+        // --- LOCO IMAGE ---
+        if (this.locoAddress > 0) {
+            const blockX = this.posLeft + 5;
+            const blockY = this.posTop + 10;
+            const blockW = this.width - 10;
+            const blockH = this.height - 20;
+
+            const loco = options?.locos?.find(
+                l => l.address === this.locoAddress
+            );
+
+            if (loco?.image) {
+
+                const img = getCanvasImage(loco.image);
+
+                if (img.naturalWidth > 0) {
+                    const padding = 3;
+
+                    const maxW = blockW - padding * 2;
+                    const maxH = blockH - padding * 2;
+
+                    const scale = Math.min(
+                        maxW / img.naturalWidth,
+                        maxH / img.naturalHeight
+                    );
+
+                    const imgW = img.naturalWidth * scale;
+                    const imgH = img.naturalHeight * scale;
+
+                    const imgX = blockX + (blockW - imgW) / 2;
+                    const imgY = blockY + (blockH - imgH) / 2;
+
+                    ctx.drawImage(img, imgX, imgY, imgW, imgH);
+                    ctx.fillStyle = fg;
+                    ctx.font = "8px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("#" +this.locoAddress.toString(), imgX - 10, this.centerY + 1);
+
+                }
+            } else {
+                // Ha nincs kép, maradhat a cím kiírása
+                ctx.fillStyle = fg;
+                ctx.font = "8px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(this.locoAddress.toString(), this.centerX, this.centerY + 1);
+            }
+        }
+
         this.drawSelection(ctx);
         this.endDraw(ctx);
-
-    }
-
-    draw22(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
-        if (!this.visible) return;
-
-        this.beginDraw(ctx, options);
-
-        const c = Math.ceil(this.w / 2);
-
-        let bg = "#868686";  // A színe lehet más is
-        let fg = "black";
-        let text = ""
-        if (this.locoAddress > 0) {
-            text = `${this.locoAddress}`
-            const loco = Api.getLoco(this.locoAddress)
-            if (loco) {
-                //text += ` ${loco.name}`
-                text += ` ${loco}`
-                bg = "lime";
-                fg = "black";
-
-            } else {
-                text += " undef"
-                bg = "red";
-                fg = "yellow";
-            }
-        }
-
-
-
-        var w = this.GridSizeX / 2.0
-        var h = this.GridSizeY / 6.0
-
-        ctx.translate(this.centerX, this.centerY);
-        ctx.rotate(this.rotation * Math.PI / 180);
-        ctx.translate(-this.centerX, -this.centerY);
-
-        ctx.fillStyle = "red";  // A színe lehet más is
-        ctx.strokeStyle = fg!;
-
-        ctx.fillRect(this.posLeft + 10, this.centerY - h, this.width - 20, 2 * h);
-
-        ctx.lineWidth = 1
-        ctx.strokeStyle = 'black';
-        ctx.strokeRect(this.posLeft + 10, this.centerY - h, this.width - 20, 2 * h);
-
-        // Triangle
-        ctx.fillStyle = 'black';
-        ctx.beginPath();
-
-        //if (Globals.Settings.EditorSettings.Orientation == DCCExDirections.forward) {
-        if (true) {
-            ctx.moveTo(this.posRight - 15, this.centerY);
-            ctx.lineTo(this.posRight - 20, this.centerY - 3);
-            ctx.lineTo(this.posRight - 20, this.centerY + 3);
-        } else {
-            ctx.moveTo(this.posLeft + 15, this.centerY);
-            ctx.lineTo(this.posLeft + 20, this.centerY - 3);
-            ctx.lineTo(this.posLeft + 20, this.centerY + 3);
-        }
-        ctx.closePath();
-        ctx.fill();
-
-
-        // if (this.text) 
-        {
-            if (this.rotation == 180) {
-                ctx.restore()
-            }
-
-
-            ctx.fillStyle = fg;
-            ctx.font = "8px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(text, this.centerX, this.centerY + 1);
-        }
-
-        super.drawBounds(ctx)
-
-        super.drawSelection(ctx);
-
-        this.endDraw(ctx);
-
-        //this.drawSelectionBox(ctx);
-        //super.drawOccupied(ctx);
 
     }
 
@@ -144,17 +117,17 @@ export class BlockElement extends BaseElement implements IBlockElement {
             return {
                 x: this.x - 1, //this.posLeft,
                 y: this.y,
-                width: this.w ,
+                width: this.w,
                 height: this.h
             }
         }
 
-            return {
-                x: this.x , //this.posLeft,
-                y: this.y - 1,
-                width: this.h,
-                height: this.w
-            }
+        return {
+            x: this.x, //this.posLeft,
+            y: this.y - 1,
+            width: this.h,
+            height: this.w
+        }
 
 
         if (this.rotation == 0 || this.rotation == 180) {
@@ -203,20 +176,29 @@ export class BlockElement extends BaseElement implements IBlockElement {
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;
         copy.selected = this.selected;
+        copy.locoAddress = this.locoAddress;
         return copy;
     }
 
-    static fromJSON(data: IBlockElement) : BlockElement {
+    static fromJSON(data: IBlockElement): BlockElement {
         const e = new BlockElement(data.x, data.y);
         e.id = data.id;
         e.name = data.name;
         e.rotation = data.rotation;
         e.bg = data.bg;
         e.fg = data.fg;
-        e.length = data.length;
-        e.sensorAddress = data.sensorAddress;
+        //e.length = data.length;
+        //e.sensorAddress = data.sensorAddress;
         e.locoAddress = data.locoAddress;
         return e;
+    }
+
+    override toJSON(): IBlockElement {
+        return {
+            ...super.toJSON(),
+            type: ELEMENT_TYPES.TRACK_BLOCK,
+            locoAddress: this.locoAddress
+        }
     }
 
     override getEditableProperties(): IEditableProperty[] {

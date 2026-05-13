@@ -682,6 +682,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       fitCounter={fitCounter}
                       turnoutSelectionMode={turnoutSelection}
                       setBusy={(busy, text) => { setCanvasBusy(busy); if (text) setCanvasBusyText(text); }}
+                      locos={locos}
                     />
                   </Box>
                 </Card>
