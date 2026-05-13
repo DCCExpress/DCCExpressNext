@@ -77,6 +77,8 @@ export class CommandCenterSimulator extends CommandCenter {
     setLocoFunction(address, fn, active) {
         const loco = this.getOrCreateLoco(address);
         loco.functions[fn] = active;
+        broadcastAll({ type: "locoState", data: { loco },
+        });
         return Promise.resolve(true);
     }
     getLoco(address) {

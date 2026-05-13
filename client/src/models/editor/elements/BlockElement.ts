@@ -192,7 +192,7 @@ export class BlockElement extends BaseElement implements IBlockElement {
                 const img = getCanvasImage(loco.image);
 
                 if (img.naturalWidth > 0) {
-                    const padding = 3;
+                    const padding = 2;
 
                     const maxW = blockW - padding * 2;
                     const maxH = blockH - padding * 2;
@@ -322,7 +322,7 @@ export class BlockElement extends BaseElement implements IBlockElement {
         e.fg = data.fg;
         //e.length = data.length;
         //e.sensorAddress = data.sensorAddress;
-        e.locoAddress = data.locoAddress;
+        e.locoAddress = 0; //data.locoAddress;
         return e;
     }
 

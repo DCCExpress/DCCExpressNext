@@ -11,6 +11,7 @@ export class ElementPreviewRenderer {
       showSensorAddress: false,
       showSignalAddress: false,
       showTurnoutAddress: false,
+      locos: [],
     }
   ): void {
     const ctx = canvas.getContext("2d");

@@ -1,5 +1,5 @@
 import { Button, Card, Group, ScrollArea, Stack, Text } from "@mantine/core";
-import { IconX } from "@tabler/icons-react";
+import { IconTrash, IconTrashFilled, IconX } from "@tabler/icons-react";
 
 import LocoImage from "./LocoImage";
 import { Loco } from "../../../../common/src/types";
@@ -60,8 +60,9 @@ export default function LocoPicker({
                     {onRemoveLoco && (
                         <Button
                             size="xs"
-                            variant="subtle"
-                            leftSection={<IconX size={14} />}
+                            variant="light" 
+                            color="red"
+                            leftSection={<IconTrash size={14} />}
                             onClick={onRemoveLoco.bind(null, locos.find((l) => l.id === selectedLocoId)!)}
                         >
                             Remove
@@ -69,8 +70,9 @@ export default function LocoPicker({
                     {onRemoveAllLoco && (
                         <Button
                             size="xs"
-                            variant="subtle"
-                            leftSection={<IconX size={14} />}
+                            variant="light"
+                            color="red"
+                            leftSection={<IconTrashFilled size={14} />}
                             onClick={onRemoveAllLoco}
                         >
                             RemoveAll

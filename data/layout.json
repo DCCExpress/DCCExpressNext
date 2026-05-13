@@ -352,7 +352,7 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 7
         },
         {
           "id": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
@@ -417,7 +417,7 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 18
+          "locoAddress": 0
         },
         {
           "id": "c546f8e-3716-4cba-9f23-d2672fb0",
@@ -430,7 +430,7 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 4
+          "locoAddress": 0
         }
       ]
     },

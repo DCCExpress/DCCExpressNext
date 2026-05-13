@@ -4,6 +4,9 @@ import { readLocos } from "../routes/locoRoutes.js";
 import { log } from "../utility.js";
 import { onLocosChanged } from "../services/locoChangeNotifier.js";
 import { broadcastAll } from "../ws/wsServer.js";
+import { dataDir } from "../paths.js";
+import path from "path/win32";
+import fs from "node:fs/promises";
 
 // export interface PowerInfo {
 //   trackVoltageOn: boolean;
@@ -49,6 +52,17 @@ export type RBusSensorInfo = {
   bitIndex: number;
 };
 
+type PersistedCommandCenterState = {
+  version: 1;
+  savedAt: string;
+  blocks: [string, BlockState][];
+  turnouts: [number, TurnoutInfo][];
+};
+
+type RuntimeStateLoadedCallback = (
+  blocks: Map<string, BlockState>,
+  turnouts: Map<number, TurnoutInfo>
+) => void | Promise<void>;
 
 export abstract class CommandCenter {
   protected name: string;
@@ -61,7 +75,7 @@ export abstract class CommandCenter {
 
 
   protected locos: Map<number, LocoState> = new Map();
-  protected blocks: Map<string, BlockState> = new Map();
+  private blocks: Map<string, BlockState> = new Map();
   protected turnouts: Map<number, TurnoutInfo> = new Map();
   protected sensors: Map<number, SensorInfo> = new Map();
   protected accessories: Map<number, AccessoryInfo> = new Map();
@@ -76,7 +90,13 @@ export abstract class CommandCenter {
       const llocos = await readLocos();
 
       this.setLocos(llocos);
-    });
+
+      await this.loadRuntimeState().then(() => {
+        log("Runtime state loaded successfully after loco change");
+      }).catch(err => {
+        log("Failed to load runtime state after loco change:", err);    
+      });
+    }); 
   }
   setLocos(llocos: Loco[]): void {
     this.locos.clear();
@@ -95,6 +115,7 @@ export abstract class CommandCenter {
     for (const block of blocks) {
       this.blocks.set(block.blockId.toString(), block);
     }
+    this.saveRuntimeState();
   }
 
   setBlock(block: BlockState): void {
@@ -107,6 +128,7 @@ export abstract class CommandCenter {
     this.blocks.set(block.blockId, block);
     const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
     broadcastAll(data);
+    this.saveRuntimeState();
   }
 
   setBlockRemove(b: BlockState): void {
@@ -118,7 +140,7 @@ export abstract class CommandCenter {
     }
     const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
     broadcastAll(data);
-
+    this.saveRuntimeState();
   }
 
   setBlocksReset(): void {
@@ -130,6 +152,10 @@ export abstract class CommandCenter {
     broadcastAll(data);
   }
 
+  public getBlocks(): void {
+    const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
+    broadcastAll(data);
+  }
 
   abstract getConnectionString(): string;
   abstract start(): Promise<boolean>;
@@ -237,8 +263,71 @@ export abstract class CommandCenter {
 
   }
 
-  //abstract getSystemState(): any;
+  private runtimeStateLoadedCallback?: RuntimeStateLoadedCallback;
+  private readonly runtimeStateFile = path.resolve(
+    dataDir,
+    "command-center-runtime-state.json"
+  );
 
+  public onRuntimeStateLoaded(callback: RuntimeStateLoadedCallback): void {
+    this.runtimeStateLoadedCallback = callback;
+  }
 
+  public async saveRuntimeState(): Promise<void> {
+    try {
+      const state: PersistedCommandCenterState = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        blocks: Array.from(this.blocks.entries()),
+        turnouts: Array.from(this.turnouts.entries()),
+      };
+
+      await fs.mkdir(path.dirname(this.runtimeStateFile), {
+        recursive: true,
+      });
+
+      await fs.writeFile(
+        this.runtimeStateFile,
+        JSON.stringify(state, null, 2),
+        "utf-8"
+      );
+
+      console.log(
+        `[CommandCenter] Runtime state saved: ${this.runtimeStateFile}`
+      );
+    } catch (err) {
+      console.error("[CommandCenter] Failed to save runtime state:", err);
+    }
+  }
+
+  public async loadRuntimeState(): Promise<void> {
+    try {
+      const raw = await fs.readFile(this.runtimeStateFile, "utf-8");
+      const state = JSON.parse(raw) as PersistedCommandCenterState;
+
+      if (state.version !== 1) {
+        console.warn(
+          `[CommandCenter] Unsupported runtime state version: ${state.version}`
+        );
+        return;
+      }
+
+      this.blocks = new Map(state.blocks ?? []);
+      this.turnouts = new Map(state.turnouts ?? []);
+
+      console.log(
+        `[CommandCenter] Runtime state loaded: ${this.blocks.size} blocks, ${this.turnouts.size} turnouts`
+      );
+
+      await this.runtimeStateLoadedCallback?.(this.blocks, this.turnouts);
+    } catch (err: any) {
+      if (err?.code === "ENOENT") {
+        console.log("[CommandCenter] No previous runtime state file found.");
+        return;
+      }
+
+      console.error("[CommandCenter] Failed to load runtime state:", err);
+    }
+  }
 
 }

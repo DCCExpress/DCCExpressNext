@@ -77,11 +77,32 @@ function initCommandCenter(conf) {
             commandCenter = new CommandCenterSimulator("Simulator");
             break;
     }
+    commandCenter.onRuntimeStateLoaded((blocks, turnouts) => {
+        console.log("[Server] Restored runtime state, rebroadcasting...");
+        for (const [, block] of blocks) {
+            broadcastAll({
+                type: "blockChanged",
+                data: block,
+            });
+        }
+        for (const [, turnout] of turnouts) {
+            broadcastAll({
+                type: "turnoutChanged",
+                data: turnout,
+            });
+        }
+    });
 }
 let commandCenter = null; //new CommandCenterSimulator("Simulator");
 setCommandCenterConfigLoadedCallback((conf) => {
     log("Command center config loaded:", conf);
     initCommandCenter(conf);
+    // if (commandCenter)
+    //   commandCenter.loadRuntimeState().then(() => {
+    //     log("Runtime state loaded successfully");
+    //   }).catch(err => {
+    //     logError("Failed to load runtime state:", err);
+    //   });
 });
 let wss;
 export function broadcastAll(message, exclude) {
@@ -144,6 +165,7 @@ export function setupWebSocketServer(server) {
                 };
                 sendToClient(ws, msg);
             }
+            commandCenter.getBlocks();
             const accessories = commandCenter.getAccessories();
             for (const accessory of accessories) {
                 const msg = {
@@ -155,6 +177,8 @@ export function setupWebSocketServer(server) {
                 };
                 sendToClient(ws, msg);
             }
+            // const data = { type: "blockStateChanged", data: Object.fromEntries(commandCenter.blocks), uuid: null };
+            // sendToClient(ws, data);
         }
         ws.on("message", (message) => {
             const text = message.toString();
@@ -338,6 +362,9 @@ export function setupWebSocketServer(server) {
                                         data: { message: "Failed to set turnout" },
                                     });
                                 }
+                                else {
+                                    commandCenter?.saveRuntimeState();
+                                }
                             });
                             return;
                         }
@@ -418,6 +445,25 @@ export function setupWebSocketServer(server) {
                             });
                             return;
                         }
+                        //==================================
+                        // SET BLOCK
+                        //==================================
+                        case "setBlock":
+                            log("Setting block:", msg.data);
+                            commandCenter.setBlock(msg.data);
+                            break;
+                        case "setBlockRemove":
+                            log("Removing loco from block:", msg.data);
+                            commandCenter.setBlockRemove(msg.data);
+                            break;
+                        case "setBlocksReset":
+                            log("Resetting blocks");
+                            commandCenter.setBlocksReset();
+                            break;
+                        case "setGetBlocks":
+                            log("Getting blocks");
+                            commandCenter.getBlocks();
+                            break;
                         //==================================
                         // DEFAULT
                         //==================================

@@ -44,7 +44,7 @@ type TrackCanvasProps = {
   onBeforeLayoutChange?: () => void;
   selectedElement: BaseElement | null;
   onSelectedElementChange: (element: BaseElement | null) => void;
-  invaildateCounter: number;
+  invalidateCounter: number;
   onInvalidate: () => void;
   fitCounter: number;
   turnoutSelectionMode: boolean;
@@ -224,7 +224,7 @@ export default function TrackCanvas({
   onBeforeLayoutChange,
   selectedElement,
   onSelectedElementChange,
-  invaildateCounter,
+  invalidateCounter: invalidateCounter,
   onInvalidate,
   fitCounter,
   turnoutSelectionMode,
@@ -322,7 +322,7 @@ export default function TrackCanvas({
 
   useEffect(() => {
     invalidate();
-  }, [invaildateCounter]);
+  }, [invalidateCounter]);
 
   const { settings } = useEditorSettings();
   // useEffect(() => {
@@ -547,7 +547,7 @@ export default function TrackCanvas({
     );
     //}, [canvasSize, editMode, colorScheme, mouseGrid, tool, hoverGrid, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
     // Mouse grid és hover grid nélkül, mert az csak a hover effekt miatt van, és az nem igényel teljes újradraw-t
-  }, [canvasSize, editMode, colorScheme, tool, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
+  }, [canvasSize, editMode, colorScheme, tool, currentCursor, layout, drawVersion, invalidateCounter, selectedElement, settings, turnoutSelectionMode]);
 
 
 

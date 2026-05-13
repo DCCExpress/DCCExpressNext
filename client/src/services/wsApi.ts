@@ -92,6 +92,11 @@ class WebscoketApi {
     return wsClient.send({ type: "setBlocksReset", data: {}, uuid: this.uuid });
   }
 
+  getBlocks() {
+    
+    return wsClient.send({ type: "setBlockRemove", data: {}, uuid: this.uuid });
+  }
+
   routeLock() {
     return wsClient.send({ type: "routeLock", uuid: this.uuid })
   };
@@ -112,3 +117,4 @@ export function getDefaultWsUrl(): string {
 }
 
 export const wsApi = new WebscoketApi();
+

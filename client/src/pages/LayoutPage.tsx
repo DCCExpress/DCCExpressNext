@@ -53,7 +53,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [pickerOpened, setPickerOpened] = useState(false);
   const [layout, setLayout] = useState<Layout>(new Layout());
   const [selectedElement, setSelectedElement] = useState<BaseElement | null>(null);
-  const [invaildateCounter, setInavalidateCounter] = useState(0);
+  const [invalidateCounter, setInvalidateCounter] = useState(0);
   const [fitCounter] = useState(0);
 
   const [commandCenterOpened, setCommandCenterOpened] = useState(false);
@@ -165,6 +165,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       setUndoStack([]);
       setRedoStack([]);
 
+      wsApi.getBlocks();
       //showOkMessage("", "Layout loaded!");
     } catch (error) {
       console.error(error);
@@ -225,6 +226,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     void loadLayoutFromServer();
     void loadCommandCentersFromServer();
     void loadScriptFromServer();
+    setInvalidateCounter((v) => v + 1);
   }, []);
 
   const createLayoutSnapshot = useCallback((source: Layout): string => {
@@ -386,7 +388,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         }
 
         if (changed) {
-          setInavalidateCounter((prev) => prev + 1);
+          setInvalidateCounter((prev) => prev + 1);
         }
       }
     );
@@ -425,7 +427,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
         if (changed) {
           layoutRef.current.checkRoutes();
-          setInavalidateCounter((prev) => prev + 1);
+          setInvalidateCounter((prev) => prev + 1);
         }
       }
     );
@@ -462,32 +464,32 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         }
 
         if (changed) {
-          setInavalidateCounter((prev) => prev + 1);
+          setInvalidateCounter((prev) => prev + 1);
         }
       }
 
     );
 
-   const unsubscribeBlockStateChanged = wsClient.on(
-  "blockStateChanged",
-  (data: Record<string, BlockState>, raw: any) => {
-    console.log("blockStateChanged:", data);
+    const unsubscribeBlockStateChanged = wsClient.on(
+      "blockStateChanged",
+      (data: Record<string, BlockState>, raw: any) => {
+        console.log("blockStateChanged:", data);
 
-    for (const [blockId, blockState] of Object.entries(data)) {
-      const elem = layoutRef.current.getElementById(blockId);
+        for (const [blockId, blockState] of Object.entries(data)) {
+          const elem = layoutRef.current.getElementById(blockId);
 
-      if (elem && elem.type === ELEMENT_TYPES.TRACK_BLOCK) {
-        const blockElement = elem as BlockElement;
+          if (elem && elem.type === ELEMENT_TYPES.TRACK_BLOCK) {
+            const blockElement = elem as BlockElement;
 
-        blockElement.locoAddress =
-          locosRef.current.find(l => l.id === blockState.locoId)?.address ?? 0;
+            blockElement.locoAddress =
+              locosRef.current.find(l => l.id === blockState.locoId)?.address ?? 0;
+          }
+          setInvalidateCounter((prev) => prev + 1);
+        }
+        
+        
       }
-    }
-
-    // Elég egyszer invalidálni, nem kell minden blokknál külön
-    setInavalidateCounter(prev => prev + 1);
-  }
-);
+    );
     const unsubscribeCommandRejected = wsClient.on(
       "commandRejected",
       (data: any, raw: any) => {
@@ -513,7 +515,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   };
 
   const handleUpdateSelectedElement = (_updated: BaseElement | null) => {
-    setInavalidateCounter((prev) => prev + 1);
+    setInvalidateCounter((prev) => prev + 1);
   };
 
   const handleSettingClick = () => {
@@ -704,8 +706,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       onBeforeLayoutChange={pushHistorySnapshot}
                       selectedElement={selectedElement}
                       onSelectedElementChange={selectedElementChanged}
-                      invaildateCounter={invaildateCounter}
-                      onInvalidate={() => setInavalidateCounter((v) => v + 1)}
+                      invalidateCounter={invalidateCounter}
+                      onInvalidate={() => setInvalidateCounter((v) => v + 1)}
                       fitCounter={fitCounter}
                       turnoutSelectionMode={turnoutSelection}
                       setBusy={(busy, text) => { setCanvasBusy(busy); if (text) setCanvasBusyText(text); }}
@@ -727,7 +729,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                   <Card withBorder radius="xs" p="xs" h="100%">
                     <RightPropertyPanel
                       selectedElement={selectedElement}
-                      invalidate={invaildateCounter}
+                      invalidate={invalidateCounter}
                       onUpdateSelectedElement={handleUpdateSelectedElement}
                       editMode={editMode}
                       opened={!propertyPanelCollapsed}

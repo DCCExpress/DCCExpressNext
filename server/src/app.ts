@@ -38,3 +38,13 @@ app.get(/.*/, (_req, res) => {
   res.sendFile(path.join(clientDir, "index.html"));
 });
 
+async function shutdown(signal: string) {
+  console.log(`[Server] ${signal} received, shutting down...`);
+
+ // await commandCenter.saveRuntimeState();
+
+  process.exit(0);
+}
+
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));
