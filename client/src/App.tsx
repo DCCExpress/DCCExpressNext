@@ -9,6 +9,7 @@ import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import { getDefaultWsUrl, wsApi } from "./services/wsApi";
+import { LayoutContextProvider } from "./context/LayoutContextProvider";
 
 export type AppPage = "home" | "layout" | "programmer";
 
@@ -39,7 +40,9 @@ export default function App() {
       )}
 
       {page === "layout" && (
-        <LayoutPage onGoHome={() => setPage("home")} />
+          <LayoutContextProvider>
+            <LayoutPage onGoHome={() => setPage("home")} />
+          </LayoutContextProvider>
       )}
 
       {page === "programmer" && (

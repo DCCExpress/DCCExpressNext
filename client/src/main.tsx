@@ -6,16 +6,19 @@ import App from "./App";
 import "./i18n";
 import { EditorSettingsProvider } from "./context/EditorSettingsContext";
 import { CommandCenterProvider } from "./context/CommandCenterContext";
+import { LayoutContextProvider } from "./context/LayoutContextProvider";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ColorSchemeScript />
-    <CommandCenterProvider>
-      <EditorSettingsProvider>
-        <MantineProvider defaultColorScheme="dark">
-          <App />
-        </MantineProvider>
-      </EditorSettingsProvider>
-    </CommandCenterProvider>
+    
+      <CommandCenterProvider>
+        <EditorSettingsProvider>
+          <MantineProvider defaultColorScheme="dark">
+            <App />
+          </MantineProvider>
+        </EditorSettingsProvider>
+      </CommandCenterProvider>
+  
   </React.StrictMode>
 );
