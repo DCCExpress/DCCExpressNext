@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "savedAt": "2026-05-14T05:43:43.146Z",
+  "savedAt": "2026-05-14T15:35:32.206Z",
   "blocks": [
     [
       "5dfc831-fbaa-4c2b-9b12-3874268a",
       {
         "blockId": "5dfc831-fbaa-4c2b-9b12-3874268a",
-        "locoId": "4bccdc08-2fd3-406e-82ea-ccfa3942df24"
+        "locoId": "b0364a2-1922-4554-9385-a142c2b0"
       }
     ],
     [
@@ -22,7 +22,7 @@
       20,
       {
         "address": 20,
-        "closed": false
+        "closed": true
       }
     ],
     [
@@ -36,7 +36,7 @@
       10,
       {
         "address": 10,
-        "closed": true
+        "closed": false
       }
     ],
     [

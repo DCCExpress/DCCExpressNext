@@ -61,7 +61,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [commandCenterAlive, setCommandCenterAlive] = useState(false);
   const [commandCenterPower, setCommandCenterPower] = useState(false);
 
-  const [script, setScript] = useState<string>("");
+  const [routesString, setRoutesString] = useState<string>("");
 
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
@@ -197,17 +197,6 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
   const loadScriptFromServer = () => {
     scriptEngine.loadScript();
-    return;
-    const script = loadJsonFile("script.json").then(script => {
-      setScript((script as any).content);
-      scriptEngine.setScript((script as any).content);
-
-      showOkMessage("", "Script loaded!");
-    }).catch(error => {
-      console.error("Nem sikerült betölteni a scriptet:", error);
-      showErrorMessage("Error", "Failed to load script: " + name);
-      return "";
-    });
   }
 
   const saveCommandCentersToServer = async (items?: ICommandCenter) => {
@@ -545,6 +534,11 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     setCommandCenter(cc)
   };
 
+  const handleRunRouteProcess = () => {
+    layoutRef.current.processRoutes();
+    setInvalidateCounter((v) => v + 1);
+  };
+
   return (
     <>
       <FullscreenLoader visible={canvasBusy} text={canvasBusyText} />
@@ -741,7 +735,9 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       setTurnoutSelectionMode={setTurnoutSelection}
                       layout={layout}
                       onLayoutChange={setLayout}
-                    />
+                      routes={routesString}
+                      onRunRouteProcess={handleRunRouteProcess}
+                      />
                   </Card>
                 )}
               </Box>

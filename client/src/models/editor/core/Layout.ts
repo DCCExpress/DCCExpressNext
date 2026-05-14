@@ -260,6 +260,11 @@ export class Layout {
         const elements = this.getAllElements();
         return elements.find((x) => x.id == id);
     }
+    getElementByName(name: string): BaseElement | undefined {
+        const elements = this.getAllElements();
+        return elements.find((x) => x.name == name);
+    }
+
     isExists(x: number, y: number): boolean {
         return this.getElements(x, y).length > 0 ? true : false;
     }
@@ -335,7 +340,7 @@ export class Layout {
                 const block = elem as BlockElement;
                 if (block.locoAddress === loco.address) {
                     block.locoAddress = 0;
-                }   
+                }
             }
         });
 
@@ -377,13 +382,21 @@ export class Layout {
     }
 
 
-    checkRoutes() {
+    resetRoutes() {
         const elems = this.getAllElements();
-
         elems.forEach((elem: BaseElement) => {
             elem.isVisited = false;
             elem.isRoute = false;
+            elem.section = 0;
         })
+    }
+    checkRoutes() {
+        //const elems = this.getAllElements();
+        // elems.forEach((elem: BaseElement) => {
+        //     elem.isVisited = false;
+        //     elem.isRoute = false;
+        // })
+        this.resetRoutes();
 
         const routeButtons = this.getAllElements().filter((elem: BaseElement) => elem instanceof RouteButtonElement) as RouteButtonElement[];
         routeButtons.forEach(rb => {
@@ -429,5 +442,78 @@ export class Layout {
                 this.startWalk(prev)
             }
         }
+    }
+
+
+    walkTrack(obj: BaseElement, section: number) {
+        // Lehet meg kellene vizsgálni, hogy a következő elem az
+        // a route váltóiban szerepel e?
+        // vagy váltótól váltói kellene vizsgálódni??
+        obj.isVisited = true;
+        obj.isRoute = true
+        obj.section = section;
+        var p1 = obj.getNextItemXy()
+        var p2 = obj.getPrevItemXy()
+
+        var next = this.getObjectXy(p1)
+        if (next && !(next instanceof TrackTurnoutElement)) {
+            if (!next.isVisited && (obj.pos.isEqual(next.getNextItemXy()) || obj.pos.isEqual(next.getPrevItemXy()))) {
+                next.isRoute = true
+                this.walkTrack(next, section)
+            }
+        }
+
+        var prev = this.getObjectXy(p2)
+        if (prev && !(prev instanceof TrackTurnoutElement)) {
+            if (!prev.isVisited && (obj.pos.isEqual(prev.getNextItemXy()) || obj.pos.isEqual(prev.getPrevItemXy()))) {
+                prev.isRoute = true
+                this.walkTrack(prev, section)
+            }
+        }
+    }
+
+    test() {
+        let section = 1;
+        this.resetRoutes();
+        let t1 = this.getElementByName("T21") as TrackTurnoutElement;
+        t1.isVisited = true;
+        t1.isRoute = true;
+        const entry = this.getObjectXy(t1.getConnections().div);
+        if (entry) {
+            this.walkTrack(entry, section)
+        }
+
+    }
+    processRoutes() {
+        this.test();
+        return;
+        let section = 1;
+        const elems = this.getAllElements();
+        const turnouts = elems.filter((elem: BaseElement) => isTurnoutElement(elem)) as TrackTurnoutElement[];
+        turnouts.forEach(t => {
+            this.resetRoutes();
+            t.isVisited = true;
+            t.isRoute = true;
+            var connections = t.getConnections();
+
+            const entry = this.getObjectXy(connections.entry);
+            if (entry) {
+                this.walkTrack(entry, section++)
+            }
+
+            const staright = this.getObjectXy(connections.straight);
+            if (staright) {
+                this.walkTrack(staright, section++)
+            }
+
+            const div = this.getObjectXy(connections.div);
+            if (div) {
+                this.walkTrack(div, section++)
+            }
+
+            //return;
+            console.log("CONNECTIONS: ", connections)
+        });
+
     }
 }

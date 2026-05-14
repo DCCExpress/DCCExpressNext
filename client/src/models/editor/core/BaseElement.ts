@@ -1,3 +1,4 @@
+import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { IEditableProperty } from "../elements/PropertyDescriptor";
 import { sampleLayout } from "../sample/sampleLayout";
@@ -38,6 +39,7 @@ export abstract class BaseElement implements IBaseElement {
     occupied: boolean = false;
     alpha: number = 0.5;
     state: RailStates = RailStates.free;
+    section: number = 0;
     debug: boolean = false;
     //length: number = 1;
 
@@ -163,6 +165,13 @@ export abstract class BaseElement implements IBaseElement {
         // if(this.marked) {
         //     this.drawMarked(ctx);
         // }
+
+        if(this.section > 0) {
+            ctx.save();
+            drawTextWithRoundedBackground(ctx, this.centerX, this.posTop - 20, "#" + this.section.toString())
+            ctx.restore()
+        }
+
         if (this.debug) {
             this.drawNeighbors(ctx);
         }

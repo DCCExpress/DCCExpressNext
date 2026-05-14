@@ -7,11 +7,13 @@ import { wsApi } from "../../../services/wsApi";
 import { AddressedElement } from "../core/AddressedElement";
 import { BaseElement } from "../core/BaseElement";
 import { ClickableBaseElement } from "../core/ClickableBaseElement";
+import { getDirectionXy } from "../core/helpers";
+import { Point } from "../core/Rect";
 import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackCornerElement, ITrackTurnoutLeftElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 import { TrackTurnoutRightElement } from "./TrackTurnoutRightElement";
 
-export abstract class  TrackTurnoutElement extends ClickableBaseElement {
+export abstract class TrackTurnoutElement extends ClickableBaseElement {
     //override type: typeof ELEMENT_TYPES.TRACK_TURNOUT = ELEMENT_TYPES.TRACK_TURNOUT;
     address: number = 0;
     turnoutLockedColor: string | CanvasGradient | CanvasPattern = "red";
@@ -31,7 +33,7 @@ export abstract class  TrackTurnoutElement extends ClickableBaseElement {
         this.beginDraw(ctx, options);
         this.drawTurnout(ctx, this.isClosed);
         this.endDraw(ctx);
-        
+
         this.beginDraw(ctx);
         if (options?.showTurnoutAddress) {
             drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.turnoutAddress.toString())
@@ -57,7 +59,7 @@ export abstract class  TrackTurnoutElement extends ClickableBaseElement {
         //alert("UP")
     }
 
-    
+
     get isClosed(): boolean {
         return this.turnoutClosed == this.turnoutClosedValue;
     }
@@ -70,4 +72,7 @@ export abstract class  TrackTurnoutElement extends ClickableBaseElement {
             { label: "Closed Value", key: "turnoutClosedValue", type: "bittoggle", readonly: false, validate: (v) => { return true } },
         ];
     }
+
+    abstract getConnections(): { entry: Point, straight: Point, div: Point } 
+
 }

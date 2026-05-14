@@ -268,6 +268,14 @@ export class TrackTurnoutRightElement extends TrackTurnoutElement implements ITr
         return getDirectionXy(this.pos, this.rotation + 180)
     }
 
+        getConnections(): { entry: Point, straight: Point, div: Point } {
+        return {
+            straight: getDirectionXy(this.pos, this.rotation),
+            entry: getDirectionXy(this.pos, this.rotation + 180),
+            div: getDirectionXy(this.pos, this.rotation + 45)
+        }
+    }
+
     override getNeigbordsXy(): Point[] {
         var points: Point[] = [];
         points.push(getDirectionXy(this.pos, this.rotation))

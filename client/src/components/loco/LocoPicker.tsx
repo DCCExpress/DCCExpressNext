@@ -38,8 +38,8 @@ export default function LocoPicker({
                 alignItems: "flex-start",
                 justifyContent: "center",
                 padding: 12,
-
             }}
+            onMouseDown={onClose}
         >
 
             <Card

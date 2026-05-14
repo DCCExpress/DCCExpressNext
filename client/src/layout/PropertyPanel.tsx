@@ -32,6 +32,8 @@ type PropertyPanelProps = {
   setTurnoutSelectionMode: (on: boolean) => void;
   layout: Layout;
   onLayoutChange: Dispatch<SetStateAction<Layout>>;
+  routes?: string | undefined;
+  onRunRouteProcess?: (() => void) | undefined;
 };
 
 
@@ -62,7 +64,7 @@ function createPreviewElement<T extends BaseElement>(element: T): T {
   return preview;
 }
 
-export default function RightPropertyPanel({ selectedElement, onUpdateSelectedElement, invalidate, editMode, opened, turnoutSelectionMode, setTurnoutSelectionMode, layout, onLayoutChange }: PropertyPanelProps) {
+export default function RightPropertyPanel({ selectedElement, onUpdateSelectedElement, invalidate, editMode, opened, turnoutSelectionMode, setTurnoutSelectionMode, layout, onLayoutChange, routes, onRunRouteProcess }: PropertyPanelProps) {
 
   const trackturnoutleft1 = new TrackTurnoutLeftElement(0, 0);
   trackturnoutleft1.turnoutClosed = true == trackturnoutleft1.turnoutClosedValue;
@@ -739,7 +741,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   }
   return (
     <>
-      <ControlPanel />
+      <ControlPanel routes={routes} onRunRouteProcess={onRunRouteProcess} />
     </>
   )
 

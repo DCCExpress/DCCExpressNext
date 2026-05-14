@@ -404,7 +404,7 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 13
         },
         {
           "id": "2135262-c36e-4feb-92ba-c7b8176a",
@@ -1648,7 +1648,7 @@
         {
           "id": "bc6de8b-d61e-49e0-8b88-86177d38",
           "type": "trackturnoutleft",
-          "name": "element",
+          "name": "T20",
           "layerName": "track",
           "x": 15,
           "y": 14,
@@ -1689,7 +1689,7 @@
         {
           "id": "a30e44c-0a14-466f-bb99-6b90b398",
           "type": "trackturnoutright",
-          "name": "element",
+          "name": "T21",
           "layerName": "track",
           "x": 29,
           "y": 14,

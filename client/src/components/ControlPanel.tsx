@@ -17,6 +17,7 @@ import {
   IconCode,
   IconDeviceGamepad2,
   IconPower,
+  IconRoute2,
 } from "@tabler/icons-react";
 
 import { useCommandCenter } from "../context/CommandCenterContext";
@@ -24,6 +25,7 @@ import { wsApi } from "../services/wsApi";
 
 
 import { scriptEngine } from "../services/scriptEngine";
+import { Layout } from "../models/editor/core/Layout";
 
 type ControlPanelProps = {
   onConnectCommandCenter?: () => void;
@@ -34,7 +36,8 @@ type ControlPanelProps = {
   onPowerOff?: () => void;
   onEmergencyStop?: () => void;
 
-  onRunScript?: (script: string) => void;
+  routes?: string | undefined;
+  onRunRouteProcess?: (() => void) | undefined;
 };
 
 const CONTROL_PANEL_ACTIVE_TAB_KEY = "dcc-express.control-panel.active-tab";
@@ -49,23 +52,23 @@ export default function ControlPanel(p: ControlPanelProps) {
     );
   });
 
-  const [script, setScript] = useState(scriptEngine.getScript());
+  
 
-  useEffect(() => {
-    const unsubscribe = scriptEngine.subscribeScript((scriptDocument) => {
-      setScript(scriptDocument.content);
-    });
+  // useEffect(() => {
+  //   const unsubscribe = scriptEngine.subscribeScript((scriptDocument) => {
+  //     setScript(scriptDocument.content);
+  //   });
 
-    void scriptEngine.loadScript().catch((error) => {
-      console.error("Failed to load script:", error);
-    });
+  //   void scriptEngine.loadScript().catch((error) => {
+  //     console.error("Failed to load script:", error);
+  //   });
 
-    return unsubscribe;
-  }, []);
+  //   return unsubscribe;
+  // }, []);
 
-  const handleScriptChange = (value: string) => {
-    scriptEngine.setScript(value);
-  };
+  // const handleScriptChange = (value: string) => {
+  //   scriptEngine.setScript(value);
+  // };
 
   const handleActiveTabChange = (value: string | null) => {
     const nextValue = value ?? DEFAULT_CONTROL_PANEL_TAB;
@@ -92,7 +95,7 @@ export default function ControlPanel(p: ControlPanelProps) {
             {/* Controller */}
           </Tabs.Tab>
 
-          <Tabs.Tab value="scripts" leftSection={<IconCode size={16} />}>
+          <Tabs.Tab value="scripts" leftSection={<IconRoute2 size={16} />}>
             {/* Scripts */}
           </Tabs.Tab>
         </Tabs.List>
@@ -113,7 +116,7 @@ export default function ControlPanel(p: ControlPanelProps) {
         </Tabs.Panel>
 
         <Tabs.Panel value="scripts" pt="sm">
-          <ScriptsTab script={script} onScriptChange={handleScriptChange} />
+          <ScriptsTab routes={p.routes} onRunRouteProcess={p.onRunRouteProcess} />
         </Tabs.Panel>
       </Tabs>
     </Card>
@@ -408,15 +411,20 @@ function ControllerTab() {
 }
 
 type ScriptsTabProps = {
-  script: string;
-  onScriptChange: (value: string) => void;
+  routes?: string | undefined;
+  onRunRouteProcess?: (() => void) | undefined;
 };
-
 
 function ScriptsTab(p: ScriptsTabProps) {
   return (
     <>
-    ---
+    <Button
+      size="xs"
+      variant="light"
+      onClick={() => p.onRunRouteProcess?.()}
+    >
+      Process Route
+    </Button>
     </>
   );
 }
