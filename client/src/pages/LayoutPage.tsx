@@ -143,7 +143,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     }
   }, [editMode]);
 
-  const refreshLocos = async () => {
+  const loadLocos = async () => {
     try {
       const data = await getLocos();
       setLocos(data);
@@ -221,12 +221,17 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     }
   };
 
-  useEffect(() => {
-    void refreshLocos();
-    void loadLayoutFromServer();
-    void loadCommandCentersFromServer();
-    void loadScriptFromServer();
+  const loadPartsFromServer = async () => {
+    await loadLocos();
+    await loadLayoutFromServer();
+    await loadCommandCentersFromServer();
+    await loadScriptFromServer();
+    wsApi.getBlocks();
     setInvalidateCounter((v) => v + 1);
+  }
+  useEffect(() => {
+    loadPartsFromServer();
+
   }, []);
 
   const createLayoutSnapshot = useCallback((source: Layout): string => {
@@ -477,17 +482,16 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
         for (const [blockId, blockState] of Object.entries(data)) {
           const elem = layoutRef.current.getElementById(blockId);
-
+          //alert(blockId + " " + locos.length);
           if (elem && elem.type === ELEMENT_TYPES.TRACK_BLOCK) {
             const blockElement = elem as BlockElement;
 
             blockElement.locoAddress =
               locosRef.current.find(l => l.id === blockState.locoId)?.address ?? 0;
           }
-          setInvalidateCounter((prev) => prev + 1);
         }
-        
-        
+        setInvalidateCounter((prev) => prev + 1);
+
       }
     );
     const unsubscribeCommandRejected = wsClient.on(
@@ -555,7 +559,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         opened={locoDialogOpened}
         onClose={() => setLocoDialogOpened(false)}
         onSaved={async () => {
-          await refreshLocos();
+          await loadLocos();
         }}
       />
 

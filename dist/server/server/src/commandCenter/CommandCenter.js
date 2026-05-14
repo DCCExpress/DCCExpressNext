@@ -83,8 +83,13 @@ export class CommandCenter {
         broadcastAll(data);
     }
     getBlocks() {
-        const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
-        broadcastAll(data);
+        this.loadRuntimeState().then(() => {
+            log("GET BLOCKS:", this.blocks);
+            const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
+            broadcastAll(data);
+        }).catch(err => {
+            log("Failed to load runtime state in getBlocks:", err);
+        });
     }
     getOrCreateLoco(address) {
         let loco = this.locos.get(address);

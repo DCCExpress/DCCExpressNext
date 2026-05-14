@@ -93,8 +93,7 @@ class WebscoketApi {
   }
 
   getBlocks() {
-    
-    return wsClient.send({ type: "setBlockRemove", data: {}, uuid: this.uuid });
+    return wsClient.send({ type: "getBlocks", data: {}, uuid: this.uuid });
   }
 
   routeLock() {

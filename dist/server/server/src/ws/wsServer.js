@@ -460,7 +460,7 @@ export function setupWebSocketServer(server) {
                             log("Resetting blocks");
                             commandCenter.setBlocksReset();
                             break;
-                        case "setGetBlocks":
+                        case "getBlocks":
                             log("Getting blocks");
                             commandCenter.getBlocks();
                             break;

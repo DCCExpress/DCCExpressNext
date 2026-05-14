@@ -94,9 +94,9 @@ export abstract class CommandCenter {
       await this.loadRuntimeState().then(() => {
         log("Runtime state loaded successfully after loco change");
       }).catch(err => {
-        log("Failed to load runtime state after loco change:", err);    
+        log("Failed to load runtime state after loco change:", err);
       });
-    }); 
+    });
   }
   setLocos(llocos: Loco[]): void {
     this.locos.clear();
@@ -153,8 +153,13 @@ export abstract class CommandCenter {
   }
 
   public getBlocks(): void {
-    const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
-    broadcastAll(data);
+    this.loadRuntimeState().then(() => {
+      log("GET BLOCKS:", this.blocks);
+      const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
+      broadcastAll(data);
+    }).catch(err => {
+      log("Failed to load runtime state in getBlocks:", err);
+    });
   }
 
   abstract getConnectionString(): string;
