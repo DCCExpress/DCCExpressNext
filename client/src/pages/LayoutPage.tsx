@@ -738,6 +738,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       onLayoutChange={setLayout}
                       routes={routesString}
                       onRunRouteProcess={handleRunRouteProcess}
+                      //setBusy={setBusy}
+                      setBusy={(busy, text) => { setCanvasBusy(busy); if (text) setCanvasBusyText(text); }}
                       />
                   </Card>
                 )}

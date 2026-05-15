@@ -37,6 +37,7 @@ type PropertyPanelProps = {
   onLayoutChange: Dispatch<SetStateAction<Layout>>;
   routes?: string | undefined;
   onRunRouteProcess: () => Graph | null;
+   setBusy?: (busy: boolean, text?: string) => void;
 };
 
 
@@ -67,7 +68,7 @@ function createPreviewElement<T extends BaseElement>(element: T): T {
   return preview;
 }
 
-export default function RightPropertyPanel({ selectedElement, onUpdateSelectedElement, invalidate, editMode, opened, turnoutSelectionMode, setTurnoutSelectionMode, layout, onLayoutChange, routes, onRunRouteProcess }: PropertyPanelProps) {
+export default function RightPropertyPanel({ selectedElement, onUpdateSelectedElement, invalidate, editMode, opened, turnoutSelectionMode, setTurnoutSelectionMode, layout, onLayoutChange, routes, onRunRouteProcess, setBusy, }: PropertyPanelProps) {
 
   const trackturnoutleft1 = new TrackTurnoutLeftElement(0, 0);
   trackturnoutleft1.turnoutClosed = true == trackturnoutleft1.turnoutClosedValue;
@@ -252,7 +253,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     }
   };
 
-  const handleTestExtendedRoute = async () => {
+  const handleTestExtendedRoute2 = async () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
       return;
     }
@@ -322,6 +323,84 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
       );
     }
   };
+
+const handleTestExtendedRoute = async () => {
+  if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+    return;
+  }
+
+  if (!selectedElement.fromSection || !selectedElement.toSection) {
+    showWarningMessage(
+      "Warning",
+      "Select both From section and To section first."
+    );
+    return;
+  }
+
+  let graph = routeGraph;
+
+  try {
+    if (!graph) {
+      graph = layout.processRoutes();
+      setRouteGraph(graph);
+    }
+
+    const solution = graph.findRoute(
+      selectedElement.fromSection,
+      selectedElement.toSection
+    );
+
+    if (!solution) {
+      showWarningMessage(
+        "Warning",
+        `No valid route found: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+      );
+      return;
+    }
+
+    setBusy?.(
+      true,
+      `Route is being set: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+    );
+
+    const elems = layout.getAllElements();
+
+    for (const turnoutState of solution.turnoutStates) {
+      const turnout = elems.find(
+        (elem): elem is TrackTurnoutElement =>
+          isTurnoutElement(elem) &&
+          elem.turnoutAddress === turnoutState.address
+      );
+
+      if (!turnout) {
+        throw new Error(
+          `Turnout not found for address: ${turnoutState.address}`
+        );
+      }
+
+      wsApi.setTurnout(
+        turnoutState.address,
+        turnoutState.closed === turnout.turnoutClosedValue
+      );
+
+      await sleep(1000);
+    }
+
+    showOkMessage(
+      "SUCCESSFUL",
+      `Route test sent: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+    );
+  } catch (error) {
+    showErrorMessage(
+      "ERROR",
+      error instanceof Error
+        ? error.message
+        : "Could not test automatic route."
+    );
+  } finally {
+    setBusy?.(false);
+  }
+};
 
   useEffect(() => {
     if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
