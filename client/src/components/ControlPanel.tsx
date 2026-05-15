@@ -30,6 +30,7 @@ import { Layout } from "../models/editor/core/Layout";
 import GraphDialog from "./common/GraphDialog";
 import { Edge, Graph, GraphNode } from "../models/editor/core/Graph";
 import { useEditorSettings } from "../context/EditorSettingsContext";
+import { showErrorMessage } from "../helpers";
 
 
 type ControlPanelProps = {
@@ -418,6 +419,7 @@ function ControllerTab() {
 type RoutesTabProps = {
   routes?: string | undefined;
   onRunRouteProcess: (() => Graph | null);
+  //onRunRouteProcess?: (() => Graph) | undefined;
   layout: Layout,
 
 };
@@ -432,10 +434,22 @@ function RoutesTab(p: RoutesTabProps) {
 
   const [graph, setGraph] = useState<Graph | null>(null);
   const handleRunRouteProcess = () => {
+    try {
+      const g = p.onRunRouteProcess?.();
 
-    const g = p.onRunRouteProcess(); // p.layout.processRoutes();
-    setGraph(g);
-    setGraphDialogOpened(true);
+      if (!g) {
+        return;
+      }
+
+      setGraph(g);
+      setGraphDialogOpened(true);
+    } catch (error) {
+      showErrorMessage("Error",
+        error instanceof Error
+          ? error.message
+          : "Could not generate route graph."
+      );
+    }
   };
   return (
     <>
@@ -447,14 +461,14 @@ function RoutesTab(p: RoutesTabProps) {
 
       <Group>
         <Group w="100%">
-        <Checkbox
-          mb={4}
-          label="Show segments"
-          checked={settings.showSegments}
-          onChange={(e) =>
-            updateSettings({ showSegments: e.currentTarget.checked })
-          }
-        />
+          <Checkbox
+            mb={4}
+            label="Show segments"
+            checked={settings.showSegments}
+            onChange={(e) =>
+              updateSettings({ showSegments: e.currentTarget.checked })
+            }
+          />
         </Group>
 
         <Button

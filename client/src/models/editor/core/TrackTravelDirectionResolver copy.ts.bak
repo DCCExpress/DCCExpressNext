@@ -1,7 +1,6 @@
 import { TrackDirectionElement } from "../elements/TrackDirectionElement";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
 import { BaseElement, TravelDirection } from "./BaseElement";
-
 import { Layout } from "./Layout";
 import { Point } from "./Rect";
 
@@ -12,8 +11,8 @@ type TurnoutPropagationState = {
     enteredSide: TurnoutSide;
 
     /**
-     * Az adott turnout-oldalon a "forward" irány
-     * a váltó belseje felé mutat-e.
+     * Az adott turnout-oldalon a pálya "forward" iránya
+     * a váltó belseje felé mutat-e?
      */
     forwardIntoTurnout: boolean;
 };
@@ -24,196 +23,13 @@ export class TrackTravelDirectionResolver {
     resolve(): void {
         this.resetTravelDirections();
 
-        const networks = this.collectTrackNetworks();
+        const marker = this.findDirectionMarker();
 
-        if (networks.length === 0) {
+        if (!marker) {
+            console.warn("[TravelDirection] No TrackDirectionElement found.");
             return;
         }
 
-        networks.forEach((network, index) => {
-            const markers = network.filter(
-                elem => elem instanceof TrackDirectionElement
-            ) as TrackDirectionElement[];
-
-            if (markers.length === 0) {
-                throw new Error(
-                    `A ${index + 1}. különálló pályarészen nincs irányjelölő elem.`
-                );
-            }
-
-            if (markers.length > 1) {
-                throw new Error(
-                    `A ${index + 1}. különálló pályarészen több irányjelölő elem található. Egy pályarészen pontosan egy lehet.`
-                );
-            }
-
-            this.propagateFromMarker(markers[0]!);
-        });
-    }
-
-    // ============================================================
-    // 1. UTAZÁSI IRÁNYOK RESET
-    // ============================================================
-
-    private resetTravelDirections(): void {
-        const elems = this.layout.getAllElements();
-
-        for (const elem of elems) {
-            elem.travelDirection = "unknown";
-        }
-    }
-
-    // ============================================================
-    // 2. KÜLÖNÁLLÓ PÁLYARÉSZEK FELTÁRÁSA
-    // ============================================================
-
-    /**
-     * Összegyűjti az összefüggő sín-hálózatokat.
-     *
-     * Kiindulási pontok:
-     * - minden TrackDirectionElement
-     * - minden TrackTurnoutElement
-     *
-     * Ez elég a route graph szempontjából releváns hálózatokhoz.
-     */
-    private collectTrackNetworks(): BaseElement[][] {
-        const elems = this.layout.getAllElements();
-
-        const seeds = elems.filter(
-            elem =>
-                elem instanceof TrackDirectionElement ||
-                elem instanceof TrackTurnoutElement
-        );
-
-        const visited = new Set<string>();
-        const networks: BaseElement[][] = [];
-
-        for (const seed of seeds) {
-            if (visited.has(seed.id)) {
-                continue;
-            }
-
-            const network = this.walkConnectedNetwork(seed, visited);
-
-            if (network.length > 0) {
-                networks.push(network);
-            }
-        }
-
-        return networks;
-    }
-
-    private walkConnectedNetwork(
-        start: BaseElement,
-        visited: Set<string>
-    ): BaseElement[] {
-        const result: BaseElement[] = [];
-        const queue: BaseElement[] = [start];
-
-        while (queue.length > 0) {
-            const current = queue.shift()!;
-
-            if (visited.has(current.id)) {
-                continue;
-            }
-
-            visited.add(current.id);
-            result.push(current);
-
-            const neighbors = this.getConnectedNeighbors(current);
-
-            for (const neighbor of neighbors) {
-                if (!visited.has(neighbor.id)) {
-                    queue.push(neighbor);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * Megadja egy pályaelem közvetlenül kapcsolódó szomszédait.
-     */
-    private getConnectedNeighbors(elem: BaseElement): BaseElement[] {
-        if (elem instanceof TrackTurnoutElement) {
-            return this.getTurnoutNeighbors(elem);
-        }
-
-        return this.getTrackNeighbors(elem);
-    }
-
-    private getTrackNeighbors(elem: BaseElement): BaseElement[] {
-        const result: BaseElement[] = [];
-
-        const nextPos = elem.getNextItemXy();
-        const prevPos = elem.getPrevItemXy();
-
-        this.tryAddTrackNeighbor(elem, nextPos, result);
-        this.tryAddTrackNeighbor(elem, prevPos, result);
-
-        return result;
-    }
-
-    private tryAddTrackNeighbor(
-        current: BaseElement,
-        targetPos: Point,
-        result: BaseElement[]
-    ): void {
-        const neighbor = this.layout.getObjectXy(targetPos);
-
-        if (!neighbor) {
-            return;
-        }
-
-        /**
-         * Track -> turnout kapcsolat.
-         * Ha a targetPos-on váltó van, akkor fizikailag kapcsolódunk hozzá.
-         */
-        if (neighbor instanceof TrackTurnoutElement) {
-            result.push(neighbor);
-            return;
-        }
-
-        /**
-         * Track -> track kapcsolat.
-         * Csak akkor valódi, ha a másik elem vissza is mutat a jelenlegi elemre.
-         */
-        const isConnectedBack =
-            current.pos.isEqual(neighbor.getNextItemXy()) ||
-            current.pos.isEqual(neighbor.getPrevItemXy());
-
-        if (isConnectedBack) {
-            result.push(neighbor);
-        }
-    }
-
-    private getTurnoutNeighbors(turnout: TrackTurnoutElement): BaseElement[] {
-        const result: BaseElement[] = [];
-        const connections = turnout.getConnections();
-
-        const connectionPositions = [
-            connections.entry,
-            connections.straight,
-            connections.div,
-        ];
-
-        for (const pos of connectionPositions) {
-            const neighbor = this.layout.getObjectXy(pos);
-
-            if (neighbor) {
-                result.push(neighbor);
-            }
-        }
-
-        return result;
-    }
-
-    // ============================================================
-    // 3. IRÁNYTERJESZTÉS EGY TRACKDIRECTION MARKERBŐL
-    // ============================================================
-
-    private propagateFromMarker(marker: TrackDirectionElement): void {
         marker.travelDirection = "forward";
 
         const trackQueue: BaseElement[] = [marker];
@@ -261,7 +77,39 @@ export class TrackTravelDirectionResolver {
     }
 
     // ============================================================
-    // 4. TRACK -> TRACK / TURNOUT IRÁNYTERJESZTÉS
+    // MARKER
+    // ============================================================
+
+    private resetTravelDirections(): void {
+        const elems = this.layout.getAllElements();
+
+        for (const elem of elems) {
+            elem.travelDirection = "unknown";
+        }
+    }
+
+    private findDirectionMarker(): TrackDirectionElement | undefined {
+        const elems = this.layout.getAllElements();
+
+        const markers = elems.filter(
+            elem => elem instanceof TrackDirectionElement
+        ) as TrackDirectionElement[];
+
+        if (markers.length === 0) {
+            return undefined;
+        }
+
+        if (markers.length > 1) {
+            console.warn(
+                `[TravelDirection] Multiple TrackDirectionElements found (${markers.length}). Using the first one.`
+            );
+        }
+
+        return markers[0];
+    }
+
+    // ============================================================
+    // TRACK -> TRACK / TURNOUT
     // ============================================================
 
     private propagateFromTrack(
@@ -335,6 +183,13 @@ export class TrackTravelDirectionResolver {
         const thisSideIsForward =
             this.isTrackSideForward(track, side);
 
+        /**
+         * Ha a jelenlegi track ezen oldalán van a forward,
+         * akkor a következő elem forward iránya a jelenlegi elemtől EL mutasson.
+         *
+         * Ha ez a jelenlegi track backward oldala,
+         * akkor a szomszéd forward iránya a jelenlegi elem FELÉ mutasson.
+         */
         const shouldPointAwayFromTrack = thisSideIsForward;
 
         const expectedDirection =
@@ -441,7 +296,7 @@ export class TrackTravelDirectionResolver {
     }
 
     // ============================================================
-    // 5. TURNOUT -> TRACK / TURNOUT IRÁNYTERJESZTÉS
+    // TURNOUT PROPAGATION
     // ============================================================
 
     private propagateFromTurnoutSide(
@@ -497,8 +352,9 @@ export class TrackTravelDirectionResolver {
                     enteredSide: targetEnteredSide,
 
                     /**
-                     * A másik váltó oldaláról nézve
-                     * a befelé/kifelé viszony megfordul.
+                     * Ha az aktuális turnout oldalán a forward
+                     * befelé mutat, akkor a szomszéd turnout oldalán
+                     * kifelé fog mutatni, és fordítva.
                      */
                     forwardIntoTurnout: !targetForwardIntoTurnout,
                 });
@@ -513,6 +369,14 @@ export class TrackTravelDirectionResolver {
                 this.getExpectedTrackDirectionFromConnection(
                     targetElem,
                     turnout.pos,
+
+                    /**
+                     * Ha a turnout adott oldalán a forward
+                     * befelé mutat, akkor a track oldaláról nézve
+                     * a forward a turnout FELÉ mutat.
+                     *
+                     * Ezért "away" = !targetForwardIntoTurnout
+                     */
                     !targetForwardIntoTurnout
                 );
 

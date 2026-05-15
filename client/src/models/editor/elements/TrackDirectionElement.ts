@@ -235,17 +235,23 @@ export class TrackDirectionElement
     }
 
     override getHelp(): string {
-        return `
-            <h3 style="margin-top:0;">Track direction element</h3>
-            <p>
-                This element defines the forward travel direction
-                for the containing railway section.
-            </p>
-            <ul>
-                <li>You can rotate it with R</li>
-                <li>The lime arrow shows the forward direction</li>
-                <li>Only one direction element should be used per section</li>
-            </ul>
-        `;
-    }
+    return `
+        <h3 style="margin-top:0;">Track direction element</h3>
+        <p>
+            This element defines the reference forward travel direction
+            for an entire connected track network.
+        </p>
+        <p>
+            The direction is propagated automatically through the connected
+            tracks and is used to determine whether a locomotive must travel
+            forward or in reverse along a calculated route.
+        </p>
+        <ul>
+            <li>You can rotate it with R</li>
+            <li>The lime arrow shows the reference forward direction</li>
+            <li>Each separate connected track network must contain exactly one direction element</li>
+            <li>Missing or multiple direction elements in the same track network will cause route graph generation to fail</li>
+        </ul>
+    `;
+}
 }

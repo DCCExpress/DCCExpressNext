@@ -95,7 +95,16 @@ export class TrackElement extends AddressedElement implements ITrackElement {
         if (options?.showSection && this.section > 0) {
             ctx.save();
             drawTextWithRoundedBackground(ctx, this.centerX, this.centerY, "S" + this.section.toString(), "white", "black")
-            ctx.restore()
+            const c = this.getTravelDirectionArrow();
+
+            drawTextWithRoundedBackground(
+                ctx,
+                this.centerX,
+                this.centerY - 12,
+                c,
+                "white",
+                "black"
+            ); ctx.restore()
         }
 
 
@@ -110,6 +119,30 @@ export class TrackElement extends AddressedElement implements ITrackElement {
         super.draw(ctx)
     }
 
+    private getTravelDirectionArrow(): string {
+        if (this.travelDirection === "unknown") {
+            return "?";
+        }
+
+        const target =
+            this.travelDirection === "forward"
+                ? this.getNextItemXy()
+                : this.getPrevItemXy();
+
+        const dx = target.x - this.pos.x;
+        const dy = target.y - this.pos.y;
+
+        if (dx > 0 && dy === 0) return "→";
+        if (dx > 0 && dy > 0) return "↘";
+        if (dx === 0 && dy > 0) return "↓";
+        if (dx < 0 && dy > 0) return "↙";
+        if (dx < 0 && dy === 0) return "←";
+        if (dx < 0 && dy < 0) return "↖";
+        if (dx === 0 && dy < 0) return "↑";
+        if (dx > 0 && dy < 0) return "↗";
+
+        return "?";
+    }
     private drawDirectionArrow(ctx: CanvasRenderingContext2D): void {
         this.beginDraw(ctx);
 

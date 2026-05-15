@@ -78,7 +78,7 @@ export class RouteGraphBuilder {
     private markTurnoutsVisited(): void {
         for (const turnout of this.turnouts) {
             turnout.isVisited = true;
-            turnout.isRoute = true;
+//            turnout.isRoute = true;
         }
     }
 
@@ -158,7 +158,7 @@ export class RouteGraphBuilder {
         sectionElements: BaseElement[]
     ): void {
         obj.isVisited = true;
-        obj.isRoute = true;
+        //obj.isRoute = true;
         obj.section = section;
 
         sectionElements.push(obj);

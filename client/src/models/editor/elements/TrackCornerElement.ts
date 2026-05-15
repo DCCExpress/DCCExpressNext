@@ -114,11 +114,11 @@ export class TrackCornerElement extends AddressedElement implements ITrackCorner
     }
 
     override  getNextItemXy(): Point {
-        return getDirectionXy(this.pos, this.rotation + 0 )
+        return getDirectionXy(this.pos, this.rotation + 90 )
     }
 
     override getPrevItemXy(): Point {
-        return getDirectionXy(this.pos, this.rotation + 225 )
+        return getDirectionXy(this.pos, this.rotation -180 )
     }
     // getBounds(): Rect {
     //     return {

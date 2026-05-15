@@ -110,7 +110,8 @@ export default function GraphDialog({
                             —
                         </Text>
                     )}
-                </Table.Td>      </Table.Tr>
+                </Table.Td>
+            </Table.Tr>
         )) ?? [];
 
     return (
