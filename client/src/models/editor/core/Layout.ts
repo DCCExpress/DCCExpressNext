@@ -391,16 +391,16 @@ export class Layout {
         elems.forEach((elem: BaseElement) => {
             elem.isVisited = false;
             elem.isRoute = false;
-            elem.section = 0;
+            //elem.section = 0;
         })
     }
     checkRoutes() {
-        //const elems = this.getAllElements();
-        // elems.forEach((elem: BaseElement) => {
-        //     elem.isVisited = false;
-        //     elem.isRoute = false;
-        // })
-        this.resetRoutes();
+        const elems = this.getAllElements();
+        elems.forEach((elem: BaseElement) => {
+            elem.isVisited = false;
+            elem.isRoute = false;
+        })
+        //this.resetRoutes();
 
         const routeButtons = this.getAllElements().filter((elem: BaseElement) => elem instanceof RouteButtonElement) as RouteButtonElement[];
         routeButtons.forEach(rb => {

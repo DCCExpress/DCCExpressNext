@@ -44,7 +44,8 @@ export default function LocoPicker({
 
             <Card
                 withBorder
-                radius="sm"
+                radius="md"
+                shadow="lg"
                 p="md"
                 style={{
                     width: "100%",

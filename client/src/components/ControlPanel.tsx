@@ -9,6 +9,7 @@ import {
   Group,
   ScrollArea,
   Stack,
+  Table,
   Tabs,
   Text,
 } from "@mantine/core";
@@ -17,7 +18,9 @@ import {
   IconBolt,
   IconCode,
   IconDeviceGamepad2,
+  IconPlayerPlay,
   IconPower,
+  IconRoute,
   IconRoute2,
 } from "@tabler/icons-react";
 
@@ -30,7 +33,8 @@ import { Layout } from "../models/editor/core/Layout";
 import GraphDialog from "./common/GraphDialog";
 import { Edge, Graph, GraphNode } from "../models/editor/core/Graph";
 import { useEditorSettings } from "../context/EditorSettingsContext";
-import { showErrorMessage } from "../helpers";
+import { showErrorMessage, showOkMessage } from "../helpers";
+import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 
 
 type ControlPanelProps = {
@@ -424,7 +428,7 @@ type RoutesTabProps = {
 
 };
 
-function RoutesTab(p: RoutesTabProps) {
+function RoutesTab22(p: RoutesTabProps) {
   const [graphDialogOpened, setGraphDialogOpened] = useState(false);
   const { settings, updateSettings } = useEditorSettings();
 
@@ -490,6 +494,188 @@ function RoutesTab(p: RoutesTabProps) {
     </>
   );
 }
+
+function RoutesTab(p: RoutesTabProps) {
+  const [graph, setGraph] = useState<Graph | null>(null);
+  const { settings, updateSettings } = useEditorSettings();
+  const [graphDialogOpened, setGraphDialogOpened] = useState(false);
+
+  const handleRunRouteProcess = () => {
+    try {
+      const g = p.onRunRouteProcess?.();
+
+      if (!g) return;
+
+      setGraph(g);
+      //setGraphDialogOpened(true);
+    } catch (error) {
+      showErrorMessage("ERROR",
+        error instanceof Error
+          ? error.message
+          : "Could not generate route graph."
+      );
+    }
+  };
+
+  const handleTestConnection = async (edge: Edge) => {
+    try {
+      for (const turnoutState of edge.turnoutStates) {
+
+        const elems = p.layout.getAllElements();
+
+        const turnout = elems.find(
+          (el) =>
+            "turnoutAddress" in el &&
+            "turnoutClosedValue" in el &&
+            el.turnoutAddress === turnoutState.address
+        ) as TrackTurnoutElement;
+
+        if (!turnout) {
+          console.warn(`Turnout not found for address: ${turnoutState.address}`);
+          continue;
+        }
+
+        await wsApi.setTurnout(
+          turnoutState.address,
+          turnoutState.closed === turnout.turnoutClosedValue
+        );
+      }
+
+      showOkMessage("SUCCESSFUL",
+        `Route test sent: ${edge.from.name} → ${edge.to.name}`
+      );
+    } catch (error) {
+      showErrorMessage("ERROR",
+        error instanceof Error
+          ? error.message
+          : "Could not test route connection."
+      );
+    }
+  };
+
+  return (
+    <>
+      <Stack gap="md">
+        <Group justify="space-between">
+
+          <Group w="100%">
+            <Checkbox
+              mb={4}
+              label="Show segments"
+              checked={settings.showSegments}
+              onChange={(e) =>
+                updateSettings({ showSegments: e.currentTarget.checked })
+              }
+            />
+            <Button
+              size="xs"
+              variant="light"
+              onClick={() => setGraphDialogOpened(true)}
+            >
+              Show Graph
+            </Button>
+
+          </Group>
+
+          <Text fw={600}>Route graph</Text>
+
+          <Button
+            leftSection={<IconRoute size={16} />}
+            onClick={handleRunRouteProcess}
+          >
+            Generate graph
+          </Button>
+        </Group>
+
+        {!graph && (
+          <Text size="sm" c="dimmed">
+            Generate the graph to display segment connections.
+          </Text>
+        )}
+
+        {graph && (
+          <Stack gap="xs">
+            <Group justify="space-between">
+              <Text fw={600}>Segment connections</Text>
+
+              <Badge variant="light">
+                {graph.edges.length} connection{graph.edges.length === 1 ? "" : "s"}
+              </Badge>
+            </Group>
+
+            <ScrollArea h={360}>
+              <Table striped highlightOnHover withTableBorder withColumnBorders>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>From</Table.Th>
+                    <Table.Th>To</Table.Th>
+                    <Table.Th>Required</Table.Th>
+                    <Table.Th style={{ width: 110 }}>Test</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+
+                <Table.Tbody>
+                  {graph.edges.map((edge, index) => (
+                    <Table.Tr
+                      key={`${edge.from.name}-${edge.to.name}-${index}`}
+                    >
+                      <Table.Td>{edge.from.name}</Table.Td>
+
+                      <Table.Td>{edge.to.name}</Table.Td>
+
+                      <Table.Td>
+                        {edge.turnoutStates.length === 0 ? (
+                          <Text size="sm" c="dimmed">
+                            No turnout required
+                          </Text>
+                        ) : (
+                          <Group gap={6}>
+                            {edge.turnoutStates.map((turnoutState, i) => (
+                              <Badge
+                                radius={4}
+                                key={`${turnoutState.address}-${i}`}
+                                variant="filled"
+                                color={turnoutState.closed ? "green" : "orange"}
+                              >
+                                {turnoutState.address}:
+                                {turnoutState.closed ? "C" : "T"}
+                              </Badge>
+                            ))}
+                          </Group>
+                        )}
+                      </Table.Td>
+
+                      <Table.Td>
+                        <Button
+                          size="xs"
+                          variant="light"
+                          leftSection={<IconPlayerPlay size={14} />}
+                          onClick={() => handleTestConnection(edge)}
+                          disabled={edge.turnoutStates.length === 0}
+                        >
+                          Test
+                        </Button>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </ScrollArea>
+          </Stack>
+        )}
+      </Stack>
+
+      {graph && (
+        <GraphDialog
+          opened={graphDialogOpened}
+          onClose={() => setGraphDialogOpened(false)}
+          graph={graph}
+        />
+      )}
+    </>
+  );
+};
+
 function InfoSection({
   title,
   children,
