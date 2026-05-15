@@ -21,6 +21,7 @@ import { ButtonScriptElement } from "../elements/ButtonScriptElement";
 import ca from "zod/v4/locales/ca.cjs";
 import { LabelElement } from "../elements/LabelElement";
 import { TrackDirectionElement } from "../elements/TrackDirectionElement";
+import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
 
 export class ElementFactory {
   static create(data: EditorElementData): BaseElement {
@@ -101,6 +102,10 @@ export class ElementFactory {
         return RouteButtonElement.fromJSON(data);
       }
 
+      case ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED: {
+        return ExtendedRouteButtonElement.fromJSON(data);
+      }
+      
       case ELEMENT_TYPES.CLOCK: {
         return ClockElement.fromJSON(data);
       }

@@ -29,6 +29,7 @@ export const ELEMENT_TYPES = {
   BUTTON_SCRIPT: "buttonscript",
   BUTTON_AUDIO: "audiobutton",
   BUTTON_ROUTE: "routebutton",
+  BUTTON_ROUTE_EXTENDED: "extendedroutebutton",
   CLOCK: "clcok",
   TREE: "tree",
   LABEL: "label"
@@ -181,6 +182,12 @@ export interface IRouteButtonElement extends IBaseElement {
   routeTurnouts: RouteTurnoutItem[] 
 }
 
+export interface IExtendedRouteButtonElement extends IBaseElement {
+  type: typeof ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED;
+  label: string;
+  fromSection: string;
+  toSection: string;
+}
 
 export interface IClockElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.CLOCK;
@@ -243,6 +250,7 @@ export type EditorElementData =
   | IButtonScriptElement
   | IAudioButtonElement
   | IRouteButtonElement
+  | IExtendedRouteButtonElement
   | IClockElement
   | IBlockElement
   | ITreeElement

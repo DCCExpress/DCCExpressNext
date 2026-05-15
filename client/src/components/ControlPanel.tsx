@@ -26,12 +26,9 @@ import {
 
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { wsApi } from "../services/wsApi";
-
-
-import { scriptEngine } from "../services/scriptEngine";
-import { Layout } from "../models/editor/core/Layout";
+import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
 import GraphDialog from "./common/GraphDialog";
-import { Edge, Graph, GraphNode } from "../models/editor/core/Graph";
+import { Edge, Graph, RouteSolution, TurnoutStateRequirement,} from "../models/editor/core/Graph";
 import { useEditorSettings } from "../context/EditorSettingsContext";
 import { showErrorMessage, showOkMessage } from "../helpers";
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
@@ -428,73 +425,6 @@ type RoutesTabProps = {
 
 };
 
-function RoutesTab22(p: RoutesTabProps) {
-  const [graphDialogOpened, setGraphDialogOpened] = useState(false);
-  const { settings, updateSettings } = useEditorSettings();
-
-  // const graph = useMemo(() => {
-  //   return p.layout?.createGraph() ?? null;
-  // }, [p.layout]);
-
-  const [graph, setGraph] = useState<Graph | null>(null);
-  const handleRunRouteProcess = () => {
-    try {
-      const g = p.onRunRouteProcess?.();
-
-      if (!g) {
-        return;
-      }
-
-      setGraph(g);
-      setGraphDialogOpened(true);
-    } catch (error) {
-      showErrorMessage("Error",
-        error instanceof Error
-          ? error.message
-          : "Could not generate route graph."
-      );
-    }
-  };
-  return (
-    <>
-      <GraphDialog
-        graph={graph}
-        opened={graphDialogOpened}
-        onClose={() => setGraphDialogOpened(false)}
-      />
-
-      <Group>
-        <Group w="100%">
-          <Checkbox
-            mb={4}
-            label="Show segments"
-            checked={settings.showSegments}
-            onChange={(e) =>
-              updateSettings({ showSegments: e.currentTarget.checked })
-            }
-          />
-        </Group>
-
-        <Button
-          size="xs"
-          variant="light"
-          onClick={handleRunRouteProcess}
-        >
-          Process Route
-        </Button>
-
-        <Button
-          size="xs"
-          variant="light"
-          onClick={() => setGraphDialogOpened(true)}
-        >
-          Show Graph
-        </Button>
-      </Group>
-    </>
-  );
-}
-
 function RoutesTab(p: RoutesTabProps) {
   const [graph, setGraph] = useState<Graph | null>(null);
   const { settings, updateSettings } = useEditorSettings();
@@ -517,42 +447,70 @@ function RoutesTab(p: RoutesTabProps) {
     }
   };
 
-  const handleTestConnection = async (edge: Edge) => {
-    try {
-      for (const turnoutState of edge.turnoutStates) {
+  const applyTurnoutStates = async (
+  turnoutStates: TurnoutStateRequirement[]
+) => {
+  const elems = p.layout.getAllElements();
 
-        const elems = p.layout.getAllElements();
+  for (const turnoutState of turnoutStates) {
+    const turnout = elems.find(
+      (el) =>
+        "turnoutAddress" in el &&
+        "turnoutClosedValue" in el &&
+        el.turnoutAddress === turnoutState.address
+    ) as TrackTurnoutElement | undefined;
 
-        const turnout = elems.find(
-          (el) =>
-            "turnoutAddress" in el &&
-            "turnoutClosedValue" in el &&
-            el.turnoutAddress === turnoutState.address
-        ) as TrackTurnoutElement;
-
-        if (!turnout) {
-          console.warn(`Turnout not found for address: ${turnoutState.address}`);
-          continue;
-        }
-
-        await wsApi.setTurnout(
-          turnoutState.address,
-          turnoutState.closed === turnout.turnoutClosedValue
-        );
-      }
-
-      showOkMessage("SUCCESSFUL",
-        `Route test sent: ${edge.from.name} → ${edge.to.name}`
-      );
-    } catch (error) {
-      showErrorMessage("ERROR",
-        error instanceof Error
-          ? error.message
-          : "Could not test route connection."
+    if (!turnout) {
+      throw new Error(
+        `Turnout not found for address: ${turnoutState.address}`
       );
     }
-  };
 
+    await wsApi.setTurnout(
+      turnoutState.address,
+      turnoutState.closed === turnout.turnoutClosedValue
+    );
+  }
+};
+
+const handleTestRoute = async (solution: RouteSolution) => {
+  try {
+    await applyTurnoutStates(solution.turnoutStates);
+
+    const routeText = solution.nodes
+      .map((node) => node.name)
+      .join(" → ");
+
+    showOkMessage(
+      "SUCCESSFUL",
+      `Route test sent: ${routeText}`
+    );
+  } catch (error) {
+    showErrorMessage(
+      "ERROR",
+      error instanceof Error
+        ? error.message
+        : "Could not test route."
+    );
+  }
+};
+const handleTestConnection = async (edge: Edge) => {
+  try {
+    await applyTurnoutStates(edge.turnoutStates);
+
+    showOkMessage(
+      "SUCCESSFUL",
+      `Route test sent: ${edge.from.name} → ${edge.to.name}`
+    );
+  } catch (error) {
+    showErrorMessage(
+      "ERROR",
+      error instanceof Error
+        ? error.message
+        : "Could not test route connection."
+    );
+  }
+};
   return (
     <>
       <Stack gap="md">
@@ -571,6 +529,7 @@ function RoutesTab(p: RoutesTabProps) {
               size="xs"
               variant="light"
               onClick={() => setGraphDialogOpened(true)}
+              disabled={!graph}
             >
               Show Graph
             </Button>
@@ -670,6 +629,7 @@ function RoutesTab(p: RoutesTabProps) {
           opened={graphDialogOpened}
           onClose={() => setGraphDialogOpened(false)}
           graph={graph}
+          onTestRoute={handleTestRoute}
         />
       )}
     </>

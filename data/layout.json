@@ -275,6 +275,36 @@
               "closed": true
             }
           ]
+        },
+        {
+          "id": "8dbd33c-4941-4972-bfa2-f5de0438",
+          "type": "extendedroutebutton",
+          "name": "element",
+          "layerName": "buildings",
+          "x": 18,
+          "y": 9,
+          "rotation": 0,
+          "rotationStep": 0,
+          "bg": "black",
+          "fg": "white",
+          "label": "AUTO ROUTE",
+          "fromSection": "",
+          "toSection": ""
+        },
+        {
+          "id": "27f0833-2412-478c-8577-387992fe",
+          "type": "extendedroutebutton",
+          "name": "element",
+          "layerName": "buildings",
+          "x": 17,
+          "y": 9,
+          "rotation": 0,
+          "rotationStep": 0,
+          "bg": "black",
+          "fg": "white",
+          "label": "AUTO ROUTE",
+          "fromSection": "",
+          "toSection": ""
         }
       ]
     },

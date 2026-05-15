@@ -15,19 +15,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import CanvasElement from "../common/CanvasElement";
 import { Graph, RouteSolution } from "../../models/editor/core/Graph";
 import AppModal from "./AppModal";
-import { wsApi } from "../../services/wsApi";
-
 
 type GraphDialogProps = {
     graph: Graph | null;
     opened: boolean;
     onClose: () => void;
+    onTestRoute?: (solution: RouteSolution) => void | Promise<void>;
 };
 
 export default function GraphDialog({
     graph,
     opened,
     onClose,
+    onTestRoute,
 }: GraphDialogProps) {
 
     const [fromNodeName, setFromNodeName] = useState<string | null>(null);
@@ -236,10 +236,8 @@ export default function GraphDialog({
                                                 color="lime"
                                                 variant="light"
                                                 onClick={() => {
-                                                    
+                                                    void onTestRoute?.(routeSolution);
                                                 }}
-                                                
-                                                
                                             >
                                                 Test route
                                             </Button>

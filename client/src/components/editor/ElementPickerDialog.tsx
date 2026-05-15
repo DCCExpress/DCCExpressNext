@@ -22,6 +22,7 @@ import { TrackCrossingElement } from "../../models/editor/elements/TrackCrossing
 import { ButtonScriptElement } from "../../models/editor/elements/ButtonScriptElement";
 import { LabelElement } from "../../models/editor/elements/LabelElement";
 import { TrackDirectionElement } from "../../models/editor/elements/TrackDirectionElement";
+import { ExtendedRouteButtonElement } from "../../models/editor/elements/ExtendedRouteButtonElement";
 
 type ElementPickerDialogProps = {
   opened: boolean;
@@ -51,6 +52,7 @@ export default function ElementPickerDialog({
   const buttonscript = new ButtonScriptElement(0, 0);
   const audiobutton = new AudioButtonElement(0, 0);
   const routebutton = new RouteButtonElement(0, 0);
+  const extendedroutebutton = new ExtendedRouteButtonElement(0, 0);
   const label = new LabelElement(0, 0);
   const clock = new ClockElement(0, 0);
   clock.scale = 0.28
@@ -58,7 +60,7 @@ export default function ElementPickerDialog({
   const block = new BlockElement(0, 0);
   const signal2 = new TrackSignalElement(0, 0);
   signal2.aspect = 2;
-  
+
   const signal3 = new TrackSignalElement(0, 0);
   signal3.aspect = 3;
   const signal4 = new TrackSignalElement(0, 0);
@@ -95,10 +97,10 @@ export default function ElementPickerDialog({
               onClose();
             }} />
           </Group>
-          </Card>
+        </Card>
 
-          <Card padding="xs" withBorder>
-            <Group>
+        <Card padding="xs" withBorder>
+          <Group>
             <ElementPreview element={trackturnoutleft} label="Turnout Left" width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_TURNOUT_LEFT);
               onClose();
@@ -159,6 +161,17 @@ export default function ElementPickerDialog({
               onPick(ELEMENT_TYPES.BUTTON_ROUTE);
               onClose();
             }} />
+            <ElementPreview
+              element={extendedroutebutton}
+              label="Auto Route"
+              width={80}
+              height={40}
+              translateX={-20}
+              onClick={() => {
+                onPick(ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED);
+                onClose();
+              }}
+            />
             <ElementPreview element={audiobutton} label="Audio" width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.BUTTON_AUDIO);
               onClose();

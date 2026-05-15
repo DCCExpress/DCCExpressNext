@@ -451,50 +451,7 @@ export class RouteGraphBuilder {
      * mely oldalak felé lehet továbbmenni,
      * és ehhez milyen váltóállás szükséges.
      */
-    private getAllowedTurnoutExits22(
-        turnout: TrackTurnoutElement,
-        enteredSide: TurnoutSide
-    ): TurnoutExit[] {
-        const straightState: TurnoutStateRequirement = {
-            address: turnout.turnoutAddress,
-            closed: turnout.turnoutClosedValue,
-        };
-
-        const divState: TurnoutStateRequirement = {
-            address: turnout.turnoutAddress,
-            closed: !turnout.turnoutClosedValue,
-        };
-
-        switch (enteredSide) {
-            case "entry":
-                return [
-                    {
-                        exitSide: "straight",
-                        turnoutState: straightState,
-                    },
-                    {
-                        exitSide: "div",
-                        turnoutState: divState,
-                    },
-                ];
-
-            case "straight":
-                return [
-                    {
-                        exitSide: "entry",
-                        turnoutState: straightState,
-                    },
-                ];
-
-            case "div":
-                return [
-                    {
-                        exitSide: "entry",
-                        turnoutState: divState,
-                    },
-                ];
-        }
-    }
+    
 
 private getAllowedTurnoutExits(
     turnout: TrackTurnoutElement,

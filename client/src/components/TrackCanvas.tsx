@@ -36,6 +36,7 @@ import LocoPicker from "./loco/LocoPicker";
 import { Loco } from "../../../common/src/types";
 import { set } from "zod";
 import { TrackDirectionElement } from "../models/editor/elements/TrackDirectionElement";
+import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -140,6 +141,7 @@ const CursorTrackCrossingElement = new TrackCrossingElement(0, 0);
 const CursorButtonElement = new ButtonElement(0, 0);
 const CursorButtonScriptElement = new ButtonScriptElement(0, 0);
 const CursorRouteButtonElement = new RouteButtonElement(0, 0);
+const CursorExtendedRouteButtonElement = new ExtendedRouteButtonElement(0, 0);
 const CursorAudioButtonElement = new AudioButtonElement(0, 0);
 const CursorClockElement = new ClockElement(0, 0);
 const CursorTreeElement = new TreeElement(0, 0);
@@ -1736,7 +1738,7 @@ export default function TrackCanvas({
         onRemoveLoco={(loco) => {
           if (selectedBlock) {
             const id = locos.find((l) => l.address === selectedBlock.locoAddress)?.id || "";
-            
+
             wsApi.setBlockRemove(selectedBlock.id, id);
             setLocoPickerOpen(false);
           }
@@ -1798,6 +1800,9 @@ function createCursorElement(tool: EditorTool): BaseElement | null {
 
     case ELEMENT_TYPES.BUTTON_ROUTE:
       return CursorRouteButtonElement;
+
+    case ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED:
+      return CursorExtendedRouteButtonElement;
 
     case ELEMENT_TYPES.CLOCK:
       return CursorClockElement;
