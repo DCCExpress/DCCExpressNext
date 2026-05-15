@@ -1,10 +1,11 @@
+import { measure } from "../../../helpers";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
 import { BaseElement, TravelDirection } from "./BaseElement";
 import {
     Edge,
     Graph,
     GraphNode,
-    
+
     TurnoutStateRequirement
 } from "./Graph";
 import { isTurnoutElement, Layout } from "./Layout";
@@ -38,9 +39,9 @@ export class RouteGraphBuilder {
 
     private nextSectionNumber = 1;
 
-    constructor(private readonly layout: Layout) {}
+    constructor(private readonly layout: Layout) { }
 
-    build(): Graph {
+    build2(): Graph {
         this.layout.resetRoutes();
 
         /**
@@ -60,6 +61,47 @@ export class RouteGraphBuilder {
         return this.graph;
     }
 
+    build(): Graph {
+        const totalStart = performance.now();
+
+        measure("  ↳ resetRoutes", () => {
+            this.layout.resetRoutes();
+        });
+
+        measure("  ↳ travel direction resolve", () => {
+            new TrackTravelDirectionResolver(this.layout).resolve();
+        });
+
+        this.turnouts = measure("  ↳ collect turnouts", () => {
+            return this.collectTurnouts();
+        });
+
+        measure("  ↳ mark turnouts visited", () => {
+            this.markTurnoutsVisited();
+        });
+
+        measure("  ↳ discover physical sections", () => {
+            this.discoverPhysicalSections();
+        });
+
+        measure("  ↳ create route edges", () => {
+            this.createRouteEdges();
+        });
+
+        const totalEnd = performance.now();
+
+        console.groupCollapsed(
+            `📈 Route graph summary: ${(totalEnd - totalStart).toFixed(2)} ms`
+        );
+        console.log("Nodes:", this.graph.nodes.length);
+        console.log("Edges:", this.graph.edges.length);
+        console.log("Turnouts:", this.turnouts.length);
+        console.groupEnd();
+
+        console.log("GENERATED SECTION GRAPH:", this.graph);
+
+        return this.graph;
+    }
     // ============================================================
     // 1. FÁZIS: VÁLTÓK ÖSSZEGYŰJTÉSE
     // ============================================================
@@ -78,7 +120,7 @@ export class RouteGraphBuilder {
     private markTurnoutsVisited(): void {
         for (const turnout of this.turnouts) {
             turnout.isVisited = true;
-//            turnout.isRoute = true;
+            //            turnout.isRoute = true;
         }
     }
 
@@ -451,60 +493,60 @@ export class RouteGraphBuilder {
      * mely oldalak felé lehet továbbmenni,
      * és ehhez milyen váltóállás szükséges.
      */
-    
 
-private getAllowedTurnoutExits(
-    turnout: TrackTurnoutElement,
-    enteredSide: TurnoutSide
-): TurnoutExit[] {
-    /**
-     * FONTOS:
-     * Itt a closed NEM a fizikai / Z21 turnoutClosed érték,
-     * hanem a logikai, képen látható váltóállás:
-     *
-     * true  = closed / straight
-     * false = thrown / diverging
-     */
-    const straightState: TurnoutStateRequirement = {
-        address: turnout.turnoutAddress,
-        closed: true,
-    };
 
-    const divState: TurnoutStateRequirement = {
-        address: turnout.turnoutAddress,
-        closed: false,
-    };
+    private getAllowedTurnoutExits(
+        turnout: TrackTurnoutElement,
+        enteredSide: TurnoutSide
+    ): TurnoutExit[] {
+        /**
+         * FONTOS:
+         * Itt a closed NEM a fizikai / Z21 turnoutClosed érték,
+         * hanem a logikai, képen látható váltóállás:
+         *
+         * true  = closed / straight
+         * false = thrown / diverging
+         */
+        const straightState: TurnoutStateRequirement = {
+            address: turnout.turnoutAddress,
+            closed: true,
+        };
 
-    switch (enteredSide) {
-        case "entry":
-            return [
-                {
-                    exitSide: "straight",
-                    turnoutState: straightState,
-                },
-                {
-                    exitSide: "div",
-                    turnoutState: divState,
-                },
-            ];
+        const divState: TurnoutStateRequirement = {
+            address: turnout.turnoutAddress,
+            closed: false,
+        };
 
-        case "straight":
-            return [
-                {
-                    exitSide: "entry",
-                    turnoutState: straightState,
-                },
-            ];
+        switch (enteredSide) {
+            case "entry":
+                return [
+                    {
+                        exitSide: "straight",
+                        turnoutState: straightState,
+                    },
+                    {
+                        exitSide: "div",
+                        turnoutState: divState,
+                    },
+                ];
 
-        case "div":
-            return [
-                {
-                    exitSide: "entry",
-                    turnoutState: divState,
-                },
-            ];
+            case "straight":
+                return [
+                    {
+                        exitSide: "entry",
+                        turnoutState: straightState,
+                    },
+                ];
+
+            case "div":
+                return [
+                    {
+                        exitSide: "entry",
+                        turnoutState: divState,
+                    },
+                ];
+        }
     }
-}
 
     /**
      * Megmondja, hogy a másik váltó melyik oldalával

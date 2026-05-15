@@ -135,8 +135,8 @@ export class TrackDirectionElement
         const px = -fy;
         const py = fx;
 
-        const arrowLength = 9;
-        const arrowHalfWidth = 9;
+        const arrowLength = 7;
+        const arrowHalfWidth = 7;
 
         // Háromszög csúcsa előre
         const tipX = centerX + fx * arrowLength;

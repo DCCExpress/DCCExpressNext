@@ -1,4 +1,4 @@
-import { showWarningMessage } from "../../../helpers";
+import { measure, showWarningMessage } from "../../../helpers";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackElement } from "../elements/TrackElement";
 import TrackTurnoutDoubleElement from "../elements/TrackTurnoutDoubleElement";
@@ -493,7 +493,7 @@ export class Layout {
         }
     }
 
-    checkRoutes() {
+    checkRoutes22() {
         const elems = this.getAllElements();
 
         // --------------------------------------------------
@@ -589,7 +589,106 @@ export class Layout {
         });
     }
 
+    checkRoutes() {
 
+        const checkRoutesStart = performance.now();
+
+        const elems = this.getAllElements();
+
+        // --------------------------------------------------
+        // 1. Gráf felépítése az ExtendedRouteButtonök miatt
+        //    A graph builder közben használja az isVisited mezőt!
+        // --------------------------------------------------
+        let graph: Graph | null = null;
+
+        try {
+            graph = this.processRoutes();
+        } catch (error) {
+            console.warn("[RouteGraph] Could not check extended routes:", error);
+            graph = null;
+        }
+
+        // --------------------------------------------------
+        // FONTOS:
+        // A gráfépítés után lenullázzuk a bejárási/színezési állapotot,
+        // mert a RouteGraphBuilder összekoszolja az isVisited mezőket.
+        // Innentől a régi RouteButton startWalk() tiszta lappal indul.
+        // --------------------------------------------------
+        elems.forEach((elem: BaseElement) => {
+            elem.isVisited = false;
+            elem.isRoute = false;
+        });
+
+        // --------------------------------------------------
+        // 2. Régi, kézzel felépített RouteButtonök ellenőrzése
+        // --------------------------------------------------
+        const routeButtons = elems.filter(
+            (elem: BaseElement) => elem instanceof RouteButtonElement
+        ) as RouteButtonElement[];
+
+        routeButtons.forEach(rb => {
+            let active = true;
+
+            rb.routeTurnouts.forEach(t => {
+                const turnout = this.getElementById(t.turnoutId) as TrackTurnoutElement;
+
+                if (turnout && turnout.turnoutClosed === t.closed) {
+                    // oké
+                } else {
+                    active = false;
+                }
+            });
+
+            rb.active = active;
+
+            if (active && rb.routeTurnouts.length > 0) {
+                const turnout = this.getElementById(
+                    rb.routeTurnouts[0]!.turnoutId
+                ) as TrackTurnoutElement;
+
+                this.startWalk(turnout);
+            }
+        });
+
+        // --------------------------------------------------
+        // 3. Új, gráfos ExtendedRouteButtonök ellenőrzése
+        // --------------------------------------------------
+        const extendedRouteButtons = elems.filter(
+            (elem: BaseElement) => elem instanceof ExtendedRouteButtonElement
+        ) as ExtendedRouteButtonElement[];
+
+        extendedRouteButtons.forEach(rb => {
+            rb.active = false;
+
+            if (!graph) {
+                return;
+            }
+
+            if (!rb.fromSection || !rb.toSection) {
+                return;
+            }
+
+            const solution = graph.findRoute(
+                rb.fromSection,
+                rb.toSection
+            );
+
+            if (!solution) {
+                return;
+            }
+
+            const active = this.isExtendedRouteSolutionActive(solution);
+
+            rb.active = active;
+
+            if (active) {
+                this.markExtendedRouteSolution(solution);
+            }
+        });
+        console.log(
+            `⏱️ checkRoutes total: ${(performance.now() - checkRoutesStart).toFixed(2)} ms`
+        );
+    }
     startWalk(obj: BaseElement) {
         // Lehet meg kellene vizsgálni, hogy a következő elem az
         // a route váltóiban szerepel e?
@@ -695,7 +794,10 @@ export class Layout {
     // GRAPH
     // ==================================================
     createRouteGraph(): Graph {
-        return new RouteGraphBuilder(this).build();
+        //return new RouteGraphBuilder(this).build();
+        return measure("Route graph build", () => {
+            return new RouteGraphBuilder(this).build();
+        });
     }
     processRoutes(): Graph {
         return this.createRouteGraph();

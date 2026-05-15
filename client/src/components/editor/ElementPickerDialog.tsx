@@ -72,7 +72,7 @@ export default function ElementPickerDialog({
       <Stack p={2} gap="xs">
         <Card padding="xs" withBorder >
           <Group>
-            <ElementPreview element={trackdirection} label="Track" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackdirection} label="Direction" width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_DIRECTION);
               onClose();
             }} />

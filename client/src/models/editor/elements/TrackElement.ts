@@ -103,7 +103,7 @@ export class TrackElement extends AddressedElement implements ITrackElement {
                 this.centerY - 12,
                 c,
                 "white",
-                "black"
+                "black", 2, 2
             ); ctx.restore()
         }
 

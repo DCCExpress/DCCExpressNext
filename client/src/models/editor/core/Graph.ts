@@ -248,7 +248,7 @@ export class Graph {
         return null;
     }
 
-    
+
     autoLayout(width: number, height: number) {
         if (this.nodes.length === 0) return;
 
@@ -472,20 +472,36 @@ export class Graph {
         fromNodeName: string,
         toNodeName: string
     ): RouteSolution | null {
+        const routeFindStart = performance.now();
+
         const fromNode = this.nodes.find(node => node.name === fromNodeName);
         const toNode = this.nodes.find(node => node.name === toNodeName);
 
         if (!fromNode || !toNode) {
+            console.log(
+                `⏱️ Route find ${fromNodeName} → ${toNodeName}: ${(performance.now() - routeFindStart).toFixed(2)} ms - missing node`
+            );
             return null;
         }
 
         if (fromNode === toNode) {
-            return {
+            const result: RouteSolution = {
                 nodes: [fromNode],
                 edges: [],
                 turnoutStates: [],
-                 locoDirection: "unknown",
+                locoDirection: "unknown",
             };
+
+            console.log(
+                `⏱️ Route find ${fromNodeName} → ${toNodeName}: ${(performance.now() - routeFindStart).toFixed(2)} ms`,
+                {
+                    nodes: result.nodes.length,
+                    edges: result.edges.length,
+                    turnouts: result.turnoutStates.length,
+                }
+            );
+
+            return result;
         }
 
         type SearchState = {
@@ -559,7 +575,7 @@ export class Graph {
                 const nextEdges = [...current.edges, edge];
 
                 if (edge.to === toNode) {
-                    return {
+                    const result: RouteSolution = {
                         nodes: nextNodes,
                         edges: nextEdges,
                         turnoutStates: this.turnoutRequirementMapToArray(
@@ -567,17 +583,31 @@ export class Graph {
                         ),
                         locoDirection: mergedLocoDirection,
                     };
-                }
 
+                    console.log(
+                        `⏱️ Route find ${fromNodeName} → ${toNodeName}: ${(performance.now() - routeFindStart).toFixed(2)} ms`,
+                        {
+                            nodes: result.nodes.length,
+                            edges: result.edges.length,
+                            turnouts: result.turnoutStates.length,
+                        }
+                    );
+
+                    return result;
+                }
                 queue.push({
                     node: edge.to,
                     nodes: nextNodes,
                     edges: nextEdges,
                     requirements: mergedRequirements,
-                     locoDirection: mergedLocoDirection,
+                    locoDirection: mergedLocoDirection,
                 });
             }
         }
+
+        console.log(
+            `⏱️ Route find ${fromNodeName} → ${toNodeName}: ${(performance.now() - routeFindStart).toFixed(2)} ms - no route`
+        );
 
         return null;
     }

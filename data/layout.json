@@ -125,7 +125,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 11,
+          "x": 9,
           "y": 5,
           "rotation": 0,
           "rotationStep": 45,
@@ -135,15 +135,15 @@
           "fontSize": 8,
           "color": "#ffffff",
           "alignment": "center",
-          "offsetY": 14,
-          "offsetX": 9
+          "offsetY": 20,
+          "offsetX": 20
         },
         {
           "id": "f01ff82-6323-40f9-b785-8691f90a",
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 11,
+          "x": 9,
           "y": 6,
           "rotation": 0,
           "rotationStep": 45,
@@ -153,15 +153,15 @@
           "fontSize": 8,
           "color": "#ffffff",
           "alignment": "center",
-          "offsetY": 14,
-          "offsetX": 9
+          "offsetY": 20,
+          "offsetX": 20
         },
         {
           "id": "9ded5a5-6a50-4704-ab97-313d173c",
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 11,
+          "x": 9,
           "y": 7,
           "rotation": 0,
           "rotationStep": 45,
@@ -171,15 +171,15 @@
           "fontSize": 8,
           "color": "#ffffff",
           "alignment": "center",
-          "offsetY": 14,
-          "offsetX": 9
+          "offsetY": 20,
+          "offsetX": 20
         },
         {
           "id": "5e80a2b-7872-46f6-9239-41618970",
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 31,
+          "x": 33,
           "y": 5,
           "rotation": 0,
           "rotationStep": 45,
@@ -189,15 +189,15 @@
           "fontSize": 8,
           "color": "#ffffff",
           "alignment": "center",
-          "offsetY": 14,
-          "offsetX": 9
+          "offsetY": 20,
+          "offsetX": 20
         },
         {
           "id": "95f5d65-3849-48c6-aee0-9dab0ae6",
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 31,
+          "x": 33,
           "y": 6,
           "rotation": 0,
           "rotationStep": 45,
@@ -207,15 +207,15 @@
           "fontSize": 8,
           "color": "#ffffff",
           "alignment": "center",
-          "offsetY": 14,
-          "offsetX": 9
+          "offsetY": 20,
+          "offsetX": 20
         },
         {
           "id": "276bba8-0c62-472c-abf6-bbacedee",
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 31,
+          "x": 33,
           "y": 7,
           "rotation": 0,
           "rotationStep": 45,
@@ -225,8 +225,8 @@
           "fontSize": 8,
           "color": "#ffffff",
           "alignment": "center",
-          "offsetY": 14,
-          "offsetX": 9
+          "offsetY": 20,
+          "offsetX": 20
         },
         {
           "id": "56cb4d0-56ae-4fae-906d-0e62ddcf",
