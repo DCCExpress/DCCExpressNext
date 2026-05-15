@@ -451,7 +451,7 @@ export class RouteGraphBuilder {
      * mely oldalak felé lehet továbbmenni,
      * és ehhez milyen váltóállás szükséges.
      */
-    private getAllowedTurnoutExits(
+    private getAllowedTurnoutExits22(
         turnout: TrackTurnoutElement,
         enteredSide: TurnoutSide
     ): TurnoutExit[] {
@@ -495,6 +495,59 @@ export class RouteGraphBuilder {
                 ];
         }
     }
+
+private getAllowedTurnoutExits(
+    turnout: TrackTurnoutElement,
+    enteredSide: TurnoutSide
+): TurnoutExit[] {
+    /**
+     * FONTOS:
+     * Itt a closed NEM a fizikai / Z21 turnoutClosed érték,
+     * hanem a logikai, képen látható váltóállás:
+     *
+     * true  = closed / straight
+     * false = thrown / diverging
+     */
+    const straightState: TurnoutStateRequirement = {
+        address: turnout.turnoutAddress,
+        closed: true,
+    };
+
+    const divState: TurnoutStateRequirement = {
+        address: turnout.turnoutAddress,
+        closed: false,
+    };
+
+    switch (enteredSide) {
+        case "entry":
+            return [
+                {
+                    exitSide: "straight",
+                    turnoutState: straightState,
+                },
+                {
+                    exitSide: "div",
+                    turnoutState: divState,
+                },
+            ];
+
+        case "straight":
+            return [
+                {
+                    exitSide: "entry",
+                    turnoutState: straightState,
+                },
+            ];
+
+        case "div":
+            return [
+                {
+                    exitSide: "entry",
+                    turnoutState: divState,
+                },
+            ];
+    }
+}
 
     /**
      * Megmondja, hogy a másik váltó melyik oldalával

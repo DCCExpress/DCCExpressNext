@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import CanvasElement from "../common/CanvasElement";
 import { Graph, RouteSolution } from "../../models/editor/core/Graph";
 import AppModal from "./AppModal";
+import { wsApi } from "../../services/wsApi";
 
 
 type GraphDialogProps = {
@@ -230,6 +231,19 @@ export default function GraphDialog({
                                             A kiválasztott szakaszok között van megoldható útvonal.
                                         </Alert>
 
+                                        <Group justify="flex-end">
+                                            <Button
+                                                color="lime"
+                                                variant="light"
+                                                onClick={() => {
+                                                    
+                                                }}
+                                                
+                                                
+                                            >
+                                                Test route
+                                            </Button>
+                                        </Group>
                                         <Stack gap="xs">
                                             <Text fw={600}>Mozdony menetiránya</Text>
 
