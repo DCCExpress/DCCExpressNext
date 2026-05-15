@@ -164,9 +164,8 @@ export default function ElementPickerDialog({
             <ElementPreview
               element={extendedroutebutton}
               label="Auto Route"
-              width={80}
+              width={40}
               height={40}
-              translateX={-20}
               onClick={() => {
                 onPick(ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED);
                 onClose();

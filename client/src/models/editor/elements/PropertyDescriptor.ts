@@ -1,6 +1,17 @@
-export type PropertyEditorType = 
-"string" | "number" | "boolean" | "checkbox" | "colorpicker" | "bittoggle" | "signal2" | "turnoutSelection" | "audiofile";
+// export type PropertyEditorType = 
+// "string" | "number" | "boolean" | "checkbox" | "colorpicker" | "bittoggle" | "signal2" | "turnoutSelection" | "audiofile";
 
+export type PropertyEditorType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "checkbox"
+  | "colorpicker"
+  | "bittoggle"
+  | "signal2"
+  | "turnoutSelection"
+  | "audiofile"
+  | "routeSegmentSelect";
 
 export interface IEditableProperty {
   label: string;

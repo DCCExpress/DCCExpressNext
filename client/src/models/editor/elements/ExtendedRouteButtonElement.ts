@@ -161,32 +161,59 @@ export class ExtendedRouteButtonElement
         return copy;
     }
 
-    override getEditableProperties(): IEditableProperty[] {
-        return [
-            ...super.getEditableProperties(),
+    // override getEditableProperties(): IEditableProperty[] {
+    //     return [
+    //         ...super.getEditableProperties(),
 
-            {
-                label: "Label",
-                key: "label",
-                type: "string",
-                readonly: false,
-            },
+    //         {
+    //             label: "Label",
+    //             key: "label",
+    //             type: "string",
+    //             readonly: false,
+    //         },
 
-            {
-                label: "From section",
-                key: "fromSection",
-                type: "string",
-                readonly: false,
-            },
+    //         {
+    //             label: "From section",
+    //             key: "fromSection",
+    //             type: "string",
+    //             readonly: false,
+    //         },
 
-            {
-                label: "To section",
-                key: "toSection",
-                type: "string",
-                readonly: false,
-            },
-        ];
-    }
+    //         {
+    //             label: "To section",
+    //             key: "toSection",
+    //             type: "string",
+    //             readonly: false,
+    //         },
+    //     ];
+    // }
+
+override getEditableProperties(): IEditableProperty[] {
+    return [
+        ...super.getEditableProperties(),
+
+        {
+            label: "Label",
+            key: "label",
+            type: "string",
+            readonly: false,
+        },
+
+        {
+            label: "From section",
+            key: "fromSection",
+            type: "routeSegmentSelect",
+            readonly: false,
+        },
+
+        {
+            label: "To section",
+            key: "toSection",
+            type: "routeSegmentSelect",
+            readonly: false,
+        },
+    ];
+}
 
     override getHelp(): string {
         return `

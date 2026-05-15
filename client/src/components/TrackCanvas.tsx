@@ -8,7 +8,7 @@ import { TrackCornerElement } from "../models/editor/elements/TrackCornerElement
 import { TrackCurveElement } from "../models/editor/elements/TrackCurveElement";
 import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
-import { generateId, showErrorMessage, showWarningMessage, sleep } from "../helpers";
+import { generateId, showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
 import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
 
 import "../styles/TrackCanvas.css";
@@ -37,6 +37,7 @@ import { Loco } from "../../../common/src/types";
 import { set } from "zod";
 import { TrackDirectionElement } from "../models/editor/elements/TrackDirectionElement";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
+import { TurnoutStateRequirement } from "../models/editor/core/Graph";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -638,6 +639,120 @@ export default function TrackCanvas({
       }
     }
 
+    const applyGraphTurnoutStates = async (
+      turnoutStates: TurnoutStateRequirement[]
+    ) => {
+      const elems = layoutRef.current.getAllElements();
+
+      for (const turnoutState of turnoutStates) {
+        const turnout = elems.find(
+          (elem) =>
+            elem instanceof TrackTurnoutElement &&
+            elem.turnoutAddress === turnoutState.address
+        ) as TrackTurnoutElement | undefined;
+
+        if (!turnout) {
+          throw new Error(
+            `Turnout not found for address: ${turnoutState.address}`
+          );
+        }
+
+        /**
+         * turnoutState.closed:
+         *   logikai gráfállapot:
+         *   true = C, false = T
+         *
+         * turnout.turnoutClosedValue:
+         *   az adott fizikai váltónál mit kell küldeni a szervernek,
+         *   hogy a képen Closed legyen.
+         */
+        wsApi.setTurnout(
+          turnoutState.address,
+          turnoutState.closed === turnout.turnoutClosedValue
+        );
+
+        await sleep(1000);
+      }
+    };
+
+    const executeExtendedRoute = async function (
+      rb: ExtendedRouteButtonElement
+    ) {
+      if (commandCenterRef.current.locked) {
+        showWarningMessage(
+          "Warning",
+          "Command center is busy. Route cannot be started."
+        );
+        return;
+      }
+
+      if (!rb.fromSection || !rb.toSection) {
+        showWarningMessage(
+          "Warning",
+          "The automatic route button has no From / To section configured."
+        );
+        return;
+      }
+
+      let graph;
+
+      try {
+        graph = layoutRef.current.processRoutes();
+      } catch (error) {
+        showErrorMessage(
+          "ERROR",
+          error instanceof Error
+            ? error.message
+            : "Could not generate route graph."
+        );
+        return;
+      }
+
+      const solution = graph.findRoute(rb.fromSection, rb.toSection);
+
+      if (!solution) {
+        showWarningMessage(
+          "Warning",
+          `No valid route found: ${rb.fromSection} → ${rb.toSection}`
+        );
+        return;
+      }
+
+      wsApi.routeLock();
+      setBusy?.(true, `Route is being set: ${rb.fromSection} → ${rb.toSection}`);
+
+      try {
+        await sleep(1000);
+
+        await applyGraphTurnoutStates(solution.turnoutStates);
+
+        const elems = layoutRef.current.getAllElements();
+
+        // for (const elem of elems) {
+        //   if (elem instanceof ExtendedRouteButtonElement) {
+        //     elem.active = elem.id === rb.id;
+        //   }
+        // }
+
+        invalidate();
+
+        showOkMessage(
+          "SUCCESSFUL",
+          `Route set: ${rb.fromSection} → ${rb.toSection}`
+        );
+      } catch (error) {
+        showErrorMessage(
+          "ERROR",
+          error instanceof Error
+            ? error.message
+            : "Could not set automatic route."
+        );
+      } finally {
+        wsApi.routeUnlock();
+        setBusy?.(false);
+      }
+    };
+
     const handleClickableDown = (
       hitElement: BaseElement | null,
       ev: MouseEvent | PointerEvent
@@ -647,6 +762,11 @@ export default function TrackCanvas({
 
       if (hitElement instanceof RouteButtonElement) {
         void executeRoute(hitElement);
+        return true;
+      }
+
+      if (hitElement instanceof ExtendedRouteButtonElement) {
+        void executeExtendedRoute(hitElement);
         return true;
       }
 

@@ -1,4 +1,4 @@
-import { Accordion, ActionIcon, Badge, Box, Button, Card, Checkbox, ColorInput, ColorPicker, ColorSwatch, DEFAULT_THEME, Divider, Group, NumberInput, ScrollArea, Stack, Text, TextInput, Title, useMantineColorScheme, useMantineTheme } from "@mantine/core";
+import { Accordion, ActionIcon, Badge, Box, Button, Card, Checkbox, ColorInput, ColorPicker, ColorSwatch, DEFAULT_THEME, Divider, Group, NumberInput, ScrollArea, Select, Stack, Text, TextInput, Title, useMantineColorScheme, useMantineTheme } from "@mantine/core";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
@@ -19,8 +19,10 @@ import { IconPlayerPlayFilled, IconTrash } from "@tabler/icons-react";
 import "../styles/propertypanel.css"
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import ControlPanel from "../components/ControlPanel";
-import { isTouchDevice } from "../helpers";
+
 import { Graph } from "../models/editor/core/Graph";
+import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
+import { showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
 
 type PropertyPanelProps = {
   selectedElement: BaseElement | null;
@@ -79,7 +81,8 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   const [helpOpened, setHelpOpened] = useState<string | null>("help");
   const { settings, updateSettings } = useEditorSettings();
   const [panelOpen, setPanelOpen] = useState(opened);
-
+  const [routeGraph, setRouteGraph] = useState<Graph | null>(null);
+  const [routeGraphError, setRouteGraphError] = useState<string | null>(null);
   const { colorScheme } = useMantineColorScheme();
 
   useEffect(() => {
@@ -227,6 +230,107 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     setPanelOpen(opened)
   }, [opened])
 
+  const refreshExtendedRouteGraph = () => {
+    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+      setRouteGraph(null);
+      setRouteGraphError(null);
+      return;
+    }
+
+    try {
+      const graph = layout.processRoutes();
+
+      setRouteGraph(graph);
+      setRouteGraphError(null);
+    } catch (error) {
+      setRouteGraph(null);
+      setRouteGraphError(
+        error instanceof Error
+          ? error.message
+          : "Could not generate route graph."
+      );
+    }
+  };
+
+  const handleTestExtendedRoute = async () => {
+    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+      return;
+    }
+
+    if (!selectedElement.fromSection || !selectedElement.toSection) {
+      showWarningMessage(
+        "Warning",
+        "Select both From section and To section first."
+      );
+      return;
+    }
+
+    let graph = routeGraph;
+
+    try {
+      if (!graph) {
+        graph = layout.processRoutes();
+        setRouteGraph(graph);
+      }
+
+      const solution = graph.findRoute(
+        selectedElement.fromSection,
+        selectedElement.toSection
+      );
+
+      if (!solution) {
+        showWarningMessage(
+          "Warning",
+          `No valid route found: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+        );
+        return;
+      }
+
+      const elems = layout.getAllElements();
+
+      for (const turnoutState of solution.turnoutStates) {
+        const turnout = elems.find(
+          (elem): elem is TrackTurnoutElement =>
+            isTurnoutElement(elem) &&
+            elem.turnoutAddress === turnoutState.address
+        );
+
+        if (!turnout) {
+          throw new Error(
+            `Turnout not found for address: ${turnoutState.address}`
+          );
+        }
+
+        wsApi.setTurnout(
+          turnoutState.address,
+          turnoutState.closed === turnout.turnoutClosedValue
+        );
+
+        await sleep(1000);
+      }
+
+      showOkMessage(
+        "SUCCESSFUL",
+        `Route test sent: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+      );
+    } catch (error) {
+      showErrorMessage(
+        "ERROR",
+        error instanceof Error
+          ? error.message
+          : "Could not test automatic route."
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
+      refreshExtendedRouteGraph();
+    } else {
+      setRouteGraph(null);
+      setRouteGraphError(null);
+    }
+  }, [selectedElement, editMode]);
 
   if (editMode) {
     return (
@@ -275,14 +379,14 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                     }
                   />
 
-                  {/* <Checkbox
+                  <Checkbox
                     mb={4}
                     label="Show segments"
                     checked={settings.showSegments}
                     onChange={(e) =>
                       updateSettings({ showSegments: e.currentTarget.checked })
                     }
-                  /> */}
+                  />
 
                   <Checkbox
                     mb={4}
@@ -332,7 +436,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          if(prop.callback) {
+                          if (prop.callback) {
                             prop.callback();
                           }
                           // openAudioFileDialog({
@@ -706,10 +810,79 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                   );
                 })()}
 
+
+                {prop.type === "routeSegmentSelect" && (
+                  <Stack gap={6}>
+                    <Select
+                      label={prop.label}
+                      placeholder="Select segment"
+                      data={
+                        routeGraph?.nodes.map((node) => ({
+                          value: node.name,
+                          label: node.name,
+                        })) ?? []
+                      }
+                      value={(selectedElement as any)[prop.key] || null}
+                      onChange={(value: string | null) =>
+                        handleChange(prop, value ?? "")
+                      }
+                      searchable
+                      clearable
+                      disabled={!routeGraph || routeGraph.nodes.length === 0}
+                    />
+
+                    {!routeGraph && (
+                      <Text size="xs" c="dimmed">
+                        No route graph available.
+                      </Text>
+                    )}
+
+                    {routeGraphError && (
+                      <Text size="xs" c="red">
+                        {routeGraphError}
+                      </Text>
+                    )}
+
+                    {prop.key === "fromSection" && (
+                      <Button
+                        size="xs"
+                        variant="light"
+                        onClick={refreshExtendedRouteGraph}
+                      >
+                        Refresh segments
+                      </Button>
+                    )}
+                  </Stack>
+                )}
               </Card >
 
             </div>
           ))}
+
+          {selectedElement instanceof ExtendedRouteButtonElement && (
+            <Card withBorder p="xs" mr={16} mb={12}>
+              <Stack gap="xs">
+                <Text size="sm" fw={600}>
+                  Automatic route test
+                </Text>
+
+                <Button
+                  size="xs"
+                  color="lime"
+                  variant="light"
+                  onClick={() => {
+                    void handleTestExtendedRoute();
+                  }}
+                  disabled={
+                    !selectedElement.fromSection ||
+                    !selectedElement.toSection
+                  }
+                >
+                  Test route
+                </Button>
+              </Stack>
+            </Card>
+          )}
 
           {(
             <Accordion
