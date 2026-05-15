@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Box,
   Button,
   Card,
+  Checkbox,
   Divider,
   Group,
   ScrollArea,
@@ -26,6 +27,10 @@ import { wsApi } from "../services/wsApi";
 
 import { scriptEngine } from "../services/scriptEngine";
 import { Layout } from "../models/editor/core/Layout";
+import GraphDialog from "./common/GraphDialog";
+import { Edge, Graph, GraphNode } from "../models/editor/core/Graph";
+import { useEditorSettings } from "../context/EditorSettingsContext";
+
 
 type ControlPanelProps = {
   onConnectCommandCenter?: () => void;
@@ -37,7 +42,8 @@ type ControlPanelProps = {
   onEmergencyStop?: () => void;
 
   routes?: string | undefined;
-  onRunRouteProcess?: (() => void) | undefined;
+  onRunRouteProcess: (() => Graph | null);
+  layout: Layout
 };
 
 const CONTROL_PANEL_ACTIVE_TAB_KEY = "dcc-express.control-panel.active-tab";
@@ -52,7 +58,6 @@ export default function ControlPanel(p: ControlPanelProps) {
     );
   });
 
-  
 
   // useEffect(() => {
   //   const unsubscribe = scriptEngine.subscribeScript((scriptDocument) => {
@@ -116,7 +121,7 @@ export default function ControlPanel(p: ControlPanelProps) {
         </Tabs.Panel>
 
         <Tabs.Panel value="scripts" pt="sm">
-          <ScriptsTab routes={p.routes} onRunRouteProcess={p.onRunRouteProcess} />
+          <RoutesTab routes={p.routes} onRunRouteProcess={p.onRunRouteProcess} layout={p.layout} />
         </Tabs.Panel>
       </Tabs>
     </Card>
@@ -410,25 +415,67 @@ function ControllerTab() {
   );
 }
 
-type ScriptsTabProps = {
+type RoutesTabProps = {
   routes?: string | undefined;
-  onRunRouteProcess?: (() => void) | undefined;
+  onRunRouteProcess: (() => Graph | null);
+  layout: Layout,
+
 };
 
-function ScriptsTab(p: ScriptsTabProps) {
+function RoutesTab(p: RoutesTabProps) {
+  const [graphDialogOpened, setGraphDialogOpened] = useState(false);
+  const { settings, updateSettings } = useEditorSettings();
+
+  // const graph = useMemo(() => {
+  //   return p.layout?.createGraph() ?? null;
+  // }, [p.layout]);
+
+  const [graph, setGraph] = useState<Graph | null>(null);
+  const handleRunRouteProcess = () => {
+
+    const g = p.onRunRouteProcess(); // p.layout.processRoutes();
+    setGraph(g);
+    setGraphDialogOpened(true);
+  };
   return (
     <>
-    <Button
-      size="xs"
-      variant="light"
-      onClick={() => p.onRunRouteProcess?.()}
-    >
-      Process Route
-    </Button>
+      <GraphDialog
+        graph={graph}
+        opened={graphDialogOpened}
+        onClose={() => setGraphDialogOpened(false)}
+      />
+
+      <Group>
+        <Group w="100%">
+        <Checkbox
+          mb={4}
+          label="Show segments"
+          checked={settings.showSegments}
+          onChange={(e) =>
+            updateSettings({ showSegments: e.currentTarget.checked })
+          }
+        />
+        </Group>
+
+        <Button
+          size="xs"
+          variant="light"
+          onClick={handleRunRouteProcess}
+        >
+          Process Route
+        </Button>
+
+        <Button
+          size="xs"
+          variant="light"
+          onClick={() => setGraphDialogOpened(true)}
+        >
+          Show Graph
+        </Button>
+      </Group>
     </>
   );
 }
-
 function InfoSection({
   title,
   children,

@@ -35,6 +35,7 @@ import { LabelElement } from "../models/editor/elements/LabelElement";
 import LocoPicker from "./loco/LocoPicker";
 import { Loco } from "../../../common/src/types";
 import { set } from "zod";
+import { TrackDirectionElement } from "../models/editor/elements/TrackDirectionElement";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -120,6 +121,7 @@ type SelectionState = {
 };
 
 const CursorTrackElement = new TrackElement(0, 0);
+const CursorTrackDirectionElement = new TrackDirectionElement(0, 0);
 const CursorTrackEndElement = new TrackEndElement(0, 0);
 const CursorTrackCornerElement = new TrackCornerElement(0, 0);
 const CursorTrackCurveElement = new TrackCurveElement(0, 0);
@@ -1755,6 +1757,9 @@ function createCursorElement(tool: EditorTool): BaseElement | null {
     case ELEMENT_TYPES.TRACK:
       return CursorTrackElement;
 
+    case ELEMENT_TYPES.TRACK_DIRECTION:
+      return CursorTrackDirectionElement;
+
     case ELEMENT_TYPES.TRACK_END:
       return CursorTrackEndElement;
 
@@ -1874,6 +1879,7 @@ function drawScene(
     showSensorAddress: settings.showSensorAddress,
     showTurnoutAddress: settings.showTurnoutAddress,
     showSignalAddress: settings.showSignalAddress,
+    showSection: settings.showSegments,
     darkMode: isDark,
     locos: locos || [],
   };

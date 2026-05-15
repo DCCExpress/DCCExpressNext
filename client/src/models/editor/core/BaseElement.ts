@@ -12,7 +12,13 @@ export enum RailStates {
     free, selected, occupied
 }
 
+export type TravelDirection =
+    | "unknown"
+    | "forward"
+    | "reverse";
+
 export const RailColors = { free: "gray", selected: "yellow", occupied: "red" }
+
 
 
 export abstract class BaseElement implements IBaseElement {
@@ -42,6 +48,7 @@ export abstract class BaseElement implements IBaseElement {
     section: number = 0;
     debug: boolean = false;
     //length: number = 1;
+    travelDirection: TravelDirection = "unknown";
 
     constructor(x: number, y: number) {
         this.x = x;
@@ -166,11 +173,6 @@ export abstract class BaseElement implements IBaseElement {
         //     this.drawMarked(ctx);
         // }
 
-        if(this.section > 0) {
-            ctx.save();
-            drawTextWithRoundedBackground(ctx, this.centerX, this.posTop - 20, "#" + this.section.toString())
-            ctx.restore()
-        }
 
         if (this.debug) {
             this.drawNeighbors(ctx);
@@ -284,13 +286,14 @@ export abstract class BaseElement implements IBaseElement {
     }
 
     fromJSON(data: IBaseElement) {
-        
+
     }
 
     draw(ctx: CanvasRenderingContext2D, options?: DrawOptions) {
         // if (this.debug) {
         //     this.drawNeighbors(ctx);
         // }
+
     }
 
 

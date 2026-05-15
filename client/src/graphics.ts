@@ -36,42 +36,70 @@ export function drawTextWithRoundedBackground(
     x: number,
     y: number,
     text: string,
-    textColor: string = 'black',
-    rectColor: string = 'lightgray',
+    textColor: string = "black",
+    rectColor: string = "lightgray",
     borderRadius: number = 2,
     padding: number = 2
 ) {
     ctx.save();
 
     const textMetrics = ctx.measureText(text);
-    // const padding = 2; 
+
     const textWidth = textMetrics.width;
-    const textHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+    const textHeight =
+        textMetrics.actualBoundingBoxAscent +
+        textMetrics.actualBoundingBoxDescent;
 
     const rectWidth = textWidth + 2 * padding;
     const rectHeight = textHeight + 2 * padding;
 
+    // x, y a doboz KÖZEPE
+    const rectX = x - rectWidth / 2;
+    const rectY = y - rectHeight / 2;
+
+    const radius = Math.min(
+        borderRadius,
+        rectWidth / 2,
+        rectHeight / 2
+    );
+
+    // Háttér
     ctx.fillStyle = rectColor;
     ctx.beginPath();
-    ctx.moveTo(x + borderRadius, y);
-    ctx.lineTo(x + rectWidth - borderRadius, y);
-    ctx.quadraticCurveTo(x + rectWidth, y, x + rectWidth, y + borderRadius);
-    ctx.lineTo(x + rectWidth, y + rectHeight - borderRadius);
-    ctx.quadraticCurveTo(x + rectWidth, y + rectHeight, x + rectWidth - borderRadius, y + rectHeight);
-    ctx.lineTo(x + borderRadius, y + rectHeight);
-    ctx.quadraticCurveTo(x, y + rectHeight, x, y + rectHeight - borderRadius);
-    ctx.lineTo(x, y + borderRadius);
-    ctx.quadraticCurveTo(x, y, x + borderRadius, y);
+    ctx.moveTo(rectX + radius, rectY);
+    ctx.lineTo(rectX + rectWidth - radius, rectY);
+    ctx.quadraticCurveTo(
+        rectX + rectWidth,
+        rectY,
+        rectX + rectWidth,
+        rectY + radius
+    );
+    ctx.lineTo(rectX + rectWidth, rectY + rectHeight - radius);
+    ctx.quadraticCurveTo(
+        rectX + rectWidth,
+        rectY + rectHeight,
+        rectX + rectWidth - radius,
+        rectY + rectHeight
+    );
+    ctx.lineTo(rectX + radius, rectY + rectHeight);
+    ctx.quadraticCurveTo(
+        rectX,
+        rectY + rectHeight,
+        rectX,
+        rectY + rectHeight - radius
+    );
+    ctx.lineTo(rectX, rectY + radius);
+    ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
     ctx.closePath();
     ctx.fill();
 
-    
+    // Szöveg a doboz közepére
     ctx.fillStyle = textColor;
-    ctx.textAlign = "left"
-    const textX = x + padding;
-    const textY = y + padding + textMetrics.actualBoundingBoxAscent;
-    ctx.fillText(text, textX, textY);
-    ctx.restore()
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+
+    ctx.restore();
 }
 
 export function drawRectangle(ctx: CanvasRenderingContext2D,

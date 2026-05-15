@@ -535,8 +535,9 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   };
 
   const handleRunRouteProcess = () => {
-    layoutRef.current.processRoutes();
+    const graph = layoutRef.current.processRoutes();
     setInvalidateCounter((v) => v + 1);
+    return graph;
   };
 
   return (

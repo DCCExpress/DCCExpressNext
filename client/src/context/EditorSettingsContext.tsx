@@ -5,7 +5,7 @@ export type EditorSettings = {
     showSensorAddress: boolean;
     showSignalAddress: boolean;
     showTurnoutAddress: boolean;
-
+    showSegments: boolean;
     showGrid: boolean;
     snapToGrid: boolean;
     showElementNames: boolean;
@@ -18,7 +18,7 @@ const defaultEditorSettings: EditorSettings = {
     showSensorAddress: false,
     showSignalAddress: false,
     showTurnoutAddress: false,
-
+    showSegments: false,
     showGrid: true,
     snapToGrid: true,
     showElementNames: false,
@@ -57,6 +57,10 @@ function loadSettings(): EditorSettings {
                 typeof parsed.showTurnoutAddress === "boolean"
                     ? parsed.showTurnoutAddress
                     : defaultEditorSettings.showTurnoutAddress,
+            showSegments:
+                typeof parsed.showSegments === "boolean"
+                    ? parsed.showSegments
+                    : defaultEditorSettings.showSegments,
 
 
             showGrid:

@@ -20,12 +20,17 @@ import { TrackCrossingElement } from "../elements/TrackCrossingElement";
 import { ButtonScriptElement } from "../elements/ButtonScriptElement";
 import ca from "zod/v4/locales/ca.cjs";
 import { LabelElement } from "../elements/LabelElement";
+import { TrackDirectionElement } from "../elements/TrackDirectionElement";
 
 export class ElementFactory {
   static create(data: EditorElementData): BaseElement {
     switch (data.type) {
       case ELEMENT_TYPES.TRACK: {
         return TrackElement.fromJSON(data)
+      }
+
+      case ELEMENT_TYPES.TRACK_DIRECTION: {
+        return TrackDirectionElement.fromJSON(data)
       }
 
       case ELEMENT_TYPES.TRACK_END: {

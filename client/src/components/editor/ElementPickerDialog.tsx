@@ -21,6 +21,7 @@ import { RouteButtonElement } from "../../models/editor/elements/RouteButtonElem
 import { TrackCrossingElement } from "../../models/editor/elements/TrackCrossingElement";
 import { ButtonScriptElement } from "../../models/editor/elements/ButtonScriptElement";
 import { LabelElement } from "../../models/editor/elements/LabelElement";
+import { TrackDirectionElement } from "../../models/editor/elements/TrackDirectionElement";
 
 type ElementPickerDialogProps = {
   opened: boolean;
@@ -36,6 +37,7 @@ export default function ElementPickerDialog({
 
 
   const track = new TrackElement(0, 0);
+  const trackdirection = new TrackDirectionElement(0, 0);
   const trackend = new TrackEndElement(0, 0);
   const trackcorner = new TrackCornerElement(0, 0);
   const trackcurve = new TrackCurveElement(0, 0);
@@ -68,6 +70,10 @@ export default function ElementPickerDialog({
       <Stack p={2} gap="xs">
         <Card padding="xs" withBorder >
           <Group>
+            <ElementPreview element={trackdirection} label="Track" width={40} height={40} onClick={() => {
+              onPick(ELEMENT_TYPES.TRACK_DIRECTION);
+              onClose();
+            }} />
             <ElementPreview element={track} label="Track" width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK);
               onClose();

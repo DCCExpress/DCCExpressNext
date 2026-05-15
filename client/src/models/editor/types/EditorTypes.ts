@@ -8,6 +8,7 @@ export const ELEMENT_TYPES = {
   GENERAL: "general",
   ADDRESSED_ELEMENT: "addressedelement",
   TRACK: "track",
+  TRACK_DIRECTION: "trackdirection",
   TRACK_BASE_ELEMENT: "trackbaseelement",
   TRACK_END: "trackend",
   TRACK_CORNER: "trackcorner",
@@ -49,6 +50,7 @@ export interface DrawOptions {
   showSensorAddress: boolean;
   showSignalAddress: boolean;
   showTurnoutAddress: boolean;
+  showSection?: boolean;
   selected?: boolean;
   hovered?: boolean;
   ghost?: boolean;
@@ -86,6 +88,10 @@ export interface IAddressedElement extends ITrackBaseElement {
 
 export interface ITrackElement extends IAddressedElement {
   type: typeof ELEMENT_TYPES.TRACK;
+}
+
+export interface ITrackDirectionElement extends IAddressedElement {
+    type: typeof ELEMENT_TYPES.TRACK_DIRECTION;
 }
 
 export interface ITrackEndElement extends IAddressedElement {
@@ -222,6 +228,7 @@ export interface ITrackSignalElement extends IBaseElement {
 
 export type EditorElementData =
   | ITrackElement
+  | ITrackDirectionElement
   | ITrackEndElement
   | ITrackCornerElement
   | ITrackCurveElement

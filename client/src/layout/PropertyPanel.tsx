@@ -20,6 +20,7 @@ import "../styles/propertypanel.css"
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import ControlPanel from "../components/ControlPanel";
 import { isTouchDevice } from "../helpers";
+import { Graph } from "../models/editor/core/Graph";
 
 type PropertyPanelProps = {
   selectedElement: BaseElement | null;
@@ -33,7 +34,7 @@ type PropertyPanelProps = {
   layout: Layout;
   onLayoutChange: Dispatch<SetStateAction<Layout>>;
   routes?: string | undefined;
-  onRunRouteProcess?: (() => void) | undefined;
+  onRunRouteProcess: () => Graph | null;
 };
 
 
@@ -273,6 +274,15 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                       updateSettings({ showSignalAddress: e.currentTarget.checked })
                     }
                   />
+
+                  {/* <Checkbox
+                    mb={4}
+                    label="Show segments"
+                    checked={settings.showSegments}
+                    onChange={(e) =>
+                      updateSettings({ showSegments: e.currentTarget.checked })
+                    }
+                  /> */}
 
                   <Checkbox
                     mb={4}
@@ -741,7 +751,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   }
   return (
     <>
-      <ControlPanel routes={routes} onRunRouteProcess={onRunRouteProcess} />
+      <ControlPanel routes={routes} onRunRouteProcess={onRunRouteProcess} layout={layout} />
     </>
   )
 

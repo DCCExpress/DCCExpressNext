@@ -1,31 +1,39 @@
-import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
+import { TrackElement } from "./TrackElement";
+import {
+    DrawOptions,
+    ELEMENT_TYPES,
+    ITrackDirectionElement,
+} from "../types/EditorTypes";
 import { AddressedElement } from "../core/AddressedElement";
-import { TrackBaseElement } from "../core/TrackBaseElement";
-import { DrawOptions, ELEMENT_TYPES, IBaseElement, ITrackElement } from "../types/EditorTypes";
+import { Point } from "../core/Rect";
+import { drawTextWithRoundedBackground } from "../../../graphics";
 
+export class TrackDirectionElement
+    extends AddressedElement
+    implements ITrackDirectionElement {
 
-
-export class TrackElement extends AddressedElement implements ITrackElement {
-    override type: typeof ELEMENT_TYPES.TRACK = ELEMENT_TYPES.TRACK;
+     type: typeof ELEMENT_TYPES.TRACK_DIRECTION =
+        ELEMENT_TYPES.TRACK_DIRECTION;
 
     constructor(x: number, y: number) {
         super(x, y);
-        this.type = ELEMENT_TYPES.TRACK;
+
+        this.type = ELEMENT_TYPES.TRACK_DIRECTION;
         this.rotationStep = 45;
         this.length = 200;
     }
 
-    draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
+   draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
         if (!this.visible) return;
 
         this.beginDraw(ctx, options);
 
         {
-
+            
             //ctx.lineWidth = Globals.TrackWidth7;
             //ctx.strokeStyle = Colors.TrackPrimaryColor
-            if (!this.enabled) {
+            if(!this.enabled) {
                 ctx.globalAlpha = this.alpha;
             }
 
@@ -88,28 +96,29 @@ export class TrackElement extends AddressedElement implements ITrackElement {
             }
         }
 
+        this.drawDirectionArrow(ctx);
+        
         if (options?.showOccupancySensorAddress) {
             drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.address.toString())
         }
 
-        if (options?.showSection && this.section > 0) {
-            ctx.save();
-            drawTextWithRoundedBackground(ctx, this.centerX, this.centerY, "S" + this.section.toString(), "white", "black")
-            ctx.restore()
-        }
-
-
         this.endDraw(ctx);
-
+        
+        
 
         super.drawSelection(ctx);
-        // if (this.travelDirection != "unknown") {
-        //     this.drawDirectionArrow(ctx);
-        // }
         //super.drawEnabled(ctx);
         super.draw(ctx)
     }
-
+    /**
+     * Lime színű háromszög az elem közepén.
+     *
+     * rotation = 0   -> jobbra
+     * rotation = 45  -> jobbra-le
+     * rotation = 90  -> le
+     * rotation = 180 -> balra
+     * stb.
+     */
     private drawDirectionArrow(ctx: CanvasRenderingContext2D): void {
         this.beginDraw(ctx);
 
@@ -160,15 +169,48 @@ export class TrackElement extends AddressedElement implements ITrackElement {
         this.endDraw(ctx);
     }
 
+    /**
+     * A TrackDirectionElement "előre" irányába eső
+     * szomszédos rácspont.
+     *
+     * Fontos:
+     * nálad a TrackBaseElement-ben a getNextItemXy()
+     * nagy valószínűséggel már rotation-függően működik,
+     * ezért ezt használjuk forwardnak.
+     */
+    getForwardItemXy(): Point {
+        return this.getNextItemXy();
+    }
 
-    // override toJSON(): IAddressedElement {
-    //     return {
-    //         ...super.toJSON(),
-    //     };
-    // }
+    /**
+     * A TrackDirectionElement "hátra" irányába eső
+     * szomszédos rácspont.
+     */
+    getBackwardItemXy(): Point {
+        return this.getPrevItemXy();
+    }
 
-    static fromJSON(data: ITrackElement): TrackElement {
-        const track = new TrackElement(data.x, data.y);
+    /**
+     * Megmondja, hogy egy adott pozíció
+     * a direction element forward oldala-e.
+     */
+    isForwardTowards(pos: Point): boolean {
+        return this.getForwardItemXy().isEqual(pos);
+    }
+
+    /**
+     * Megmondja, hogy egy adott pozíció
+     * a direction element backward oldala-e.
+     */
+    isBackwardTowards(pos: Point): boolean {
+        return this.getBackwardItemXy().isEqual(pos);
+    }
+
+    static fromJSON(
+        data: ITrackDirectionElement
+    ): TrackDirectionElement {
+        const track = new TrackDirectionElement(data.x, data.y);
+
         track.id = data.id;
         track.name = data.name;
         track.rotation = data.rotation;
@@ -178,8 +220,10 @@ export class TrackElement extends AddressedElement implements ITrackElement {
 
         return track;
     }
-    override clone(): TrackElement {
-        const copy = new TrackElement(this.x, this.y);
+
+    override clone(): TrackDirectionElement {
+        const copy = new TrackDirectionElement(this.x, this.y);
+
         copy.id = generateId();
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;
@@ -190,15 +234,18 @@ export class TrackElement extends AddressedElement implements ITrackElement {
         return copy;
     }
 
-    getHelp(): string {
+    override getHelp(): string {
         return `
-    <h3 style="margin-top:0;">Track element</h3>
-    <p>This is a straight track section.</p>
-    <ul>
-      <li>You can rotate it with R</li>
-      <li>You can move it by drag and drop</li>
-    </ul>
-  `;
+            <h3 style="margin-top:0;">Track direction element</h3>
+            <p>
+                This element defines the forward travel direction
+                for the containing railway section.
+            </p>
+            <ul>
+                <li>You can rotate it with R</li>
+                <li>The lime arrow shows the forward direction</li>
+                <li>Only one direction element should be used per section</li>
+            </ul>
+        `;
     }
-
 }
