@@ -47,7 +47,7 @@ export class TrackSignalElement extends BaseElement implements ITrackSignalEleme
         this.address = 0;
         this.rotation = 90;
         this.rotationStep = 45;
-        this.layerName = "sensors";
+        this.layerName = "signals";
     }
 
     get lastAddress(): number {

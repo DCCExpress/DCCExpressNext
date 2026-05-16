@@ -199,7 +199,7 @@ export interface IBlockElement extends IBaseElement {
   // length: number;
   // textColor: string;
   locoAddress: number;
-  //sensorAddress: number;
+  sensorAddress: number;
 }
 
 export interface ITreeElement extends IBaseElement {

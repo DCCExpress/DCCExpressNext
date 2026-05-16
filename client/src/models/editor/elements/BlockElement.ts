@@ -321,7 +321,7 @@ export class BlockElement extends BaseElement implements IBlockElement {
         e.bg = data.bg;
         e.fg = data.fg;
         //e.length = data.length;
-        //e.sensorAddress = data.sensorAddress;
+        e.sensorAddress = data.sensorAddress ?? 0;
         e.locoAddress = 0; //data.locoAddress;
         return e;
     }
@@ -330,7 +330,8 @@ export class BlockElement extends BaseElement implements IBlockElement {
         return {
             ...super.toJSON(),
             type: ELEMENT_TYPES.TRACK_BLOCK,
-            locoAddress: this.locoAddress
+            locoAddress: this.locoAddress,
+            sensorAddress: this.sensorAddress,
         }
     }
 
@@ -338,7 +339,7 @@ export class BlockElement extends BaseElement implements IBlockElement {
         return [
             ...super.getEditableProperties(),
             { label: "Length", key: "length", type: "number", readonly: false },
-            { label: "Sensor Address", key: "address", type: "number", readonly: false },
+            { label: "Sensor Address", key: "sensorAddress", type: "number", readonly: false },
             { label: "Color ON", key: "colorOn", type: "colorpicker", readonly: false },
         ];
     }

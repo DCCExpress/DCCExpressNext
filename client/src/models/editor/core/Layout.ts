@@ -589,7 +589,8 @@ export class Layout {
         });
     }
 
-    checkRoutes() {
+    // checkRoutes33() {
+    checkRoutes(existingGraph?: Graph | null): Graph | null {
 
         const checkRoutesStart = performance.now();
 
@@ -599,10 +600,20 @@ export class Layout {
         // 1. Gráf felépítése az ExtendedRouteButtonök miatt
         //    A graph builder közben használja az isVisited mezőt!
         // --------------------------------------------------
-        let graph: Graph | null = null;
+        // let graph: Graph | null = null;
+
+        // try {
+        //     graph = this.processRoutes();
+        // } catch (error) {
+        //     console.warn("[RouteGraph] Could not check extended routes:", error);
+        //     graph = null;
+        // }
+        let graph: Graph | null = existingGraph ?? null;
 
         try {
-            graph = this.processRoutes();
+            if (!graph) {
+                graph = this.processRoutes();
+            }
         } catch (error) {
             console.warn("[RouteGraph] Could not check extended routes:", error);
             graph = null;
@@ -688,7 +699,10 @@ export class Layout {
         console.log(
             `⏱️ checkRoutes total: ${(performance.now() - checkRoutesStart).toFixed(2)} ms`
         );
+        return graph
     }
+
+
     startWalk(obj: BaseElement) {
         // Lehet meg kellene vizsgálni, hogy a következő elem az
         // a route váltóiban szerepel e?

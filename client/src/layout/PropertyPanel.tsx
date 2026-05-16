@@ -85,7 +85,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   const [helpOpened, setHelpOpened] = useState<string | null>("help");
   const { settings, updateSettings } = useEditorSettings();
   const [panelOpen, setPanelOpen] = useState(opened);
-  const {  graph: routeGraph,  setGraph: setRouteGraph,} = useRouteGraph();
+  const { graph: routeGraph, setGraph: setRouteGraph, } = useRouteGraph();
   const [routeGraphError, setRouteGraphError] = useState<string | null>(null);
   const { colorScheme } = useMantineColorScheme();
 
@@ -234,26 +234,26 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     setPanelOpen(opened)
   }, [opened])
 
-const refreshExtendedRouteGraph = () => {
-  if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
-    setRouteGraphError(null);
-    return;
-  }
+  const refreshExtendedRouteGraph = () => {
+    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+      setRouteGraphError(null);
+      return;
+    }
 
-  try {
-    const graph = layout.processRoutes();
+    try {
+      const graph = layout.processRoutes();
 
-    setRouteGraph(graph);
-    setRouteGraphError(null);
-  } catch (error) {
-    setRouteGraph(null);
-    setRouteGraphError(
-      error instanceof Error
-        ? error.message
-        : "Could not generate route graph."
-    );
-  }
-};
+      setRouteGraph(graph);
+      setRouteGraphError(null);
+    } catch (error) {
+      setRouteGraph(null);
+      setRouteGraphError(
+        error instanceof Error
+          ? error.message
+          : "Could not generate route graph."
+      );
+    }
+  };
 
   const handleTestExtendedRoute2 = async () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
@@ -404,17 +404,31 @@ const refreshExtendedRouteGraph = () => {
     }
   };
 
-useEffect(() => {
-  if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
-    if (!routeGraph) {
-      refreshExtendedRouteGraph();
+  // useEffect(() => {
+  //   if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
+  //     if (!routeGraph) {
+  //       refreshExtendedRouteGraph();
+  //     } else {
+  //       setRouteGraphError(null);
+  //     }
+  //   } else {
+  //     setRouteGraphError(null);
+  //   }
+  // }, [selectedElement, editMode, routeGraph]);
+  useEffect(() => {
+    if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
+      if (!routeGraph) {
+        refreshExtendedRouteGraph();
+      } else {
+        setRouteGraphError(null);
+      }
     } else {
       setRouteGraphError(null);
     }
-  } else {
-    setRouteGraphError(null);
-  }
-}, [selectedElement, editMode, routeGraph]);
+
+    // Szándékosan NINCS routeGraph a dependency listában.
+    // Csak kijelöléskor / editMode váltáskor döntsön az automatikus generálásról.
+  }, [selectedElement, editMode]);
 
   if (editMode) {
     return (

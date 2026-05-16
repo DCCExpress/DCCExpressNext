@@ -144,6 +144,15 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     }
   }, [editMode]);
 
+  useEffect(() => {
+    if (editMode) {
+      return;
+    }
+    const graph = layoutRef.current.checkRoutes(null);
+    routeGraphStore.setGraph(graph);
+    setInvalidateCounter((prev) => prev + 1);
+  }, [editMode]);
+
   const loadLocos = async () => {
     try {
       const data = await getLocos();
@@ -422,8 +431,19 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
           }
         }
 
+        // if (changed) {
+        //   layoutRef.current.checkRoutes();
+        //   setInvalidateCounter((prev) => prev + 1);
+        // }
         if (changed) {
-          layoutRef.current.checkRoutes();
+          const graph = layoutRef.current.checkRoutes(
+            routeGraphStore.getGraph()
+          );
+
+          if (graph && !routeGraphStore.getGraph()) {
+            routeGraphStore.setGraph(graph);
+          }
+
           setInvalidateCounter((prev) => prev + 1);
         }
       }
