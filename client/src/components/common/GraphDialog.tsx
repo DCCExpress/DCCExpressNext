@@ -215,170 +215,139 @@ export default function GraphDialog({
             </Table.Tr>
         )) ?? [];
 
-    function hasBlocks(node: GraphNode): boolean {
-        return node.blocks.length > 0;
+        // Block Tab
+
+function isBlockNode(node: GraphNode): boolean {
+    return node.blocks.length > 0;
+}
+
+function getBlockConnectionLabel(node: GraphNode): string {
+    if (node.blocks.length > 0) {
+        return node.blocks
+            .map(block => block.label || block.name || node.name)
+            .join(" / ");
     }
 
-    function getNodeBlockOrSectionLabels(node: GraphNode): string[] {
-        if (node.blocks.length > 0) {
-            return node.blocks.map(block => block.label || block.name || node.name);
-        }
+    return node.name;
+}
 
-        return [node.name];
+function buildBlockConnectionPaths(graph: Graph): GraphNode[][] {
+    const adjacency = new Map<string, GraphNode[]>();
+
+    for (const node of graph.nodes) {
+        adjacency.set(node.name, []);
     }
 
-    function trimChainToBlockBounds(chain: GraphNode[]): GraphNode[] | null {
-        let firstBlockIndex = -1;
-        let lastBlockIndex = -1;
-
-        for (let i = 0; i < chain.length; i++) {
-            if (hasBlocks(chain[i]!)) {
-                firstBlockIndex = i;
-                break;
-            }
-        }
-
-        for (let i = chain.length - 1; i >= 0; i--) {
-            if (hasBlocks(chain[i]!)) {
-                lastBlockIndex = i;
-                break;
-            }
-        }
-
-        // Nincs legalább két külön blokk-végpont
-        if (
-            firstBlockIndex === -1 ||
-            lastBlockIndex === -1 ||
-            firstBlockIndex === lastBlockIndex
-        ) {
-            return null;
-        }
-
-        return chain.slice(firstBlockIndex, lastBlockIndex + 1);
+    // A block-kapcsolati nézethez kétirányú kapcsolatként járjuk be a gráfot
+    for (const edge of graph.edges) {
+        adjacency.get(edge.from.name)?.push(edge.to);
+        adjacency.get(edge.to.name)?.push(edge.from);
     }
 
-    function buildBlockConnectionChains(graph: Graph): GraphNode[][] {
-        const nodeByName = new Map<string, GraphNode>();
-        const adjacency = new Map<string, Set<string>>();
+    const paths: GraphNode[][] = [];
+    const createdPathKeys = new Set<string>();
 
-        for (const node of graph.nodes) {
-            nodeByName.set(node.name, node);
-            adjacency.set(node.name, new Set<string>());
-        }
+    const blockNodes = graph.nodes.filter(isBlockNode);
 
-        // A gráfot itt nézethez kétirányú kapcsolatként kezeljük
-        for (const edge of graph.edges) {
-            adjacency.get(edge.from.name)?.add(edge.to.name);
-            adjacency.get(edge.to.name)?.add(edge.from.name);
-        }
+    for (const startNode of blockNodes) {
+        const stack: {
+            currentNode: GraphNode;
+            path: GraphNode[];
+            visitedNodeNames: Set<string>;
+        }[] = [
+            {
+                currentNode: startNode,
+                path: [startNode],
+                visitedNodeNames: new Set([startNode.name]),
+            },
+        ];
 
-        const visitedEdges = new Set<string>();
-        const chains: GraphNode[][] = [];
+        while (stack.length > 0) {
+            const state = stack.pop()!;
+            const neighbors = adjacency.get(state.currentNode.name) ?? [];
 
-        const makeEdgeKey = (a: string, b: string): string =>
-            a < b ? `${a}|${b}` : `${b}|${a}`;
-
-        // Láncok kezdőpontjai:
-        // ahol nem pontosan 2 szomszéd van, ott "vége" vagy "elágazás" van
-        const chainStartNodes = graph.nodes.filter(node => {
-            const degree = adjacency.get(node.name)?.size ?? 0;
-            return degree !== 2;
-        });
-
-        for (const startNode of chainStartNodes) {
-            const neighbors = adjacency.get(startNode.name);
-
-            if (!neighbors) continue;
-
-            for (const firstNextName of neighbors) {
-                const firstEdgeKey = makeEdgeKey(startNode.name, firstNextName);
-
-                if (visitedEdges.has(firstEdgeKey)) {
+            for (const nextNode of neighbors) {
+                if (state.visitedNodeNames.has(nextNode.name)) {
                     continue;
                 }
 
-                visitedEdges.add(firstEdgeKey);
+                const nextPath = [...state.path, nextNode];
 
-                const chain: GraphNode[] = [startNode];
+                // Ha újabb blokkos node-hoz értünk:
+                // ez egy érvényes block connection, és ITT megállunk.
+                if (isBlockNode(nextNode)) {
+                    const forwardKey = nextPath
+                        .map(node => node.name)
+                        .join(">");
 
-                let previousName = startNode.name;
-                let currentName = firstNextName;
+                    const reverseKey = [...nextPath]
+                        .reverse()
+                        .map(node => node.name)
+                        .join(">");
 
-                while (true) {
-                    const currentNode = nodeByName.get(currentName);
+                    const pathKey =
+                        forwardKey < reverseKey ? forwardKey : reverseKey;
 
-                    if (!currentNode) {
-                        break;
+                    if (!createdPathKeys.has(pathKey)) {
+                        createdPathKeys.add(pathKey);
+                        paths.push(nextPath);
                     }
 
-                    chain.push(currentNode);
-
-                    const currentNeighbors = adjacency.get(currentName) ?? new Set<string>();
-                    const degree = currentNeighbors.size;
-
-                    // Ha nem egyszerű átmenő csomópont, a lánc véget ér
-                    if (degree !== 2) {
-                        break;
-                    }
-
-                    const nextName = [...currentNeighbors].find(name => name !== previousName);
-
-                    if (!nextName) {
-                        break;
-                    }
-
-                    const nextEdgeKey = makeEdgeKey(currentName, nextName);
-
-                    if (visitedEdges.has(nextEdgeKey)) {
-                        break;
-                    }
-
-                    visitedEdges.add(nextEdgeKey);
-
-                    previousName = currentName;
-                    currentName = nextName;
+                    continue;
                 }
 
-                const trimmedChain = trimChainToBlockBounds(chain);
+                // Ha nem blokkos node, mehetünk tovább rajta keresztül
+                const nextVisitedNodeNames = new Set(state.visitedNodeNames);
+                nextVisitedNodeNames.add(nextNode.name);
 
-                if (trimmedChain) {
-                    chains.push(trimmedChain);
-                }
+                stack.push({
+                    currentNode: nextNode,
+                    path: nextPath,
+                    visitedNodeNames: nextVisitedNodeNames,
+                });
             }
         }
-
-        return chains;
     }
 
-    const blockConnectionChains = graph
-        ? buildBlockConnectionChains(graph)
-        : [];
+    return paths;
+}
 
-    const blockConnectionRows = blockConnectionChains.map((chain, index) => {
-        const labels = chain.flatMap(node =>
-            getNodeBlockOrSectionLabels(node)
-        );
+const blockConnectionPaths = useMemo(() => {
+    if (!graph) {
+        return [];
+    }
 
-        const sectionNames = chain.map(node => node.name);
+    return buildBlockConnectionPaths(graph);
+}, [graph]);
 
-        return (
-            <Table.Tr key={`block-connection-${index}`}>
-                <Table.Td>{index + 1}</Table.Td>
+const blockConnectionRows = blockConnectionPaths.map((path, index) => {
+    const blockConnectionLabel = path
+        .map(node => getBlockConnectionLabel(node))
+        .join(" = ");
 
-                <Table.Td>
-                    <Text fw={600}>
-                        {labels.join(" = ")}
-                    </Text>
-                </Table.Td>
+    const sectionChainLabel = path
+        .map(node => node.name)
+        .join(" = ");
 
-                <Table.Td>
-                    <Text size="sm" c="dimmed">
-                        {sectionNames.join(" = ")}
-                    </Text>
-                </Table.Td>
-            </Table.Tr>
-        );
-    });
+    return (
+        <Table.Tr key={`block-connection-${index}`}>
+            <Table.Td>{index + 1}</Table.Td>
+
+            <Table.Td>
+                <Text fw={600}>
+                    {blockConnectionLabel}
+                </Text>
+            </Table.Td>
+
+            <Table.Td>
+                <Text size="sm" c="dimmed">
+                    {sectionChainLabel}
+                </Text>
+            </Table.Td>
+        </Table.Tr>
+    );
+});        
+
 
 
     return (
