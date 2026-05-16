@@ -16,6 +16,7 @@ import CanvasElement from "../common/CanvasElement";
 import {
     BlockRouteSolution,
     Graph,
+    GraphNode,
     RouteSolution,
 } from "../../models/editor/core/Graph";
 import AppModal from "./AppModal";
@@ -214,11 +215,177 @@ export default function GraphDialog({
             </Table.Tr>
         )) ?? [];
 
+    function hasBlocks(node: GraphNode): boolean {
+        return node.blocks.length > 0;
+    }
+
+    function getNodeBlockOrSectionLabels(node: GraphNode): string[] {
+        if (node.blocks.length > 0) {
+            return node.blocks.map(block => block.label || block.name || node.name);
+        }
+
+        return [node.name];
+    }
+
+    function trimChainToBlockBounds(chain: GraphNode[]): GraphNode[] | null {
+        let firstBlockIndex = -1;
+        let lastBlockIndex = -1;
+
+        for (let i = 0; i < chain.length; i++) {
+            if (hasBlocks(chain[i]!)) {
+                firstBlockIndex = i;
+                break;
+            }
+        }
+
+        for (let i = chain.length - 1; i >= 0; i--) {
+            if (hasBlocks(chain[i]!)) {
+                lastBlockIndex = i;
+                break;
+            }
+        }
+
+        // Nincs legalább két külön blokk-végpont
+        if (
+            firstBlockIndex === -1 ||
+            lastBlockIndex === -1 ||
+            firstBlockIndex === lastBlockIndex
+        ) {
+            return null;
+        }
+
+        return chain.slice(firstBlockIndex, lastBlockIndex + 1);
+    }
+
+    function buildBlockConnectionChains(graph: Graph): GraphNode[][] {
+        const nodeByName = new Map<string, GraphNode>();
+        const adjacency = new Map<string, Set<string>>();
+
+        for (const node of graph.nodes) {
+            nodeByName.set(node.name, node);
+            adjacency.set(node.name, new Set<string>());
+        }
+
+        // A gráfot itt nézethez kétirányú kapcsolatként kezeljük
+        for (const edge of graph.edges) {
+            adjacency.get(edge.from.name)?.add(edge.to.name);
+            adjacency.get(edge.to.name)?.add(edge.from.name);
+        }
+
+        const visitedEdges = new Set<string>();
+        const chains: GraphNode[][] = [];
+
+        const makeEdgeKey = (a: string, b: string): string =>
+            a < b ? `${a}|${b}` : `${b}|${a}`;
+
+        // Láncok kezdőpontjai:
+        // ahol nem pontosan 2 szomszéd van, ott "vége" vagy "elágazás" van
+        const chainStartNodes = graph.nodes.filter(node => {
+            const degree = adjacency.get(node.name)?.size ?? 0;
+            return degree !== 2;
+        });
+
+        for (const startNode of chainStartNodes) {
+            const neighbors = adjacency.get(startNode.name);
+
+            if (!neighbors) continue;
+
+            for (const firstNextName of neighbors) {
+                const firstEdgeKey = makeEdgeKey(startNode.name, firstNextName);
+
+                if (visitedEdges.has(firstEdgeKey)) {
+                    continue;
+                }
+
+                visitedEdges.add(firstEdgeKey);
+
+                const chain: GraphNode[] = [startNode];
+
+                let previousName = startNode.name;
+                let currentName = firstNextName;
+
+                while (true) {
+                    const currentNode = nodeByName.get(currentName);
+
+                    if (!currentNode) {
+                        break;
+                    }
+
+                    chain.push(currentNode);
+
+                    const currentNeighbors = adjacency.get(currentName) ?? new Set<string>();
+                    const degree = currentNeighbors.size;
+
+                    // Ha nem egyszerű átmenő csomópont, a lánc véget ér
+                    if (degree !== 2) {
+                        break;
+                    }
+
+                    const nextName = [...currentNeighbors].find(name => name !== previousName);
+
+                    if (!nextName) {
+                        break;
+                    }
+
+                    const nextEdgeKey = makeEdgeKey(currentName, nextName);
+
+                    if (visitedEdges.has(nextEdgeKey)) {
+                        break;
+                    }
+
+                    visitedEdges.add(nextEdgeKey);
+
+                    previousName = currentName;
+                    currentName = nextName;
+                }
+
+                const trimmedChain = trimChainToBlockBounds(chain);
+
+                if (trimmedChain) {
+                    chains.push(trimmedChain);
+                }
+            }
+        }
+
+        return chains;
+    }
+
+    const blockConnectionChains = graph
+        ? buildBlockConnectionChains(graph)
+        : [];
+
+    const blockConnectionRows = blockConnectionChains.map((chain, index) => {
+        const labels = chain.flatMap(node =>
+            getNodeBlockOrSectionLabels(node)
+        );
+
+        const sectionNames = chain.map(node => node.name);
+
+        return (
+            <Table.Tr key={`block-connection-${index}`}>
+                <Table.Td>{index + 1}</Table.Td>
+
+                <Table.Td>
+                    <Text fw={600}>
+                        {labels.join(" = ")}
+                    </Text>
+                </Table.Td>
+
+                <Table.Td>
+                    <Text size="sm" c="dimmed">
+                        {sectionNames.join(" = ")}
+                    </Text>
+                </Table.Td>
+            </Table.Tr>
+        );
+    });
+
+
     return (
         <AppModal
             opened={opened}
             onClose={onClose}
-            title="Bejárhatósági gráf"
+            title="Graph"
             size="calc(80vw - 64px)"
             centered
             draggable
@@ -228,7 +395,7 @@ export default function GraphDialog({
                     <Tabs.List>
                         <Tabs.Tab value="graph">Graph</Tabs.Tab>
 
-                        <Tabs.Tab value="table">
+                        <Tabs.Tab value="connections">
                             Connections
                             {graph && (
                                 <Badge ml="xs" size="xs" variant="light">
@@ -236,6 +403,8 @@ export default function GraphDialog({
                                 </Badge>
                             )}
                         </Tabs.Tab>
+
+                        <Tabs.Tab value="blocks">Blocks</Tabs.Tab>
 
                         <Tabs.Tab value="solver">
                             Útvonal keresés
@@ -253,7 +422,7 @@ export default function GraphDialog({
                         )}
                     </Tabs.Panel>
 
-                    <Tabs.Panel value="table" pt="md">
+                    <Tabs.Panel value="connections" pt="md">
                         {graph && graph.edges.length > 0 ? (
                             <ScrollArea h="calc(100vh - 280px)">
                                 <Table
@@ -278,6 +447,33 @@ export default function GraphDialog({
                             </ScrollArea>
                         ) : (
                             <Text c="dimmed">Nincs megjeleníthető kapcsolat.</Text>
+                        )}
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="blocks" pt="md">
+                        {blockConnectionRows.length > 0 ? (
+                            <ScrollArea h="calc(100vh - 280px)">
+                                <Table
+                                    striped
+                                    highlightOnHover
+                                    withTableBorder
+                                    withColumnBorders
+                                >
+                                    <Table.Thead>
+                                        <Table.Tr>
+                                            <Table.Th>#</Table.Th>
+                                            <Table.Th>Block connection</Table.Th>
+                                            <Table.Th>Section chain</Table.Th>
+                                        </Table.Tr>
+                                    </Table.Thead>
+
+                                    <Table.Tbody>{blockConnectionRows}</Table.Tbody>
+                                </Table>
+                            </ScrollArea>
+                        ) : (
+                            <Text c="dimmed">
+                                Nincs megjeleníthető blokk kapcsolat.
+                            </Text>
                         )}
                     </Tabs.Panel>
 

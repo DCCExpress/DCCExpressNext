@@ -19,7 +19,7 @@ type TurnoutPropagationState = {
 };
 
 export class TrackTravelDirectionResolver {
-    constructor(private readonly layout: Layout) {}
+    constructor(private readonly layout: Layout) { }
 
     resolve(): void {
         this.resetTravelDirections();
@@ -47,7 +47,12 @@ export class TrackTravelDirectionResolver {
                 );
             }
 
-            this.propagateFromMarker(markers[0]!);
+            //this.propagateFromMarker(markers[0]!);
+            const marker = markers[0]!;
+            const trackName = marker.name?.trim() || "Unnamed track";
+
+            this.assignTrackNameToNetwork(network, trackName);
+            this.propagateFromMarker(marker);
         });
     }
 
@@ -60,9 +65,18 @@ export class TrackTravelDirectionResolver {
 
         for (const elem of elems) {
             elem.travelDirection = "unknown";
+            elem.trackName = "";
         }
     }
 
+    private assignTrackNameToNetwork(
+        network: BaseElement[],
+        trackName: string
+    ): void {
+        for (const elem of network) {
+            elem.trackName = trackName;
+        }
+    }
     // ============================================================
     // 2. KÜLÖNÁLLÓ PÁLYARÉSZEK FELTÁRÁSA
     // ============================================================

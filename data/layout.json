@@ -279,7 +279,7 @@
         {
           "id": "8dbd33c-4941-4972-bfa2-f5de0438",
           "type": "extendedroutebutton",
-          "name": "element",
+          "name": "ar1",
           "layerName": "buildings",
           "x": 20,
           "y": 9,
@@ -287,14 +287,14 @@
           "rotationStep": 0,
           "bg": "black",
           "fg": "white",
-          "label": "A1 = C1",
+          "label": "A1=C1",
           "fromBlockId": "97aa3af-3ac9-4483-815a-d1ead989",
           "toBlockId": "389fdf2-889e-44bc-8013-d8aa373d"
         },
         {
           "id": "27f0833-2412-478c-8577-387992fe",
           "type": "extendedroutebutton",
-          "name": "element",
+          "name": "ar2",
           "layerName": "buildings",
           "x": 22,
           "y": 9,
@@ -302,7 +302,7 @@
           "rotationStep": 0,
           "bg": "black",
           "fg": "white",
-          "label": "AUTO ROUTE",
+          "label": "A1=C3",
           "fromBlockId": "97aa3af-3ac9-4483-815a-d1ead989",
           "toBlockId": "5bac967-d1d9-42dc-a6e0-7eb4292c"
         },
@@ -2128,7 +2128,7 @@
         {
           "id": "fe057ca-8093-40cc-917f-ff7eb09a",
           "type": "trackdirection",
-          "name": "element",
+          "name": "P1",
           "layerName": "track",
           "x": 21,
           "y": 6,
@@ -2141,7 +2141,7 @@
         {
           "id": "76df460-6b98-45a3-8791-c321db5c",
           "type": "trackdirection",
-          "name": "element",
+          "name": "P2",
           "layerName": "track",
           "x": 22,
           "y": 15,

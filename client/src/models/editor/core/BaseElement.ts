@@ -49,6 +49,7 @@ export abstract class BaseElement implements IBaseElement {
     debug: boolean = false;
     //length: number = 1;
     travelDirection: TravelDirection = "unknown";
+    trackName: string = "";
 
     constructor(x: number, y: number) {
         this.x = x;

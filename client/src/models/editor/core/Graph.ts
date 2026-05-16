@@ -20,6 +20,7 @@ export type SectionSignal = {
 export type SectionBlock = {
     id: string;
     name: string;
+    trackName: string;
     label: string;
 };
 
@@ -49,6 +50,7 @@ export type BlockRouteSolution = RouteSolution & {
 
 export class GraphNode {
     name: string = "";
+    trackName: string = "";
     x: number = 0;
     y: number = 0;
     isVirtual: boolean = false;
@@ -58,21 +60,23 @@ export class GraphNode {
 
     static readonly RADIUS = 10;
 
-    constructor(
-        name: string,
-        x: number,
-        y: number,
-        detectors: SectionDetector[] = [],
-        signals: SectionSignal[] = [],
-        blocks: SectionBlock[] = []
-    ) {
-        this.name = name;
-        this.x = x;
-        this.y = y;
-        this.detectors = detectors;
-        this.signals = signals;
-        this.blocks = blocks;
-    }
+constructor(
+    name: string,
+    trackName: string,
+    x: number,
+    y: number,
+    detectors: SectionDetector[] = [],
+    signals: SectionSignal[] = [],
+    blocks: SectionBlock[] = []
+) {
+    this.name = name;
+    this.trackName = trackName;
+    this.x = x;
+    this.y = y;
+    this.detectors = detectors;
+    this.signals = signals;
+    this.blocks = blocks;
+}
 
     draw(ctx: CanvasRenderingContext2D) {
         ctx.save();
@@ -660,7 +664,7 @@ export class Graph {
         return null;
     }
 
-  /// BLOCKS
+    /// BLOCKS
 
     findNodeContainingBlock(blockId: string): GraphNode | null {
         return (

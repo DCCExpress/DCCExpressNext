@@ -283,12 +283,15 @@ export class RouteGraphBuilder {
             y /= sectionElements.length;
         }
 
+        const trackName = this.getSectionTrackName(sectionElements);
+
         const detectors = this.collectSectionDetectors(sectionElements);
         const signals = this.collectSectionSignals(sectionElements);
-        const blocks = this.collectSectionBlocks(sectionElements);
+        const blocks = this.collectSectionBlocks(sectionElements, trackName);
 
         return new GraphNode(
             `S${section}`,
+            trackName,
             x,
             y,
             detectors,
@@ -297,6 +300,14 @@ export class RouteGraphBuilder {
         );
     }
 
+    private getSectionTrackName(
+        sectionElements: BaseElement[]
+    ): string {
+        return (
+            sectionElements.find(elem => elem.trackName.trim().length > 0)
+                ?.trackName ?? "Unnamed track"
+        );
+    }
     private collectSectionDetectors(
         sectionElements: BaseElement[]
     ): SectionDetector[] {
@@ -346,7 +357,8 @@ export class RouteGraphBuilder {
     }
 
     private collectSectionBlocks(
-        sectionElements: BaseElement[]
+        sectionElements: BaseElement[],
+        trackName: string
     ): SectionBlock[] {
         return this.layout
             .getAllElements()
@@ -360,27 +372,38 @@ export class RouteGraphBuilder {
                 )
             )
             .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
-            .map(block => ({
-                id: block.id,
-                name: block.name,
-                label: block.name?.trim()
-                    ? `B: ${block.name}`
-                    : "B: Block",
-            }));
+            .map(block => {
+                const blockName =
+                    block.name?.trim()
+                        ? block.name.trim()
+                        : "Block";
+
+                const resolvedTrackName =
+                    trackName?.trim()
+                        ? trackName.trim()
+                        : "Unnamed track";
+
+                return {
+                    id: block.id,
+                    name: blockName,
+                    trackName: resolvedTrackName,
+                    label: `${resolvedTrackName}: ${blockName}`,
+                };
+            });
     }
     private isSectionElementInsideBlock(
-    sectionElem: BaseElement,
-    block: BlockElement
-): boolean {
-    const bounds = block.getBounds();
+        sectionElem: BaseElement,
+        block: BlockElement
+    ): boolean {
+        const bounds = block.getBounds();
 
-    return (
-        sectionElem.x >= bounds.x &&
-        sectionElem.x < bounds.x + bounds.width &&
-        sectionElem.y >= bounds.y &&
-        sectionElem.y < bounds.y + bounds.height
-    );
-}
+        return (
+            sectionElem.x >= bounds.x &&
+            sectionElem.x < bounds.x + bounds.width &&
+            sectionElem.y >= bounds.y &&
+            sectionElem.y < bounds.y + bounds.height
+        );
+    }
     // ============================================================
     // 3. FÁZIS: EDGE-EK FELÉPÍTÉSE
     // ============================================================
