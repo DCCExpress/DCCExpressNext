@@ -1,5 +1,7 @@
 import { loadJsonFile, saveJsonFile } from "../../api/fileApi";
+import { BlockElement } from "../../models/editor/elements/BlockElement";
 import { layoutStore } from "../layoutStore";
+import { locoStore } from "../locoStore";
 import { routeGraphStore } from "../routeGraphStore";
 
 import type {
@@ -101,7 +103,7 @@ export class TaskManager {
                 input.name?.trim() ||
                 `${transition.fromBlock.name} → ${transition.toBlock.name}`,
 
-            locoAddress: input.locoAddress,
+
             targetSpeed: input.targetSpeed,
 
             fromBlockId: input.fromBlockId,
@@ -114,9 +116,11 @@ export class TaskManager {
             createdAt: Date.now(),
 
             runtime: {
+                loco: null,
                 hasLeftFromBlock: false,
                 hasReachedToBlock: false,
                 inTransit: false,
+
             },
         };
 
@@ -171,6 +175,18 @@ export class TaskManager {
             };
         }
 
+        const loco = this.resolveLocoFromStartBlock(task);
+
+        if (!loco) {
+            return {
+                ok: false,
+                error:
+                    "Az induló blokkban nincs azonosított mozdony, ezért a feladat nem indítható.",
+            };
+        }
+
+        task.runtime.loco = loco;
+
         if (task.status === "running") {
             return {
                 ok: false,
@@ -196,6 +212,7 @@ export class TaskManager {
 
         if (task.status === "stopped") {
             task.runtime = {
+                loco: null,
                 hasLeftFromBlock: false,
                 hasReachedToBlock: false,
                 inTransit: false,
@@ -411,7 +428,25 @@ export class TaskManager {
             .toString(36)
             .slice(2, 10)}`;
     }
+    private resolveLocoFromStartBlock(task: TrainTask) {
+        const layout = layoutStore.getLayout();
 
+        if (!layout) {
+            return null;
+        }
+
+        const element = layout.getElementById(task.fromBlockId);
+
+        if (!(element instanceof BlockElement)) {
+            return null;
+        }
+
+        if (element.locoAddress <= 0) {
+            return null;
+        }
+
+        return locoStore.findByAddress(element.locoAddress);
+    }
     // =========================================
     // JSON
     // =========================================
@@ -421,7 +456,7 @@ export class TaskManager {
                 id: task.id,
                 name: task.name,
 
-                locoAddress: task.locoAddress,
+
                 targetSpeed: task.targetSpeed,
 
                 fromBlockId: task.fromBlockId,
@@ -490,7 +525,7 @@ export class TaskManager {
                     id: savedTask.id,
                     name: savedTask.name,
 
-                    locoAddress: savedTask.locoAddress,
+
                     targetSpeed: savedTask.targetSpeed,
 
                     fromBlockId: savedTask.fromBlockId,
@@ -503,6 +538,7 @@ export class TaskManager {
                     createdAt: savedTask.createdAt,
 
                     runtime: {
+                        loco: null,
                         hasLeftFromBlock: false,
                         hasReachedToBlock: false,
                         inTransit: false,

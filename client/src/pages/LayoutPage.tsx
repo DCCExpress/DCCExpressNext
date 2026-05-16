@@ -34,6 +34,7 @@ import { BlockElement } from "../models/editor/elements/BlockElement";
 import { routeGraphStore } from "../services/routeGraphStore";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
+import { locoStore } from "../services/locoStore";
 type LayoutPageProps = {
   onGoHome: () => void;
 };
@@ -176,6 +177,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     try {
       const data = await getLocos();
       setLocos(data);
+      locoStore.setLocos(data);
       //showOkMessage("", "Locomotives loaded!");
     } catch (error) {
       console.error("Nem sikerült betölteni a mozdonyokat:", error);

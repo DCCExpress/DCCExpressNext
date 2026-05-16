@@ -1,3 +1,4 @@
+import { Loco } from "../../../../common/src/types";
 import type { RunnableBlockTransition } from "../../models/editor/core/Graph";
 
 export type TrainTaskStatus =
@@ -10,31 +11,19 @@ export type TrainTaskStatus =
 
 export type TrainTaskCreateInput = {
     name?: string;
-
-    locoAddress: number;
     targetSpeed: number;
-
     fromBlockId: string;
     toBlockId: string;
 };
 
 export type TrainTaskRuntimeState = {
     /**
-     * Majd akkor áll true-ra, amikor a vonat
-     * elhagyta a from blokk foglaltsági szenzorát.
+     * Startkor az induló blokkból kiolvasott mozdonycím.
+     * Futás közben ezt használjuk Pause / Resume / Stop műveleteknél.
      */
+    loco: Loco | null;
     hasLeftFromBlock: boolean;
-
-    /**
-     * Majd akkor áll true-ra, amikor a vonat
-     * elérte a to blokk foglaltsági szenzorát.
-     */
     hasReachedToBlock: boolean;
-
-    /**
-     * A "két blokk között jár" állapot.
-     * Ebből kap majd a TrackCanvas piros áttetsző overlay-t.
-     */
     inTransit: boolean;
 };
 
@@ -42,7 +31,7 @@ export type TrainTask = {
     id: string;
     name: string;
 
-    locoAddress: number;
+    
     targetSpeed: number;
 
     fromBlockId: string;
@@ -119,7 +108,7 @@ export type SavedTrainTask = {
     id: string;
     name: string;
 
-    locoAddress: number;
+    
     targetSpeed: number;
 
     fromBlockId: string;

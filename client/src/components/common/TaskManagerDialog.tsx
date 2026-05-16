@@ -157,7 +157,7 @@ export default function TaskManagerDialog({
 
         const result = taskManager.addTask({
             ...(trimmedTaskName ? { name: trimmedTaskName } : {}),
-            locoAddress,
+
             targetSpeed,
             fromBlockId,
             toBlockId,
@@ -603,11 +603,22 @@ export default function TaskManagerDialog({
             </Table.Td>
 
             <Table.Td>
-                <Badge color="indigo" variant="light">
-                    Loco {task.locoAddress}
-                </Badge>
-            </Table.Td>
+                {task.runtime.loco ? (
+                    <Stack gap={2}>
+                        <Badge color="indigo" variant="light">
+                            {task.runtime.loco.name}
+                        </Badge>
 
+                        <Text size="xs" c="dimmed">
+                            Address {task.runtime.loco.address}
+                        </Text>
+                    </Stack>
+                ) : (
+                    <Text size="sm" c="dimmed">
+                        —
+                    </Text>
+                )}
+            </Table.Td>
             <Table.Td>
                 <Badge color="cyan" variant="light">
                     {task.targetSpeed}

@@ -27,7 +27,9 @@ import {
   IconCode,
   IconDeviceGamepad2,
   IconEye,
+  IconPlayerPause,
   IconPlayerPlay,
+  IconPlayerStop,
   IconPower,
   IconRoute,
   IconRoute2,
@@ -44,6 +46,9 @@ import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutEleme
 import VisibilitySettings from "./VisibilitySettings";
 import { useRouteGraph } from "../hooks/useRouteGraph";
 import TaskManagerDialog from "./common/TaskManagerDialog";
+import { taskManager } from "../services/tasks/taskManagerSingleton";
+import { TrainTask, TrainTaskStatus } from "../services/tasks/TaskTypes";
+import { useTaskManager } from "../services/tasks/useTaskManager";
 
 
 type ControlPanelProps = {
@@ -424,7 +429,201 @@ function CommandCenterTab(p: CommandCenterTabProps) {
 }
 
 function ControllerTab() {
+  const snapshot = useTaskManager();
   const [taskManagerOpened, setTaskManagerOpened] = useState(false);
+
+  const runTaskAction = (
+    action: () => { ok: true } | { ok: false; error: string }
+  ) => {
+    const result = action();
+
+    if (!result.ok) {
+      showErrorMessage("ERROR", result.error);
+    }
+  };
+
+  function getStatusColor(status: TrainTaskStatus): string {
+    switch (status) {
+      case "queued":
+        return "gray";
+      case "running":
+        return "green";
+      case "paused":
+        return "yellow";
+      case "stopped":
+        return "red";
+      case "completed":
+        return "blue";
+      case "error":
+        return "red";
+    }
+  }
+
+  function getStatusLabel(status: TrainTaskStatus): string {
+    switch (status) {
+      case "queued":
+        return "Queued";
+      case "running":
+        return "Running";
+      case "paused":
+        return "Paused";
+      case "stopped":
+        return "Stopped";
+      case "completed":
+        return "Completed";
+      case "error":
+        return "Error";
+    }
+  }
+
+  function getTaskProgressLabel(task: TrainTask): string {
+    if (task.status === "completed") {
+      return "Megérkezett";
+    }
+
+    if (task.runtime.inTransit) {
+      return "Két blokk között halad";
+    }
+
+    if (task.runtime.hasLeftFromBlock) {
+      return "Elhagyta az induló blokkot";
+    }
+
+    switch (task.status) {
+      case "queued":
+        return "Indításra vár";
+      case "running":
+        return "Futás alatt";
+      case "paused":
+        return "Szüneteltetve";
+      case "stopped":
+        return "Leállítva";
+      case "error":
+        return "Hiba";
+    }
+  }
+  function getProgressColor(task: TrainTask): string {
+    if (task.status === "completed") {
+      return "blue";
+    }
+
+    if (task.runtime.inTransit) {
+      return "red";
+    }
+
+    if (task.runtime.hasLeftFromBlock) {
+      return "orange";
+    }
+
+    switch (task.status) {
+      case "running":
+        return "green";
+      case "paused":
+        return "yellow";
+      case "stopped":
+        return "red";
+      case "error":
+        return "red";
+      default:
+        return "gray";
+    }
+  }
+
+  function renderTaskControls(task: TrainTask) {
+    switch (task.status) {
+      case "queued":
+        return (
+          <Button
+            size="xs"
+            variant="light"
+            color="green"
+            leftSection={<IconPlayerPlay size={14} />}
+            onClick={() =>
+              runTaskAction(() => taskManager.startTask(task.id))
+            }
+          >
+            Start
+          </Button>
+        );
+
+      case "running":
+        return (
+          <Group gap="xs" grow>
+            <Button
+              size="xs"
+              variant="light"
+              color="yellow"
+              leftSection={<IconPlayerPause size={14} />}
+              onClick={() =>
+                runTaskAction(() => taskManager.pauseTask(task.id))
+              }
+            >
+              Pause
+            </Button>
+
+            <Button
+              size="xs"
+              variant="light"
+              color="red"
+              leftSection={<IconPlayerStop size={14} />}
+              onClick={() =>
+                runTaskAction(() => taskManager.stopTask(task.id))
+              }
+            >
+              Stop
+            </Button>
+          </Group>
+        );
+
+      case "paused":
+        return (
+          <Group gap="xs" grow>
+            <Button
+              size="xs"
+              variant="light"
+              color="green"
+              leftSection={<IconPlayerPlay size={14} />}
+              onClick={() =>
+                runTaskAction(() => taskManager.resumeTask(task.id))
+              }
+            >
+              Resume
+            </Button>
+
+            <Button
+              size="xs"
+              variant="light"
+              color="red"
+              leftSection={<IconPlayerStop size={14} />}
+              onClick={() =>
+                runTaskAction(() => taskManager.stopTask(task.id))
+              }
+            >
+              Stop
+            </Button>
+          </Group>
+        );
+
+      case "stopped":
+        return (
+          <Button
+            size="xs"
+            variant="light"
+            color="green"
+            leftSection={<IconPlayerPlay size={14} />}
+            onClick={() =>
+              runTaskAction(() => taskManager.startTask(task.id))
+            }
+          >
+            Start again
+          </Button>
+        );
+
+      case "completed":
+      case "error":
+        return null;
+    }
+  }
 
   return (
     <>
@@ -438,14 +637,16 @@ function ControllerTab() {
         type="auto"
         offsetScrollbars
       >
-        <Stack gap="xs">
-          <Text size="sm" fw={700}>
-            Controller
-          </Text>
+        <Stack gap="sm">
+          <Group justify="space-between" align="center">
+            <Text size="sm" fw={700}>
+              Controller
+            </Text>
 
-          <Text size="sm" c="dimmed">
-            Automated train tasks, route execution and train tracking.
-          </Text>
+            <Badge variant="light">
+              {snapshot.tasks.length} task
+            </Badge>
+          </Group>
 
           <Button
             size="xs"
@@ -456,6 +657,84 @@ function ControllerTab() {
           >
             Task Manager...
           </Button>
+
+          <Divider />
+
+          {snapshot.tasks.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              Nincs aktív vagy felvett feladat.
+            </Text>
+          ) : (
+            <Stack gap="sm">
+              {snapshot.tasks.map(task => (
+                <Card
+                  key={task.id}
+                  withBorder
+                  radius="sm"
+                  p="xs"
+                >
+                  <Stack gap="xs">
+                    <Group justify="space-between" align="flex-start">
+                      <Stack gap={2}>
+                        <Text size="sm" fw={700}>
+                          {task.name}
+                        </Text>
+
+                        <Group gap="xs" wrap="wrap">
+                          {task.runtime.loco && (
+                            <>
+                              <Badge color="indigo" variant="light">
+                                {task.runtime.loco.name}
+                              </Badge>
+
+                              <Badge color="gray" variant="light">
+                                Address {task.runtime.loco.address}
+                              </Badge>
+                            </>
+                          )}
+
+                          <Badge color="cyan" variant="light">
+                            Speed {task.targetSpeed}
+                          </Badge>
+                        </Group>
+
+                      </Stack>
+
+                      <Badge
+                        size="sm"
+                        color={getStatusColor(task.status)}
+                        variant="light"
+                      >
+                        {getStatusLabel(task.status)}
+                      </Badge>
+                    </Group>
+
+                    <Group gap="xs" wrap="wrap">
+                      <Badge color="violet" variant="filled">
+                        {task.transition.fromBlock.name}
+                      </Badge>
+
+                      <Text fw={700}>→</Text>
+
+                      <Badge color="violet" variant="filled">
+                        {task.transition.toBlock.name}
+                      </Badge>
+                    </Group>
+
+                    <Badge
+                      color={getProgressColor(task)}
+                      variant="light"
+                      style={{ alignSelf: "flex-start" }}
+                    >
+                      {getTaskProgressLabel(task)}
+                    </Badge>
+
+                    {renderTaskControls(task)}
+                  </Stack>
+                </Card>
+              ))}
+            </Stack>
+          )}
         </Stack>
       </ScrollArea.Autosize>
     </>
