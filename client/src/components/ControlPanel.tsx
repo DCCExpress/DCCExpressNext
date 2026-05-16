@@ -43,6 +43,7 @@ import { showErrorMessage, showOkMessage } from "../helpers";
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import VisibilitySettings from "./VisibilitySettings";
 import { useRouteGraph } from "../hooks/useRouteGraph";
+import TaskManagerDialog from "./common/TaskManagerDialog";
 
 
 type ControlPanelProps = {
@@ -423,14 +424,41 @@ function CommandCenterTab(p: CommandCenterTabProps) {
 }
 
 function ControllerTab() {
+  const [taskManagerOpened, setTaskManagerOpened] = useState(false);
+
   return (
-    <ScrollArea.Autosize mah="calc(100vh - 220px)" type="auto" offsetScrollbars>
-      <Stack gap="xs">
-        <Text size="sm" fw={700}>
-          Controller
-        </Text>
-      </Stack>
-    </ScrollArea.Autosize>
+    <>
+      <TaskManagerDialog
+        opened={taskManagerOpened}
+        onClose={() => setTaskManagerOpened(false)}
+      />
+
+      <ScrollArea.Autosize
+        mah="calc(100vh - 220px)"
+        type="auto"
+        offsetScrollbars
+      >
+        <Stack gap="xs">
+          <Text size="sm" fw={700}>
+            Controller
+          </Text>
+
+          <Text size="sm" c="dimmed">
+            Automated train tasks, route execution and train tracking.
+          </Text>
+
+          <Button
+            size="xs"
+            variant="light"
+            color="violet"
+            leftSection={<IconRoute size={16} />}
+            onClick={() => setTaskManagerOpened(true)}
+          >
+            Task Manager...
+          </Button>
+        </Stack>
+      </ScrollArea.Autosize>
+    </>
   );
 }
 

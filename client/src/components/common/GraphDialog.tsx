@@ -186,37 +186,61 @@ export default function GraphDialog({
                 </Table.Td>
 
                 <Table.Td>
-                    {edge.turnoutStates.length > 0 ? (
-                        <Group gap="xs">
-                            {edge.turnoutStates.map((turnoutState, tsIndex) => (
-                                <Group
-                                    key={`${turnoutState.address}-${tsIndex}`}
-                                    gap={4}
-                                >
-                                    <Badge color="orange" variant="light">
-                                        Turnout {turnoutState.address}
-                                    </Badge>
-
-                                    <Badge
-                                        color={turnoutState.closed ? "green" : "red"}
-                                        variant="light"
-                                    >
-                                        {turnoutState.closed ? "closed" : "thrown"}
-                                    </Badge>
-                                </Group>
-                            ))}
-                        </Group>
-                    ) : (
-                        <Text size="sm" c="dimmed">
-                            —
-                        </Text>
-                    )}
+                 {renderTurnoutRequirementBadges(edge.turnoutStates)}
                 </Table.Td>
             </Table.Tr>
         )) ?? [];
 
-    // Block Tab
 
+    //=====================
+    // HELPERS
+    //=====================
+    function renderTurnoutRequirementBadges(
+        turnoutStates: { address: number; closed: boolean }[]
+    ) {
+        if (turnoutStates.length === 0) {
+            return (
+                <Text size="sm" c="dimmed">
+                    —
+                </Text>
+            );
+        }
+
+        return (
+            <Group gap="xs" wrap="wrap">
+                {turnoutStates.map((turnoutState, index) => (
+                    <Badge
+                        key={`turnout-${turnoutState.address}-${turnoutState.closed}-${index}`}
+                        
+                        variant="light"
+                        styles={{
+                            label: {
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                            },
+                        }}
+                    >
+                        <span>Turnout {turnoutState.address}</span>
+
+                        <Badge
+                            size="xs"
+                            color={turnoutState.closed ? "green" : "orange"}
+                            variant="filled"
+                            radius="xs"
+                           
+                        >
+                            {turnoutState.closed ? "C" : "T"}
+                        </Badge>
+                    </Badge>
+                ))}
+            </Group>
+        );
+    }
+
+    //=============================
+    // Block Tab
+    // ========================
     function isBlockNode(node: GraphNode): boolean {
         return node.blocks.length > 0;
     }
@@ -371,140 +395,140 @@ export default function GraphDialog({
         );
     });
 
-       const runnableBlockRoutes = useMemo(() => {
+    const runnableBlockRoutes = useMemo(() => {
         return graph?.getRunnableBlockRoutes() ?? [];
     }, [graph]);
 
-  
-function renderBlockRoutePath(
-    solution: BlockRouteSolution,
-    badgeSize: "sm" | "md" | "lg" = "sm"
-) {
-    const firstItem = solution.path[0];
-    const lastItem = solution.path[solution.path.length - 1];
 
-    const segmentItems = solution.path.filter(
-        item => item.type === "segment"
-    );
-
-    const firstSegment = segmentItems[0];
-    const lastSegment = segmentItems[segmentItems.length - 1];
-
-    if (
-        !firstItem ||
-        firstItem.type !== "block" ||
-        !lastItem ||
-        lastItem.type !== "block" ||
-        !firstSegment ||
-        !lastSegment
+    function renderBlockRoutePath(
+        solution: BlockRouteSolution,
+        badgeSize: "sm" | "md" | "lg" = "sm"
     ) {
-        return null;
-    }
+        const firstItem = solution.path[0];
+        const lastItem = solution.path[solution.path.length - 1];
 
-    const middleSegments = segmentItems.slice(1, -1);
+        const segmentItems = solution.path.filter(
+            item => item.type === "segment"
+        );
 
-    const items: React.ReactNode[] = [];
+        const firstSegment = segmentItems[0];
+        const lastSegment = segmentItems[segmentItems.length - 1];
 
-    // Induló blokk + saját szegmense
-    items.push(
-        // <Badge
-        //     key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
-        //     size={badgeSize}
-        //     color="violet"
-        //     variant="filled"
-        // >
-        //     {firstItem.block.name} - {firstSegment.node.name}
-        // </Badge>
-        <Badge
-    key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
-    size={badgeSize}
-    color="violet"
-    variant="filled"
-    styles={{
-        label: {
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-        },
-    }}
->
-    <span>{firstItem.block.name}</span>
+        if (
+            !firstItem ||
+            firstItem.type !== "block" ||
+            !lastItem ||
+            lastItem.type !== "block" ||
+            !firstSegment ||
+            !lastSegment
+        ) {
+            return null;
+        }
 
-    <Badge
-        size="xs"
-        color="black"
-        variant="filled"
-        radius="sm"
-    >
-        {firstSegment.node.name}
-    </Badge>
-</Badge>
-    );
+        const middleSegments = segmentItems.slice(1, -1);
 
-    // Köztes szegmensek
-    for (const segment of middleSegments) {
+        const items: React.ReactNode[] = [];
+
+        // Induló blokk + saját szegmense
         items.push(
+            // <Badge
+            //     key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
+            //     size={badgeSize}
+            //     color="violet"
+            //     variant="filled"
+            // >
+            //     {firstItem.block.name} - {firstSegment.node.name}
+            // </Badge>
             <Badge
-                key={`middle-segment-${segment.node.name}`}
+                key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
                 size={badgeSize}
-                color="gray"
-                variant="light"
+                color="violet"
+                variant="filled"
+                styles={{
+                    label: {
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                    },
+                }}
             >
-                {segment.node.name}
+                <span>{firstItem.block.name}</span>
+
+                <Badge
+                    size="xs"
+                    color="black"
+                    variant="filled"
+                    radius="xs"
+                >
+                    {firstSegment.node.name}
+                </Badge>
             </Badge>
         );
+
+        // Köztes szegmensek
+        for (const segment of middleSegments) {
+            items.push(
+                <Badge
+                    key={`middle-segment-${segment.node.name}`}
+                    size={badgeSize}
+                    color="gray"
+                    variant="light"
+                >
+                    {segment.node.name}
+                </Badge>
+            );
+        }
+
+        // Cél blokk + saját szegmense
+        items.push(
+            // <Badge
+            //     key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
+            //     size={badgeSize}
+            //     color="violet"
+            //     variant="filled"
+            // >
+            //     {lastItem.block.name} - {lastSegment.node.name}
+            // </Badge>
+            <Badge
+                key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
+                size={badgeSize}
+                color="violet"
+                variant="filled"
+                styles={{
+                    label: {
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                    },
+                }}
+            >
+                <span>{lastItem.block.name}</span>
+
+                <Badge
+                    size="xs"
+                    color="black"
+                    variant="filled"
+                    radius="xs"
+                >
+                    {lastSegment.node.name}
+                </Badge>
+            </Badge>
+        );
+
+        return (
+            <Group gap="xs" wrap="wrap">
+                {items.map((item, index) => (
+                    <Group key={`route-path-item-${index}`} gap="xs">
+                        {item}
+
+                        {index < items.length - 1 && (
+                            <Text fw={700}>→</Text>
+                        )}
+                    </Group>
+                ))}
+            </Group>
+        );
     }
-
-    // Cél blokk + saját szegmense
-    items.push(
-        // <Badge
-        //     key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
-        //     size={badgeSize}
-        //     color="violet"
-        //     variant="filled"
-        // >
-        //     {lastItem.block.name} - {lastSegment.node.name}
-        // </Badge>
-<Badge
-    key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
-    size={badgeSize}
-    color="violet"
-    variant="filled"
-    styles={{
-        label: {
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-        },
-    }}
->
-    <span>{lastItem.block.name}</span>
-
-    <Badge
-        size="xs"
-        color="black"
-        variant="filled"
-        radius="sm"
-    >
-        {lastSegment.node.name}
-    </Badge>
-</Badge>        
-    );
-
-    return (
-        <Group gap="xs" wrap="wrap">
-            {items.map((item, index) => (
-                <Group key={`route-path-item-${index}`} gap="xs">
-                    {item}
-
-                    {index < items.length - 1 && (
-                        <Text fw={700}>→</Text>
-                    )}
-                </Group>
-            ))}
-        </Group>
-    );
-}
 
     const runnableBlockRouteRows = runnableBlockRoutes.map((route, index) => {
         const solution = route.solution;
@@ -528,7 +552,7 @@ function renderBlockRoutePath(
                 </Table.Td>
 
                 <Table.Td>
-                      {renderBlockRoutePath(solution)}
+                    {renderBlockRoutePath(solution)}
                 </Table.Td>
 
                 <Table.Td>
@@ -547,31 +571,7 @@ function renderBlockRoutePath(
                 </Table.Td>
 
                 <Table.Td>
-                    {solution.turnoutStates.length > 0 ? (
-                        <Group gap="xs" wrap="wrap">
-                            {solution.turnoutStates.map((turnoutState, turnoutIndex) => (
-                                <Group
-                                    key={`${turnoutState.address}-${turnoutState.closed}-${turnoutIndex}`}
-                                    gap={4}
-                                >
-                                    <Badge color="orange" variant="light">
-                                        Turnout {turnoutState.address}
-                                    </Badge>
-
-                                    <Badge
-                                        color={turnoutState.closed ? "green" : "red"}
-                                        variant="light"
-                                    >
-                                        {turnoutState.closed ? "closed" : "thrown"}
-                                    </Badge>
-                                </Group>
-                            ))}
-                        </Group>
-                    ) : (
-                        <Text size="sm" c="dimmed">
-                            —
-                        </Text>
-                    )}
+                    {renderTurnoutRequirementBadges(solution.turnoutStates)}
                 </Table.Td>
             </Table.Tr>
         );
@@ -869,39 +869,13 @@ function renderBlockRoutePath(
                                                 <Text fw={600}>Szükséges váltóállások</Text>
 
                                                 {routeSolution.turnoutStates.length > 0 ? (
-                                                    <Group gap="xs">
-                                                        {routeSolution.turnoutStates.map(turnoutState => (
-                                                            <Group
-                                                                key={`${turnoutState.address}-${turnoutState.closed}`}
-                                                                gap={4}
-                                                            >
-                                                                <Badge color="orange" variant="light">
-                                                                    Turnout {turnoutState.address}
-                                                                </Badge>
-
-                                                                <Badge
-                                                                    color={
-                                                                        turnoutState.closed
-                                                                            ? "green"
-                                                                            : "red"
-                                                                    }
-                                                                    variant="light"
-                                                                >
-                                                                    {turnoutState.closed
-                                                                        ? "closed"
-                                                                        : "thrown"}
-                                                                </Badge>
-                                                            </Group>
-                                                        ))}
-                                                    </Group>
+                                                    renderTurnoutRequirementBadges(routeSolution.turnoutStates)
                                                 ) : (
                                                     <Text c="dimmed" size="sm">
-                                                        Ehhez az útvonalhoz nincs szükség
-                                                        váltóállításra.
+                                                        Ehhez az útvonalhoz nincs szükség váltóállításra.
                                                     </Text>
                                                 )}
                                             </Stack>
-
                                             <Stack gap="xs">
                                                 <Text fw={600}>Élek részletesen</Text>
 

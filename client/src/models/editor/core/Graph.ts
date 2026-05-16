@@ -54,6 +54,12 @@ export type RunnableBlockRoute = {
     solution: BlockRouteSolution;
 };
 
+export type RunnableBlockTransition = {
+    fromBlock: SectionBlock;
+    toBlock: SectionBlock;
+    solution: BlockRouteSolution;
+};
+
 export class GraphNode {
     name: string = "";
     trackName: string = "";
@@ -792,4 +798,47 @@ export class Graph {
 
         return result;
     }
+
+    getRunnableBlockTransitions(): RunnableBlockTransition[] {
+    const result: RunnableBlockTransition[] = [];
+
+    const routes = this.getRunnableBlockRoutes();
+
+    for (const route of routes) {
+        const solution = route.solution;
+
+        /**
+         * Ha ugyanazon a szegmensen lenne a két blokk,
+         * abból most ne csináljunk automata mozgási átmenetet.
+         */
+        if (solution.nodes.length < 2) {
+            continue;
+        }
+
+        /**
+         * A közvetlen automatizálható blokkátmenet lényege:
+         * a két végblokk között NEM lehet másik blokk.
+         *
+         * Ha lenne, akkor az már több külön végrehajtási lépés:
+         * B1 -> C1 -> D1
+         */
+        const intermediateNodes = solution.nodes.slice(1, -1);
+
+        const hasIntermediateBlock = intermediateNodes.some(
+            node => node.blocks.length > 0
+        );
+
+        if (hasIntermediateBlock) {
+            continue;
+        }
+
+        result.push({
+            fromBlock: route.fromBlock,
+            toBlock: route.toBlock,
+            solution,
+        });
+    }
+
+    return result;
+}
 }

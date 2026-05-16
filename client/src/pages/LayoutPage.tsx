@@ -33,7 +33,7 @@ import { loadJsonFile } from "../api/fileApi";
 import { BlockElement } from "../models/editor/elements/BlockElement";
 import { routeGraphStore } from "../services/routeGraphStore";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
-
+import { taskManager } from "../services/tasks/taskManagerSingleton";
 type LayoutPageProps = {
   onGoHome: () => void;
 };
@@ -104,6 +104,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   });
 
   const [settingsDialogOpened, setSettingsDialogOpened] = useState(false);
+
+ 
 
   useEffect(() => {
     layoutRef.current = layout;
