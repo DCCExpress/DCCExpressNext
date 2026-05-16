@@ -27,6 +27,11 @@ export function isTurnoutElement(el: BaseElement | null | undefined) {
     );
 }
 
+export type CheckRoutesResult = {
+    graph: Graph | null;
+    error: string | null;
+};
+
 type TurnoutSide = "entry" | "straight" | "div";
 
 export class Layout {
@@ -391,7 +396,7 @@ export class Layout {
         elems.forEach((elem: BaseElement) => {
             elem.isVisited = false;
             elem.isRoute = false;
-            //elem.section = 0;
+            elem.section = 0;
         })
     }
     checkRoutes2() {
@@ -590,7 +595,8 @@ export class Layout {
     }
 
     // checkRoutes33() {
-    checkRoutes(existingGraph?: Graph | null): Graph | null {
+    //checkRoutes(existingGraph?: Graph | null): Graph | null {
+    checkRoutes(existingGraph?: Graph | null): CheckRoutesResult {
 
         const checkRoutesStart = performance.now();
 
@@ -609,16 +615,21 @@ export class Layout {
         //     graph = null;
         // }
         let graph: Graph | null = existingGraph ?? null;
+        let routeGraphError: string | null = null;
 
         try {
             if (!graph) {
                 graph = this.processRoutes();
             }
         } catch (error) {
+            routeGraphError =
+                error instanceof Error
+                    ? error.message
+                    : "Could not generate route graph.";
+
             console.warn("[RouteGraph] Could not check extended routes:", error);
             graph = null;
         }
-
         // --------------------------------------------------
         // FONTOS:
         // A gráfépítés után lenullázzuk a bejárási/színezési állapotot,
@@ -699,7 +710,10 @@ export class Layout {
         console.log(
             `⏱️ checkRoutes total: ${(performance.now() - checkRoutesStart).toFixed(2)} ms`
         );
-        return graph
+        return {
+            graph,
+            error: routeGraphError,
+        };
     }
 
 

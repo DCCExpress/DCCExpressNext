@@ -32,6 +32,7 @@ import { scriptEngine } from "../services/scriptEngine";
 import { loadJsonFile } from "../api/fileApi";
 import { BlockElement } from "../models/editor/elements/BlockElement";
 import { routeGraphStore } from "../services/routeGraphStore";
+import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -141,15 +142,31 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       setTool({ mode: "cursor", elementType: "general" });
       setPickerOpened(false);
       setTurnoutSelection(false);
+      return;
     }
+
+    // Szerkesztő módba lépve a korábbi gráf/debug állapot már elavulhat
+    routeGraphStore.clear();
+    layoutRef.current.resetRoutes();
+    setInvalidateCounter((prev) => prev + 1);
   }, [editMode]);
 
   useEffect(() => {
     if (editMode) {
       return;
     }
-    const graph = layoutRef.current.checkRoutes(null);
-    routeGraphStore.setGraph(graph);
+
+    const result = layoutRef.current.checkRoutes(null);
+
+    routeGraphStore.setGraph(result.graph);
+
+    if (result.error) {
+      showWarningMessage(
+        "Route graph warning",
+        result.error
+      );
+    }
+
     setInvalidateCounter((prev) => prev + 1);
   }, [editMode]);
 
@@ -436,12 +453,19 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         //   setInvalidateCounter((prev) => prev + 1);
         // }
         if (changed) {
-          const graph = layoutRef.current.checkRoutes(
-            routeGraphStore.getGraph()
-          );
+          const existingGraph = routeGraphStore.getGraph();
 
-          if (graph && !routeGraphStore.getGraph()) {
-            routeGraphStore.setGraph(graph);
+          const result = layoutRef.current.checkRoutes(existingGraph);
+
+          if (result.graph && !existingGraph) {
+            routeGraphStore.setGraph(result.graph);
+          }
+
+          if (result.error) {
+            showWarningMessage(
+              "Route graph warning",
+              result.error
+            );
           }
 
           setInvalidateCounter((prev) => prev + 1);
@@ -530,11 +554,21 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     setSelectedElement(e);
   };
 
-  const handleUpdateSelectedElement = (_updated: BaseElement | null) => {
-    routeGraphStore.clear();
-    setInvalidateCounter((prev) => prev + 1);
-  };
+  // const handleUpdateSelectedElement = (_updated: BaseElement | null) => {
+  //   routeGraphStore.clear();
+  //   setInvalidateCounter((prev) => prev + 1);
+  // };
 
+  const handleUpdateSelectedElement = (updated: BaseElement | null) => {
+  // Az ExtendedRouteButton beállításai
+  // nem módosítják a pálya topológiáját,
+  // ezért nem töröljük a route graphot.
+  if (!(updated instanceof ExtendedRouteButtonElement)) {
+    routeGraphStore.clear();
+  }
+
+  setInvalidateCounter((prev) => prev + 1);
+};
   const handleSettingClick = () => {
     setSettingsDialogOpened(true);
   };

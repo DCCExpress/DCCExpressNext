@@ -38,6 +38,8 @@ export abstract class TrackTurnoutElement extends ClickableBaseElement {
         if (options?.showTurnoutAddress) {
             drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.turnoutAddress.toString())
         }
+
+        this.drawSectionInfo(ctx, options);
         this.endDraw(ctx);
 
         super.drawSelection(ctx);

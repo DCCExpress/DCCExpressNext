@@ -203,7 +203,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   }
 
 
-  const handleChange = (prop: IEditableProperty, rawValue: any) => {
+  const handleChange22 = (prop: IEditableProperty, rawValue: any) => {
     if (selectedElement != null) {
 
       switch (prop.type) {
@@ -230,11 +230,39 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     }
   };
 
+  const handleChange = (prop: IEditableProperty, rawValue: any) => {
+    if (selectedElement != null) {
+      switch (prop.type) {
+        case "number":
+          if (prop.validate) {
+            const isValid = prop.validate(rawValue);
+            (selectedElement as any)[prop.key] = parseInt(rawValue);
+          } else {
+            (selectedElement as any)[prop.key] = parseInt(rawValue);
+          }
+          break;
+
+        case "boolean":
+          (selectedElement as any)[prop.key] = Boolean(rawValue);
+          break;
+
+        case "checkbox":
+          (selectedElement as any)[prop.key] = rawValue ? "checked" : "";
+          break;
+
+        default:
+          (selectedElement as any)[prop.key] = rawValue;
+          break;
+      }
+
+      onUpdateSelectedElement(selectedElement);
+    }
+  };
   useEffect(() => {
     setPanelOpen(opened)
   }, [opened])
 
-  const refreshExtendedRouteGraph = () => {
+  const refreshExtendedRouteGraph22 = () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
       setRouteGraphError(null);
       return;
@@ -326,6 +354,48 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     }
   };
 
+  const refreshExtendedRouteGraph33 = () => {
+    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+      setRouteGraphError(null);
+      return;
+    }
+
+    try {
+      const graph = layout.processRoutes();
+
+      setRouteGraph(graph);
+      setRouteGraphError(null);
+    } catch (error) {
+      setRouteGraph(null);
+      setRouteGraphError(
+        error instanceof Error
+          ? error.message
+          : "Could not generate route graph."
+      );
+    }
+  };
+  const refreshExtendedRouteGraph = () => {
+    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+      setRouteGraphError(null);
+      return;
+    }
+
+    try {
+      const graph = layout.processRoutes();
+
+      setRouteGraph(graph);
+      setRouteGraphError(null);
+    } catch (error) {
+      setRouteGraph(null);
+      setRouteGraphError(
+        error instanceof Error
+          ? error.message
+          : "Could not generate route graph."
+      );
+    } finally {
+      onUpdateSelectedElement(selectedElement);
+    }
+  };
   const handleTestExtendedRoute = async () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
       return;
@@ -881,7 +951,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                       </Text>
                     )}
 
-                    {prop.key === "fromSection" && (
+                    {/* {prop.key === "fromSection" && (
                       <Button
                         size="xs"
                         variant="light"
@@ -889,7 +959,8 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                       >
                         Refresh segments
                       </Button>
-                    )}
+                    )} */}
+
                   </Stack>
                 )}
               </Card >
@@ -903,6 +974,14 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                 <Text size="sm" fw={600}>
                   Automatic route test
                 </Text>
+                <Button
+                  size="xs"
+                  variant="light"
+                  onClick={refreshExtendedRouteGraph}
+                >
+                  Refresh segments
+                </Button>
+
 
                 <Button
                   size="xs"

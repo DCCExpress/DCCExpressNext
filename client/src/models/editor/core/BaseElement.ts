@@ -264,6 +264,64 @@ export abstract class BaseElement implements IBaseElement {
         }
     }
 
+    
+protected drawSectionInfo(
+    ctx: CanvasRenderingContext2D,
+    options?: DrawOptions
+): void {
+    if (!options?.showSection || this.section <= 0) {
+        return;
+    }
+
+    ctx.save();
+
+    drawTextWithRoundedBackground(
+        ctx,
+        this.centerX,
+        this.centerY + 12,
+        "S" + this.section.toString(),
+        "white",
+        "black"
+    );
+
+    drawTextWithRoundedBackground(
+        ctx,
+        this.centerX,
+        this.centerY - 0,
+        this.getTravelDirectionArrow(),
+        "white",
+        "black",
+        2,
+        2
+    );
+
+    ctx.restore();
+}
+
+protected getTravelDirectionArrow(): string {
+    if (this.travelDirection === "unknown") {
+        return "?";
+    }
+
+    const target =
+        this.travelDirection === "forward"
+            ? this.getNextItemXy()
+            : this.getPrevItemXy();
+
+    const dx = target.x - this.pos.x;
+    const dy = target.y - this.pos.y;
+
+    if (dx > 0 && dy === 0) return "→";
+    if (dx > 0 && dy > 0) return "↘";
+    if (dx === 0 && dy > 0) return "↓";
+    if (dx < 0 && dy > 0) return "↙";
+    if (dx < 0 && dy === 0) return "←";
+    if (dx < 0 && dy < 0) return "↖";
+    if (dx === 0 && dy < 0) return "↑";
+    if (dx > 0 && dy < 0) return "↗";
+
+    return "?";
+}
     mouseDown(ev: MouseEvent) {
     }
 

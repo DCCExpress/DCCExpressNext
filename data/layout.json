@@ -325,7 +325,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 0,
+          "sensorAddress": 0
         },
         {
           "id": "389fdf2-889e-44bc-8013-d8aa373d",
@@ -338,7 +339,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 0,
+          "sensorAddress": 0
         },
         {
           "id": "5bac967-d1d9-42dc-a6e0-7eb4292c",
@@ -351,7 +353,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 0,
+          "sensorAddress": 0
         },
         {
           "id": "97aa3af-3ac9-4483-815a-d1ead989",
@@ -364,7 +367,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 7
+          "locoAddress": 7,
+          "sensorAddress": 0
         },
         {
           "id": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
@@ -377,7 +381,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 0,
+          "sensorAddress": 0
         },
         {
           "id": "373b352-2a53-4318-ba72-bb209d50",
@@ -390,7 +395,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 0,
+          "sensorAddress": 0
         },
         {
           "id": "518e54e-918c-4add-a05a-37dab832",
@@ -403,7 +409,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 0,
+          "sensorAddress": 0
         },
         {
           "id": "5dfc831-fbaa-4c2b-9b12-3874268a",
@@ -416,7 +423,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 13
+          "locoAddress": 13,
+          "sensorAddress": 0
         },
         {
           "id": "2135262-c36e-4feb-92ba-c7b8176a",
@@ -429,7 +437,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 0,
+          "sensorAddress": 0
         },
         {
           "id": "c546f8e-3716-4cba-9f23-d2672fb0",
@@ -442,7 +451,8 @@
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
-          "locoAddress": 0
+          "locoAddress": 0,
+          "sensorAddress": 0
         }
       ]
     },
@@ -592,7 +602,7 @@
           "id": "bb31f1c-9be0-4b31-ab69-283fd9d7",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 15,
           "y": 6,
           "rotation": 180,
@@ -612,7 +622,7 @@
           "id": "aecff41-e161-4097-8ff8-95e91b60",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 15,
           "y": 7,
           "rotation": 180,
@@ -632,7 +642,7 @@
           "id": "0b5a6b2-c147-498b-baaf-34ef1599",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 15,
           "y": 5,
           "rotation": 180,
@@ -652,7 +662,7 @@
           "id": "7833e12-f6c2-4d03-92be-8e38fc30",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 27,
           "y": 5,
           "rotation": 0,
@@ -672,7 +682,7 @@
           "id": "7e64e52-90c2-44cc-9f76-eb7c0f33",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 27,
           "y": 6,
           "rotation": 0,
@@ -692,7 +702,7 @@
           "id": "98856fe-f153-44ec-9276-1bf6a964",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 27,
           "y": 7,
           "rotation": 0,
@@ -712,7 +722,7 @@
           "id": "8d70d87-9260-4196-8050-b9bc2c7e",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 24,
           "y": 15,
           "rotation": 180,
@@ -732,7 +742,7 @@
           "id": "6ce7ae1-2c93-48b2-8fe4-a3662c0d",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 24,
           "y": 16,
           "rotation": 180,
@@ -752,7 +762,7 @@
           "id": "55aeec7-397b-40a7-812d-6ac18bfc",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 20,
           "y": 16,
           "rotation": 0,
@@ -772,7 +782,7 @@
           "id": "1b54a49-db1d-4c19-b8df-5f1b6549",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 20,
           "y": 15,
           "rotation": 0,
@@ -792,7 +802,7 @@
           "id": "f38e698-f3af-439c-aa63-8afe2380",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 24,
           "y": 11,
           "rotation": 180,
@@ -812,7 +822,7 @@
           "id": "df45ca1-866d-473e-9a06-6506896e",
           "type": "tracksignal2",
           "name": "element",
-          "layerName": "sensors",
+          "layerName": "signals",
           "x": 20,
           "y": 11,
           "rotation": 0,
@@ -1740,58 +1750,6 @@
           "address": 0
         },
         {
-          "id": "73c7503-1322-4d1b-86e8-01da4a31",
-          "type": "trackcurve",
-          "name": "element",
-          "layerName": "track",
-          "x": 15,
-          "y": 12,
-          "rotation": 90,
-          "rotationStep": 45,
-          "bg": "black",
-          "fg": "white",
-          "address": 0
-        },
-        {
-          "id": "c2ac497-d819-49c7-acc1-4f29c1af",
-          "type": "trackcurve",
-          "name": "element",
-          "layerName": "track",
-          "x": 16,
-          "y": 11,
-          "rotation": 135,
-          "rotationStep": 45,
-          "bg": "black",
-          "fg": "white",
-          "address": 0
-        },
-        {
-          "id": "77effa5-9119-447f-ab68-1f34ea7e",
-          "type": "trackcurve",
-          "name": "element",
-          "layerName": "track",
-          "x": 28,
-          "y": 11,
-          "rotation": 180,
-          "rotationStep": 45,
-          "bg": "black",
-          "fg": "white",
-          "address": 0
-        },
-        {
-          "id": "71dbad1-e84c-4d0d-8863-38b485ab",
-          "type": "trackcurve",
-          "name": "element",
-          "layerName": "track",
-          "x": 29,
-          "y": 12,
-          "rotation": 225,
-          "rotationStep": 45,
-          "bg": "black",
-          "fg": "white",
-          "address": 0
-        },
-        {
           "id": "5a9a405-8f4d-4453-9afa-ef733e75",
           "type": "track",
           "name": "element",
@@ -2150,6 +2108,84 @@
           "x": 22,
           "y": 15,
           "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "address": 0
+        },
+        {
+          "id": "0ef2efe-2a3d-4f9a-bf3a-ced56b10",
+          "type": "trackcorner",
+          "name": "element",
+          "layerName": "track",
+          "x": 29,
+          "y": 11,
+          "rotation": 0,
+          "rotationStep": 90,
+          "bg": "black",
+          "fg": "white",
+          "address": 0
+        },
+        {
+          "id": "a6a0234-ba4d-4b27-85f8-864f63bc",
+          "type": "trackcorner",
+          "name": "element",
+          "layerName": "track",
+          "x": 15,
+          "y": 11,
+          "rotation": 270,
+          "rotationStep": 90,
+          "bg": "black",
+          "fg": "white",
+          "address": 0
+        },
+        {
+          "id": "db6879c-eeb2-4a13-8d01-6c30d0f3",
+          "type": "track",
+          "name": "element",
+          "layerName": "track",
+          "x": 16,
+          "y": 11,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "address": 0
+        },
+        {
+          "id": "9e68b0d-0f72-480e-a5f1-f366af5b",
+          "type": "track",
+          "name": "element",
+          "layerName": "track",
+          "x": 28,
+          "y": 11,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "address": 0
+        },
+        {
+          "id": "779d366-07fb-400d-9796-b3d1b3e7",
+          "type": "track",
+          "name": "element",
+          "layerName": "track",
+          "x": 29,
+          "y": 12,
+          "rotation": 90,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "address": 0
+        },
+        {
+          "id": "4d501c8-7edd-434b-a020-f1b46f12",
+          "type": "track",
+          "name": "element",
+          "layerName": "track",
+          "x": 15,
+          "y": 12,
+          "rotation": 90,
           "rotationStep": 45,
           "bg": "black",
           "fg": "white",

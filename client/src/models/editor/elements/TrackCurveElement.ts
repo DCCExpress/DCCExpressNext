@@ -160,6 +160,8 @@ export class TrackCurveElement extends AddressedElement implements ITrackCurveEl
             drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.address.toString())
         }
 
+        this.drawSectionInfo(ctx, options);
+        
         this.endDraw(ctx);
         super.drawSelection(ctx);
     }

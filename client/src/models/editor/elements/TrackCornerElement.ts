@@ -107,18 +107,17 @@ export class TrackCornerElement extends AddressedElement implements ITrackCorner
             drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.address.toString())
         }
 
-
-        this.endDraw(ctx);
+        this.drawSectionInfo(ctx, options); this.endDraw(ctx);
         super.drawSelection(ctx);
         //super.draw(ctx)
     }
 
-    override  getNextItemXy(): Point {
-        return getDirectionXy(this.pos, this.rotation + 90 )
+    override getNextItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation + 90)
     }
 
     override getPrevItemXy(): Point {
-        return getDirectionXy(this.pos, this.rotation -180 )
+        return getDirectionXy(this.pos, this.rotation - 180)
     }
     // getBounds(): Rect {
     //     return {
@@ -142,7 +141,7 @@ export class TrackCornerElement extends AddressedElement implements ITrackCorner
         };
     }
 
-    static fromJSON(data: ITrackCornerElement) : TrackCornerElement {
+    static fromJSON(data: ITrackCornerElement): TrackCornerElement {
         const corner = new TrackCornerElement(data.x, data.y);
         corner.id = data.id;
         corner.name = data.name;
