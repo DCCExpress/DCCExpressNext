@@ -125,7 +125,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 9,
+          "x": 11,
           "y": 5,
           "rotation": 0,
           "rotationStep": 45,
@@ -143,7 +143,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 9,
+          "x": 11,
           "y": 6,
           "rotation": 0,
           "rotationStep": 45,
@@ -161,7 +161,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 9,
+          "x": 11,
           "y": 7,
           "rotation": 0,
           "rotationStep": 45,
@@ -179,7 +179,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 33,
+          "x": 31,
           "y": 5,
           "rotation": 0,
           "rotationStep": 45,
@@ -197,7 +197,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 33,
+          "x": 31,
           "y": 6,
           "rotation": 0,
           "rotationStep": 45,
@@ -215,7 +215,7 @@
           "type": "label",
           "name": "element",
           "layerName": "buildings",
-          "x": 33,
+          "x": 31,
           "y": 7,
           "rotation": 0,
           "rotationStep": 45,
@@ -281,15 +281,15 @@
           "type": "extendedroutebutton",
           "name": "element",
           "layerName": "buildings",
-          "x": 23,
+          "x": 17,
           "y": 9,
           "rotation": 0,
           "rotationStep": 0,
           "bg": "black",
           "fg": "white",
           "label": "AUTO ROUTE",
-          "fromSection": "S5",
-          "toSection": "S2"
+          "fromBlockId": "97aa3af-3ac9-4483-815a-d1ead989",
+          "toBlockId": "389fdf2-889e-44bc-8013-d8aa373d"
         },
         {
           "id": "27f0833-2412-478c-8577-387992fe",
@@ -303,8 +303,26 @@
           "bg": "black",
           "fg": "white",
           "label": "AUTO ROUTE",
-          "fromSection": "S5",
-          "toSection": "S3"
+          "fromBlockId": "97aa3af-3ac9-4483-815a-d1ead989",
+          "toBlockId": "5bac967-d1d9-42dc-a6e0-7eb4292c"
+        },
+        {
+          "id": "c1e435b-49c2-4dab-8343-b6b27caa",
+          "type": "label",
+          "name": "element",
+          "layerName": "buildings",
+          "x": 21,
+          "y": 6,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "text": "B1",
+          "fontSize": 12,
+          "color": "#ffffff",
+          "alignment": "center",
+          "offsetY": 21,
+          "offsetX": 20
         }
       ]
     },
@@ -317,7 +335,7 @@
         {
           "id": "d6e5b297-7c39-46b1-9dde-3163d2ee9aac",
           "type": "trackblock",
-          "name": "element",
+          "name": "C2",
           "layerName": "blocks",
           "x": 30,
           "y": 6,
@@ -326,12 +344,14 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 0,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "terminal"
         },
         {
           "id": "389fdf2-889e-44bc-8013-d8aa373d",
           "type": "trackblock",
-          "name": "element",
+          "name": "C1",
           "layerName": "blocks",
           "x": 30,
           "y": 5,
@@ -340,12 +360,14 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 0,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "terminal"
         },
         {
           "id": "5bac967-d1d9-42dc-a6e0-7eb4292c",
           "type": "trackblock",
-          "name": "element",
+          "name": "C3",
           "layerName": "blocks",
           "x": 30,
           "y": 7,
@@ -354,12 +376,14 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 0,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "terminal"
         },
         {
           "id": "97aa3af-3ac9-4483-815a-d1ead989",
           "type": "trackblock",
-          "name": "element",
+          "name": "A1",
           "layerName": "blocks",
           "x": 12,
           "y": 5,
@@ -368,12 +392,14 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 7,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "terminal"
         },
         {
           "id": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
           "type": "trackblock",
-          "name": "element",
+          "name": "A2",
           "layerName": "blocks",
           "x": 12,
           "y": 6,
@@ -382,12 +408,14 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 0,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "terminal"
         },
         {
           "id": "373b352-2a53-4318-ba72-bb209d50",
           "type": "trackblock",
-          "name": "element",
+          "name": "A3",
           "layerName": "blocks",
           "x": 12,
           "y": 7,
@@ -396,26 +424,30 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 0,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "terminal"
         },
         {
           "id": "518e54e-918c-4add-a05a-37dab832",
           "type": "trackblock",
-          "name": "element",
+          "name": "B1",
           "layerName": "blocks",
           "x": 21,
-          "y": 5,
+          "y": 6,
           "rotation": 0,
           "rotationStep": 90,
           "bg": "black",
           "fg": "white",
           "locoAddress": 0,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "normal"
         },
         {
           "id": "5dfc831-fbaa-4c2b-9b12-3874268a",
           "type": "trackblock",
-          "name": "element",
+          "name": "BB1",
           "layerName": "blocks",
           "x": 22,
           "y": 11,
@@ -424,12 +456,14 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 13,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "normal"
         },
         {
           "id": "2135262-c36e-4feb-92ba-c7b8176a",
           "type": "trackblock",
-          "name": "element",
+          "name": "BB2",
           "layerName": "blocks",
           "x": 22,
           "y": 14,
@@ -438,12 +472,14 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 0,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "normal"
         },
         {
           "id": "c546f8e-3716-4cba-9f23-d2672fb0",
           "type": "trackblock",
-          "name": "element",
+          "name": "BB3",
           "layerName": "blocks",
           "x": 22,
           "y": 16,
@@ -452,7 +488,9 @@
           "bg": "black",
           "fg": "white",
           "locoAddress": 0,
-          "sensorAddress": 0
+          "length": 100,
+          "sensorAddress": 0,
+          "blockType": "normal"
         }
       ]
     },

@@ -16,13 +16,24 @@ export class ExtendedRouteButtonElement
     label: string = "AUTO ROUTE";
 
     /**
-     * Ezeket majd a gráfos útvonalindításhoz használjuk.
+     * Új, blokk-alapú automatikus route konfiguráció.
+     */
+    fromBlockId: string = "";
+    toBlockId: string = "";
+
+    /**
+     * Legacy mezők:
+     * csak azért maradnak most még bent,
+     * hogy a PropertyPanelben lévő régi 22/2 tartalék függvények
+     * ne törjék a TypeScript fordítást.
+     *
+     * Ezeket később nyugodtan kidobjuk.
      */
     fromSection: string = "";
     toSection: string = "";
 
     /**
-     * Később ezzel lehet majd zölden jelezni,
+     * Később ezzel lehet zölden jelezni,
      * hogy az útvonal aktív / beállított.
      */
     active: boolean = false;
@@ -103,8 +114,8 @@ export class ExtendedRouteButtonElement
         ctx.textBaseline = "middle";
 
         const routeText =
-            this.fromSection && this.toSection
-                ? `${this.fromSection}→${this.toSection}`
+            this.fromBlockId && this.toBlockId
+                ? "READY"
                 : "AUTO";
 
         ctx.fillText(routeText, this.centerX, this.centerY + 10);
@@ -114,8 +125,9 @@ export class ExtendedRouteButtonElement
         this.endDraw(ctx);
         super.drawSelection(ctx);
     }
+
     override mouseDown(_ev: MouseEvent): void {
-        // A valódi gráfos route indítást a következő körben kötjük rá.
+        // A valódi gráfos route indítást a TrackCanvas kezeli.
     }
 
     override toJSON(): IExtendedRouteButtonElement {
@@ -123,8 +135,8 @@ export class ExtendedRouteButtonElement
             ...super.toJSON(),
             type: ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED,
             label: this.label,
-            fromSection: this.fromSection,
-            toSection: this.toSection,
+            fromBlockId: this.fromBlockId,
+            toBlockId: this.toBlockId,
         };
     }
 
@@ -140,8 +152,15 @@ export class ExtendedRouteButtonElement
         e.fg = data.fg;
 
         e.label = data.label ?? "AUTO ROUTE";
-        e.fromSection = data.fromSection ?? "";
-        e.toSection = data.toSection ?? "";
+        e.fromBlockId = data.fromBlockId ?? "";
+        e.toBlockId = data.toBlockId ?? "";
+
+        /**
+         * Régi layout JSON-ekből esetleg még jöhetnek section mezők.
+         * Ezeket csak eltároljuk legacyként, de az új logika nem használja.
+         */
+        e.fromSection = (data as any).fromSection ?? "";
+        e.toSection = (data as any).toSection ?? "";
 
         return e;
     }
@@ -155,77 +174,55 @@ export class ExtendedRouteButtonElement
         copy.selected = this.selected;
 
         copy.label = this.label;
+        copy.fromBlockId = this.fromBlockId;
+        copy.toBlockId = this.toBlockId;
+
+        // Legacy mezők csak kompatibilitásból
         copy.fromSection = this.fromSection;
         copy.toSection = this.toSection;
 
         return copy;
     }
 
-    // override getEditableProperties(): IEditableProperty[] {
-    //     return [
-    //         ...super.getEditableProperties(),
+    override getEditableProperties(): IEditableProperty[] {
+        return [
+            ...super.getEditableProperties(),
 
-    //         {
-    //             label: "Label",
-    //             key: "label",
-    //             type: "string",
-    //             readonly: false,
-    //         },
+            {
+                label: "Label",
+                key: "label",
+                type: "string",
+                readonly: false,
+            },
 
-    //         {
-    //             label: "From section",
-    //             key: "fromSection",
-    //             type: "string",
-    //             readonly: false,
-    //         },
+            {
+                label: "From block",
+                key: "fromBlockId",
+                type: "routeBlockSelect",
+                readonly: false,
+            },
 
-    //         {
-    //             label: "To section",
-    //             key: "toSection",
-    //             type: "string",
-    //             readonly: false,
-    //         },
-    //     ];
-    // }
-
-override getEditableProperties(): IEditableProperty[] {
-    return [
-        ...super.getEditableProperties(),
-
-        {
-            label: "Label",
-            key: "label",
-            type: "string",
-            readonly: false,
-        },
-
-        {
-            label: "From section",
-            key: "fromSection",
-            type: "routeSegmentSelect",
-            readonly: false,
-        },
-
-        {
-            label: "To section",
-            key: "toSection",
-            type: "routeSegmentSelect",
-            readonly: false,
-        },
-    ];
-}
+            {
+                label: "To block",
+                key: "toBlockId",
+                type: "routeBlockSelect",
+                readonly: false,
+            },
+        ];
+    }
 
     override getHelp(): string {
         return `
       <h3 style="margin-top:0;">Extended route button</h3>
       <p>
         This button represents an automatically calculated route
-        between two graph segments.
+        between two railway blocks.
       </p>
       <ul>
-        <li>From section: the starting segment</li>
-        <li>To section: the destination segment</li>
+        <li><b>From block</b>: the starting occupancy block</li>
+        <li><b>To block</b>: the destination occupancy block</li>
         <li>The required turnout states will be calculated automatically</li>
+        <li>Intermediate non-block segments may be part of the route</li>
       </ul>
     `;
     }

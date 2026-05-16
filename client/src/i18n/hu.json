@@ -47,5 +47,68 @@
       "hu": "Magyar"
     },
     "title": "Beállítások"
+  },
+  "block": {
+    "typePlaceholder": "Válassz blokktípust",
+    "types": {
+      "normal": "Átmenő blokk",
+      "station": "Megálló / Állomás",
+      "terminal": "Végállomás",
+      "staging": "Árnyékpályaudvar / Tároló",
+      "siding": "Mellékvágány / Kitérő",
+      "yard": "Rendező / Tolatási terület"
+    }
+  },
+  "help": {
+    "block": {
+      "title": "Blokk elem",
+      "description": "A blokk egy üzemi vasúti szakasz, amelyet az automatikus útvonalkeresés és a vonatkövetés használ.",
+      "occupancyDescription": "A DCCExpressben a blokk elsődlegesen foglaltságérzékelővel működik. A szenzor azt jelzi, hogy a blokk foglalt vagy szabad.",
+      "fields": {
+        "name": {
+          "title": "Név",
+          "description": "A blokk felhasználó által megadott neve, amely a pályán és az útvonalválasztásban is megjelenik."
+        },
+        "blockType": {
+          "title": "Blokktípus",
+          "description": "A blokk vasútüzemi szerepe."
+        },
+        "length": {
+          "title": "Hossz",
+          "description": "A blokk becsült fizikai hossza. Később ezt használjuk majd az automatikus lassítás és megállás számításához."
+        },
+        "sensorAddress": {
+          "title": "Foglaltságérzékelő címe",
+          "description": "Annak a detektornak a címe, amely jelzi, hogy a blokk foglalt-e."
+        }
+      },
+      "types": {
+        "title": "Blokktípusok",
+        "normal": {
+          "title": "Átmenő blokk",
+          "description": "Általános vonali blokk, amelyen a vonat jellemzően áthalad."
+        },
+        "station": {
+          "title": "Megálló / Állomás",
+          "description": "Olyan blokk, ahol a vonat menetrend szerint megállhat."
+        },
+        "terminal": {
+          "title": "Végállomás",
+          "description": "Végponti blokk, ahol a vonat később irányt válthat vagy visszaindulhat."
+        },
+        "staging": {
+          "title": "Árnyékpályaudvar / Tároló",
+          "description": "Rejtett vagy tároló blokk, ahová a vonatok eltűnhetnek, illetve ahonnan indulhatnak."
+        },
+        "siding": {
+          "title": "Mellékvágány / Kitérő",
+          "description": "Várakozásra, keresztezésre vagy előzésre használható blokk."
+        },
+        "yard": {
+          "title": "Rendező / Tolatási terület",
+          "description": "Üzemi, rendezői vagy tolatási mozgásokhoz használt blokk."
+        }
+      }
+    }
   }
 }

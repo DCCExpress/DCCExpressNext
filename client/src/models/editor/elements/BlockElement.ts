@@ -4,9 +4,11 @@ import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
 import { IRect } from "../core/Rect";
 
-import { DrawOptions, ELEMENT_TYPES, IBlockElement } from "../types/EditorTypes";
+import { BLOCK_TYPES, BlockType, DrawOptions, ELEMENT_TYPES, IBlockElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 import { getCanvasImage } from "../rendering/ImageCache";
+
+import i18n from "../../../i18n";
 
 export class BlockElement extends BaseElement implements IBlockElement {
     override type: typeof ELEMENT_TYPES.TRACK_BLOCK = ELEMENT_TYPES.TRACK_BLOCK;
@@ -15,6 +17,7 @@ export class BlockElement extends BaseElement implements IBlockElement {
     locoAddress: number = 0;
     length: number = 1;
     sensorAddress: number = 0;
+    blockType: BlockType = BLOCK_TYPES.NORMAL;
 
     constructor(x: number, y: number) {
         super(x, y);
@@ -154,48 +157,86 @@ export class BlockElement extends BaseElement implements IBlockElement {
         ctx.rotate(this.rotation * Math.PI / 180);
         ctx.translate(-this.centerX, -this.centerY);
 
-        const r = this.getBounds();
+        const blockX = this.posLeft + 5;
+        const blockY = this.posTop + 10;
+        const blockW = this.width - 10;
+        const blockH = this.height - 20;
 
-        let bg = options?.darkMode ? "#888888" : "#f0f0f0";  // A színe lehet más is
-        let fg = "black";
+        const bg = options?.darkMode ? "#888888" : "#f0f0f0";
+        const fg = "black";
 
-        ctx.fillStyle = bg!;  // A színe lehet más is
-        ctx.strokeStyle = fg!;
-        ctx.lineWidth = 1
-        ctx.strokeStyle = 'black';
+        const showBlockName =
+            options?.showBlockNames === true &&
+            this.name.trim().length > 0;
 
-        ctx.fillRect(this.posLeft + 5, this.posTop + 10, this.width - 10, this.height - 20);
-        ctx.strokeRect(this.posLeft + 5, this.posTop + 10, this.width - 10, this.height - 20);
-        //ctx.strokeRect(this.posLeft + 10, this.centerY - h, this.width - 20, 2 * h);
+        const blockNameHeight = showBlockName ? 9 : 0;
 
-        // if (this.locoAddress > 0) {
-        //     ctx.fillStyle = fg;
-        //     ctx.font = "8px Arial";
-        //     ctx.textAlign = "center";
-        //     ctx.textBaseline = "middle";
-        //     ctx.fillText(this.locoAddress?.toString(), this.centerX, this.centerY + 1);
-        // }
+        ctx.fillStyle = bg;
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 1;
 
-        // --- LOCO IMAGE ---
+        ctx.fillRect(blockX, blockY, blockW, blockH);
+        ctx.strokeRect(blockX, blockY, blockW, blockH);
+
+        const withReadableOverlayAt180 = (drawFn: () => void) => {
+            if (this.rotation === 180) {
+                ctx.translate(this.centerX, this.centerY);
+                ctx.rotate(Math.PI);
+                ctx.translate(-this.centerX, -this.centerY);
+            }
+
+            drawFn();
+
+            if (this.rotation === 180) {
+                ctx.translate(this.centerX, this.centerY);
+                ctx.rotate(-Math.PI);
+                ctx.translate(-this.centerX, -this.centerY);
+            }
+        };
+
+        const drawBlockName = () => {
+            if (!showBlockName) return;
+
+            ctx.fillStyle = fg;
+            ctx.font = "bold 8px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+
+            ctx.fillText(
+                this.name.trim(),
+                blockX + blockW / 2,
+                blockY + 2
+            );
+        };
+
+        // ----------------------------------------------------
+        // NINCS MOZDONYA, DE A BLOKK NEVE AKKOR IS LÁTSZÓDHAT
+        // ----------------------------------------------------
+        if (this.locoAddress <= 0) {
+            withReadableOverlayAt180(() => {
+                drawBlockName();
+            });
+        }
+
+        // ----------------------------------------------------
+        // LOCO IMAGE / ADDRESS
+        // ----------------------------------------------------
         if (this.locoAddress > 0) {
-            const blockX = this.posLeft + 5;
-            const blockY = this.posTop + 10;
-            const blockW = this.width - 10;
-            const blockH = this.height - 20;
-
             const loco = options?.locos?.find(
                 l => l.address === this.locoAddress
             );
 
             if (loco?.image) {
-
                 const img = getCanvasImage(loco.image);
 
                 if (img.naturalWidth > 0) {
                     const padding = 2;
 
+                    const availableImageHeight =
+                        blockH - blockNameHeight - padding * 2;
+
                     const maxW = blockW - padding * 2;
-                    const maxH = blockH - padding * 2;
+                    const maxH = Math.max(1, availableImageHeight);
 
                     const scale = Math.min(
                         maxW / img.naturalWidth,
@@ -205,42 +246,55 @@ export class BlockElement extends BaseElement implements IBlockElement {
                     const imgW = img.naturalWidth * scale;
                     const imgH = img.naturalHeight * scale;
 
+                    const contentY = blockY + blockNameHeight;
+                    const contentH = blockH - blockNameHeight;
+
                     const imgX = blockX + (blockW - imgW) / 2;
-                    const imgY = blockY + (blockH - imgH) / 2;
+                    const imgY = contentY + (contentH - imgH) / 2;
 
-                    if (this.rotation == 180) {
-                        ctx.translate(this.centerX, this.centerY);
-                        ctx.rotate( Math.PI);
-                        ctx.translate(-this.centerX, -this.centerY);
-                    }
+                    withReadableOverlayAt180(() => {
+                        drawBlockName();
 
-                    ctx.drawImage(img, imgX, imgY, imgW, imgH);
+                        ctx.drawImage(img, imgX, imgY, imgW, imgH);
+
+                        ctx.fillStyle = fg;
+                        ctx.font = "8px Arial";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+
+                        ctx.fillText(
+                            "#" + this.locoAddress.toString(),
+                            imgX - 10,
+                            contentY + contentH / 2
+                        );
+                    });
+                }
+            } else {
+                // Ha nincs kép, a blokk neve felül, a loco address középtájon
+                withReadableOverlayAt180(() => {
+                    drawBlockName();
+
                     ctx.fillStyle = fg;
                     ctx.font = "8px Arial";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    ctx.fillText("#" + this.locoAddress.toString(), imgX - 10, this.centerY + 1);
-                    if (this.rotation == 180) {
-                        ctx.translate(this.centerX, this.centerY);
-                        ctx.rotate(-Math.PI);
-                        ctx.translate(-this.centerX, -this.centerY);
-                    }
 
+                    const addressY =
+                        blockY +
+                        blockNameHeight +
+                        (blockH - blockNameHeight) / 2;
 
-                }
-            } else {
-                // Ha nincs kép, maradhat a cím kiírása
-                ctx.fillStyle = fg;
-                ctx.font = "8px Arial";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(this.locoAddress.toString(), this.centerX, this.centerY + 1);
+                    ctx.fillText(
+                        this.locoAddress.toString(),
+                        blockX + blockW / 2,
+                        addressY
+                    );
+                });
             }
         }
 
         this.drawSelection(ctx);
         this.endDraw(ctx);
-
     }
 
     override getBounds(): IRect {
@@ -305,42 +359,150 @@ export class BlockElement extends BaseElement implements IBlockElement {
 
     override clone(): BlockElement {
         const copy = new BlockElement(this.x, this.y);
+
         copy.id = generateId();
+        copy.name = this.name;
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;
         copy.selected = this.selected;
+
+        copy.bg = this.bg;
+        copy.fg = this.fg;
+
         copy.locoAddress = this.locoAddress;
+        copy.length = this.length;
+        copy.sensorAddress = this.sensorAddress;
+        copy.blockType = this.blockType;
+
         return copy;
     }
 
     static fromJSON(data: IBlockElement): BlockElement {
         const e = new BlockElement(data.x, data.y);
+
         e.id = data.id;
         e.name = data.name;
         e.rotation = data.rotation;
         e.bg = data.bg;
         e.fg = data.fg;
-        //e.length = data.length;
+
+        e.length = data.length ?? 100;
         e.sensorAddress = data.sensorAddress ?? 0;
-        e.locoAddress = 0; //data.locoAddress;
+
+        // Futáskor majd runtime kezeli, ezért induláskor nem töltjük vissza.
+        e.locoAddress = 0;
+
+        e.blockType = data.blockType ?? BLOCK_TYPES.NORMAL;
+
         return e;
     }
-
     override toJSON(): IBlockElement {
         return {
             ...super.toJSON(),
             type: ELEMENT_TYPES.TRACK_BLOCK,
             locoAddress: this.locoAddress,
+            length: this.length,
             sensorAddress: this.sensorAddress,
-        }
+            blockType: this.blockType,
+        };
     }
-
     override getEditableProperties(): IEditableProperty[] {
         return [
             ...super.getEditableProperties(),
-            { label: "Length", key: "length", type: "number", readonly: false },
-            { label: "Sensor Address", key: "sensorAddress", type: "number", readonly: false },
-            { label: "Color ON", key: "colorOn", type: "colorpicker", readonly: false },
+
+            {
+                label: "Block type",
+                key: "blockType",
+                type: "blockTypeSelect",
+                readonly: false,
+            },
+
+            {
+                label: "Length",
+                key: "length",
+                type: "number",
+                readonly: false,
+                min: 1,
+            },
+
+            {
+                label: "Occupancy sensor address",
+                key: "sensorAddress",
+                type: "number",
+                readonly: false,
+                min: 0,
+            },
+
+            {
+                label: "Color ON",
+                key: "colorOn",
+                type: "colorpicker",
+                readonly: false,
+            },
         ];
+    }
+
+    override getHelp(): string {
+        return `
+      <h3 style="margin-top:0;">
+        ${i18n.t("help.block.title")}
+      </h3>
+
+      <p>
+        ${i18n.t("help.block.description")}
+      </p>
+
+      <p>
+        ${i18n.t("help.block.occupancyDescription")}
+      </p>
+
+      <ul>
+        <li>
+          <b>${i18n.t("help.block.fields.name.title")}</b>:
+          ${i18n.t("help.block.fields.name.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.fields.blockType.title")}</b>:
+          ${i18n.t("help.block.fields.blockType.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.fields.length.title")}</b>:
+          ${i18n.t("help.block.fields.length.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.fields.sensorAddress.title")}</b>:
+          ${i18n.t("help.block.fields.sensorAddress.description")}
+        </li>
+      </ul>
+
+      <h4>${i18n.t("help.block.types.title")}</h4>
+
+      <ul>
+        <li>
+          <b>${i18n.t("help.block.types.normal.title")}</b>:
+          ${i18n.t("help.block.types.normal.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.station.title")}</b>:
+          ${i18n.t("help.block.types.station.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.terminal.title")}</b>:
+          ${i18n.t("help.block.types.terminal.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.staging.title")}</b>:
+          ${i18n.t("help.block.types.staging.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.siding.title")}</b>:
+          ${i18n.t("help.block.types.siding.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.yard.title")}</b>:
+          ${i18n.t("help.block.types.yard.description")}
+        </li>
+      </ul>
+    `;
     }
 }

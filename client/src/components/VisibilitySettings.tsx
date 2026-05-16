@@ -71,7 +71,16 @@ export default function VisibilitySettings({
             })
           }
         />
-
+        <Checkbox
+          mb={4}
+          label="Show block names"
+          checked={settings.showBlockNames}
+          onChange={(e) =>
+            updateSettings({
+              showBlockNames: e.currentTarget.checked,
+            })
+          }
+        />
         <Checkbox
           mb={4}
           label="Show grid"

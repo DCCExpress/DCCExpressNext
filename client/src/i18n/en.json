@@ -45,5 +45,68 @@
       "hu": "Hungarian"
     },
     "title": "Settings"
+  },
+  "block": {
+    "typePlaceholder": "Select block type",
+    "types": {
+      "normal": "Normal / Through block",
+      "station": "Station / Stop",
+      "terminal": "Terminal station",
+      "staging": "Staging / Hidden storage",
+      "siding": "Siding / Passing track",
+      "yard": "Yard / Shunting area"
+    }
+  },
+  "help": {
+    "block": {
+      "title": "Block element",
+      "description": "A block is an operational railway section used by the automatic route and train tracking system.",
+      "occupancyDescription": "In DCCExpress the block is planned to work primarily with an occupancy sensor. The sensor reports whether the block is occupied or free.",
+      "fields": {
+        "name": {
+          "title": "Name",
+          "description": "The user-visible block name shown on the layout and in route selection."
+        },
+        "blockType": {
+          "title": "Block type",
+          "description": "The operational role of the block."
+        },
+        "length": {
+          "title": "Length",
+          "description": "The estimated physical length of the block. This will later help automatic braking and stopping calculations."
+        },
+        "sensorAddress": {
+          "title": "Occupancy sensor address",
+          "description": "The detector address that reports whether this block is occupied."
+        }
+      },
+      "types": {
+        "title": "Block types",
+        "normal": {
+          "title": "Normal / Through block",
+          "description": "A regular line block, mainly used for passing through."
+        },
+        "station": {
+          "title": "Station / Stop",
+          "description": "A block where trains may perform a scheduled stop."
+        },
+        "terminal": {
+          "title": "Terminal station",
+          "description": "An end-point block where a train may later reverse direction or start a return journey."
+        },
+        "staging": {
+          "title": "Staging / Hidden storage",
+          "description": "A storage or hidden yard block for trains entering or leaving the visible layout."
+        },
+        "siding": {
+          "title": "Siding / Passing track",
+          "description": "A waiting, crossing, or passing block."
+        },
+        "yard": {
+          "title": "Yard / Shunting area",
+          "description": "An operational block intended for yard or shunting movements."
+        }
+      }
+    }
   }
 }

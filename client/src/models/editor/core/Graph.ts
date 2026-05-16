@@ -30,6 +30,23 @@ export type RouteSolution = {
     locoDirection: TravelDirection;
 };
 
+export type BlockRoutePathItem =
+    | {
+        type: "block";
+        block: SectionBlock;
+        node: GraphNode;
+    }
+    | {
+        type: "segment";
+        node: GraphNode;
+    };
+
+export type BlockRouteSolution = RouteSolution & {
+    fromBlock: SectionBlock;
+    toBlock: SectionBlock;
+    path: BlockRoutePathItem[];
+};
+
 export class GraphNode {
     name: string = "";
     x: number = 0;
@@ -641,5 +658,97 @@ export class Graph {
         );
 
         return null;
+    }
+
+  /// BLOCKS
+
+    findNodeContainingBlock(blockId: string): GraphNode | null {
+        return (
+            this.nodes.find(node =>
+                node.blocks.some(block => block.id === blockId)
+            ) ?? null
+        );
+    }
+
+    findBlockById(blockId: string): SectionBlock | null {
+        for (const node of this.nodes) {
+            const block = node.blocks.find(block => block.id === blockId);
+
+            if (block) {
+                return block;
+            }
+        }
+
+        return null;
+    }
+
+    getBlockSelectData(): { value: string; label: string }[] {
+        return this.nodes
+            .flatMap(node =>
+                node.blocks.map(block => ({
+                    value: block.id,
+                    label: block.label,
+                }))
+            )
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    findRouteBetweenBlocks(
+        fromBlockId: string,
+        toBlockId: string
+    ): BlockRouteSolution | null {
+        const fromNode = this.findNodeContainingBlock(fromBlockId);
+        const toNode = this.findNodeContainingBlock(toBlockId);
+
+        const fromBlock = this.findBlockById(fromBlockId);
+        const toBlock = this.findBlockById(toBlockId);
+
+        if (!fromNode || !toNode || !fromBlock || !toBlock) {
+            console.warn("[BlockRoute] Missing block or containing segment node.", {
+                fromBlockId,
+                toBlockId,
+                fromNode,
+                toNode,
+                fromBlock,
+                toBlock,
+            });
+
+            return null;
+        }
+
+        const segmentRoute = this.findRoute(
+            fromNode.name,
+            toNode.name
+        );
+
+        if (!segmentRoute) {
+            return null;
+        }
+
+        const path: BlockRoutePathItem[] = [
+            {
+                type: "block",
+                block: fromBlock,
+                node: fromNode,
+            },
+
+            ...segmentRoute.nodes.map(node => ({
+                type: "segment" as const,
+                node,
+            })),
+
+            {
+                type: "block",
+                block: toBlock,
+                node: toNode,
+            },
+        ];
+
+        return {
+            ...segmentRoute,
+            fromBlock,
+            toBlock,
+            path,
+        };
     }
 }

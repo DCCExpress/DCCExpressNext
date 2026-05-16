@@ -36,6 +36,20 @@ export const ELEMENT_TYPES = {
 
 } as const;
 
+export const BLOCK_TYPES = {
+  NORMAL: "normal",
+  STATION: "station",
+  TERMINAL: "terminal",
+  STAGING: "staging",
+  SIDING: "siding",
+  YARD: "yard",
+} as const;
+
+export type BlockType =
+  typeof BLOCK_TYPES[keyof typeof BLOCK_TYPES];
+
+
+
 export type ElementType =
   typeof ELEMENT_TYPES[keyof typeof ELEMENT_TYPES];
 
@@ -52,6 +66,7 @@ export interface DrawOptions {
   showSignalAddress: boolean;
   showTurnoutAddress: boolean;
   showSection?: boolean;
+  showBlockNames?: boolean;
   selected?: boolean;
   hovered?: boolean;
   ghost?: boolean;
@@ -185,8 +200,8 @@ export interface IRouteButtonElement extends IBaseElement {
 export interface IExtendedRouteButtonElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED;
   label: string;
-  fromSection: string;
-  toSection: string;
+  fromBlockId: string;
+  toBlockId: string;
 }
 
 export interface IClockElement extends IBaseElement {
@@ -196,10 +211,11 @@ export interface IClockElement extends IBaseElement {
 export interface IBlockElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.TRACK_BLOCK;
   //text: string;
-  // length: number;
+  length: number;
   // textColor: string;
   locoAddress: number;
   sensorAddress: number;
+  blockType: BlockType;
 }
 
 export interface ITreeElement extends IBaseElement {

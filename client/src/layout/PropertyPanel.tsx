@@ -6,7 +6,7 @@ import BitToggleElement from "../components/editor/BitToggleElement";
 import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
-import { ELEMENT_TYPES } from "../models/editor/types/EditorTypes";
+import { BLOCK_TYPES, ELEMENT_TYPES } from "../models/editor/types/EditorTypes";
 import { wsApi } from "../services/wsApi";
 import { useEditorSettings } from "../context/EditorSettingsContext";
 import { SetTurnoutMessage } from "../../../common/src/types";
@@ -26,6 +26,7 @@ import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRo
 import { showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
 import VisibilitySettings from "../components/VisibilitySettings";
 import { Graph } from "../models/editor/core/Graph";
+import { useTranslation } from "react-i18next";
 
 type PropertyPanelProps = {
   selectedElement: BaseElement | null;
@@ -72,7 +73,7 @@ function createPreviewElement<T extends BaseElement>(element: T): T {
 }
 
 export default function RightPropertyPanel({ selectedElement, onUpdateSelectedElement, invalidate, editMode, opened, turnoutSelectionMode, setTurnoutSelectionMode, layout, onLayoutChange, routes, onRunRouteProcess, setBusy, }: PropertyPanelProps) {
-
+  const { t } = useTranslation();
   const trackturnoutleft1 = new TrackTurnoutLeftElement(0, 0);
   trackturnoutleft1.turnoutClosed = true == trackturnoutleft1.turnoutClosedValue;
 
@@ -401,10 +402,10 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
       return;
     }
 
-    if (!selectedElement.fromSection || !selectedElement.toSection) {
+    if (!selectedElement.fromBlockId || !selectedElement.toBlockId) {
       showWarningMessage(
         "Warning",
-        "Select both From section and To section first."
+        "Select both From block and To block first."
       );
       return;
     }
@@ -417,22 +418,30 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
         setRouteGraph(graph);
       }
 
-      const solution = graph.findRoute(
-        selectedElement.fromSection,
-        selectedElement.toSection
+      const solution = graph.findRouteBetweenBlocks(
+        selectedElement.fromBlockId,
+        selectedElement.toBlockId
       );
 
       if (!solution) {
         showWarningMessage(
           "Warning",
-          `No valid route found: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+          "No valid route found between the selected blocks."
         );
         return;
       }
 
+      const fromBlockLabel =
+        graph.findBlockById(selectedElement.fromBlockId)?.label ??
+        selectedElement.fromBlockId;
+
+      const toBlockLabel =
+        graph.findBlockById(selectedElement.toBlockId)?.label ??
+        selectedElement.toBlockId;
+
       setBusy?.(
         true,
-        `Route is being set: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+        `Route is being set: ${fromBlockLabel} → ${toBlockLabel}`
       );
 
       const elems = layout.getAllElements();
@@ -460,7 +469,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
 
       showOkMessage(
         "SUCCESSFUL",
-        `Route test sent: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+        `Route test sent: ${fromBlockLabel} → ${toBlockLabel}`
       );
     } catch (error) {
       showErrorMessage(
@@ -918,25 +927,22 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                   );
                 })()}
 
-
-                {prop.type === "routeSegmentSelect" && (
+                {prop.type === "routeBlockSelect" && (
                   <Stack gap={6}>
                     <Select
                       label={prop.label}
-                      placeholder="Select segment"
-                      data={
-                        routeGraph?.nodes.map((node) => ({
-                          value: node.name,
-                          label: node.name,
-                        })) ?? []
-                      }
+                      placeholder="Select block"
+                      data={routeGraph?.getBlockSelectData() ?? []}
                       value={(selectedElement as any)[prop.key] || null}
                       onChange={(value: string | null) =>
                         handleChange(prop, value ?? "")
                       }
                       searchable
                       clearable
-                      disabled={!routeGraph || routeGraph.nodes.length === 0}
+                      disabled={
+                        !routeGraph ||
+                        routeGraph.getBlockSelectData().length === 0
+                      }
                     />
 
                     {!routeGraph && (
@@ -945,23 +951,59 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                       </Text>
                     )}
 
+                    {routeGraph &&
+                      routeGraph.getBlockSelectData().length === 0 && (
+                        <Text size="xs" c="dimmed">
+                          No blocks available in the generated route graph.
+                        </Text>
+                      )}
+
                     {routeGraphError && (
                       <Text size="xs" c="red">
                         {routeGraphError}
                       </Text>
                     )}
-
-                    {/* {prop.key === "fromSection" && (
-                      <Button
-                        size="xs"
-                        variant="light"
-                        onClick={refreshExtendedRouteGraph}
-                      >
-                        Refresh segments
-                      </Button>
-                    )} */}
-
                   </Stack>
+                )}
+
+                {prop.type === "blockTypeSelect" && (
+                  <Select
+                    label={prop.label}
+                    placeholder={t("block.typePlaceholder")}
+                    data={[
+                      {
+                        value: BLOCK_TYPES.NORMAL,
+                        label: t("block.types.normal"),
+                      },
+                      {
+                        value: BLOCK_TYPES.STATION,
+                        label: t("block.types.station"),
+                      },
+                      {
+                        value: BLOCK_TYPES.TERMINAL,
+                        label: t("block.types.terminal"),
+                      },
+                      {
+                        value: BLOCK_TYPES.STAGING,
+                        label: t("block.types.staging"),
+                      },
+                      {
+                        value: BLOCK_TYPES.SIDING,
+                        label: t("block.types.siding"),
+                      },
+                      {
+                        value: BLOCK_TYPES.YARD,
+                        label: t("block.types.yard"),
+                      },
+                    ]}
+                    value={(selectedElement as any)[prop.key] ?? null}
+                    onChange={(value: string | null) =>
+                      handleChange(prop, value ?? BLOCK_TYPES.NORMAL)
+                    }
+                    searchable={false}
+                    clearable={false}
+                    disabled={prop.readonly === true}
+                  />
                 )}
               </Card >
 
@@ -991,10 +1033,9 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
                     void handleTestExtendedRoute();
                   }}
                   disabled={
-                    !selectedElement.fromSection ||
-                    !selectedElement.toSection
-                  }
-                >
+                    !selectedElement.fromBlockId ||
+                    !selectedElement.toBlockId
+                  }                >
                   Test route
                 </Button>
               </Stack>

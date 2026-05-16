@@ -11,7 +11,8 @@ export type PropertyEditorType =
   | "signal2"
   | "turnoutSelection"
   | "audiofile"
-  | "routeSegmentSelect";
+  | "routeBlockSelect"
+   | "blockTypeSelect";
 
 export interface IEditableProperty {
   label: string;

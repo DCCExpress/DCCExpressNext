@@ -498,104 +498,7 @@ export class Layout {
         }
     }
 
-    checkRoutes22() {
-        const elems = this.getAllElements();
 
-        // --------------------------------------------------
-        // Minden korábbi route-színezés törlése
-        // --------------------------------------------------
-        elems.forEach((elem: BaseElement) => {
-            elem.isVisited = false;
-            elem.isRoute = false;
-        });
-
-        // --------------------------------------------------
-        // 1. Gráf felépítése az ExtendedRouteButtonök miatt
-        // --------------------------------------------------
-        let graph: Graph | null = null;
-
-        try {
-            graph = this.processRoutes();
-        } catch (error) {
-            /**
-             * Például nincs direction marker, vagy hibás a pálya.
-             * Ettől a régi route gombok még működjenek tovább,
-             * csak az extended route-ok nem tudnak aktívvá válni.
-             */
-            console.warn("[RouteGraph] Could not check extended routes:", error);
-            graph = null;
-        }
-
-        // --------------------------------------------------
-        // 2. Régi, kézzel felépített RouteButtonök ellenőrzése
-        // --------------------------------------------------
-        const routeButtons = elems.filter(
-            (elem: BaseElement) => elem instanceof RouteButtonElement
-        ) as RouteButtonElement[];
-
-        routeButtons.forEach(rb => {
-            let active = true;
-
-            rb.routeTurnouts.forEach(t => {
-                const turnout = this.getElementById(t.turnoutId) as TrackTurnoutElement;
-
-                if (turnout && turnout.turnoutClosed === t.closed) {
-                    // oké
-                } else {
-                    active = false;
-                }
-            });
-
-            rb.active = active;
-
-            if (active && rb.routeTurnouts.length > 0) {
-                const turnout = this.getElementById(
-                    rb.routeTurnouts[0]!.turnoutId
-                ) as TrackTurnoutElement;
-
-                this.startWalk(turnout);
-            }
-        });
-
-        // --------------------------------------------------
-        // 3. Új, gráfos ExtendedRouteButtonök ellenőrzése
-        // --------------------------------------------------
-        const extendedRouteButtons = elems.filter(
-            (elem: BaseElement) => elem instanceof ExtendedRouteButtonElement
-        ) as ExtendedRouteButtonElement[];
-
-        extendedRouteButtons.forEach(rb => {
-            rb.active = false;
-
-            if (!graph) {
-                return;
-            }
-
-            if (!rb.fromSection || !rb.toSection) {
-                return;
-            }
-
-            const solution = graph.findRoute(
-                rb.fromSection,
-                rb.toSection
-            );
-
-            if (!solution) {
-                return;
-            }
-
-            const active = this.isExtendedRouteSolutionActive(solution);
-
-            rb.active = active;
-
-            if (active) {
-                this.markExtendedRouteSolution(solution);
-            }
-        });
-    }
-
-    // checkRoutes33() {
-    //checkRoutes(existingGraph?: Graph | null): Graph | null {
     checkRoutes(existingGraph?: Graph | null): CheckRoutesResult {
 
         const checkRoutesStart = performance.now();
@@ -686,15 +589,14 @@ export class Layout {
                 return;
             }
 
-            if (!rb.fromSection || !rb.toSection) {
+            if (!rb.fromBlockId || !rb.toBlockId) {
                 return;
             }
 
-            const solution = graph.findRoute(
-                rb.fromSection,
-                rb.toSection
+            const solution = graph.findRouteBetweenBlocks(
+                rb.fromBlockId,
+                rb.toBlockId
             );
-
             if (!solution) {
                 return;
             }

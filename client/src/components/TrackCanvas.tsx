@@ -2029,6 +2029,7 @@ function drawScene(
     showTurnoutAddress: settings.showTurnoutAddress,
     showSignalAddress: settings.showSignalAddress,
     showSection: settings.showSegments,
+    showBlockNames: settings.showBlockNames,
     darkMode: isDark,
     locos: locos || [],
   };
