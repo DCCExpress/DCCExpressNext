@@ -5,9 +5,14 @@ import {
     Edge,
     Graph,
     GraphNode,
-
+    SectionBlock,
+    SectionDetector,
+    SectionSignal,
     TurnoutStateRequirement
 } from "./Graph";
+import { TrackSensorElement } from "../elements/TrackSensorElement";
+import { TrackSignalElement } from "../elements/TrackSignalElement";
+import { BlockElement } from "../elements/BlockElement";
 import { isTurnoutElement, Layout } from "./Layout";
 import { Point } from "./Rect";
 import { TrackTravelDirectionResolver } from "./TrackTravelDirectionResolver";
@@ -278,9 +283,104 @@ export class RouteGraphBuilder {
             y /= sectionElements.length;
         }
 
-        return new GraphNode(`S${section}`, x, y);
+        const detectors = this.collectSectionDetectors(sectionElements);
+        const signals = this.collectSectionSignals(sectionElements);
+        const blocks = this.collectSectionBlocks(sectionElements);
+
+        return new GraphNode(
+            `S${section}`,
+            x,
+            y,
+            detectors,
+            signals,
+            blocks
+        );
     }
 
+    private collectSectionDetectors(
+        sectionElements: BaseElement[]
+    ): SectionDetector[] {
+        const sectionPositions = new Set(
+            sectionElements.map(elem => `${elem.x}:${elem.y}`)
+        );
+
+        return this.layout
+            .getAllElements()
+            .filter(
+                (elem): elem is TrackSensorElement =>
+                    elem instanceof TrackSensorElement
+            )
+            .filter(sensor =>
+                sectionPositions.has(`${sensor.x}:${sensor.y}`)
+            )
+            .sort((a, b) => a.address - b.address)
+            .map(sensor => ({
+                id: sensor.id,
+                address: sensor.address,
+                label: `D${sensor.address}`,
+            }));
+    }
+
+    private collectSectionSignals(
+        sectionElements: BaseElement[]
+    ): SectionSignal[] {
+        const sectionPositions = new Set(
+            sectionElements.map(elem => `${elem.x}:${elem.y}`)
+        );
+
+        return this.layout
+            .getAllElements()
+            .filter(
+                (elem): elem is TrackSignalElement =>
+                    elem instanceof TrackSignalElement
+            )
+            .filter(signal =>
+                sectionPositions.has(`${signal.x}:${signal.y}`)
+            )
+            .sort((a, b) => a.address - b.address)
+            .map(signal => ({
+                id: signal.id,
+                address: signal.address,
+                label: `L${signal.address}`,
+            }));
+    }
+
+    private collectSectionBlocks(
+        sectionElements: BaseElement[]
+    ): SectionBlock[] {
+        return this.layout
+            .getAllElements()
+            .filter(
+                (elem): elem is BlockElement =>
+                    elem instanceof BlockElement
+            )
+            .filter(block =>
+                sectionElements.some(sectionElem =>
+                    this.isSectionElementInsideBlock(sectionElem, block)
+                )
+            )
+            .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+            .map(block => ({
+                id: block.id,
+                name: block.name,
+                label: block.name?.trim()
+                    ? `B: ${block.name}`
+                    : "B: Block",
+            }));
+    }
+    private isSectionElementInsideBlock(
+    sectionElem: BaseElement,
+    block: BlockElement
+): boolean {
+    const bounds = block.getBounds();
+
+    return (
+        sectionElem.x >= bounds.x &&
+        sectionElem.x < bounds.x + bounds.width &&
+        sectionElem.y >= bounds.y &&
+        sectionElem.y < bounds.y + bounds.height
+    );
+}
     // ============================================================
     // 3. FÁZIS: EDGE-EK FELÉPÍTÉSE
     // ============================================================

@@ -20,9 +20,12 @@ import "../styles/propertypanel.css"
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import ControlPanel from "../components/ControlPanel";
 
-import { Graph } from "../models/editor/core/Graph";
+//import { Graph } from "../models/editor/core/Graph";
+import { useRouteGraph } from "../hooks/useRouteGraph";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 import { showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
+import VisibilitySettings from "../components/VisibilitySettings";
+import { Graph } from "../models/editor/core/Graph";
 
 type PropertyPanelProps = {
   selectedElement: BaseElement | null;
@@ -37,7 +40,7 @@ type PropertyPanelProps = {
   onLayoutChange: Dispatch<SetStateAction<Layout>>;
   routes?: string | undefined;
   onRunRouteProcess: () => Graph | null;
-   setBusy?: (busy: boolean, text?: string) => void;
+  setBusy?: (busy: boolean, text?: string) => void;
 };
 
 
@@ -82,7 +85,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   const [helpOpened, setHelpOpened] = useState<string | null>("help");
   const { settings, updateSettings } = useEditorSettings();
   const [panelOpen, setPanelOpen] = useState(opened);
-  const [routeGraph, setRouteGraph] = useState<Graph | null>(null);
+  const {  graph: routeGraph,  setGraph: setRouteGraph,} = useRouteGraph();
   const [routeGraphError, setRouteGraphError] = useState<string | null>(null);
   const { colorScheme } = useMantineColorScheme();
 
@@ -231,27 +234,26 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     setPanelOpen(opened)
   }, [opened])
 
-  const refreshExtendedRouteGraph = () => {
-    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
-      setRouteGraph(null);
-      setRouteGraphError(null);
-      return;
-    }
+const refreshExtendedRouteGraph = () => {
+  if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+    setRouteGraphError(null);
+    return;
+  }
 
-    try {
-      const graph = layout.processRoutes();
+  try {
+    const graph = layout.processRoutes();
 
-      setRouteGraph(graph);
-      setRouteGraphError(null);
-    } catch (error) {
-      setRouteGraph(null);
-      setRouteGraphError(
-        error instanceof Error
-          ? error.message
-          : "Could not generate route graph."
-      );
-    }
-  };
+    setRouteGraph(graph);
+    setRouteGraphError(null);
+  } catch (error) {
+    setRouteGraph(null);
+    setRouteGraphError(
+      error instanceof Error
+        ? error.message
+        : "Could not generate route graph."
+    );
+  }
+};
 
   const handleTestExtendedRoute2 = async () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
@@ -324,161 +326,104 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     }
   };
 
-const handleTestExtendedRoute = async () => {
-  if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
-    return;
-  }
-
-  if (!selectedElement.fromSection || !selectedElement.toSection) {
-    showWarningMessage(
-      "Warning",
-      "Select both From section and To section first."
-    );
-    return;
-  }
-
-  let graph = routeGraph;
-
-  try {
-    if (!graph) {
-      graph = layout.processRoutes();
-      setRouteGraph(graph);
+  const handleTestExtendedRoute = async () => {
+    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+      return;
     }
 
-    const solution = graph.findRoute(
-      selectedElement.fromSection,
-      selectedElement.toSection
-    );
-
-    if (!solution) {
+    if (!selectedElement.fromSection || !selectedElement.toSection) {
       showWarningMessage(
         "Warning",
-        `No valid route found: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+        "Select both From section and To section first."
       );
       return;
     }
 
-    setBusy?.(
-      true,
-      `Route is being set: ${selectedElement.fromSection} → ${selectedElement.toSection}`
-    );
+    let graph = routeGraph;
 
-    const elems = layout.getAllElements();
-
-    for (const turnoutState of solution.turnoutStates) {
-      const turnout = elems.find(
-        (elem): elem is TrackTurnoutElement =>
-          isTurnoutElement(elem) &&
-          elem.turnoutAddress === turnoutState.address
-      );
-
-      if (!turnout) {
-        throw new Error(
-          `Turnout not found for address: ${turnoutState.address}`
-        );
+    try {
+      if (!graph) {
+        graph = layout.processRoutes();
+        setRouteGraph(graph);
       }
 
-      wsApi.setTurnout(
-        turnoutState.address,
-        turnoutState.closed === turnout.turnoutClosedValue
+      const solution = graph.findRoute(
+        selectedElement.fromSection,
+        selectedElement.toSection
       );
 
-      await sleep(1000);
+      if (!solution) {
+        showWarningMessage(
+          "Warning",
+          `No valid route found: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+        );
+        return;
+      }
+
+      setBusy?.(
+        true,
+        `Route is being set: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+      );
+
+      const elems = layout.getAllElements();
+
+      for (const turnoutState of solution.turnoutStates) {
+        const turnout = elems.find(
+          (elem): elem is TrackTurnoutElement =>
+            isTurnoutElement(elem) &&
+            elem.turnoutAddress === turnoutState.address
+        );
+
+        if (!turnout) {
+          throw new Error(
+            `Turnout not found for address: ${turnoutState.address}`
+          );
+        }
+
+        wsApi.setTurnout(
+          turnoutState.address,
+          turnoutState.closed === turnout.turnoutClosedValue
+        );
+
+        await sleep(1000);
+      }
+
+      showOkMessage(
+        "SUCCESSFUL",
+        `Route test sent: ${selectedElement.fromSection} → ${selectedElement.toSection}`
+      );
+    } catch (error) {
+      showErrorMessage(
+        "ERROR",
+        error instanceof Error
+          ? error.message
+          : "Could not test automatic route."
+      );
+    } finally {
+      setBusy?.(false);
     }
+  };
 
-    showOkMessage(
-      "SUCCESSFUL",
-      `Route test sent: ${selectedElement.fromSection} → ${selectedElement.toSection}`
-    );
-  } catch (error) {
-    showErrorMessage(
-      "ERROR",
-      error instanceof Error
-        ? error.message
-        : "Could not test automatic route."
-    );
-  } finally {
-    setBusy?.(false);
-  }
-};
-
-  useEffect(() => {
-    if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
+useEffect(() => {
+  if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
+    if (!routeGraph) {
       refreshExtendedRouteGraph();
     } else {
-      setRouteGraph(null);
       setRouteGraphError(null);
     }
-  }, [selectedElement, editMode]);
+  } else {
+    setRouteGraphError(null);
+  }
+}, [selectedElement, editMode, routeGraph]);
 
   if (editMode) {
     return (
       <ScrollArea h="100%" style={{ margin: 0, padding: 0 }}>
         <div className="property-panel">
           <Text c="blue" tt="capitalize">Properties</Text>
-          {!selectedElement &&
-            (
-              <>
-                <Card withBorder p="xs">
-                  <Group mb="sm">
-                    <Text fw={500}>Editor</Text>
-                  </Group>
-                  <Checkbox
-                    mb={4}
-                    label="Show occupancy address"
-                    checked={settings.showOccupacySensorAddress}
-                    onChange={(e) =>
-                      updateSettings({ showOccupacySensorAddress: e.currentTarget.checked })
-                    }
-                  />
-                  <Checkbox
-                    mb={4}
-                    label="Show sensor address"
-                    checked={settings.showSensorAddress}
-                    onChange={(e) =>
-                      updateSettings({ showSensorAddress: e.currentTarget.checked })
-                    }
-                  />
-
-                  <Checkbox
-                    mb={4}
-                    label="Show turnout address"
-                    checked={settings.showTurnoutAddress}
-                    onChange={(e) =>
-                      updateSettings({ showTurnoutAddress: e.currentTarget.checked })
-                    }
-                  />
-
-                  <Checkbox
-                    mb={4}
-                    label="Show signal address"
-                    checked={settings.showSignalAddress}
-                    onChange={(e) =>
-                      updateSettings({ showSignalAddress: e.currentTarget.checked })
-                    }
-                  />
-
-                  <Checkbox
-                    mb={4}
-                    label="Show segments"
-                    checked={settings.showSegments}
-                    onChange={(e) =>
-                      updateSettings({ showSegments: e.currentTarget.checked })
-                    }
-                  />
-
-                  <Checkbox
-                    mb={4}
-                    label="Show grid"
-                    checked={settings.showGrid}
-                    onChange={(e) =>
-                      updateSettings({ showGrid: e.currentTarget.checked })
-                    }
-                  />
-                </Card>
-              </>
-            )
-          }
+          {!selectedElement && (
+            <VisibilitySettings title="Visibility" />
+          )}
 
           {selectedElement && properties && properties.map((prop) => (
             <div key={prop.key}

@@ -31,6 +31,7 @@ import { layoutStore } from "../services/layoutStore";
 import { scriptEngine } from "../services/scriptEngine";
 import { loadJsonFile } from "../api/fileApi";
 import { BlockElement } from "../models/editor/elements/BlockElement";
+import { routeGraphStore } from "../services/routeGraphStore";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -162,6 +163,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
       setLayout(nextLayout);
       layoutStore.setLayout(nextLayout);
+      routeGraphStore.clear();
       setUndoStack([]);
       setRedoStack([]);
 
@@ -259,6 +261,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       });
 
       setLayout(restoredLayout);
+      routeGraphStore.clear();
 
       return prevUndo.slice(0, -1);
     });
@@ -280,7 +283,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       });
 
       setLayout(restoredLayout);
-
+      routeGraphStore.clear();
       return prevRedo.slice(0, -1);
     });
   }, [createLayoutSnapshot]);
@@ -508,6 +511,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   };
 
   const handleUpdateSelectedElement = (_updated: BaseElement | null) => {
+    routeGraphStore.clear();
     setInvalidateCounter((prev) => prev + 1);
   };
 
@@ -534,10 +538,24 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     setCommandCenter(cc)
   };
 
+  // const handleRunRouteProcess = () => {
+  //   const graph = layoutRef.current.processRoutes();
+  //   setInvalidateCounter((v) => v + 1);
+  //   return graph;
+  // };
+
   const handleRunRouteProcess = () => {
     const graph = layoutRef.current.processRoutes();
+    routeGraphStore.setGraph(graph);
     setInvalidateCounter((v) => v + 1);
     return graph;
+  };
+
+  const handleLayoutChange: React.Dispatch<React.SetStateAction<Layout>> = (
+    value
+  ) => {
+    routeGraphStore.clear();
+    setLayout(value);
   };
 
   return (
@@ -701,7 +719,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       editMode={editMode}
                       tool={tool}
                       layout={layout}
-                      onLayoutChange={setLayout}
+
+                      onLayoutChange={handleLayoutChange}
                       onBeforeLayoutChange={pushHistorySnapshot}
                       selectedElement={selectedElement}
                       onSelectedElementChange={selectedElementChanged}
@@ -740,7 +759,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       onRunRouteProcess={handleRunRouteProcess}
                       //setBusy={setBusy}
                       setBusy={(busy, text) => { setCanvasBusy(busy); if (text) setCanvasBusyText(text); }}
-                      />
+                    />
                   </Card>
                 )}
               </Box>

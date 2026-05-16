@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+
 import {
   Badge,
   Box,
@@ -18,6 +26,7 @@ import {
   IconBolt,
   IconCode,
   IconDeviceGamepad2,
+  IconEye,
   IconPlayerPlay,
   IconPower,
   IconRoute,
@@ -28,10 +37,12 @@ import { useCommandCenter } from "../context/CommandCenterContext";
 import { wsApi } from "../services/wsApi";
 import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
 import GraphDialog from "./common/GraphDialog";
-import { Edge, Graph, RouteSolution, TurnoutStateRequirement,} from "../models/editor/core/Graph";
+import { Edge, Graph, RouteSolution, TurnoutStateRequirement, } from "../models/editor/core/Graph";
 import { useEditorSettings } from "../context/EditorSettingsContext";
 import { showErrorMessage, showOkMessage } from "../helpers";
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
+import VisibilitySettings from "./VisibilitySettings";
+import { useRouteGraph } from "../hooks/useRouteGraph";
 
 
 type ControlPanelProps = {
@@ -105,6 +116,9 @@ export default function ControlPanel(p: ControlPanelProps) {
           <Tabs.Tab value="scripts" leftSection={<IconRoute2 size={16} />}>
             {/* Scripts */}
           </Tabs.Tab>
+          <Tabs.Tab value="visibility" leftSection={<IconEye size={16} />}>
+            {/* Visibility */}
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="command-center" pt="sm">
@@ -124,6 +138,9 @@ export default function ControlPanel(p: ControlPanelProps) {
 
         <Tabs.Panel value="scripts" pt="sm">
           <RoutesTab routes={p.routes} onRunRouteProcess={p.onRunRouteProcess} layout={p.layout} />
+        </Tabs.Panel>
+        <Tabs.Panel value="visibility" pt="sm">
+          <VisibilityTab />
         </Tabs.Panel>
       </Tabs>
     </Card>
@@ -426,8 +443,9 @@ type RoutesTabProps = {
 };
 
 function RoutesTab(p: RoutesTabProps) {
-  const [graph, setGraph] = useState<Graph | null>(null);
-  const { settings, updateSettings } = useEditorSettings();
+  //const { graph, setGraph } = useRouteGraph();
+  //const { settings, updateSettings } = useEditorSettings();
+  const { graph } = useRouteGraph();
   const [graphDialogOpened, setGraphDialogOpened] = useState(false);
 
   const handleRunRouteProcess = () => {
@@ -435,11 +453,9 @@ function RoutesTab(p: RoutesTabProps) {
       const g = p.onRunRouteProcess?.();
 
       if (!g) return;
-
-      setGraph(g);
-      //setGraphDialogOpened(true);
     } catch (error) {
-      showErrorMessage("ERROR",
+      showErrorMessage(
+        "ERROR",
         error instanceof Error
           ? error.message
           : "Could not generate route graph."
@@ -448,102 +464,88 @@ function RoutesTab(p: RoutesTabProps) {
   };
 
   const applyTurnoutStates = async (
-  turnoutStates: TurnoutStateRequirement[]
-) => {
-  const elems = p.layout.getAllElements();
+    turnoutStates: TurnoutStateRequirement[]
+  ) => {
+    const elems = p.layout.getAllElements();
 
-  for (const turnoutState of turnoutStates) {
-    const turnout = elems.find(
-      (el) =>
-        "turnoutAddress" in el &&
-        "turnoutClosedValue" in el &&
-        el.turnoutAddress === turnoutState.address
-    ) as TrackTurnoutElement | undefined;
+    for (const turnoutState of turnoutStates) {
+      const turnout = elems.find(
+        (el) =>
+          "turnoutAddress" in el &&
+          "turnoutClosedValue" in el &&
+          el.turnoutAddress === turnoutState.address
+      ) as TrackTurnoutElement | undefined;
 
-    if (!turnout) {
-      throw new Error(
-        `Turnout not found for address: ${turnoutState.address}`
+      if (!turnout) {
+        throw new Error(
+          `Turnout not found for address: ${turnoutState.address}`
+        );
+      }
+
+      await wsApi.setTurnout(
+        turnoutState.address,
+        turnoutState.closed === turnout.turnoutClosedValue
       );
     }
+  };
 
-    await wsApi.setTurnout(
-      turnoutState.address,
-      turnoutState.closed === turnout.turnoutClosedValue
-    );
-  }
-};
+  const handleTestRoute = async (solution: RouteSolution) => {
+    try {
+      await applyTurnoutStates(solution.turnoutStates);
 
-const handleTestRoute = async (solution: RouteSolution) => {
-  try {
-    await applyTurnoutStates(solution.turnoutStates);
+      const routeText = solution.nodes
+        .map((node) => node.name)
+        .join(" → ");
 
-    const routeText = solution.nodes
-      .map((node) => node.name)
-      .join(" → ");
+      showOkMessage(
+        "SUCCESSFUL",
+        `Route test sent: ${routeText}`
+      );
+    } catch (error) {
+      showErrorMessage(
+        "ERROR",
+        error instanceof Error
+          ? error.message
+          : "Could not test route."
+      );
+    }
+  };
+  const handleTestConnection = async (edge: Edge) => {
+    try {
+      await applyTurnoutStates(edge.turnoutStates);
 
-    showOkMessage(
-      "SUCCESSFUL",
-      `Route test sent: ${routeText}`
-    );
-  } catch (error) {
-    showErrorMessage(
-      "ERROR",
-      error instanceof Error
-        ? error.message
-        : "Could not test route."
-    );
-  }
-};
-const handleTestConnection = async (edge: Edge) => {
-  try {
-    await applyTurnoutStates(edge.turnoutStates);
-
-    showOkMessage(
-      "SUCCESSFUL",
-      `Route test sent: ${edge.from.name} → ${edge.to.name}`
-    );
-  } catch (error) {
-    showErrorMessage(
-      "ERROR",
-      error instanceof Error
-        ? error.message
-        : "Could not test route connection."
-    );
-  }
-};
+      showOkMessage(
+        "SUCCESSFUL",
+        `Route test sent: ${edge.from.name} → ${edge.to.name}`
+      );
+    } catch (error) {
+      showErrorMessage(
+        "ERROR",
+        error instanceof Error
+          ? error.message
+          : "Could not test route connection."
+      );
+    }
+  };
   return (
     <>
       <Stack gap="md">
-        <Group justify="space-between">
-
-          <Group w="100%">
-            <Checkbox
-              mb={4}
-              label="Show segments"
-              checked={settings.showSegments}
-              onChange={(e) =>
-                updateSettings({ showSegments: e.currentTarget.checked })
-              }
-            />
-            <Button
-              size="xs"
-              variant="light"
-              onClick={() => setGraphDialogOpened(true)}
-              disabled={!graph}
-            >
-              Show Graph
-            </Button>
-
-          </Group>
-
-          <Text fw={600}>Route graph</Text>
+        <Group justify="center">
 
           <Button
             leftSection={<IconRoute size={16} />}
             onClick={handleRunRouteProcess}
           >
-            Generate graph
+            Generate
           </Button>
+          <Button
+            size="sm"
+            onClick={() => setGraphDialogOpened(true)}
+            disabled={!graph}
+          >
+            Open Graph
+          </Button>
+
         </Group>
 
         {!graph && (
@@ -636,6 +638,19 @@ const handleTestConnection = async (edge: Edge) => {
   );
 };
 
+function VisibilityTab() {
+  return (
+    <ScrollArea.Autosize
+      mah="calc(100vh - 220px)"
+      type="auto"
+      offsetScrollbars
+    >
+      <Stack gap="xs">
+        <VisibilitySettings />
+      </Stack>
+    </ScrollArea.Autosize>
+  );
+}
 function InfoSection({
   title,
   children,

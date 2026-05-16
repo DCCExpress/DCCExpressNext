@@ -5,6 +5,24 @@ export type TurnoutStateRequirement = {
     closed: boolean;
 };
 
+export type SectionDetector = {
+    id: string;
+    address: number;
+    label: string;
+};
+
+export type SectionSignal = {
+    id: string;
+    address: number;
+    label: string;
+};
+
+export type SectionBlock = {
+    id: string;
+    name: string;
+    label: string;
+};
+
 export type RouteSolution = {
     nodes: GraphNode[];
     edges: Edge[];
@@ -17,13 +35,26 @@ export class GraphNode {
     x: number = 0;
     y: number = 0;
     isVirtual: boolean = false;
+    detectors: SectionDetector[] = [];
+    signals: SectionSignal[] = [];
+    blocks: SectionBlock[] = [];
 
     static readonly RADIUS = 10;
 
-    constructor(name: string, x: number, y: number) {
+    constructor(
+        name: string,
+        x: number,
+        y: number,
+        detectors: SectionDetector[] = [],
+        signals: SectionSignal[] = [],
+        blocks: SectionBlock[] = []
+    ) {
         this.name = name;
         this.x = x;
         this.y = y;
+        this.detectors = detectors;
+        this.signals = signals;
+        this.blocks = blocks;
     }
 
     draw(ctx: CanvasRenderingContext2D) {

@@ -38,6 +38,7 @@ import { set } from "zod";
 import { TrackDirectionElement } from "../models/editor/elements/TrackDirectionElement";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 import { TurnoutStateRequirement } from "../models/editor/core/Graph";
+import { routeGraphStore } from "../services/routeGraphStore";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -697,7 +698,12 @@ export default function TrackCanvas({
       let graph;
 
       try {
-        graph = layoutRef.current.processRoutes();
+        graph = routeGraphStore.getGraph();
+
+        if (!graph) {
+          graph = layoutRef.current.processRoutes();
+          routeGraphStore.setGraph(graph);
+        }
       } catch (error) {
         showErrorMessage(
           "ERROR",

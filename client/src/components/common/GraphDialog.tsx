@@ -77,22 +77,119 @@ export default function GraphDialog({
         [graph]
     );
 
+    const renderNodeItems = (
+        nodeName: string,
+        title: string,
+        color: string,
+        items: { id: string; label: string }[]
+    ) => {
+        if (items.length === 0) {
+            return null;
+        }
+
+        return (
+            <Group gap={6} wrap="wrap">
+                <Badge size="sm" variant="outline" color="blue">
+                    {nodeName}
+                </Badge>
+
+                <Badge size="sm" variant="outline" color={color}>
+                    {title}
+                </Badge>
+
+                {items.map(item => (
+                    <Badge
+                        key={`${nodeName}-${title}-${item.id}`}
+                        color={color}
+                        variant="light"
+                    >
+                        {item.label}
+                    </Badge>
+                ))}
+            </Group>
+        );
+    };
+
     const edgeRows =
         graph?.edges.map((edge, index) => (
             <Table.Tr key={index}>
                 <Table.Td>{index + 1}</Table.Td>
+
                 <Table.Td>
                     <Badge variant="light">{edge.from.name}</Badge>
                 </Table.Td>
+
                 <Table.Td>→</Table.Td>
+
                 <Table.Td>
                     <Badge variant="light">{edge.to.name}</Badge>
                 </Table.Td>
+
+                <Table.Td>
+                    {edge.from.detectors.length === 0 &&
+                        edge.to.detectors.length === 0 &&
+                        edge.from.signals.length === 0 &&
+                        edge.to.signals.length === 0 &&
+                        edge.from.blocks.length === 0 &&
+                        edge.to.blocks.length === 0 ? (
+                        <Text size="sm" c="dimmed">
+                            —
+                        </Text>
+                    ) : (
+                        <Stack gap={6}>
+                            {renderNodeItems(
+                                edge.from.name,
+                                "Detectors",
+                                "cyan",
+                                edge.from.detectors
+                            )}
+
+                            {renderNodeItems(
+                                edge.from.name,
+                                "Signals",
+                                "yellow",
+                                edge.from.signals
+                            )}
+
+                            {renderNodeItems(
+                                edge.from.name,
+                                "Blocks",
+                                "violet",
+                                edge.from.blocks
+                            )}
+
+                            {renderNodeItems(
+                                edge.to.name,
+                                "Detectors",
+                                "cyan",
+                                edge.to.detectors
+                            )}
+
+                            {renderNodeItems(
+                                edge.to.name,
+                                "Signals",
+                                "yellow",
+                                edge.to.signals
+                            )}
+
+                            {renderNodeItems(
+                                edge.to.name,
+                                "Blocks",
+                                "violet",
+                                edge.to.blocks
+                            )}
+                        </Stack>
+                    )}
+                </Table.Td>
+
                 <Table.Td>
                     {edge.turnoutStates.length > 0 ? (
                         <Group gap="xs">
                             {edge.turnoutStates.map((turnoutState, index) => (
-                                <Group key={`${turnoutState.address}-${index}`} gap={4}>
+                                <Group
+                                    key={`${turnoutState.address}-${index}`}
+                                    gap={4}
+                                >
                                     <Badge color="orange" variant="light">
                                         Turnout {turnoutState.address}
                                     </Badge>
@@ -120,10 +217,10 @@ export default function GraphDialog({
             opened={opened}
             onClose={onClose}
             title="Bejárhatósági gráf"
-            size="calc(100vw - 64px)"
+            size="calc(80vw - 64px)"
             centered
-        >
-            <Stack gap="md">
+            draggable
+        >            <Stack gap="md">
                 <Tabs defaultValue="graph">
                     <Tabs.List>
                         <Tabs.Tab value="graph">Graph</Tabs.Tab>
@@ -166,6 +263,7 @@ export default function GraphDialog({
                                             <Table.Th>From</Table.Th>
                                             <Table.Th></Table.Th>
                                             <Table.Th>To</Table.Th>
+                                            <Table.Th>Section objects</Table.Th>
                                             <Table.Th>Turnout requirement</Table.Th>
                                         </Table.Tr>
                                     </Table.Thead>
@@ -180,6 +278,7 @@ export default function GraphDialog({
 
                     <Tabs.Panel value="solver" pt="md">
                         {graph && graph.nodes.length > 0 ? (
+                            <ScrollArea h="calc(100vh - 280px)" type="auto">
                             <Stack gap="md">
                                 <Group grow align="end">
                                     <Select
@@ -341,6 +440,7 @@ export default function GraphDialog({
                                                         <Table.Th>#</Table.Th>
                                                         <Table.Th>From</Table.Th>
                                                         <Table.Th>To</Table.Th>
+                                                        <Table.Th>Szakasz objektumok</Table.Th>
                                                         <Table.Th>Váltófeltételek</Table.Th>
                                                     </Table.Tr>
                                                 </Table.Thead>
@@ -352,6 +452,61 @@ export default function GraphDialog({
                                                             <Table.Td>{edge.from.name}</Table.Td>
                                                             <Table.Td>{edge.to.name}</Table.Td>
                                                             <Table.Td>
+                                                                {edge.from.detectors.length === 0 &&
+                                                                    edge.to.detectors.length === 0 &&
+                                                                    edge.from.signals.length === 0 &&
+                                                                    edge.to.signals.length === 0 &&
+                                                                    edge.from.blocks.length === 0 &&
+                                                                    edge.to.blocks.length === 0 ? (
+                                                                    <Text size="sm" c="dimmed">
+                                                                        —
+                                                                    </Text>
+                                                                ) : (
+                                                                    <Stack gap={6}>
+                                                                        {renderNodeItems(
+                                                                            edge.from.name,
+                                                                            "Detectors",
+                                                                            "cyan",
+                                                                            edge.from.detectors
+                                                                        )}
+
+                                                                        {renderNodeItems(
+                                                                            edge.from.name,
+                                                                            "Signals",
+                                                                            "yellow",
+                                                                            edge.from.signals
+                                                                        )}
+
+                                                                        {renderNodeItems(
+                                                                            edge.from.name,
+                                                                            "Blocks",
+                                                                            "violet",
+                                                                            edge.from.blocks
+                                                                        )}
+
+                                                                        {renderNodeItems(
+                                                                            edge.to.name,
+                                                                            "Detectors",
+                                                                            "cyan",
+                                                                            edge.to.detectors
+                                                                        )}
+
+                                                                        {renderNodeItems(
+                                                                            edge.to.name,
+                                                                            "Signals",
+                                                                            "yellow",
+                                                                            edge.to.signals
+                                                                        )}
+
+                                                                        {renderNodeItems(
+                                                                            edge.to.name,
+                                                                            "Blocks",
+                                                                            "violet",
+                                                                            edge.to.blocks
+                                                                        )}
+                                                                    </Stack>
+                                                                )}
+                                                            </Table.Td>                                                            <Table.Td>
                                                                 {edge.turnoutStates.length > 0 ? (
                                                                     <Group gap="xs">
                                                                         {edge.turnoutStates.map((turnoutState, tsIndex) => (
@@ -388,6 +543,7 @@ export default function GraphDialog({
                                     </Stack>
                                 )}
                             </Stack>
+                            </ScrollArea>
                         ) : (
                             <Text c="dimmed">
                                 Nincs gráf, amelyen útvonalat lehetne keresni.
