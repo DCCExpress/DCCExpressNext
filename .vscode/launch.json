@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "DCCExpress Client: Browser Debug",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/client/src",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/client/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "DCCExpress Server: Debug",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "tsx",
+        "watch",
+        "server/src/index.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "DCCExpress: Client + Server Debug",
+      "configurations": [
+        "DCCExpress Server: Debug",
+        "DCCExpress Client: Browser Debug"
+      ]
+    }
+  ]
+}
