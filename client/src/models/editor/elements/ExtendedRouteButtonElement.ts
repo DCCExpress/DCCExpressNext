@@ -113,9 +113,14 @@ export class ExtendedRouteButtonElement
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
+        // const routeText =
+        //     this.fromBlockId && this.toBlockId
+        //         ? "READY"
+        //         : "AUTO";
+
         const routeText =
-            this.fromBlockId && this.toBlockId
-                ? "READY"
+            this.label.trim().length > 0
+                ? this.label
                 : "AUTO";
 
         ctx.fillText(routeText, this.centerX, this.centerY + 10);

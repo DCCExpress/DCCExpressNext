@@ -687,10 +687,10 @@ export default function TrackCanvas({
         return;
       }
 
-      if (!rb.fromSection || !rb.toSection) {
+      if (!rb.fromBlockId || !rb.toBlockId) {
         showWarningMessage(
           "Warning",
-          "The automatic route button has no From / To section configured."
+          "The automatic route button has no From / To block configured."
         );
         return;
       }
@@ -714,37 +714,47 @@ export default function TrackCanvas({
         return;
       }
 
-      const solution = graph.findRoute(rb.fromSection, rb.toSection);
+      const solution = graph.findRouteBetweenBlocks(
+        rb.fromBlockId,
+        rb.toBlockId
+      );
 
       if (!solution) {
+        const fromBlockLabel =
+          graph.findBlockById(rb.fromBlockId)?.label ?? rb.fromBlockId;
+
+        const toBlockLabel =
+          graph.findBlockById(rb.toBlockId)?.label ?? rb.toBlockId;
+
         showWarningMessage(
           "Warning",
-          `No valid route found: ${rb.fromSection} → ${rb.toSection}`
+          `No valid route found: ${fromBlockLabel} → ${toBlockLabel}`
         );
         return;
       }
 
+      const fromBlockLabel =
+        solution.fromBlock.label;
+
+      const toBlockLabel =
+        solution.toBlock.label;
+
       wsApi.routeLock();
-      setBusy?.(true, `Route is being set: ${rb.fromSection} → ${rb.toSection}`);
+      setBusy?.(
+        true,
+        `Route is being set: ${fromBlockLabel} → ${toBlockLabel}`
+      );
 
       try {
         await sleep(1000);
 
         await applyGraphTurnoutStates(solution.turnoutStates);
 
-        const elems = layoutRef.current.getAllElements();
-
-        // for (const elem of elems) {
-        //   if (elem instanceof ExtendedRouteButtonElement) {
-        //     elem.active = elem.id === rb.id;
-        //   }
-        // }
-
         invalidate();
 
         showOkMessage(
           "SUCCESSFUL",
-          `Route set: ${rb.fromSection} → ${rb.toSection}`
+          `Route set: ${fromBlockLabel} → ${toBlockLabel}`
         );
       } catch (error) {
         showErrorMessage(
@@ -758,7 +768,6 @@ export default function TrackCanvas({
         setBusy?.(false);
       }
     };
-
     const handleClickableDown = (
       hitElement: BaseElement | null,
       ev: MouseEvent | PointerEvent
