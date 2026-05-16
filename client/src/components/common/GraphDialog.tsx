@@ -215,140 +215,367 @@ export default function GraphDialog({
             </Table.Tr>
         )) ?? [];
 
-        // Block Tab
+    // Block Tab
 
-function isBlockNode(node: GraphNode): boolean {
-    return node.blocks.length > 0;
-}
-
-function getBlockConnectionLabel(node: GraphNode): string {
-    if (node.blocks.length > 0) {
-        return node.blocks
-            .map(block => block.label || block.name || node.name)
-            .join(" / ");
+    function isBlockNode(node: GraphNode): boolean {
+        return node.blocks.length > 0;
     }
 
-    return node.name;
-}
+    function buildBlockConnectionPaths(graph: Graph): GraphNode[][] {
+        const adjacency = new Map<string, GraphNode[]>();
 
-function buildBlockConnectionPaths(graph: Graph): GraphNode[][] {
-    const adjacency = new Map<string, GraphNode[]>();
+        for (const node of graph.nodes) {
+            adjacency.set(node.name, []);
+        }
 
-    for (const node of graph.nodes) {
-        adjacency.set(node.name, []);
-    }
+        // A block-kapcsolati nézethez kétirányú kapcsolatként járjuk be a gráfot
+        for (const edge of graph.edges) {
+            adjacency.get(edge.from.name)?.push(edge.to);
+            adjacency.get(edge.to.name)?.push(edge.from);
+        }
 
-    // A block-kapcsolati nézethez kétirányú kapcsolatként járjuk be a gráfot
-    for (const edge of graph.edges) {
-        adjacency.get(edge.from.name)?.push(edge.to);
-        adjacency.get(edge.to.name)?.push(edge.from);
-    }
+        const paths: GraphNode[][] = [];
+        const createdPathKeys = new Set<string>();
 
-    const paths: GraphNode[][] = [];
-    const createdPathKeys = new Set<string>();
+        const blockNodes = graph.nodes.filter(isBlockNode);
 
-    const blockNodes = graph.nodes.filter(isBlockNode);
+        for (const startNode of blockNodes) {
+            const stack: {
+                currentNode: GraphNode;
+                path: GraphNode[];
+                visitedNodeNames: Set<string>;
+            }[] = [
+                    {
+                        currentNode: startNode,
+                        path: [startNode],
+                        visitedNodeNames: new Set([startNode.name]),
+                    },
+                ];
 
-    for (const startNode of blockNodes) {
-        const stack: {
-            currentNode: GraphNode;
-            path: GraphNode[];
-            visitedNodeNames: Set<string>;
-        }[] = [
-            {
-                currentNode: startNode,
-                path: [startNode],
-                visitedNodeNames: new Set([startNode.name]),
-            },
-        ];
+            while (stack.length > 0) {
+                const state = stack.pop()!;
+                const neighbors = adjacency.get(state.currentNode.name) ?? [];
 
-        while (stack.length > 0) {
-            const state = stack.pop()!;
-            const neighbors = adjacency.get(state.currentNode.name) ?? [];
-
-            for (const nextNode of neighbors) {
-                if (state.visitedNodeNames.has(nextNode.name)) {
-                    continue;
-                }
-
-                const nextPath = [...state.path, nextNode];
-
-                // Ha újabb blokkos node-hoz értünk:
-                // ez egy érvényes block connection, és ITT megállunk.
-                if (isBlockNode(nextNode)) {
-                    const forwardKey = nextPath
-                        .map(node => node.name)
-                        .join(">");
-
-                    const reverseKey = [...nextPath]
-                        .reverse()
-                        .map(node => node.name)
-                        .join(">");
-
-                    const pathKey =
-                        forwardKey < reverseKey ? forwardKey : reverseKey;
-
-                    if (!createdPathKeys.has(pathKey)) {
-                        createdPathKeys.add(pathKey);
-                        paths.push(nextPath);
+                for (const nextNode of neighbors) {
+                    if (state.visitedNodeNames.has(nextNode.name)) {
+                        continue;
                     }
 
-                    continue;
+                    const nextPath = [...state.path, nextNode];
+
+                    // Ha újabb blokkos node-hoz értünk:
+                    // ez egy érvényes block connection, és ITT megállunk.
+                    if (isBlockNode(nextNode)) {
+                        const forwardKey = nextPath
+                            .map(node => node.name)
+                            .join(">");
+
+                        const reverseKey = [...nextPath]
+                            .reverse()
+                            .map(node => node.name)
+                            .join(">");
+
+                        const pathKey =
+                            forwardKey < reverseKey ? forwardKey : reverseKey;
+
+                        if (!createdPathKeys.has(pathKey)) {
+                            createdPathKeys.add(pathKey);
+                            paths.push(nextPath);
+                        }
+
+                        continue;
+                    }
+
+                    // Ha nem blokkos node, mehetünk tovább rajta keresztül
+                    const nextVisitedNodeNames = new Set(state.visitedNodeNames);
+                    nextVisitedNodeNames.add(nextNode.name);
+
+                    stack.push({
+                        currentNode: nextNode,
+                        path: nextPath,
+                        visitedNodeNames: nextVisitedNodeNames,
+                    });
                 }
-
-                // Ha nem blokkos node, mehetünk tovább rajta keresztül
-                const nextVisitedNodeNames = new Set(state.visitedNodeNames);
-                nextVisitedNodeNames.add(nextNode.name);
-
-                stack.push({
-                    currentNode: nextNode,
-                    path: nextPath,
-                    visitedNodeNames: nextVisitedNodeNames,
-                });
             }
         }
+
+        return paths;
     }
 
-    return paths;
-}
+    function renderBlockConnectionPath(path: GraphNode[]) {
+        const items: React.ReactNode[] = [];
 
-const blockConnectionPaths = useMemo(() => {
-    if (!graph) {
-        return [];
+        path.forEach((node, nodeIndex) => {
+
+            if (node.blocks.length > 0) {
+                node.blocks.forEach(block => {
+                    items.push(
+                        <Badge
+                            key={`block-${node.name}-${block.id}`}
+                            variant="filled"
+                            color="blue"
+                            size="sm"
+                        >
+                            {block.label || block.name || node.name}
+                        </Badge>
+                    );
+                });
+            } else {
+                items.push(
+                    <Badge
+                        key={`section-${node.name}`}
+                        variant="light"
+                        color="gray"
+                        size="sm"
+                    >
+                        {node.name}
+                    </Badge>
+                );
+            }
+        });
+
+        return (
+            <Group gap="xs" wrap="wrap">
+                {items}
+            </Group>
+        );
     }
 
-    return buildBlockConnectionPaths(graph);
-}, [graph]);
+    const blockConnectionPaths = useMemo(() => {
+        if (!graph) {
+            return [];
+        }
 
-const blockConnectionRows = blockConnectionPaths.map((path, index) => {
-    const blockConnectionLabel = path
-        .map(node => getBlockConnectionLabel(node))
-        .join(" = ");
+        return buildBlockConnectionPaths(graph);
+    }, [graph]);
 
-    const sectionChainLabel = path
-        .map(node => node.name)
-        .join(" = ");
+    const blockConnectionRows = blockConnectionPaths.map((path, index) => {
+        const sectionChainLabel = path
+            .map(node => node.name)
+            .join(" = ");
+
+        return (
+            <Table.Tr key={`block-connection-${index}`}>
+                <Table.Td>{index + 1}</Table.Td>
+
+                <Table.Td>
+                    {renderBlockConnectionPath(path)}
+                </Table.Td>
+
+                <Table.Td>
+                    <Text size="sm" c="dimmed">
+                        {sectionChainLabel}
+                    </Text>
+                </Table.Td>
+            </Table.Tr>
+        );
+    });
+
+       const runnableBlockRoutes = useMemo(() => {
+        return graph?.getRunnableBlockRoutes() ?? [];
+    }, [graph]);
+
+  
+function renderBlockRoutePath(
+    solution: BlockRouteSolution,
+    badgeSize: "sm" | "md" | "lg" = "sm"
+) {
+    const firstItem = solution.path[0];
+    const lastItem = solution.path[solution.path.length - 1];
+
+    const segmentItems = solution.path.filter(
+        item => item.type === "segment"
+    );
+
+    const firstSegment = segmentItems[0];
+    const lastSegment = segmentItems[segmentItems.length - 1];
+
+    if (
+        !firstItem ||
+        firstItem.type !== "block" ||
+        !lastItem ||
+        lastItem.type !== "block" ||
+        !firstSegment ||
+        !lastSegment
+    ) {
+        return null;
+    }
+
+    const middleSegments = segmentItems.slice(1, -1);
+
+    const items: React.ReactNode[] = [];
+
+    // Induló blokk + saját szegmense
+    items.push(
+        // <Badge
+        //     key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
+        //     size={badgeSize}
+        //     color="violet"
+        //     variant="filled"
+        // >
+        //     {firstItem.block.name} - {firstSegment.node.name}
+        // </Badge>
+        <Badge
+    key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
+    size={badgeSize}
+    color="violet"
+    variant="filled"
+    styles={{
+        label: {
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+        },
+    }}
+>
+    <span>{firstItem.block.name}</span>
+
+    <Badge
+        size="xs"
+        color="black"
+        variant="filled"
+        radius="sm"
+    >
+        {firstSegment.node.name}
+    </Badge>
+</Badge>
+    );
+
+    // Köztes szegmensek
+    for (const segment of middleSegments) {
+        items.push(
+            <Badge
+                key={`middle-segment-${segment.node.name}`}
+                size={badgeSize}
+                color="gray"
+                variant="light"
+            >
+                {segment.node.name}
+            </Badge>
+        );
+    }
+
+    // Cél blokk + saját szegmense
+    items.push(
+        // <Badge
+        //     key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
+        //     size={badgeSize}
+        //     color="violet"
+        //     variant="filled"
+        // >
+        //     {lastItem.block.name} - {lastSegment.node.name}
+        // </Badge>
+<Badge
+    key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
+    size={badgeSize}
+    color="violet"
+    variant="filled"
+    styles={{
+        label: {
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+        },
+    }}
+>
+    <span>{lastItem.block.name}</span>
+
+    <Badge
+        size="xs"
+        color="black"
+        variant="filled"
+        radius="sm"
+    >
+        {lastSegment.node.name}
+    </Badge>
+</Badge>        
+    );
 
     return (
-        <Table.Tr key={`block-connection-${index}`}>
-            <Table.Td>{index + 1}</Table.Td>
+        <Group gap="xs" wrap="wrap">
+            {items.map((item, index) => (
+                <Group key={`route-path-item-${index}`} gap="xs">
+                    {item}
 
-            <Table.Td>
-                <Text fw={600}>
-                    {blockConnectionLabel}
-                </Text>
-            </Table.Td>
-
-            <Table.Td>
-                <Text size="sm" c="dimmed">
-                    {sectionChainLabel}
-                </Text>
-            </Table.Td>
-        </Table.Tr>
+                    {index < items.length - 1 && (
+                        <Text fw={700}>→</Text>
+                    )}
+                </Group>
+            ))}
+        </Group>
     );
-});        
+}
 
+    const runnableBlockRouteRows = runnableBlockRoutes.map((route, index) => {
+        const solution = route.solution;
 
+        return (
+            <Table.Tr key={`runnable-block-route-${index}`}>
+                <Table.Td>{index + 1}</Table.Td>
+
+                <Table.Td>
+                    <Badge color="violet" variant="light">
+                        {route.fromBlock.label}
+                    </Badge>
+                </Table.Td>
+
+                <Table.Td>→</Table.Td>
+
+                <Table.Td>
+                    <Badge color="violet" variant="light">
+                        {route.toBlock.label}
+                    </Badge>
+                </Table.Td>
+
+                <Table.Td>
+                      {renderBlockRoutePath(solution)}
+                </Table.Td>
+
+                <Table.Td>
+                    <Badge
+                        color={
+                            solution.locoDirection === "forward"
+                                ? "green"
+                                : solution.locoDirection === "reverse"
+                                    ? "orange"
+                                    : "gray"
+                        }
+                        variant="light"
+                    >
+                        {solution.locoDirection.toUpperCase()}
+                    </Badge>
+                </Table.Td>
+
+                <Table.Td>
+                    {solution.turnoutStates.length > 0 ? (
+                        <Group gap="xs" wrap="wrap">
+                            {solution.turnoutStates.map((turnoutState, turnoutIndex) => (
+                                <Group
+                                    key={`${turnoutState.address}-${turnoutState.closed}-${turnoutIndex}`}
+                                    gap={4}
+                                >
+                                    <Badge color="orange" variant="light">
+                                        Turnout {turnoutState.address}
+                                    </Badge>
+
+                                    <Badge
+                                        color={turnoutState.closed ? "green" : "red"}
+                                        variant="light"
+                                    >
+                                        {turnoutState.closed ? "closed" : "thrown"}
+                                    </Badge>
+                                </Group>
+                            ))}
+                        </Group>
+                    ) : (
+                        <Text size="sm" c="dimmed">
+                            —
+                        </Text>
+                    )}
+                </Table.Td>
+            </Table.Tr>
+        );
+    });
 
     return (
         <AppModal
@@ -374,6 +601,16 @@ const blockConnectionRows = blockConnectionPaths.map((path, index) => {
                         </Tabs.Tab>
 
                         <Tabs.Tab value="blocks">Blocks</Tabs.Tab>
+
+                        <Tabs.Tab value="runnableBlocks">
+                            Runnable Blocks
+                            {graph && (
+                                <Badge ml="xs" size="xs" variant="light">
+                                    {runnableBlockRoutes.length}
+                                </Badge>
+                            )}
+                        </Tabs.Tab>
+
 
                         <Tabs.Tab value="solver">
                             Útvonal keresés
@@ -442,6 +679,39 @@ const blockConnectionRows = blockConnectionPaths.map((path, index) => {
                         ) : (
                             <Text c="dimmed">
                                 Nincs megjeleníthető blokk kapcsolat.
+                            </Text>
+                        )}
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="runnableBlocks" pt="md">
+                        {runnableBlockRouteRows.length > 0 ? (
+                            <ScrollArea h="calc(100vh - 280px)">
+                                <Table
+                                    striped
+                                    highlightOnHover
+                                    withTableBorder
+                                    withColumnBorders
+                                >
+                                    <Table.Thead>
+                                        <Table.Tr>
+                                            <Table.Th>#</Table.Th>
+                                            <Table.Th>From block</Table.Th>
+                                            <Table.Th></Table.Th>
+                                            <Table.Th>To block</Table.Th>
+                                            <Table.Th>Runnable path</Table.Th>
+                                            <Table.Th>Loco direction</Table.Th>
+                                            <Table.Th>Turnout requirement</Table.Th>
+                                        </Table.Tr>
+                                    </Table.Thead>
+
+                                    <Table.Tbody>
+                                        {runnableBlockRouteRows}
+                                    </Table.Tbody>
+                                </Table>
+                            </ScrollArea>
+                        ) : (
+                            <Text c="dimmed">
+                                Nincs ténylegesen megoldható blokk útvonal.
                             </Text>
                         )}
                     </Tabs.Panel>

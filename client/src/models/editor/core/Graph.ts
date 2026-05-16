@@ -48,6 +48,12 @@ export type BlockRouteSolution = RouteSolution & {
     path: BlockRoutePathItem[];
 };
 
+export type RunnableBlockRoute = {
+    fromBlock: SectionBlock;
+    toBlock: SectionBlock;
+    solution: BlockRouteSolution;
+};
+
 export class GraphNode {
     name: string = "";
     trackName: string = "";
@@ -60,23 +66,23 @@ export class GraphNode {
 
     static readonly RADIUS = 10;
 
-constructor(
-    name: string,
-    trackName: string,
-    x: number,
-    y: number,
-    detectors: SectionDetector[] = [],
-    signals: SectionSignal[] = [],
-    blocks: SectionBlock[] = []
-) {
-    this.name = name;
-    this.trackName = trackName;
-    this.x = x;
-    this.y = y;
-    this.detectors = detectors;
-    this.signals = signals;
-    this.blocks = blocks;
-}
+    constructor(
+        name: string,
+        trackName: string,
+        x: number,
+        y: number,
+        detectors: SectionDetector[] = [],
+        signals: SectionSignal[] = [],
+        blocks: SectionBlock[] = []
+    ) {
+        this.name = name;
+        this.trackName = trackName;
+        this.x = x;
+        this.y = y;
+        this.detectors = detectors;
+        this.signals = signals;
+        this.blocks = blocks;
+    }
 
     draw(ctx: CanvasRenderingContext2D) {
         ctx.save();
@@ -754,5 +760,36 @@ export class Graph {
             toBlock,
             path,
         };
+    }
+
+    getRunnableBlockRoutes(): RunnableBlockRoute[] {
+        const result: RunnableBlockRoute[] = [];
+
+        const blocks = this.nodes.flatMap(node => node.blocks);
+
+        for (const fromBlock of blocks) {
+            for (const toBlock of blocks) {
+                if (fromBlock.id === toBlock.id) {
+                    continue;
+                }
+
+                const solution = this.findRouteBetweenBlocks(
+                    fromBlock.id,
+                    toBlock.id
+                );
+
+                if (!solution) {
+                    continue;
+                }
+
+                result.push({
+                    fromBlock,
+                    toBlock,
+                    solution,
+                });
+            }
+        }
+
+        return result;
     }
 }
