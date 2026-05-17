@@ -142,9 +142,40 @@ export interface PowerInfo {
   current: number;
 }
 
-
-
 export type SingleScriptFile = {
   content: string;
   updatedAt?: string;
+};
+
+export type ReserveRouteMessage = {
+  type: "reserveRoute";
+  data: {
+    fromBlockName: string;
+    toBlockName: string;
+  };
+  uuid: string;
+};
+
+export type ClearAllRouteReservationsMessage = {
+  type: "clearAllRouteReservations";
+  data: {};
+  uuid: string;
+};
+
+export type RouteReservationChangedMessage = {
+  type: "routeReservationChanged";
+  data: {
+    busy: boolean;
+    sectionNames: string[];
+    turnoutAddresses: number[];
+    fromBlockName?: string;
+    toBlockName?: string;
+  };
+};
+
+export type RouteReservationRejectedMessage = {
+  type: "routeReservationRejected";
+  data: {
+    reason: string;
+  };
 };

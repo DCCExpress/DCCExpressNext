@@ -105,6 +105,32 @@ class WebscoketApi {
 
   };
 
+  reserveRoute(
+    fromBlockName: string,
+    toBlockName: string
+  ) {
+    return this.send("reserveRoute", {
+      fromBlockName,
+      toBlockName,
+    });
+  }
+
+  releaseRouteReservation(
+    fromBlockName: string,
+    toBlockName: string
+  ) {
+    return this.send("releaseRouteReservation", {
+      fromBlockName,
+      toBlockName,
+    });
+  }
+  
+  clearAllRouteReservations() {
+    return this.send(
+      "clearAllRouteReservations",
+      {}
+    );
+  }
 }
 
 export function getDefaultWsUrl(): string {

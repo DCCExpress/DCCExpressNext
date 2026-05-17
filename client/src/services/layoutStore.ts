@@ -232,6 +232,72 @@ class LayoutStore {
       this.emit();
     }
   }
+
+  setSectionsBusyByNames(
+    sectionNames: string[],
+    busy: boolean
+  ): boolean {
+    const layout = this.layout;
+
+    if (!layout) {
+      return false;
+    }
+
+    const sectionNumbers = new Set<number>();
+
+    for (const name of sectionNames) {
+      const match = /^S(\d+)$/.exec(name);
+
+      if (!match) {
+        continue;
+      }
+
+      sectionNumbers.add(Number(match[1]));
+    }
+
+    let changed = false;
+
+    for (const elem of layout.getTrackElements()) {
+      if (!sectionNumbers.has(elem.section)) {
+        continue;
+      }
+
+      elem.isBusy = busy;
+      changed = true;
+    }
+
+    if (changed) {
+      this.emit();
+    }
+
+    return changed;
+  }
+
+  setTurnoutsBusyByAddresses(
+    turnoutAddresses: number[],
+    busy: boolean
+  ): boolean {
+    let changed = false;
+
+    for (const address of turnoutAddresses) {
+      const turnout = this.findTurnoutByAddress(
+        address
+      ) as TrackTurnoutElement | undefined;
+
+      if (!turnout) {
+        continue;
+      }
+
+      turnout.isBusy = busy;
+      changed = true;
+    }
+
+    if (changed) {
+      this.emit();
+    }
+
+    return changed;
+  }
 }
 
 export const layoutStore = new LayoutStore();

@@ -552,6 +552,61 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       }
     );
 
+ 
+    const unsubscribeRouteReservationRejected =
+      wsClient.on<{ reason: string }>(
+        "routeReservationRejected",
+        data => {
+          showWarningMessage(
+            "Route reservation",
+            data.reason
+          );
+        }
+      );
+
+    const unsubscribeRouteReservationChanged =
+      wsClient.on<{
+        busy: boolean;
+        sectionNames: string[];
+        turnoutAddresses: number[];
+        fromBlockName?: string;
+        toBlockName?: string;
+      }>(
+        "routeReservationChanged",
+        data => {
+          if (data.busy) {
+            layoutStore.setSectionsBusyByNames(
+              data.sectionNames,
+              true
+            );
+
+            layoutStore.setTurnoutsBusyByAddresses(
+              data.turnoutAddresses,
+              true
+            );
+
+            return;
+          }
+
+          layoutStore.setSectionsBusyByNames(
+            data.sectionNames,
+            false
+          );
+
+          layoutStore.setTurnoutsBusyByAddresses(
+            data.turnoutAddresses,
+            false
+          );
+        });
+
+    const unsubscribeAllRouteReservationsCleared =
+      wsClient.on(
+        "allRouteReservationsCleared",
+        () => {
+          layoutStore.clearAllBusy();
+        }
+      );
+
     return () => {
       unsubscribeSensor();
       unsubscribeTurnout();
@@ -559,6 +614,10 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       unsubscribeAccessory();
       unsubscribeCommandRejected();
       unsubscribeBlockStateChanged();
+      unsubscribeRouteReservationChanged();
+      unsubscribeRouteReservationRejected();
+      unsubscribeAllRouteReservationsCleared();
+
       //wsApi.disconnect();
     };
   }, []);

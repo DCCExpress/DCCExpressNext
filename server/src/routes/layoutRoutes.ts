@@ -217,3 +217,110 @@ layoutRoutes.get("/route-graph-summary", (_req, res) => {
       graph.getRunnableBlockTransitions().length,
   });
 });
+
+layoutRoutes.get("/route-test", (req, res) => {
+  const graph = routeGraphRuntimeStore.getGraph();
+
+  if (!graph) {
+    res.json({
+      ready: false,
+      error: "Nincs aktív szerveroldali route graph.",
+    });
+
+    return;
+  }
+
+  const fromBlockName =
+    typeof req.query.from === "string"
+      ? req.query.from
+      : "A1";
+
+  const toBlockName =
+    typeof req.query.to === "string"
+      ? req.query.to
+      : "C3";
+
+  const fromBlock =
+    graph.findBlockByName(fromBlockName);
+
+  const toBlock =
+    graph.findBlockByName(toBlockName);
+
+  const fromNode = fromBlock
+    ? graph.findNodeContainingBlock(fromBlock.id)
+    : null;
+
+  const toNode = toBlock
+    ? graph.findNodeContainingBlock(toBlock.id)
+    : null;
+
+  const nodeRoute =
+    fromNode && toNode
+      ? graph.findRoute(fromNode.name, toNode.name)
+      : null;
+
+  const blockRoute =
+    graph.findRouteBetweenBlockNames(
+      fromBlockName,
+      toBlockName
+    );
+
+  res.json({
+    ready: true,
+
+    request: {
+      fromBlockName,
+      toBlockName,
+    },
+
+    fromBlock,
+    toBlock,
+
+    fromNode: fromNode
+      ? {
+          name: fromNode.name,
+          blocks: fromNode.blocks.map(b => b.name),
+        }
+      : null,
+
+    toNode: toNode
+      ? {
+          name: toNode.name,
+          blocks: toNode.blocks.map(b => b.name),
+        }
+      : null,
+
+    nodeRoute: nodeRoute
+      ? {
+          nodes: nodeRoute.nodes.map(node => node.name),
+          edges: nodeRoute.edges.length,
+          turnoutStates: nodeRoute.turnoutStates,
+          locoDirection: nodeRoute.locoDirection,
+        }
+      : null,
+
+    blockRoute: blockRoute
+      ? {
+          fromBlock: blockRoute.fromBlock.name,
+          toBlock: blockRoute.toBlock.name,
+          nodes: blockRoute.nodes.map(node => node.name),
+          edges: blockRoute.edges.length,
+          turnoutStates: blockRoute.turnoutStates,
+          locoDirection: blockRoute.locoDirection,
+        }
+      : null,
+
+    graphSummary: {
+      nodes: graph.nodes.map(node => ({
+        name: node.name,
+        blocks: node.blocks.map(block => block.name),
+      })),
+
+      edges: graph.edges.map(edge => ({
+        from: edge.from.name,
+        to: edge.to.name,
+        turnouts: edge.turnoutStates,
+      })),
+    },
+  });
+});

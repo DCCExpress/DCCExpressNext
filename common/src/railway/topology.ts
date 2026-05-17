@@ -98,7 +98,7 @@ export type SerializedLayoutDto = {
 };
 
 export const TOPOLOGY_ELEMENT_TYPES = {
-  TRACK_STRAIGHT: "track",
+  TRACK_STRAIGHT: "trackstraight",
   TRACK_DIRECTION: "trackdirection",
   TRACK_END: "trackend",
   TRACK_CORNER: "trackcorner",
@@ -371,6 +371,7 @@ export class RailwayTopologyLayout {
   getPhysicalTrackElements(): TopologyTrackElement[] {
     return this.elements.filter((element): element is TopologyTrackElement => {
       return (
+        element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_DIRECTION ||
         element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_STRAIGHT ||
         element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_END ||
         element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_CORNER ||

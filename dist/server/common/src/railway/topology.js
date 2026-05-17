@@ -33,7 +33,7 @@ export function getDirectionPoint(point, angle) {
     return new TopologyPoint(point.x + d.x, point.y + d.y);
 }
 export const TOPOLOGY_ELEMENT_TYPES = {
-    TRACK_STRAIGHT: "track",
+    TRACK_STRAIGHT: "trackstraight",
     TRACK_DIRECTION: "trackdirection",
     TRACK_END: "trackend",
     TRACK_CORNER: "trackcorner",
@@ -235,7 +235,8 @@ export class RailwayTopologyLayout {
     }
     getPhysicalTrackElements() {
         return this.elements.filter((element) => {
-            return (element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_STRAIGHT ||
+            return (element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_DIRECTION ||
+                element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_STRAIGHT ||
                 element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_END ||
                 element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_CORNER ||
                 element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_CURVE ||

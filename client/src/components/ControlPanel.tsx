@@ -15,6 +15,7 @@ import {
   Table,
   Tabs,
   Text,
+  TextInput,
 } from "@mantine/core";
 import {
   IconAlertTriangle,
@@ -427,6 +428,8 @@ function CommandCenterTab(p: CommandCenterTabProps) {
 function ControllerTab() {
   const snapshot = useTaskManager();
   const [taskManagerOpened, setTaskManagerOpened] = useState(false);
+  const [fromBlockName, setFromBlockName] = useState("A1");
+  const [toBlockName, setToBlockName] = useState("C1");
 
   const runTaskAction = (
     action: () => { ok: true } | { ok: false; error: string }
@@ -621,30 +624,30 @@ function ControllerTab() {
     }
   }
 
+  const handleReserveRoute = () => {
+    const from = fromBlockName.trim();
+    const to = toBlockName.trim();
 
-  const handleTestBusyRoute = async () => {
-    const result = await routeRuntimeService.previewBusyRoute("A1", "C3");
-
-    if (!result.ok) {
-      showWarningMessage("Route test", result.error);
+    if (!from || !to) {
       return;
     }
 
-    console.log("A1 → C3 route solution:", result.solution);
-
-    showOkMessage(
-      "Route test",
-      "A1 → C3 lefoglalva, a váltóállítások elküldve."
-    );
+    wsApi.reserveRoute(from, to);
   };
 
-  const handleClearAllBusy = () => {
-    routeRuntimeService.clearAllBusy();
+  const handleReleaseRoute = () => {
+    const from = fromBlockName.trim();
+    const to = toBlockName.trim();
 
-    showOkMessage(
-      "Route test",
-      "Minden busy szegmens és váltó elengedve."
-    );
+    if (!from || !to) {
+      return;
+    }
+
+    wsApi.releaseRouteReservation(from, to);
+  }; 
+  
+  const handleClearAllBusy = () => {
+    wsApi.clearAllRouteReservations();
   };
 
   return (
@@ -654,23 +657,58 @@ function ControllerTab() {
         onClose={() => setTaskManagerOpened(false)}
       />
 
-      <Group gap="xs">
+      <Group align="end" gap="xs">
+        <TextInput
+          label="From block"
+          value={fromBlockName}
+          onChange={(event) =>
+            setFromBlockName(event.currentTarget.value)
+          }
+          placeholder="A1"
+          w={120}
+        />
+
+        <TextInput
+          label="To block"
+          value={toBlockName}
+          onChange={(event) =>
+            setToBlockName(event.currentTarget.value)
+          }
+          placeholder="C1"
+          w={120}
+        />
+
         <Button
-          color="red"
+          color="orange"
           variant="light"
-          onClick={handleTestBusyRoute}
+          onClick={handleReserveRoute}
         >
-          TEST: A1 → C3 busy
+          Set route
+        </Button>
+
+        <Button
+          color="gray"
+          variant="light"
+          onClick={() =>
+            wsApi.releaseRouteReservation(
+              fromBlockName.trim(),
+              toBlockName.trim()
+            )
+          }
+        >
+          Release route
         </Button>
 
         <Button
           color="gray"
           variant="light"
           onClick={handleClearAllBusy}
+          mt={25}
         >
-          TEST: Clear all busy
+          Clear all busy
         </Button>
       </Group>
+
       <ScrollArea.Autosize
         mah="calc(100vh - 220px)"
         type="auto"

@@ -69,14 +69,20 @@ export class RouteGraphBuilder {
         const node = this.createSectionGraphNode(sectionNumber, sectionElements);
         this.graph.addNode(node);
         this.sectionNodes.set(sectionNumber, node);
-        console.log(`[ServerRouteGraph] Section S${sectionNumber}:`, sectionElements.map(elem => ({
-            id: elem.id,
-            type: elem.type,
-            x: elem.x,
-            y: elem.y,
-            rotation: elem.rotation,
-        })));
-        console.log(`[ServerRouteGraph] Section S${sectionNumber} blocks:`, node.blocks.map(block => block.name));
+        // console.log(
+        //   `[ServerRouteGraph] Section S${sectionNumber}:`,
+        //   sectionElements.map(elem => ({
+        //     id: elem.id,
+        //     type: elem.type,
+        //     x: elem.x,
+        //     y: elem.y,
+        //     rotation: elem.rotation,
+        //   }))
+        // );
+        // console.log(
+        //   `[ServerRouteGraph] Section S${sectionNumber} blocks:`,
+        //   node.blocks.map(block => block.name)
+        // );
     }
     walkTrackSection(obj, section, sectionElements) {
         obj.isVisited = true;
@@ -179,11 +185,14 @@ export class RouteGraphBuilder {
     createRouteEdges() {
         for (const turnout of this.turnouts) {
             const connections = turnout.getConnections();
-            console.log(`[ServerRouteGraph] Turnout ${turnout.turnoutAddress} ${turnout.type} @ ${turnout.x}:${turnout.y}`, {
-                entry: connections.entry,
-                straight: connections.straight,
-                div: connections.div,
-            });
+            // console.log(
+            //   `[ServerRouteGraph] Turnout ${turnout.turnoutAddress} ${turnout.type} @ ${turnout.x}:${turnout.y}`,
+            //   {
+            //     entry: connections.entry,
+            //     straight: connections.straight,
+            //     div: connections.div,
+            //   }
+            // );
             const sides = [
                 "entry",
                 "straight",
@@ -191,18 +200,22 @@ export class RouteGraphBuilder {
             ];
             for (const side of sides) {
                 const connectedElem = this.topology.getPhysicalTrackAt(connections[side]);
-                console.log(`[ServerRouteGraph]   side=${side}`, {
-                    at: connections[side],
-                    found: connectedElem
-                        ? {
-                            type: connectedElem.type,
-                            x: connectedElem.x,
-                            y: connectedElem.y,
-                            section: connectedElem.section,
-                            isTurnout: connectedElem instanceof TopologyTurnoutElement,
-                        }
-                        : null,
-                });
+                // console.log(
+                //   `[ServerRouteGraph]   side=${side}`,
+                //   {
+                //     at: connections[side],
+                //     found: connectedElem
+                //       ? {
+                //         type: connectedElem.type,
+                //         x: connectedElem.x,
+                //         y: connectedElem.y,
+                //         section: connectedElem.section,
+                //         isTurnout:
+                //           connectedElem instanceof TopologyTurnoutElement,
+                //       }
+                //       : null,
+                //   }
+                // );
                 if (!connectedElem) {
                     continue;
                 }
@@ -242,18 +255,22 @@ export class RouteGraphBuilder {
             const connections = turnout.getConnections();
             const exitPos = connections[exit.exitSide];
             const nextElem = this.topology.getPhysicalTrackAt(exitPos);
-            console.log(`[ServerRouteGraph]     turnout ${turnout.turnoutAddress} exit=${exit.exitSide}`, {
-                exitPos,
-                found: nextElem
-                    ? {
-                        type: nextElem.type,
-                        x: nextElem.x,
-                        y: nextElem.y,
-                        section: nextElem.section,
-                        isTurnout: nextElem instanceof TopologyTurnoutElement,
-                    }
-                    : null,
-            });
+            // console.log(
+            //   `[ServerRouteGraph]     turnout ${turnout.turnoutAddress} exit=${exit.exitSide}`,
+            //   {
+            //     exitPos,
+            //     found: nextElem
+            //       ? {
+            //         type: nextElem.type,
+            //         x: nextElem.x,
+            //         y: nextElem.y,
+            //         section: nextElem.section,
+            //         isTurnout:
+            //           nextElem instanceof TopologyTurnoutElement,
+            //       }
+            //       : null,
+            //   }
+            // );
             if (!nextElem) {
                 continue;
             }
