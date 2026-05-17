@@ -110,7 +110,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     // return selectedElement.getHelpHtml?.() ?? "";
 
     switch (selectedElement.type) {
-      case "track":
+      case "trackstraight":
         return `
           <h3 style="margin-top:0;">Track help</h3>
           <p>This element represents a straight track section.</p>

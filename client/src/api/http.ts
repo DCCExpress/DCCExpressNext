@@ -1,8 +1,8 @@
 import { Loco, SingleScriptFile } from "../../../common/src/types";
-import { BaseElement } from "../models/editor/core/BaseElement";
+
 import { Layout } from "../models/editor/core/Layout";
 
-import { ELEMENT_TYPES, ElementType, ITrackLayoutFile } from "../models/editor/types/EditorTypes";
+import { ElementType } from "../models/editor/types/EditorTypes";
 
 
 export async function getLocos(): Promise<Loco[]> {

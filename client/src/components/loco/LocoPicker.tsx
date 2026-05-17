@@ -19,7 +19,7 @@ export default function LocoPicker({
     opened,
     locos,
     selectedLocoId,
-    title = "Mozdony választó",
+    
     onClose,
     onSelect,
     onRemoveLoco,

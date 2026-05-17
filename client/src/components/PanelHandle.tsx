@@ -32,12 +32,12 @@ export default function PanelHandle({
       ? theme.colors.dark[6]
       : theme.colors.gray[1];
 
-  const shadow = hover
-    ? "0 2px 6px rgba(0,0,0,0.25)"
-    : "0 1px 3px rgba(0,0,0,0.15)";
+  // const shadow = hover
+  //   ? "0 2px 6px rgba(0,0,0,0.25)"
+  //   : "0 1px 3px rgba(0,0,0,0.15)";
 
   const iconColor = isDark ? theme.colors.gray[0] : theme.colors.dark[7];
-  const border = isDark ? "gray" : "gainsboro";
+  //const border = isDark ? "gray" : "gainsboro";
 
   const icon = isLeft
     ? collapsed

@@ -7,6 +7,8 @@ import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnout
 import { TrackTurnoutTwoWayElement } from "../models/editor/elements/TrackTurnoutTwoWayElement";
 import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
+import { TrackStates } from "../models/editor/core/TrackElement";
+import { BlockRouteSolution } from "../models/editor/core/Graph";
 
 type LayoutListener = (layout: Layout | null) => void;
 
@@ -88,7 +90,7 @@ class LayoutStore {
     const signal = this.findSignalByAddress(address) as TrackSignalElement;
     if (signal) {
       signal.sendGreenIfNotGreen();
-     
+
     }
     //this.emit();
 
@@ -133,6 +135,102 @@ class LayoutStore {
       e instanceof TrackTurnoutTwoWayElement
 
     );
+  }
+
+  setRouteSegmentsBusy(
+    solution: BlockRouteSolution,
+    busy: boolean
+  ): boolean {
+    const layout = this.layout;
+
+    if (!layout) {
+      return false;
+    }
+
+    const sectionNumbers = new Set<number>();
+
+    for (const node of solution.nodes) {
+      const match = /^S(\d+)$/.exec(node.name);
+
+      if (!match) {
+        continue;
+      }
+
+      sectionNumbers.add(Number(match[1]));
+    }
+
+    let changed = false;
+
+    for (const elem of layout.getTrackElements()) {
+      if (!sectionNumbers.has(elem.section)) {
+        continue;
+      }
+
+
+
+      // elem.state = busy
+      //   ? TrackStates.occupied
+      //   : TrackStates.free;
+
+      elem.isBusy = busy;
+      changed = true;
+    }
+
+    if (changed) {
+      this.emit();
+    }
+
+    return changed;
+  }
+  setRouteTurnoutsBusy(
+    solution: BlockRouteSolution,
+    busy: boolean
+  ): boolean {
+    let changed = false;
+
+    for (const turnoutState of solution.turnoutStates) {
+      const turnout = this.findTurnoutByAddress(
+        turnoutState.address
+      ) as TrackTurnoutElement | undefined;
+
+      if (!turnout) {
+        continue;
+      }
+
+      // turnout.state = busy
+      //   ? TrackStates.occupied
+      //   : TrackStates.free;
+
+      turnout.isBusy = busy;
+      changed = true;
+    }
+
+    if (changed) {
+      this.emit();
+    }
+
+    return changed;
+  }
+
+  clearAllBusy(): void {
+    const layout = this.layout;
+
+    if (!layout) {
+      return;
+    }
+
+    let changed = false;
+
+    for (const elem of layout.getTrackElements()) {
+      if (elem.isBusy) {
+        elem.isBusy = false;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.emit();
+    }
   }
 }
 

@@ -1,12 +1,11 @@
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { TrackElement } from "../core/TrackElement";
-import { TrackBaseElement } from "../core/TrackBaseElement";
-import { DrawOptions, ELEMENT_TYPES, IBaseElement, ITrackElement as ITrackStarightElement } from "../types/EditorTypes";
+import { DrawOptions, ELEMENT_TYPES, ITrackElement as ITrackStraightElement } from "../types/EditorTypes";
 
 
 
-export class TrackStraightElement extends TrackElement implements ITrackStarightElement {
+export class TrackStraightElement extends TrackElement implements ITrackStraightElement {
     override type: typeof ELEMENT_TYPES.TRACK_STRAIGHT = ELEMENT_TYPES.TRACK_STRAIGHT;
 
     constructor(x: number, y: number) {
@@ -162,7 +161,7 @@ export class TrackStraightElement extends TrackElement implements ITrackStaright
     //     };
     // }
 
-    static fromJSON(data: ITrackStarightElement): TrackStraightElement {
+    static fromJSON(data: ITrackStraightElement): TrackStraightElement {
         const track = new TrackStraightElement(data.x, data.y);
         track.id = data.id;
         track.name = data.name;

@@ -106,10 +106,19 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
   const [settingsDialogOpened, setSettingsDialogOpened] = useState(false);
 
- 
+  useEffect(() => {
+    const unsubscribe = layoutStore.subscribe(() => {
+      setInvalidateCounter((prev) => prev + 1);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     layoutRef.current = layout;
+    layoutStore.setLayout(layout);
   }, [layout]);
 
   useEffect(() => {
@@ -564,15 +573,15 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   // };
 
   const handleUpdateSelectedElement = (updated: BaseElement | null) => {
-  // Az ExtendedRouteButton beállításai
-  // nem módosítják a pálya topológiáját,
-  // ezért nem töröljük a route graphot.
-  if (!(updated instanceof ExtendedRouteButtonElement)) {
-    routeGraphStore.clear();
-  }
+    // Az ExtendedRouteButton beállításai
+    // nem módosítják a pálya topológiáját,
+    // ezért nem töröljük a route graphot.
+    if (!(updated instanceof ExtendedRouteButtonElement)) {
+      routeGraphStore.clear();
+    }
 
-  setInvalidateCounter((prev) => prev + 1);
-};
+    setInvalidateCounter((prev) => prev + 1);
+  };
   const handleSettingClick = () => {
     setSettingsDialogOpened(true);
   };

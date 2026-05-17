@@ -1,4 +1,4 @@
-import { Box, CSSProperties, Group, Stack, Text, useMantineColorScheme, useMantineTheme } from "@mantine/core";
+import { Box, CSSProperties, Text, useMantineColorScheme, useMantineTheme } from "@mantine/core";
 import { BaseElement } from "../core/BaseElement";
 import { DrawOptions } from "../types/EditorTypes";
 

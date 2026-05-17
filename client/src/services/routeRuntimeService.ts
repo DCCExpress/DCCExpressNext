@@ -1,0 +1,169 @@
+// client/src/services/routeRuntimeService.ts
+
+import { sleep } from "../helpers";
+import {
+  BlockRouteSolution,
+  SectionBlock,
+  TurnoutStateRequirement,
+} from "../models/editor/core/Graph";
+import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
+
+import { layoutStore } from "./layoutStore";
+import { routeGraphStore } from "./routeGraphStore";
+import { wsApi } from "./wsApi";
+
+type RouteRuntimeResult =
+  | {
+    ok: true;
+    solution: BlockRouteSolution;
+  }
+  | {
+    ok: false;
+    error: string;
+  };
+
+class RouteRuntimeService {
+  /**
+   * Blokknév alapján keres route-ot, majd busy-ra színezi
+   * az útvonal szegmenseit.
+   *
+   * Teszthez:
+   * routeRuntimeService.previewBusyRoute("A1", "C3")
+   */
+
+  private async applyTurnoutStates(
+    turnoutStates: TurnoutStateRequirement[]
+  ): Promise<void> {
+    for (const turnoutState of turnoutStates) {
+      const turnout = layoutStore.findTurnoutByAddress(
+        turnoutState.address
+      ) as TrackTurnoutElement | undefined;
+
+      if (!turnout) {
+        console.warn(
+          `[RouteRuntime] Turnout not found for address ${turnoutState.address}`
+        );
+        continue;
+      }
+
+      /**
+       * turnoutState.closed:
+       *   gráf-logikai állapot: true = closed, false = thrown
+       *
+       * turnout.turnoutClosedValue:
+       *   az adott váltónál melyik fizikai WS boolean jelenti a closed állást
+       */
+      const physicalClosed =
+        turnoutState.closed === turnout.turnoutClosedValue;
+
+      console.log(
+        `[RouteRuntime] Set turnout #${turnoutState.address}:`,
+        {
+          routeClosed: turnoutState.closed,
+          turnoutClosedValue: turnout.turnoutClosedValue,
+          physicalClosed,
+        }
+      );
+
+      wsApi.setTurnout(turnoutState.address, physicalClosed);
+
+      // Már korábban is ezt a tempót akartad útvonal váltóállításnál
+      await sleep(500);
+    }
+  }
+
+  async previewBusyRoute(
+    fromBlockName: string,
+    toBlockName: string
+  ): Promise<RouteRuntimeResult> {
+    const graph = routeGraphStore.getGraph();
+
+    if (!graph) {
+      return {
+        ok: false,
+        error: "Nincs aktív útvonalgráf.",
+      };
+    }
+
+    const fromBlock = this.findBlockByName(fromBlockName);
+    const toBlock = this.findBlockByName(toBlockName);
+
+    if (!fromBlock) {
+      return {
+        ok: false,
+        error: `A kiinduló blokk nem található: ${fromBlockName}`,
+      };
+    }
+
+    if (!toBlock) {
+      return {
+        ok: false,
+        error: `A célblokk nem található: ${toBlockName}`,
+      };
+    }
+
+    const solution = graph.findRouteBetweenBlocks(
+      fromBlock.id,
+      toBlock.id
+    );
+
+    if (!solution) {
+      return {
+        ok: false,
+        error: `Nincs útvonal: ${fromBlockName} → ${toBlockName}`,
+      };
+    }
+
+    const reservation = routeGraphStore.tryReserveRoute(solution);
+
+    if (!reservation.ok) {
+      return {
+        ok: false,
+        error: reservation.error,
+      };
+    }
+    layoutStore.setRouteSegmentsBusy(solution, true);
+    layoutStore.setRouteSegmentsBusy(solution, true);
+    layoutStore.setRouteTurnoutsBusy(solution, true);
+    await this.applyTurnoutStates(solution.turnoutStates);
+
+
+    return {
+      ok: true,
+      solution,
+    };
+  }
+
+  resetRouteBusy(solution: BlockRouteSolution): void {
+    routeGraphStore.setRouteBusy(solution, false);
+    layoutStore.setRouteSegmentsBusy(solution, false);
+    layoutStore.setRouteTurnoutsBusy(solution, false);
+  }
+
+  private findBlockByName(name: string): SectionBlock | null {
+    const graph = routeGraphStore.getGraph();
+
+    if (!graph) {
+      return null;
+    }
+
+    for (const node of graph.nodes) {
+      const block = node.blocks.find(
+        (b) => b.name === name
+      );
+
+      if (block) {
+        return block;
+      }
+    }
+
+    return null;
+  }
+
+  clearAllBusy(): void {
+    routeGraphStore.clearAllBusy();
+    layoutStore.clearAllBusy();
+  }
+}
+
+export const routeRuntimeService = new RouteRuntimeService();

@@ -1,15 +1,14 @@
 import { Loco } from "../../../../../common/src/types";
 import { RouteTurnoutItem } from "../elements/RouteButtonElement";
 import { SensorTypes } from "../elements/TrackSensorElement";
-import { TrackSignalElement as TrackSignal2Element } from "../elements/TrackSignalElement";
 
 
 export const ELEMENT_TYPES = {
   GENERAL: "general",
   ADDRESSED_ELEMENT: "addressedelement",
-  TRACK_STRAIGHT: "track",
+  TRACK_STRAIGHT: "trackstraight",
   TRACK_DIRECTION: "trackdirection",
-  TRACK_BASE_ELEMENT: "trackbaseelement",
+  //TRACK_BASE_ELEMENT: "trackbaseelement",
   TRACK_END: "trackend",
   TRACK_CORNER: "trackcorner",
   TRACK_CURVE: "trackcurve",
@@ -94,11 +93,11 @@ export interface IBaseElement {
   fg: string;
 }
 
-export interface ITrackBaseElement extends IBaseElement   {
-  //length: number;
-}
+// export interface ITrackBaseElement extends IBaseElement   {
+//   //length: number;
+// }
 
-export interface ITrackElement extends ITrackBaseElement { 
+export interface ITrackElement extends IBaseElement { 
   address: number,
   length: number,
 }

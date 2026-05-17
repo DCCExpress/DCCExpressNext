@@ -329,7 +329,7 @@ export default function GraphDialog({
     function renderBlockConnectionPath(path: GraphNode[]) {
         const items: React.ReactNode[] = [];
 
-        path.forEach((node, nodeIndex) => {
+        path.forEach((node) => {
 
             if (node.blocks.length > 0) {
                 node.blocks.forEach(block => {

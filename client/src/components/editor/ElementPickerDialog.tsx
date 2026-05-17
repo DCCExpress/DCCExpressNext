@@ -1,5 +1,5 @@
-import { Button, Card, Group, Modal, Stack, Text } from "@mantine/core";
-import { IconLine } from "@tabler/icons-react";
+import { Card, Group, Modal, Stack } from "@mantine/core";
+
 import { ElementType, ELEMENT_TYPES } from "../../models/editor/types/EditorTypes";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import { TrackStraightElement } from "../../models/editor/elements/TrackStraightElement";

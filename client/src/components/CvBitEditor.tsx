@@ -1,4 +1,4 @@
-import { Badge, Group, Stack, Text, Tooltip } from "@mantine/core";
+import { Badge, Group, Stack, Tooltip } from "@mantine/core";
 
 export type CvBitDefinition = {
   bit: number;

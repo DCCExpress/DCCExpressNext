@@ -13,7 +13,6 @@ import {
 } from "@mantine/core";
 import {
   IconDeviceFloppy,
-  IconDownload,
   IconMessageCode,
   IconPlayerPlay,
   IconPlayerStop,

@@ -272,7 +272,7 @@
       "elements": [
         {
           "id": "f0044eea-0e46-4ca7-b789-a8e5f2d52fe2",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 11,
@@ -285,7 +285,7 @@
         },
         {
           "id": "aed851ed-322b-4c2b-bbbd-a8241b94dba3",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 12,
@@ -341,7 +341,7 @@
         },
         {
           "id": "492beaeb-600d-4ada-8802-47facd815655",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 27,
@@ -354,7 +354,7 @@
         },
         {
           "id": "884d3842-e295-46d4-9923-90b2e6d88bbd",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 26,
@@ -393,7 +393,7 @@
         },
         {
           "id": "0bbecd54-c716-45f9-804e-f28aed1cdc14",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 27,
@@ -406,7 +406,7 @@
         },
         {
           "id": "f6c6fc50-aef9-4f15-af77-2481a98dc8b8",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 29,
@@ -419,7 +419,7 @@
         },
         {
           "id": "fb83e0c8-884a-4838-99f2-49e66affc435",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 30,
@@ -432,7 +432,7 @@
         },
         {
           "id": "ab07e6e9-6a82-4c7d-83dd-3d7e014f875c",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 31,
@@ -445,7 +445,7 @@
         },
         {
           "id": "55a5cadd-a76a-4907-9279-bd14dc0f2354",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 32,
@@ -458,7 +458,7 @@
         },
         {
           "id": "7408ee87-59cf-4cbc-ae6d-890124be4783",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 28,
@@ -471,7 +471,7 @@
         },
         {
           "id": "0793c404-dbfe-48f6-ad68-bdd9fd1dca65",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 29,
@@ -484,7 +484,7 @@
         },
         {
           "id": "d16a5044-1972-4537-b525-e6b1a63bd3a6",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 10,
@@ -497,7 +497,7 @@
         },
         {
           "id": "34884035-1cdd-42a6-9cba-35fb4eabe4b7",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 11,
@@ -510,7 +510,7 @@
         },
         {
           "id": "cb650686-b802-49c6-b64b-bed47756ddfa",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 27,
@@ -523,7 +523,7 @@
         },
         {
           "id": "c4c1b0cb-5d91-4eff-85ad-790936c4f307",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 28,
@@ -536,7 +536,7 @@
         },
         {
           "id": "5e32dd88-789f-4361-ab01-ce2ef32b41cf",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 29,
@@ -549,7 +549,7 @@
         },
         {
           "id": "28f953f6-5378-4a21-a4e3-0c7049ed9f67",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 30,
@@ -562,7 +562,7 @@
         },
         {
           "id": "99b27840-5745-460e-a827-7581c2994ffc",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 31,
@@ -575,7 +575,7 @@
         },
         {
           "id": "bb44e01d-ad45-445e-b0f7-4c16d32c5230",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 13,
@@ -588,7 +588,7 @@
         },
         {
           "id": "17683a74-66e6-4560-96fe-a546956519e6",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 12,
@@ -601,7 +601,7 @@
         },
         {
           "id": "360794a0-f7d5-477c-8319-8bf46a17c0aa",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 11,
@@ -666,7 +666,7 @@
         },
         {
           "id": "ee2398fb-d7da-4710-8838-f90f890fd628",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 30,
@@ -679,7 +679,7 @@
         },
         {
           "id": "100a8cb4-cfa0-4913-b17b-432bd604d0d9",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 31,
@@ -761,7 +761,7 @@
         },
         {
           "id": "35c3f36-4b32-4dad-a5c6-8123abdc",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 15,
@@ -774,7 +774,7 @@
         },
         {
           "id": "62ff163-2dfc-4f59-a2c7-a143f6f7",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 14,
@@ -787,7 +787,7 @@
         },
         {
           "id": "bf26a6d-9ad2-48a2-866a-7eda1245",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 12,
@@ -800,7 +800,7 @@
         },
         {
           "id": "26e6a84-04c8-4fd5-a1f5-0838a9ec",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 14,
@@ -813,7 +813,7 @@
         },
         {
           "id": "d22ab90-64f6-4a1a-a06e-950d8ca9",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 14,
@@ -826,7 +826,7 @@
         },
         {
           "id": "872012e-166d-40a2-af3f-277e429e",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 13,
@@ -839,7 +839,7 @@
         },
         {
           "id": "4952703-98ee-4d67-acea-976b5a1f",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 19,
@@ -852,7 +852,7 @@
         },
         {
           "id": "6bd7d82-4d08-4917-a94e-39ae379c",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 20,
@@ -865,7 +865,7 @@
         },
         {
           "id": "2bc0818-996e-44fa-8a74-6f6e5553",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 22,
@@ -878,7 +878,7 @@
         },
         {
           "id": "ed67cf6-cb1f-4d64-a17e-4cf59c17",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 23,
@@ -891,7 +891,7 @@
         },
         {
           "id": "25f2f63-4212-4d72-9d02-b976aaac",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 15,
@@ -904,7 +904,7 @@
         },
         {
           "id": "4dde0b1-250c-4771-895a-bf49ef28",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 16,
@@ -917,7 +917,7 @@
         },
         {
           "id": "2647825-9c00-4377-94c4-b6d6a2d2",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 15,
@@ -930,7 +930,7 @@
         },
         {
           "id": "08b40a5-9040-4d58-91f5-918d55c2",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 26,
@@ -943,7 +943,7 @@
         },
         {
           "id": "1ac9b66-dc94-4f42-abf6-78680c35",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 28,
@@ -997,7 +997,7 @@
         },
         {
           "id": "d5a728a-367b-44ba-b83d-19fb9975",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 18,
@@ -1010,7 +1010,7 @@
         },
         {
           "id": "eb1efa8-4168-47df-8589-3c41ae87",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 19,
@@ -1023,7 +1023,7 @@
         },
         {
           "id": "e537f79-a0cb-4502-94fb-30c2a030",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 20,
@@ -1036,7 +1036,7 @@
         },
         {
           "id": "12dd449-806e-4c63-9e2e-c9a9d511",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 21,
@@ -1049,7 +1049,7 @@
         },
         {
           "id": "0c085f8-9fcc-49a4-b929-c702e703",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 22,
@@ -1062,7 +1062,7 @@
         },
         {
           "id": "e8dba71-2fb2-49da-8ac9-0380070e",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 23,
@@ -1075,7 +1075,7 @@
         },
         {
           "id": "a1eab07-220b-43e3-a5d8-b88d4572",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 24,
@@ -1116,7 +1116,7 @@
         },
         {
           "id": "8997219-a0f8-4877-b8bf-083e20f3",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 23,
@@ -1129,7 +1129,7 @@
         },
         {
           "id": "de45808-d24c-44a3-bc6a-227f83de",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 22,
@@ -1142,7 +1142,7 @@
         },
         {
           "id": "878f430-c150-48bb-a6b3-1487bbef",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 21,
@@ -1155,7 +1155,7 @@
         },
         {
           "id": "ea20f90-ceee-4d13-8bfd-6b3f4036",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 20,
@@ -1168,7 +1168,7 @@
         },
         {
           "id": "cc22307-3dae-489a-8533-f78f0ad9",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 19,
@@ -1181,7 +1181,7 @@
         },
         {
           "id": "29e1abe-ea6c-499b-9d13-d1c78134",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 18,
@@ -1194,7 +1194,7 @@
         },
         {
           "id": "228fa9f-a675-4d2f-98b6-82be5477",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 26,
@@ -1207,7 +1207,7 @@
         },
         {
           "id": "37d48f0-93c5-4536-8e8e-3dea28f7",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 27,
@@ -1220,7 +1220,7 @@
         },
         {
           "id": "555d21a-2f07-44fc-9376-b3c374a5",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 28,
@@ -1233,7 +1233,7 @@
         },
         {
           "id": "aaab68b-7e87-4e03-be37-7e218e07",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 29,
@@ -1246,7 +1246,7 @@
         },
         {
           "id": "7f6021a-a9c4-44a4-a9c0-02ea3087",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 30,
@@ -1341,7 +1341,7 @@
         },
         {
           "id": "2cafe30-bf4f-4144-84e8-106bb2c5",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 19,
@@ -1354,7 +1354,7 @@
         },
         {
           "id": "348e339-aa7b-4d53-b10d-fb4a0dc9",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 20,
@@ -1367,7 +1367,7 @@
         },
         {
           "id": "7f14961-97d7-47a6-9998-2be7fd3b",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 21,
@@ -1380,7 +1380,7 @@
         },
         {
           "id": "698625b-6667-4335-95ce-38bde398",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 22,
@@ -1393,7 +1393,7 @@
         },
         {
           "id": "57a9901-e24e-4466-b473-253fdb9c",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 23,
@@ -1406,7 +1406,7 @@
         },
         {
           "id": "3fbcb71-546b-470b-bc80-b25ce303",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 24,
@@ -1419,7 +1419,7 @@
         },
         {
           "id": "cc6fc21-8d69-4111-8932-ed4f794c",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 25,
@@ -1432,7 +1432,7 @@
         },
         {
           "id": "278b716-4752-436a-b6ce-30522db4",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 26,
@@ -1445,7 +1445,7 @@
         },
         {
           "id": "e8368ab-aea1-444d-be58-1965da62",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 27,
@@ -1458,7 +1458,7 @@
         },
         {
           "id": "4a79bf6-8690-4305-9f36-d8e6d890",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 28,
@@ -1471,7 +1471,7 @@
         },
         {
           "id": "9030cc4-079a-4090-9bba-7ed0d114",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 29,
@@ -1484,7 +1484,7 @@
         },
         {
           "id": "79909b7-4972-405b-999f-4195bed1",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 28,
@@ -1497,7 +1497,7 @@
         },
         {
           "id": "0939dd9-e777-4f6f-82ed-d08b441b",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 27,
@@ -1510,7 +1510,7 @@
         },
         {
           "id": "e3afd75-b6c9-48fc-81c9-e3fd5a6d",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 26,
@@ -1523,7 +1523,7 @@
         },
         {
           "id": "7b31728-a3a9-4a1a-b5f7-28b4c36d",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 25,
@@ -1536,7 +1536,7 @@
         },
         {
           "id": "f1fb3b2-c482-4b08-a4d8-d6e5e19e",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 24,
@@ -1549,7 +1549,7 @@
         },
         {
           "id": "4471ac3-154b-474c-996e-6d82692d",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 13,
@@ -1562,7 +1562,7 @@
         },
         {
           "id": "ee28b96-423c-4142-bae9-08bb94c0",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 22,
@@ -1575,7 +1575,7 @@
         },
         {
           "id": "56f93bd-1919-4821-95ba-51e372b9",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 21,
@@ -1588,7 +1588,7 @@
         },
         {
           "id": "f8bcb4f-8ea3-4c5b-951e-5227fe54",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 20,
@@ -1601,7 +1601,7 @@
         },
         {
           "id": "3c9b4e4-4683-4d47-b7ef-fc8a4f3d",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 17,
@@ -1614,7 +1614,7 @@
         },
         {
           "id": "089a5ad-2f04-45c3-b431-98477ff7",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 17,
@@ -1627,7 +1627,7 @@
         },
         {
           "id": "00a1880-93f6-409d-882f-61dc5fd4",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 17,
@@ -1640,7 +1640,7 @@
         },
         {
           "id": "bc243f9-d704-41ca-afd0-005e5945",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 17,
@@ -1653,7 +1653,7 @@
         },
         {
           "id": "e5b1bd5-0498-40e5-a373-81729e22",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 31,
@@ -1666,7 +1666,7 @@
         },
         {
           "id": "139db2e-0c3e-4b79-a8e2-495bb460",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 31,
@@ -1679,7 +1679,7 @@
         },
         {
           "id": "54c2c4b-56a8-4a78-97b4-bf750299",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 31,
@@ -1692,7 +1692,7 @@
         },
         {
           "id": "0be0628-0cee-405d-92f3-746a18e6",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 31,
@@ -1705,7 +1705,7 @@
         },
         {
           "id": "85ecedc-234b-42d2-b3db-590b1f79",
-          "type": "track",
+          "type": "trackstraight",
           "name": "element",
           "layerName": "track",
           "x": 31,

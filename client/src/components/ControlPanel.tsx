@@ -1,10 +1,5 @@
 import {
-  useCallback,
-  useEffect,
-  useRef,
   useState,
-  type Dispatch,
-  type SetStateAction,
 } from "react";
 
 import {
@@ -37,11 +32,11 @@ import {
 
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { wsApi } from "../services/wsApi";
-import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
+import { Layout } from "../models/editor/core/Layout";
 import GraphDialog from "./common/GraphDialog";
 import { Edge, Graph, RouteSolution, TurnoutStateRequirement, } from "../models/editor/core/Graph";
-import { useEditorSettings } from "../context/EditorSettingsContext";
-import { showErrorMessage, showOkMessage } from "../helpers";
+
+import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import VisibilitySettings from "./VisibilitySettings";
 import { useRouteGraph } from "../hooks/useRouteGraph";
@@ -49,6 +44,7 @@ import TaskManagerDialog from "./common/TaskManagerDialog";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { TrainTask, TrainTaskStatus } from "../services/tasks/TaskTypes";
 import { useTaskManager } from "../services/tasks/useTaskManager";
+import { routeRuntimeService } from "../services/routeRuntimeService";
 
 
 type ControlPanelProps = {
@@ -625,6 +621,32 @@ function ControllerTab() {
     }
   }
 
+
+  const handleTestBusyRoute = async () => {
+    const result = await routeRuntimeService.previewBusyRoute("A1", "C3");
+
+    if (!result.ok) {
+      showWarningMessage("Route test", result.error);
+      return;
+    }
+
+    console.log("A1 → C3 route solution:", result.solution);
+
+    showOkMessage(
+      "Route test",
+      "A1 → C3 lefoglalva, a váltóállítások elküldve."
+    );
+  };
+
+  const handleClearAllBusy = () => {
+    routeRuntimeService.clearAllBusy();
+
+    showOkMessage(
+      "Route test",
+      "Minden busy szegmens és váltó elengedve."
+    );
+  };
+
   return (
     <>
       <TaskManagerDialog
@@ -632,6 +654,23 @@ function ControllerTab() {
         onClose={() => setTaskManagerOpened(false)}
       />
 
+      <Group gap="xs">
+        <Button
+          color="red"
+          variant="light"
+          onClick={handleTestBusyRoute}
+        >
+          TEST: A1 → C3 busy
+        </Button>
+
+        <Button
+          color="gray"
+          variant="light"
+          onClick={handleClearAllBusy}
+        >
+          TEST: Clear all busy
+        </Button>
+      </Group>
       <ScrollArea.Autosize
         mah="calc(100vh - 220px)"
         type="auto"

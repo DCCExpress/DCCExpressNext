@@ -131,12 +131,13 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
       wsApi.setLoco(currentLoco.address, 0, direction);
     }
   };
-  const handleEmergencyStop = () => {
-    setSpeed(0);
-    if (currentLoco) {
-      wsApi.emergencyStop();
-    }
-  };
+
+  // const handleEmergencyStop = () => {
+  //   setSpeed(0);
+  //   if (currentLoco) {
+  //     wsApi.emergencyStop();
+  //   }
+  // };
 
   const setSpeedByPercent = (percent: number) => {
     if (!currentLoco) return;

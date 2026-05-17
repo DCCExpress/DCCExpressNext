@@ -70,6 +70,7 @@ export class GraphNode {
     detectors: SectionDetector[] = [];
     signals: SectionSignal[] = [];
     blocks: SectionBlock[] = [];
+    busy: boolean = false;
 
     static readonly RADIUS = 10;
 

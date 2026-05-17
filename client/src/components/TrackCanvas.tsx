@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
-import { Box, Group, Popover, Text, Stack, useMantineColorScheme } from "@mantine/core";
+import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { DrawOptions, ELEMENT_TYPES, EditorTool } from "../models/editor/types/EditorTypes";
 import { TrackStraightElement } from "../models/editor/elements/TrackStraightElement";
@@ -21,7 +21,7 @@ import { TreeElement } from "../models/editor/elements/TreeElement";
 import { BlockElement } from "../models/editor/elements/BlockElement";
 import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
 import { AudioButtonElement } from "../models/editor/elements/AudioButtonElement";
-import { RouteButtonElement, RouteTurnoutItem } from "../models/editor/elements/RouteButtonElement";
+import { RouteButtonElement } from "../models/editor/elements/RouteButtonElement";
 import { TrackCrossingElement } from "../models/editor/elements/TrackCrossingElement";
 import { ClickableBaseElement } from "../models/editor/core/ClickableBaseElement";
 import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
@@ -29,12 +29,10 @@ import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../services/wsApi";
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import { useCommandCenter } from "../context/CommandCenterContext";
-import { is } from "zod/v4/locales/index.js";
 import { ButtonScriptElement } from "../models/editor/elements/ButtonScriptElement";
 import { LabelElement } from "../models/editor/elements/LabelElement";
 import LocoPicker from "./loco/LocoPicker";
 import { Loco } from "../../../common/src/types";
-import { set } from "zod";
 import { TrackDirectionElement } from "../models/editor/elements/TrackDirectionElement";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 import { TurnoutStateRequirement } from "../models/editor/core/Graph";
@@ -773,7 +771,12 @@ export default function TrackCanvas({
       ev: MouseEvent | PointerEvent
     ): boolean => {
       if (!hitElement) return false;
-      if (!(hitElement instanceof ClickableBaseElement)) return false;
+      if (
+        !(hitElement instanceof ClickableBaseElement) &&
+        !(hitElement instanceof TrackTurnoutElement)
+      ) {
+        return false;
+      }
 
       if (hitElement instanceof RouteButtonElement) {
         void executeRoute(hitElement);
@@ -794,8 +797,12 @@ export default function TrackCanvas({
       ev: MouseEvent | PointerEvent
     ): boolean => {
       if (!hitElement) return false;
-      if (!(hitElement instanceof ClickableBaseElement)) return false;
-
+      if (
+        !(hitElement instanceof ClickableBaseElement) &&
+        !(hitElement instanceof TrackTurnoutElement)
+      ) {
+        return false;
+      }
       hitElement.mouseUp(ev as any);
       return true;
     };
