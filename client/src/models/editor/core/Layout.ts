@@ -528,22 +528,11 @@ export class Layout {
         //     console.warn("[RouteGraph] Could not check extended routes:", error);
         //     graph = null;
         // }
-        let graph: Graph | null = existingGraph ?? null;
-        let routeGraphError: string | null = null;
 
-        try {
-            if (!graph) {
-                graph = this.processRoutes();
-            }
-        } catch (error) {
-            routeGraphError =
-                error instanceof Error
-                    ? error.message
-                    : "Could not generate route graph.";
+        const graph: Graph | null = existingGraph ?? null;
+        const routeGraphError: string | null = null;
 
-            console.warn("[RouteGraph] Could not check extended routes:", error);
-            graph = null;
-        }
+
         // --------------------------------------------------
         // FONTOS:
         // A gráfépítés után lenullázzuk a bejárási/színezési állapotot,

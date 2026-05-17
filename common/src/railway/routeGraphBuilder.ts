@@ -249,14 +249,18 @@ export class RouteGraphBuilder {
         trackName
       );
 
-    return new GraphNode(
+   const elementIds =
+      sectionElements.map(elem => elem.id);
+
+  return new GraphNode(
       `S${section}`,
       trackName,
       x,
       y,
       detectors,
       signals,
-      blocks
+      blocks,
+      elementIds
     );
   }
 
@@ -344,13 +348,15 @@ export class RouteGraphBuilder {
         const resolvedTrackName =
           trackName?.trim()
             ? trackName.trim()
-            : "Unnamed track";
+            : "";
 
         return {
           id: block.id,
           name: blockName,
           trackName: resolvedTrackName,
-          label: `${resolvedTrackName}: ${blockName}`,
+          label: resolvedTrackName
+            ? `${resolvedTrackName}: ${blockName}`
+            : blockName,
         };
       });
   }
@@ -510,7 +516,7 @@ export class RouteGraphBuilder {
       //       : null,
       //   }
       // );
-      
+
       if (!nextElem) {
         continue;
       }

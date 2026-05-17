@@ -221,7 +221,8 @@ export class RailwayTopologyLayout {
     }
     getPhysicalTrackElements() {
         return this.elements.filter((element) => {
-            return (element.type === ELEMENT_TYPES.TRACK_STRAIGHT ||
+            return (element.type === ELEMENT_TYPES.TRACK_DIRECTION ||
+                element.type === ELEMENT_TYPES.TRACK_STRAIGHT ||
                 element.type === ELEMENT_TYPES.TRACK_END ||
                 element.type === ELEMENT_TYPES.TRACK_CORNER ||
                 element.type === ELEMENT_TYPES.TRACK_CURVE ||

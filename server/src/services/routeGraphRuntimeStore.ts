@@ -165,101 +165,101 @@ class RouteGraphRuntimeStore {
     };
   }
 
- releaseRouteReservation(
-  fromBlockName: string,
-  toBlockName: string
-):
-  | {
+  releaseRouteReservation(
+    fromBlockName: string,
+    toBlockName: string
+  ):
+    | {
       ok: true;
       releasedSectionNames: string[];
       retainedSectionNames: string[];
       releasedTurnoutAddresses: number[];
       retainedTurnoutAddresses: number[];
     }
-  | {
+    | {
       ok: false;
       error: string;
     } {
-  const key = this.createReservationKey(
-    fromBlockName,
-    toBlockName
-  );
+    const key = this.createReservationKey(
+      fromBlockName,
+      toBlockName
+    );
 
-  const reservation = this.reservations.get(key);
+    const reservation = this.reservations.get(key);
 
-  if (!reservation) {
+    if (!reservation) {
+      return {
+        ok: false,
+        error: `Nincs ilyen lefoglalt útvonal: ${fromBlockName} → ${toBlockName}`,
+      };
+    }
+
+    /**
+     * Először kivesszük ezt a reservationt.
+     * Így amikor megnézzük, hogy egy section/váltó
+     * kell-e még másik útvonalnak, már csak a TÖBBI foglalás számít.
+     */
+    this.reservations.delete(key);
+
+    const releasedSectionNames: string[] = [];
+    const retainedSectionNames: string[] = [];
+
+    const releasedTurnoutAddresses: number[] = [];
+    const retainedTurnoutAddresses: number[] = [];
+
+    /**
+     * SZAKASZOK FELOLDÁSA
+     */
+    for (const sectionName of reservation.sectionNames) {
+      const stillUsedByAnotherReservation = [
+        ...this.reservations.values(),
+      ].some(otherReservation =>
+        otherReservation.sectionNames.includes(sectionName)
+      );
+
+      if (stillUsedByAnotherReservation) {
+        retainedSectionNames.push(sectionName);
+        continue;
+      }
+
+      const node = this.graph?.nodes.find(
+        item => item.name === sectionName
+      );
+
+      if (node) {
+        node.busy = false;
+      }
+
+      releasedSectionNames.push(sectionName);
+    }
+
+    /**
+     * VÁLTÓK FELOLDÁSA
+     */
+    for (const turnoutAddress of reservation.turnoutAddresses) {
+      const stillUsedByAnotherReservation = [
+        ...this.reservations.values(),
+      ].some(otherReservation =>
+        otherReservation.turnoutAddresses.includes(turnoutAddress)
+      );
+
+      if (stillUsedByAnotherReservation) {
+        retainedTurnoutAddresses.push(turnoutAddress);
+        continue;
+      }
+
+      this.busyTurnoutAddresses.delete(turnoutAddress);
+      releasedTurnoutAddresses.push(turnoutAddress);
+    }
+
     return {
-      ok: false,
-      error: `Nincs ilyen lefoglalt útvonal: ${fromBlockName} → ${toBlockName}`,
+      ok: true,
+      releasedSectionNames,
+      retainedSectionNames,
+      releasedTurnoutAddresses,
+      retainedTurnoutAddresses,
     };
   }
-
-  /**
-   * Először kivesszük ezt a reservationt.
-   * Így amikor megnézzük, hogy egy section/váltó
-   * kell-e még másik útvonalnak, már csak a TÖBBI foglalás számít.
-   */
-  this.reservations.delete(key);
-
-  const releasedSectionNames: string[] = [];
-  const retainedSectionNames: string[] = [];
-
-  const releasedTurnoutAddresses: number[] = [];
-  const retainedTurnoutAddresses: number[] = [];
-
-  /**
-   * SZAKASZOK FELOLDÁSA
-   */
-  for (const sectionName of reservation.sectionNames) {
-    const stillUsedByAnotherReservation = [
-      ...this.reservations.values(),
-    ].some(otherReservation =>
-      otherReservation.sectionNames.includes(sectionName)
-    );
-
-    if (stillUsedByAnotherReservation) {
-      retainedSectionNames.push(sectionName);
-      continue;
-    }
-
-    const node = this.graph?.nodes.find(
-      item => item.name === sectionName
-    );
-
-    if (node) {
-      node.busy = false;
-    }
-
-    releasedSectionNames.push(sectionName);
-  }
-
-  /**
-   * VÁLTÓK FELOLDÁSA
-   */
-  for (const turnoutAddress of reservation.turnoutAddresses) {
-    const stillUsedByAnotherReservation = [
-      ...this.reservations.values(),
-    ].some(otherReservation =>
-      otherReservation.turnoutAddresses.includes(turnoutAddress)
-    );
-
-    if (stillUsedByAnotherReservation) {
-      retainedTurnoutAddresses.push(turnoutAddress);
-      continue;
-    }
-
-    this.busyTurnoutAddresses.delete(turnoutAddress);
-    releasedTurnoutAddresses.push(turnoutAddress);
-  }
-
-  return {
-    ok: true,
-    releasedSectionNames,
-    retainedSectionNames,
-    releasedTurnoutAddresses,
-    retainedTurnoutAddresses,
-  };
-}
 
   clearAllBusy(): void {
     if (this.graph) {
@@ -270,6 +270,25 @@ class RouteGraphRuntimeStore {
 
     this.busyTurnoutAddresses.clear();
     this.reservations.clear();
+  }
+
+  getElementIdsForSections(
+    sectionNames: string[]
+  ): string[] {
+    if (!this.graph) {
+      return [];
+    }
+
+    const sectionNameSet =
+      new Set(sectionNames);
+
+    return this.graph.nodes
+      .filter(node => sectionNameSet.has(node.name))
+      .flatMap(node => node.elementIds);
+  }
+  
+  isTurnoutBusy(address: number): boolean {
+    return this.busyTurnoutAddresses.has(address);
   }
 }
 

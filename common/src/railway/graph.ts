@@ -35,14 +35,14 @@ export type RouteSolution = {
 
 export type BlockRoutePathItem =
   | {
-      type: "block";
-      block: SectionBlock;
-      node: GraphNode;
-    }
+    type: "block";
+    block: SectionBlock;
+    node: GraphNode;
+  }
   | {
-      type: "segment";
-      node: GraphNode;
-    };
+    type: "segment";
+    node: GraphNode;
+  };
 
 export type BlockRouteSolution = RouteSolution & {
   fromBlock: SectionBlock;
@@ -77,6 +77,7 @@ export class GraphNode {
   detectors: SectionDetector[] = [];
   signals: SectionSignal[] = [];
   blocks: SectionBlock[] = [];
+  elementIds: string[] = [];
 
   constructor(
     name: string,
@@ -85,7 +86,8 @@ export class GraphNode {
     y: number,
     detectors: SectionDetector[] = [],
     signals: SectionSignal[] = [],
-    blocks: SectionBlock[] = []
+    blocks: SectionBlock[] = [],
+    elementIds: string[] = []
   ) {
     this.name = name;
     this.trackName = trackName;
@@ -94,6 +96,7 @@ export class GraphNode {
     this.detectors = detectors;
     this.signals = signals;
     this.blocks = blocks;
+    this.elementIds = elementIds;
   }
 }
 
@@ -103,7 +106,7 @@ export class Edge {
     public to: GraphNode,
     public turnoutStates: TurnoutStateRequirement[] = [],
     public locoDirection: TravelDirection = "unknown"
-  ) {}
+  ) { }
 }
 
 export class Graph {

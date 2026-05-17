@@ -36,6 +36,10 @@ import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRo
 import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { locoStore } from "../services/locoStore";
 import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
+import { getRouteGraph } from "../api/http";
+import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
+
+
 type LayoutPageProps = {
   onGoHome: () => void;
 };
@@ -169,19 +173,13 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       return;
     }
 
-    const result = layoutRef.current.checkRoutes(null);
+    const existingGraph = routeGraphStore.getGraph();
 
-    routeGraphStore.setGraph(result.graph);
-
-    if (result.error) {
-      showWarningMessage(
-        "Route graph warning",
-        result.error
-      );
-    }
+    layoutRef.current.checkRoutes(existingGraph);
 
     setInvalidateCounter((prev) => prev + 1);
   }, [editMode]);
+
 
   const loadLocos = async () => {
     try {
@@ -469,18 +467,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         if (changed) {
           const existingGraph = routeGraphStore.getGraph();
 
-          const result = layoutRef.current.checkRoutes(existingGraph);
-
-          if (result.graph && !existingGraph) {
-            routeGraphStore.setGraph(result.graph);
-          }
-
-          if (result.error) {
-            showWarningMessage(
-              "Route graph warning",
-              result.error
-            );
-          }
+          layoutRef.current.checkRoutes(existingGraph);
 
           setInvalidateCounter((prev) => prev + 1);
         }
@@ -569,6 +556,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       wsClient.on<{
         busy: boolean;
         sectionNames: string[];
+        elementIds: string[];
         turnoutAddresses: number[];
         fromBlockName?: string;
         toBlockName?: string;
@@ -576,11 +564,10 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         "routeReservationChanged",
         data => {
           if (data.busy) {
-            layoutStore.setSectionsBusyByNames(
-              data.sectionNames,
+            layoutStore.setElementsBusyByIds(
+              data.elementIds,
               true
             );
-
             layoutStore.setTurnoutsBusyByAddresses(
               data.turnoutAddresses,
               true
@@ -589,8 +576,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
             return;
           }
 
-          layoutStore.setSectionsBusyByNames(
-            data.sectionNames,
+          layoutStore.setElementsBusyByIds(
+            data.elementIds,
             false
           );
 
@@ -733,12 +720,6 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   //   return graph;
   // };
 
-  const handleRunRouteProcess = () => {
-    const graph = layoutRef.current.processRoutes();
-    routeGraphStore.setGraph(graph);
-    setInvalidateCounter((v) => v + 1);
-    return graph;
-  };
 
   const handleLayoutChange: React.Dispatch<React.SetStateAction<Layout>> = (
     value
@@ -945,7 +926,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
                       layout={layout}
                       onLayoutChange={setLayout}
                       routes={routesString}
-                      onRunRouteProcess={handleRunRouteProcess}
+
                       //setBusy={setBusy}
                       setBusy={(busy, text) => { setCanvasBusy(busy); if (text) setCanvasBusyText(text); }}
                     />

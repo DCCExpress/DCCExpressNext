@@ -45,7 +45,8 @@ import TaskManagerDialog from "./common/TaskManagerDialog";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { TrainTask, TrainTaskStatus } from "../services/tasks/TaskTypes";
 import { useTaskManager } from "../services/tasks/useTaskManager";
-import { routeRuntimeService } from "../services/routeRuntimeService";
+import { getRouteGraph } from "../api/http";
+import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
 
 
 type ControlPanelProps = {
@@ -58,7 +59,7 @@ type ControlPanelProps = {
   onEmergencyStop?: () => void;
 
   routes?: string | undefined;
-  onRunRouteProcess: (() => Graph | null);
+  
   layout: Layout
 };
 
@@ -140,7 +141,7 @@ export default function ControlPanel(p: ControlPanelProps) {
         </Tabs.Panel>
 
         <Tabs.Panel value="scripts" pt="sm">
-          <RoutesTab routes={p.routes} onRunRouteProcess={p.onRunRouteProcess} layout={p.layout} />
+          <RoutesTab routes={p.routes} layout={p.layout} />
         </Tabs.Panel>
         <Tabs.Panel value="visibility" pt="sm">
           <VisibilityTab />
@@ -644,8 +645,8 @@ function ControllerTab() {
     }
 
     wsApi.releaseRouteReservation(from, to);
-  }; 
-  
+  };
+
   const handleClearAllBusy = () => {
     wsApi.clearAllRouteReservations();
   };
@@ -820,8 +821,6 @@ function ControllerTab() {
 
 type RoutesTabProps = {
   routes?: string | undefined;
-  onRunRouteProcess: (() => Graph | null);
-  //onRunRouteProcess?: (() => Graph) | undefined;
   layout: Layout,
 
 };
@@ -829,24 +828,45 @@ type RoutesTabProps = {
 function RoutesTab(p: RoutesTabProps) {
   //const { graph, setGraph } = useRouteGraph();
   //const { settings, updateSettings } = useEditorSettings();
-  const { graph } = useRouteGraph();
+  const {
+    graph,
+    setGraph,
+  } = useRouteGraph();
   const [graphDialogOpened, setGraphDialogOpened] = useState(false);
 
-  const handleRunRouteProcess = () => {
-    try {
-      const g = p.onRunRouteProcess?.();
+const handleRunRouteProcess = async () => {
+  try {
+    const response = await getRouteGraph();
 
-      if (!g) return;
-    } catch (error) {
-      showErrorMessage(
-        "ERROR",
-        error instanceof Error
-          ? error.message
-          : "Could not generate route graph."
+    if (!response.ready) {
+      setGraph(null);
+
+      showWarningMessage(
+        "Route graph",
+        "A szerveren még nincs aktív route gráf."
       );
-    }
-  };
 
+      return;
+    }
+
+    const clientGraph =
+      createClientGraphFromRouteGraphDto(response);
+
+    setGraph(clientGraph);
+
+    showOkMessage(
+      "Route graph",
+      `Szerveroldali gráf betöltve: ${response.nodes.length} node, ${response.edges.length} edge.`
+    );
+  } catch (error) {
+    showErrorMessage(
+      "ERROR",
+      error instanceof Error
+        ? error.message
+        : "Could not load server route graph."
+    );
+  }
+};
   const applyTurnoutStates = async (
     turnoutStates: TurnoutStateRequirement[]
   ) => {

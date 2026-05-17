@@ -299,6 +299,7 @@ export function setupWebSocketServer(server) {
                                 data: {
                                     busy: true,
                                     sectionNames: reservation.reservation.sectionNames,
+                                    elementIds: routeGraphRuntimeStore.getElementIdsForSections(reservation.reservation.sectionNames),
                                     turnoutAddresses: reservation.reservation.turnoutAddresses,
                                     fromBlockName,
                                     toBlockName,
@@ -393,6 +394,7 @@ export function setupWebSocketServer(server) {
                                 data: {
                                     busy: false,
                                     sectionNames: result.releasedSectionNames,
+                                    elementIds: routeGraphRuntimeStore.getElementIdsForSections(result.releasedSectionNames),
                                     turnoutAddresses: result.releasedTurnoutAddresses,
                                     fromBlockName,
                                     toBlockName,
@@ -521,32 +523,59 @@ export function setupWebSocketServer(server) {
                         // setTurnout
                         //===============================
                         case "setTurnout": {
-                            if (commandCenter.locked && commandCenter.lockOwnerUUID != msg.uuid) {
-                                ws.send(JSON.stringify({
+                            const address = msg.data?.address;
+                            const closed = msg.data?.closed;
+                            if (typeof address !== "number" ||
+                                typeof closed !== "boolean") {
+                                sendToClient(ws, {
+                                    type: "error",
+                                    data: {
+                                        message: "Invalid setTurnout payload",
+                                    },
+                                });
+                                return;
+                            }
+                            /**
+                             * Ha a váltó aktív route foglalás része,
+                             * kézzel nem engedjük átállítani.
+                             */
+                            if (routeGraphRuntimeStore.isTurnoutBusy(address)) {
+                                sendToClient(ws, {
+                                    type: "commandRejected",
+                                    uuid: msg.uuid,
+                                    data: {
+                                        reason: `Turnout #${address} is reserved by an active route.`,
+                                        lockOwner: null,
+                                    },
+                                });
+                                return;
+                            }
+                            /**
+                             * A meglévő command center műveleti lock is marad:
+                             * például route-beállítás közben se állítgatható kézzel.
+                             */
+                            if (commandCenter.locked &&
+                                commandCenter.lockOwnerUUID != msg.uuid) {
+                                sendToClient(ws, {
                                     type: "commandRejected",
                                     uuid: msg.uuid,
                                     data: {
                                         reason: "Command center busy",
                                         lockOwner: commandCenter.lockOwnerUUID,
                                     },
-                                }));
-                                return;
-                            }
-                            const address = msg.data?.address;
-                            const closed = msg.data?.closed;
-                            if (typeof address !== "number" || typeof closed !== "boolean") {
-                                sendToClient(ws, {
-                                    type: "error",
-                                    data: { message: "Invalid setTurnout payload" },
                                 });
                                 return;
                             }
-                            commandCenter.setTurnout(address, closed).then(success => {
+                            commandCenter
+                                .setTurnout(address, closed)
+                                .then(success => {
                                 log("Turnout set result:", success);
                                 if (!success) {
                                     broadcast(wss, {
                                         type: "error",
-                                        data: { message: "Failed to set turnout" },
+                                        data: {
+                                            message: "Failed to set turnout",
+                                        },
                                     });
                                 }
                                 else {

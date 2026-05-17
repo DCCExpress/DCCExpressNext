@@ -27,6 +27,8 @@ import VisibilitySettings from "../components/VisibilitySettings";
 import { Graph } from "../models/editor/core/Graph";
 import { useTranslation } from "react-i18next";
 import { BLOCK_TYPES, ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
+import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
+import { getRouteGraph } from "../api/http";
 
 type PropertyPanelProps = {
   selectedElement: BaseElement | null;
@@ -40,7 +42,7 @@ type PropertyPanelProps = {
   layout: Layout;
   onLayoutChange: Dispatch<SetStateAction<Layout>>;
   routes?: string | undefined;
-  onRunRouteProcess: () => Graph | null;
+
   setBusy?: (busy: boolean, text?: string) => void;
 };
 
@@ -72,7 +74,7 @@ function createPreviewElement<T extends BaseElement>(element: T): T {
   return preview;
 }
 
-export default function RightPropertyPanel({ selectedElement, onUpdateSelectedElement, invalidate, editMode, opened, turnoutSelectionMode, setTurnoutSelectionMode, layout, onLayoutChange, routes, onRunRouteProcess, setBusy, }: PropertyPanelProps) {
+export default function RightPropertyPanel({ selectedElement, onUpdateSelectedElement, invalidate, editMode, opened, turnoutSelectionMode, setTurnoutSelectionMode, layout, onLayoutChange, routes, setBusy, }: PropertyPanelProps) {
   const { t } = useTranslation();
   const trackturnoutleft1 = new TrackTurnoutLeftElement(0, 0);
   trackturnoutleft1.turnoutClosed = true == trackturnoutleft1.turnoutClosedValue;
@@ -263,140 +265,47 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     setPanelOpen(opened)
   }, [opened])
 
-  const refreshExtendedRouteGraph22 = () => {
+
+  const loadServerRouteGraph = async (): Promise<Graph | null> => {
+    const response = await getRouteGraph();
+
+    if (!response.ready) {
+      setRouteGraph(null);
+      setRouteGraphError(
+        "A szerveren még nincs aktív route gráf."
+      );
+
+      return null;
+    }
+
+    const graph = createClientGraphFromRouteGraphDto(response);
+
+    setRouteGraph(graph);
+    setRouteGraphError(null);
+
+    return graph;
+  };
+
+  const refreshExtendedRouteGraph = async () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
       setRouteGraphError(null);
       return;
     }
 
     try {
-      const graph = layout.processRoutes();
-
-      setRouteGraph(graph);
-      setRouteGraphError(null);
+      await loadServerRouteGraph();
     } catch (error) {
       setRouteGraph(null);
       setRouteGraphError(
         error instanceof Error
           ? error.message
-          : "Could not generate route graph."
-      );
-    }
-  };
-
-  const handleTestExtendedRoute2 = async () => {
-    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
-      return;
-    }
-
-    if (!selectedElement.fromSection || !selectedElement.toSection) {
-      showWarningMessage(
-        "Warning",
-        "Select both From section and To section first."
-      );
-      return;
-    }
-
-    let graph = routeGraph;
-
-    try {
-      if (!graph) {
-        graph = layout.processRoutes();
-        setRouteGraph(graph);
-      }
-
-      const solution = graph.findRoute(
-        selectedElement.fromSection,
-        selectedElement.toSection
-      );
-
-      if (!solution) {
-        showWarningMessage(
-          "Warning",
-          `No valid route found: ${selectedElement.fromSection} → ${selectedElement.toSection}`
-        );
-        return;
-      }
-
-      const elems = layout.getAllElements();
-
-      for (const turnoutState of solution.turnoutStates) {
-        const turnout = elems.find(
-          (elem): elem is TrackTurnoutElement =>
-            isTurnoutElement(elem) &&
-            elem.turnoutAddress === turnoutState.address
-        );
-
-        if (!turnout) {
-          throw new Error(
-            `Turnout not found for address: ${turnoutState.address}`
-          );
-        }
-
-        wsApi.setTurnout(
-          turnoutState.address,
-          turnoutState.closed === turnout.turnoutClosedValue
-        );
-
-        await sleep(1000);
-      }
-
-      showOkMessage(
-        "SUCCESSFUL",
-        `Route test sent: ${selectedElement.fromSection} → ${selectedElement.toSection}`
-      );
-    } catch (error) {
-      showErrorMessage(
-        "ERROR",
-        error instanceof Error
-          ? error.message
-          : "Could not test automatic route."
-      );
-    }
-  };
-
-  const refreshExtendedRouteGraph33 = () => {
-    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
-      setRouteGraphError(null);
-      return;
-    }
-
-    try {
-      const graph = layout.processRoutes();
-
-      setRouteGraph(graph);
-      setRouteGraphError(null);
-    } catch (error) {
-      setRouteGraph(null);
-      setRouteGraphError(
-        error instanceof Error
-          ? error.message
-          : "Could not generate route graph."
-      );
-    }
-  };
-  const refreshExtendedRouteGraph = () => {
-    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
-      setRouteGraphError(null);
-      return;
-    }
-
-    try {
-      const graph = layout.processRoutes();
-
-      setRouteGraph(graph);
-      setRouteGraphError(null);
-    } catch (error) {
-      setRouteGraph(null);
-      setRouteGraphError(
-        error instanceof Error
-          ? error.message
-          : "Could not generate route graph."
+          : "Could not load server route graph."
       );
     } finally {
       onUpdateSelectedElement(selectedElement);
     }
   };
+
   const handleTestExtendedRoute = async () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
       return;
@@ -414,69 +323,51 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
 
     try {
       if (!graph) {
-        graph = layout.processRoutes();
-        setRouteGraph(graph);
+        graph = await loadServerRouteGraph();
       }
 
-      const solution = graph.findRouteBetweenBlocks(
-        selectedElement.fromBlockId,
-        selectedElement.toBlockId
-      );
-
-      if (!solution) {
+      if (!graph) {
         showWarningMessage(
           "Warning",
-          "No valid route found between the selected blocks."
+          "No server route graph is available."
         );
         return;
       }
 
-      const fromBlockLabel =
-        graph.findBlockById(selectedElement.fromBlockId)?.label ??
-        selectedElement.fromBlockId;
+      const fromBlock =
+        graph.findBlockById(selectedElement.fromBlockId);
 
-      const toBlockLabel =
-        graph.findBlockById(selectedElement.toBlockId)?.label ??
-        selectedElement.toBlockId;
+      const toBlock =
+        graph.findBlockById(selectedElement.toBlockId);
+
+      if (!fromBlock || !toBlock) {
+        showWarningMessage(
+          "Warning",
+          "The selected route blocks could not be found in the server graph."
+        );
+        return;
+      }
 
       setBusy?.(
         true,
-        `Route is being set: ${fromBlockLabel} → ${toBlockLabel}`
+        `Route request sent: ${fromBlock.label} → ${toBlock.label}`
       );
 
-      const elems = layout.getAllElements();
-
-      for (const turnoutState of solution.turnoutStates) {
-        const turnout = elems.find(
-          (elem): elem is TrackTurnoutElement =>
-            isTurnoutElement(elem) &&
-            elem.turnoutAddress === turnoutState.address
-        );
-
-        if (!turnout) {
-          throw new Error(
-            `Turnout not found for address: ${turnoutState.address}`
-          );
-        }
-
-        wsApi.setTurnout(
-          turnoutState.address,
-          turnoutState.closed === turnout.turnoutClosedValue
-        );
-
-        await sleep(1000);
-      }
+      wsApi.reserveRoute(
+        fromBlock.name,
+        toBlock.name
+      );
 
       showOkMessage(
-        "SUCCESSFUL",
-        `Route test sent: ${fromBlockLabel} → ${toBlockLabel}`
+        "Route request",
+        `Reservation requested: ${fromBlock.label} → ${toBlock.label}`
       );
     } catch (error) {
       showErrorMessage(
         "ERROR",
         error instanceof Error
           ? error.message
-          : "Could not test automatic route."
+          : "Could not request route reservation."
       );
     } finally {
       setBusy?.(false);
@@ -497,7 +388,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   useEffect(() => {
     if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
       if (!routeGraph) {
-        refreshExtendedRouteGraph();
+        void refreshExtendedRouteGraph();
       } else {
         setRouteGraphError(null);
       }
@@ -1082,7 +973,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   }
   return (
     <>
-      <ControlPanel routes={routes} onRunRouteProcess={onRunRouteProcess} layout={layout} />
+      <ControlPanel routes={routes} layout={layout} />
     </>
   )
 

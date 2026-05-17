@@ -12,7 +12,8 @@ export class GraphNode {
     detectors = [];
     signals = [];
     blocks = [];
-    constructor(name, trackName, x, y, detectors = [], signals = [], blocks = []) {
+    elementIds = [];
+    constructor(name, trackName, x, y, detectors = [], signals = [], blocks = [], elementIds = []) {
         this.name = name;
         this.trackName = trackName;
         this.x = x;
@@ -20,6 +21,7 @@ export class GraphNode {
         this.detectors = detectors;
         this.signals = signals;
         this.blocks = blocks;
+        this.elementIds = elementIds;
     }
 }
 export class Edge {

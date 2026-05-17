@@ -70,6 +70,8 @@ export class GraphNode {
     detectors: SectionDetector[] = [];
     signals: SectionSignal[] = [];
     blocks: SectionBlock[] = [];
+    elementIds: string[] = [];
+    
     busy: boolean = false;
 
     static readonly RADIUS = 10;
@@ -81,7 +83,8 @@ export class GraphNode {
         y: number,
         detectors: SectionDetector[] = [],
         signals: SectionSignal[] = [],
-        blocks: SectionBlock[] = []
+        blocks: SectionBlock[] = [],
+        elementIds: string[] = [],       
     ) {
         this.name = name;
         this.trackName = trackName;
@@ -90,6 +93,7 @@ export class GraphNode {
         this.detectors = detectors;
         this.signals = signals;
         this.blocks = blocks;
+        this.elementIds = elementIds;
     }
 
     draw(ctx: CanvasRenderingContext2D) {

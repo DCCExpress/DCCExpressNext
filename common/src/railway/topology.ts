@@ -350,6 +350,7 @@ export class RailwayTopologyLayout {
   getPhysicalTrackElements(): TopologyTrackElement[] {
     return this.elements.filter((element): element is TopologyTrackElement => {
       return (
+        element.type === ELEMENT_TYPES.TRACK_DIRECTION ||
         element.type === ELEMENT_TYPES.TRACK_STRAIGHT ||
         element.type === ELEMENT_TYPES.TRACK_END ||
         element.type === ELEMENT_TYPES.TRACK_CORNER ||

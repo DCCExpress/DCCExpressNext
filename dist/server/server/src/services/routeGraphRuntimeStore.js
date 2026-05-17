@@ -143,5 +143,17 @@ class RouteGraphRuntimeStore {
         this.busyTurnoutAddresses.clear();
         this.reservations.clear();
     }
+    getElementIdsForSections(sectionNames) {
+        if (!this.graph) {
+            return [];
+        }
+        const sectionNameSet = new Set(sectionNames);
+        return this.graph.nodes
+            .filter(node => sectionNameSet.has(node.name))
+            .flatMap(node => node.elementIds);
+    }
+    isTurnoutBusy(address) {
+        return this.busyTurnoutAddresses.has(address);
+    }
 }
 export const routeGraphRuntimeStore = new RouteGraphRuntimeStore();

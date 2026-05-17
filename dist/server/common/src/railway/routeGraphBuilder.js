@@ -126,7 +126,8 @@ export class RouteGraphBuilder {
         const detectors = this.collectSectionDetectors(sectionElements);
         const signals = this.collectSectionSignals(sectionElements);
         const blocks = this.collectSectionBlocks(sectionElements, trackName);
-        return new GraphNode(`S${section}`, trackName, x, y, detectors, signals, blocks);
+        const elementIds = sectionElements.map(elem => elem.id);
+        return new GraphNode(`S${section}`, trackName, x, y, detectors, signals, blocks, elementIds);
     }
     getSectionTrackName(sectionElements) {
         return (sectionElements.find(elem => elem.trackName.trim().length > 0)?.trackName ?? "Unnamed track");
@@ -166,12 +167,14 @@ export class RouteGraphBuilder {
                 : "Block";
             const resolvedTrackName = trackName?.trim()
                 ? trackName.trim()
-                : "Unnamed track";
+                : "";
             return {
                 id: block.id,
                 name: blockName,
                 trackName: resolvedTrackName,
-                label: `${resolvedTrackName}: ${blockName}`,
+                label: resolvedTrackName
+                    ? `${resolvedTrackName}: ${blockName}`
+                    : blockName,
             };
         });
     }

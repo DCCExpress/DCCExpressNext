@@ -298,6 +298,35 @@ class LayoutStore {
 
     return changed;
   }
+
+  setElementsBusyByIds(
+    elementIds: string[],
+    busy: boolean
+  ): boolean {
+    const layout = this.layout;
+
+    if (!layout) {
+      return false;
+    }
+
+    const idSet = new Set(elementIds);
+    let changed = false;
+
+    for (const elem of layout.getTrackElements()) {
+      if (!idSet.has(elem.id)) {
+        continue;
+      }
+
+      elem.isBusy = busy;
+      changed = true;
+    }
+
+    if (changed) {
+      this.emit();
+    }
+
+    return changed;
+  }
 }
 
 export const layoutStore = new LayoutStore();

@@ -2,7 +2,9 @@ import { ElementType } from "react";
 import { Loco, SingleScriptFile } from "../../../common/src/types";
 
 import { Layout } from "../models/editor/core/Layout";
-
+import type {
+  RouteGraphResponseDto,
+} from "../../../common/src/railway/routeGraphDto";
 
 export async function getLocos(): Promise<Loco[]> {
   const response = await fetch("/api/locos");
@@ -92,4 +94,14 @@ export async function saveScript(content: string): Promise<SingleScriptFile> {
   }
 
   return await res.json();
+}
+
+export async function getRouteGraph(): Promise<RouteGraphResponseDto> {
+  const response = await fetch("/api/layout/route-graph");
+
+  if (!response.ok) {
+    throw new Error("Nem sikerült lekérni a szerveroldali route gráfot.");
+  }
+
+  return response.json();
 }
