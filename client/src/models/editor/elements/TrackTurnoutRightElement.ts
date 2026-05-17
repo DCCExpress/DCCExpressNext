@@ -1,15 +1,9 @@
 
-import { SetTurnoutMessage } from "../../../../../common/src/types";
-import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { wsApi } from "../../../services/wsApi";
-import { AddressedElement } from "../core/AddressedElement";
-import { BaseElement } from "../core/BaseElement";
-import { ClickableBaseElement } from "../core/ClickableBaseElement";
+
 import { getDirectionXy } from "../core/helpers";
 import { Point } from "../core/Rect";
-import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackTurnoutLeftElement, ITrackTurnoutRightElement } from "../types/EditorTypes";
-import { IEditableProperty } from "./PropertyDescriptor";
+import { ELEMENT_TYPES, ITrackTurnoutRightElement } from "../types/EditorTypes";
 import { TrackTurnoutElement } from "./TrackTurnoutElement";
 
 export class TrackTurnoutRightElement extends TrackTurnoutElement implements ITrackTurnoutRightElement {

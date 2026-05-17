@@ -9,8 +9,9 @@ import { IEditableProperty } from "./PropertyDescriptor";
 import { getCanvasImage } from "../rendering/ImageCache";
 
 import i18n from "../../../i18n";
+import { TrackElement } from "../core/TrackElement";
 
-export class BlockElement extends BaseElement implements IBlockElement {
+export class BlockElement extends TrackElement implements IBlockElement {
     override type: typeof ELEMENT_TYPES.TRACK_BLOCK = ELEMENT_TYPES.TRACK_BLOCK;
     text: string = 'HELLO';
     textColor: string = 'black';

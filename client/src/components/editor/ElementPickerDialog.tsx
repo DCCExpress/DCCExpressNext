@@ -2,7 +2,7 @@ import { Button, Card, Group, Modal, Stack, Text } from "@mantine/core";
 import { IconLine } from "@tabler/icons-react";
 import { ElementType, ELEMENT_TYPES } from "../../models/editor/types/EditorTypes";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
-import { TrackElement } from "../../models/editor/elements/TrackElement";
+import { TrackStraightElement } from "../../models/editor/elements/TrackStraightElement";
 import { TrackEndElement } from "../../models/editor/elements/TrackEndElement";
 import { TrackCornerElement } from "../../models/editor/elements/TrackCornerElement";
 import { TrackCurveElement } from "../../models/editor/elements/TrackCurveElement";
@@ -37,7 +37,7 @@ export default function ElementPickerDialog({
 }: ElementPickerDialogProps) {
 
 
-  const track = new TrackElement(0, 0);
+  const track = new TrackStraightElement(0, 0);
   const trackdirection = new TrackDirectionElement(0, 0);
   const trackend = new TrackEndElement(0, 0);
   const trackcorner = new TrackCornerElement(0, 0);
@@ -76,8 +76,8 @@ export default function ElementPickerDialog({
               onPick(ELEMENT_TYPES.TRACK_DIRECTION);
               onClose();
             }} />
-            <ElementPreview element={track} label="Track" width={40} height={40} onClick={() => {
-              onPick(ELEMENT_TYPES.TRACK);
+            <ElementPreview element={track} label="Straight" width={40} height={40} onClick={() => {
+              onPick(ELEMENT_TYPES.TRACK_STRAIGHT);
               onClose();
             }} />
             <ElementPreview element={trackend} label="Track End" width={40} height={40} onClick={() => {

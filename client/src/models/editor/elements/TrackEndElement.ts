@@ -1,11 +1,11 @@
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { AddressedElement } from "../core/AddressedElement";
+import { TrackElement } from "../core/TrackElement";
 import { BaseElement } from "../core/BaseElement";
 import { sampleLayout } from "../sample/sampleLayout";
 import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackEndElement } from "../types/EditorTypes";
 
-export class TrackEndElement extends AddressedElement implements ITrackEndElement {
+export class TrackEndElement extends TrackElement implements ITrackEndElement {
     override type = ELEMENT_TYPES.TRACK_END
     constructor(x: number, y: number) {
         super(x, y);

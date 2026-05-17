@@ -1,6 +1,6 @@
 import { measure } from "../../../helpers";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
-import { BaseElement, TravelDirection } from "./BaseElement";
+import { BaseElement } from "./BaseElement";
 import {
     Edge,
     Graph,
@@ -16,6 +16,7 @@ import { BlockElement } from "../elements/BlockElement";
 import { isTurnoutElement, Layout } from "./Layout";
 import { Point } from "./Rect";
 import { TrackTravelDirectionResolver } from "./TrackTravelDirectionResolver";
+import { TrackElement, TravelDirection } from "./TrackElement";
 
 type TurnoutSide = "entry" | "straight" | "div";
 
@@ -144,7 +145,7 @@ export class RouteGraphBuilder {
             ];
 
             for (const pos of connectionPositions) {
-                const firstElem = this.layout.getObjectXy(pos);
+                const firstElem = this.layout.getObjectXy(pos) as TrackElement;
 
                 if (!firstElem) {
                     continue;
@@ -171,9 +172,9 @@ export class RouteGraphBuilder {
         }
     }
 
-    private createPhysicalSection(firstElem: BaseElement): void {
+    private createPhysicalSection(firstElem: TrackElement): void {
         const sectionNumber = this.nextSectionNumber++;
-        const sectionElements: BaseElement[] = [];
+        const sectionElements: TrackElement[] = [];
 
         this.walkTrackSection(
             firstElem,
@@ -200,9 +201,9 @@ export class RouteGraphBuilder {
      * Az összes bejárt elem ugyanazt a section számot kapja.
      */
     private walkTrackSection(
-        obj: BaseElement,
+        obj: TrackElement,
         section: number,
-        sectionElements: BaseElement[]
+        sectionElements: TrackElement[]
     ): void {
         obj.isVisited = true;
         //obj.isRoute = true;
@@ -229,12 +230,12 @@ export class RouteGraphBuilder {
     }
 
     private walkTrackSectionDirection(
-        current: BaseElement,
+        current: TrackElement,
         targetPos: Point,
         section: number,
-        sectionElements: BaseElement[]
+        sectionElements: TrackElement[]
     ): void {
-        const next = this.layout.getObjectXy(targetPos);
+        const next = this.layout.getObjectXy(targetPos) as TrackElement;
 
         if (!next) {
             return;
@@ -268,7 +269,7 @@ export class RouteGraphBuilder {
 
     private createSectionGraphNode(
         section: number,
-        sectionElements: BaseElement[]
+        sectionElements: TrackElement[]
     ): GraphNode {
         let x = 0;
         let y = 0;
@@ -421,7 +422,7 @@ export class RouteGraphBuilder {
             for (const side of sides) {
                 const connectedElem = this.layout.getObjectXy(
                     connections[side]
-                );
+                ) as TrackElement;
 
                 /**
                  * Edge-et csak valódi fizikai szakaszból indítunk.
@@ -507,7 +508,7 @@ export class RouteGraphBuilder {
             const connections = turnout.getConnections();
             const exitPos = connections[exit.exitSide];
 
-            const nextElem = this.layout.getObjectXy(exitPos);
+            const nextElem = this.layout.getObjectXy(exitPos) as TrackElement;
 
             if (!nextElem) {
                 continue;
@@ -557,7 +558,7 @@ export class RouteGraphBuilder {
 
     private finishRouteEdge(
         fromNode: GraphNode,
-        targetElem: BaseElement,
+        targetElem: TrackElement,
         turnoutStates: TurnoutStateRequirement[],
         locoDirection: TravelDirection
     ): void {
@@ -705,7 +706,7 @@ export class RouteGraphBuilder {
      * a mozdony parancsa forward vagy reverse legyen-e.
      */
     private getLocoDirectionForDeparture(
-        trackElem: BaseElement,
+        trackElem: TrackElement,
         turnout: TrackTurnoutElement
     ): TravelDirection {
         if (trackElem.travelDirection === "unknown") {
@@ -728,7 +729,7 @@ export class RouteGraphBuilder {
      * "előre" iránya a megadott pozíció felé mutat.
      */
     private isTrackForwardTowardsPosition(
-        trackElem: BaseElement,
+        trackElem: TrackElement,
         pos: Point
     ): boolean {
         if (trackElem.travelDirection === "forward") {

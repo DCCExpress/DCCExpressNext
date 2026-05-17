@@ -1,6 +1,6 @@
 import { IEditableProperty } from "../elements/PropertyDescriptor";
 import { ELEMENT_TYPES, ElementType, ITrackBaseElement } from "../types/EditorTypes";
-import { AddressedElement } from "./AddressedElement";
+import { TrackElement } from "./TrackElement";
 import { BaseElement } from "./BaseElement";
 
 export class TrackBaseElement extends BaseElement implements ITrackBaseElement {

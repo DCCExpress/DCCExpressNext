@@ -10,7 +10,7 @@ export type RouteTurnoutItem = {
   closed: boolean;
 };
 
-export class RouteButtonElement extends ClickableBaseElement implements IRouteButtonElement {
+export class RouteButtonElement extends BaseElement implements IRouteButtonElement {
     override type: typeof ELEMENT_TYPES.BUTTON_ROUTE = ELEMENT_TYPES.BUTTON_ROUTE;
     label: string = "Route";
     colorOn: string = "lime";

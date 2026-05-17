@@ -1,18 +1,9 @@
 
-import { SetTurnoutMessage } from "../../../../../common/src/types";
-import Api from "../../../api/Api";
-import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { wsApi } from "../../../services/wsApi";
-import { AddressedElement } from "../core/AddressedElement";
-import { BaseElement } from "../core/BaseElement";
-import { ClickableBaseElement } from "../core/ClickableBaseElement";
 import { getDirectionXy } from "../core/helpers";
 import { Point } from "../core/Rect";
-import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackCornerElement, ITrackTurnoutLeftElement } from "../types/EditorTypes";
-import { IEditableProperty } from "./PropertyDescriptor";
+import { ELEMENT_TYPES, ITrackTurnoutLeftElement } from "../types/EditorTypes";
 import { TrackTurnoutElement } from "./TrackTurnoutElement";
-import { TrackTurnoutRightElement } from "./TrackTurnoutRightElement";
 
 export class TrackTurnoutLeftElement extends TrackTurnoutElement implements ITrackTurnoutLeftElement {
     override type: typeof ELEMENT_TYPES.TRACK_TURNOUT_LEFT = ELEMENT_TYPES.TRACK_TURNOUT_LEFT;

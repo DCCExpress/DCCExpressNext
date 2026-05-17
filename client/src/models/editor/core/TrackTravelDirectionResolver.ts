@@ -1,9 +1,10 @@
 import { TrackDirectionElement } from "../elements/TrackDirectionElement";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
-import { BaseElement, TravelDirection } from "./BaseElement";
+
 
 import { Layout } from "./Layout";
 import { Point } from "./Rect";
+import { TrackElement, TravelDirection } from "./TrackElement";
 
 type TurnoutSide = "entry" | "straight" | "div";
 
@@ -61,7 +62,7 @@ export class TrackTravelDirectionResolver {
     // ============================================================
 
     private resetTravelDirections(): void {
-        const elems = this.layout.getAllElements();
+        const elems = this.layout.getTrackElements();
 
         for (const elem of elems) {
             elem.travelDirection = "unknown";
@@ -70,7 +71,7 @@ export class TrackTravelDirectionResolver {
     }
 
     private assignTrackNameToNetwork(
-        network: BaseElement[],
+        network: TrackElement[],
         trackName: string
     ): void {
         for (const elem of network) {
@@ -90,8 +91,8 @@ export class TrackTravelDirectionResolver {
      *
      * Ez elég a route graph szempontjából releváns hálózatokhoz.
      */
-    private collectTrackNetworks(): BaseElement[][] {
-        const elems = this.layout.getAllElements();
+    private collectTrackNetworks(): TrackElement[][] {
+        const elems = this.layout.getTrackElements();
 
         const seeds = elems.filter(
             elem =>
@@ -100,7 +101,7 @@ export class TrackTravelDirectionResolver {
         );
 
         const visited = new Set<string>();
-        const networks: BaseElement[][] = [];
+        const networks: TrackElement[][] = [];
 
         for (const seed of seeds) {
             if (visited.has(seed.id)) {
@@ -118,11 +119,11 @@ export class TrackTravelDirectionResolver {
     }
 
     private walkConnectedNetwork(
-        start: BaseElement,
+        start: TrackElement,
         visited: Set<string>
-    ): BaseElement[] {
-        const result: BaseElement[] = [];
-        const queue: BaseElement[] = [start];
+    ): TrackElement[] {
+        const result: TrackElement[] = [];
+        const queue: TrackElement[] = [start];
 
         while (queue.length > 0) {
             const current = queue.shift()!;
@@ -149,7 +150,7 @@ export class TrackTravelDirectionResolver {
     /**
      * Megadja egy pályaelem közvetlenül kapcsolódó szomszédait.
      */
-    private getConnectedNeighbors(elem: BaseElement): BaseElement[] {
+    private getConnectedNeighbors(elem: TrackElement): TrackElement[] {
         if (elem instanceof TrackTurnoutElement) {
             return this.getTurnoutNeighbors(elem);
         }
@@ -157,8 +158,8 @@ export class TrackTravelDirectionResolver {
         return this.getTrackNeighbors(elem);
     }
 
-    private getTrackNeighbors(elem: BaseElement): BaseElement[] {
-        const result: BaseElement[] = [];
+    private getTrackNeighbors(elem: TrackElement): TrackElement[] {
+        const result: TrackElement[] = [];
 
         const nextPos = elem.getNextItemXy();
         const prevPos = elem.getPrevItemXy();
@@ -170,11 +171,11 @@ export class TrackTravelDirectionResolver {
     }
 
     private tryAddTrackNeighbor(
-        current: BaseElement,
+        current: TrackElement,
         targetPos: Point,
-        result: BaseElement[]
+        result: TrackElement[]
     ): void {
-        const neighbor = this.layout.getObjectXy(targetPos);
+        const neighbor = this.layout.getObjectXy(targetPos) as TrackElement;;
 
         if (!neighbor) {
             return;
@@ -202,8 +203,8 @@ export class TrackTravelDirectionResolver {
         }
     }
 
-    private getTurnoutNeighbors(turnout: TrackTurnoutElement): BaseElement[] {
-        const result: BaseElement[] = [];
+    private getTurnoutNeighbors(turnout: TrackTurnoutElement): TrackElement[] {
+        const result: TrackElement[] = [];
         const connections = turnout.getConnections();
 
         const connectionPositions = [
@@ -213,7 +214,7 @@ export class TrackTravelDirectionResolver {
         ];
 
         for (const pos of connectionPositions) {
-            const neighbor = this.layout.getObjectXy(pos);
+            const neighbor = this.layout.getObjectXy(pos) as TrackElement;
 
             if (neighbor) {
                 result.push(neighbor);
@@ -230,7 +231,7 @@ export class TrackTravelDirectionResolver {
     private propagateFromMarker(marker: TrackDirectionElement): void {
         marker.travelDirection = "forward";
 
-        const trackQueue: BaseElement[] = [marker];
+        const trackQueue: TrackElement[] = [marker];
         const turnoutQueue: TurnoutPropagationState[] = [];
 
         const processedTrackIds = new Set<string>();
@@ -279,8 +280,8 @@ export class TrackTravelDirectionResolver {
     // ============================================================
 
     private propagateFromTrack(
-        track: BaseElement,
-        trackQueue: BaseElement[],
+        track: TrackElement,
+        trackQueue: TrackElement[],
         turnoutQueue: TurnoutPropagationState[]
     ): void {
         this.propagateFromTrackSide(
@@ -299,9 +300,9 @@ export class TrackTravelDirectionResolver {
     }
 
     private propagateFromTrackSide(
-        track: BaseElement,
+        track: TrackElement,
         side: "next" | "prev",
-        trackQueue: BaseElement[],
+        trackQueue: TrackElement[],
         turnoutQueue: TurnoutPropagationState[]
     ): void {
         const targetPos =
@@ -309,7 +310,7 @@ export class TrackTravelDirectionResolver {
                 ? track.getNextItemXy()
                 : track.getPrevItemXy();
 
-        const nextElem = this.layout.getObjectXy(targetPos);
+        const nextElem = this.layout.getObjectXy(targetPos) as TrackElement;
 
         if (!nextElem) {
             return;
@@ -370,7 +371,7 @@ export class TrackTravelDirectionResolver {
     }
 
     private isTrackSideForward(
-        track: BaseElement,
+        track: TrackElement,
         side: "next" | "prev"
     ): boolean {
         return (
@@ -380,7 +381,7 @@ export class TrackTravelDirectionResolver {
     }
 
     private isTrackForwardTowardsPosition(
-        track: BaseElement,
+        track: TrackElement,
         pos: Point
     ): boolean {
         if (track.travelDirection === "forward") {
@@ -405,7 +406,7 @@ export class TrackTravelDirectionResolver {
      *   false -> a track forward iránya a kapcsolat felé mutasson
      */
     private getExpectedTrackDirectionFromConnection(
-        track: BaseElement,
+        track: TrackElement,
         connectionPos: Point,
         shouldPointAwayFromConnection: boolean
     ): TravelDirection | undefined {
@@ -437,9 +438,9 @@ export class TrackTravelDirectionResolver {
     }
 
     private assignTravelDirection(
-        elem: BaseElement,
+        elem: TrackElement,
         direction: TravelDirection,
-        trackQueue: BaseElement[]
+        trackQueue: TrackElement[]
     ): void {
         if (elem.travelDirection === "unknown") {
             elem.travelDirection = direction;
@@ -460,7 +461,7 @@ export class TrackTravelDirectionResolver {
 
     private propagateFromTurnoutSide(
         state: TurnoutPropagationState,
-        trackQueue: BaseElement[],
+        trackQueue: TrackElement[],
         turnoutQueue: TurnoutPropagationState[]
     ): void {
         const { turnout, enteredSide, forwardIntoTurnout } = state;
@@ -486,7 +487,7 @@ export class TrackTravelDirectionResolver {
                 );
 
             const targetPos = connections[targetSide];
-            const targetElem = this.layout.getObjectXy(targetPos);
+            const targetElem = this.layout.getObjectXy(targetPos) as TrackElement;
 
             if (!targetElem) {
                 continue;
@@ -566,7 +567,7 @@ export class TrackTravelDirectionResolver {
 
     private getTurnoutSideConnectedToElement(
         turnout: TrackTurnoutElement,
-        other: BaseElement
+        other: TrackElement
     ): TurnoutSide | undefined {
         const connections = turnout.getConnections();
 

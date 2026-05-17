@@ -1,16 +1,16 @@
 import { generateId } from "../../../helpers";
-import { TrackElement } from "./TrackElement";
+import { TrackStraightElement } from "./TrackStraightElement";
 import {
     DrawOptions,
     ELEMENT_TYPES,
     ITrackDirectionElement,
 } from "../types/EditorTypes";
-import { AddressedElement } from "../core/AddressedElement";
+import { TrackElement } from "../core/TrackElement";
 import { Point } from "../core/Rect";
 import { drawTextWithRoundedBackground } from "../../../graphics";
 
 export class TrackDirectionElement
-    extends AddressedElement
+    extends TrackElement
     implements ITrackDirectionElement {
 
      type: typeof ELEMENT_TYPES.TRACK_DIRECTION =

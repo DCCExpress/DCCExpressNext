@@ -1,14 +1,14 @@
 
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { AddressedElement } from "../core/AddressedElement";
+import { TrackElement } from "../core/TrackElement";
 import { BaseElement } from "../core/BaseElement";
 import { getDirectionXy } from "../core/helpers";
 import { Point } from "../core/Rect";
 import { sampleLayout } from "../sample/sampleLayout";
 import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackCurveElement } from "../types/EditorTypes";
 
-export class TrackCurveElement extends AddressedElement implements ITrackCurveElement {
+export class TrackCurveElement extends TrackElement implements ITrackCurveElement {
 
     override type = ELEMENT_TYPES.TRACK_CURVE;
     constructor(x: number, y: number) {

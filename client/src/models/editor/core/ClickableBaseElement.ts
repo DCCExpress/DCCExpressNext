@@ -1,7 +1,7 @@
 // limitations under the License.
 
-import { IAddressedElement } from "../types/EditorTypes";
-import { AddressedElement } from "./AddressedElement";
+import { ITrackElement } from "../types/EditorTypes";
+import { TrackElement } from "./TrackElement";
 import { BaseElement } from "./BaseElement";
 
 export abstract class ClickableBaseElement extends BaseElement {

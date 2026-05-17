@@ -3,6 +3,7 @@ import { generateId } from "../../../helpers";
 import { wsApi } from "../../../services/wsApi";
 import { BaseElement } from "../core/BaseElement";
 import { Layer } from "../core/Layer";
+import { TrackElement } from "../core/TrackElement";
 import { DrawOptions, ELEMENT_TYPES, IBaseElement, ITrackSignalElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
@@ -21,7 +22,7 @@ class SignalLight {
         this.color = color
     }
 }
-export class TrackSignalElement extends BaseElement implements ITrackSignalElement {
+export class TrackSignalElement extends TrackElement implements ITrackSignalElement {
     override type: typeof ELEMENT_TYPES.TRACK_SIGNAL2 = ELEMENT_TYPES.TRACK_SIGNAL2;
     //outputMode: OutputModes = OutputModes.accessory;
 

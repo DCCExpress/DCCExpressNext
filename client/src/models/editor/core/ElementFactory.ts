@@ -1,5 +1,5 @@
 import { BaseElement } from "./BaseElement";
-import { TrackElement } from "../elements/TrackElement";
+import { TrackStraightElement } from "../elements/TrackStraightElement";
 import { EditorElementData, ELEMENT_TYPES } from "../types/EditorTypes";
 import { TrackCornerElement } from "../elements/TrackCornerElement";
 import { TrackEndElement } from "../elements/TrackEndElement";
@@ -26,8 +26,8 @@ import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonEleme
 export class ElementFactory {
   static create(data: EditorElementData): BaseElement {
     switch (data.type) {
-      case ELEMENT_TYPES.TRACK: {
-        return TrackElement.fromJSON(data)
+      case ELEMENT_TYPES.TRACK_STRAIGHT: {
+        return TrackStraightElement.fromJSON(data)
       }
 
       case ELEMENT_TYPES.TRACK_DIRECTION: {

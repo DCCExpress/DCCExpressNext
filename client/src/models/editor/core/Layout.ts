@@ -1,6 +1,6 @@
 import { measure, showWarningMessage } from "../../../helpers";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
-import { TrackElement } from "../elements/TrackElement";
+import { TrackStraightElement } from "../elements/TrackStraightElement";
 import TrackTurnoutDoubleElement from "../elements/TrackTurnoutDoubleElement";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
 import { TrackTurnoutLeftElement } from "../elements/TrackTurnoutLeftElement";
@@ -16,6 +16,7 @@ import { Loco } from "../../../../../common/src/types";
 import { Edge, Graph, GraphNode, RouteSolution, TurnoutStateRequirement } from "./Graph";
 import { RouteGraphBuilder } from "./RouteGraphBuilder";
 import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
+import { TrackElement } from "./TrackElement";
 
 export function isTurnoutElement(el: BaseElement | null | undefined) {
     return (
@@ -47,7 +48,7 @@ export class Layout {
             new Layer("track", "Pálya"),
         ];
 
-        const track = new TrackElement(10, 10)
+        const track = new TrackStraightElement(10, 10)
         track.id = "track1";
         this.track.elements.push(track);
 
@@ -170,6 +171,16 @@ export class Layout {
     // public getAllElements(): BaseElement[] {
     //     return this.layers.flatMap(layer => layer.elements);
     // }
+
+    public getTrackElements(): TrackElement[] {
+        return [
+            ...this.track.elements as TrackElement[],
+            ...this.blocks.elements as TrackElement[],
+            ...this.signals.elements as TrackElement[],
+            ...this.sensors.elements as TrackElement[],
+        ];
+    }
+
 
     public getAllElements(): BaseElement[] {
         return [
@@ -392,16 +403,16 @@ export class Layout {
 
 
     resetRoutes() {
-        const elems = this.getAllElements();
-        elems.forEach((elem: BaseElement) => {
+        const elems = this.getTrackElements();
+        elems.forEach((elem: TrackElement) => {
             elem.isVisited = false;
             elem.isRoute = false;
             elem.section = 0;
         })
     }
     checkRoutes2() {
-        const elems = this.getAllElements();
-        elems.forEach((elem: BaseElement) => {
+        const elems = this.getTrackElements();
+        elems.forEach((elem: TrackElement) => {
             elem.isVisited = false;
             elem.isRoute = false;
         })
@@ -460,7 +471,7 @@ export class Layout {
     }
 
     private markExtendedRouteSolution(solution: RouteSolution): void {
-        const elems = this.getAllElements();
+        const elems = this.getTrackElements();
 
         /**
          * A graph node nevek most S1, S2, S3...
@@ -503,7 +514,7 @@ export class Layout {
 
         const checkRoutesStart = performance.now();
 
-        const elems = this.getAllElements();
+        const elems = this.getTrackElements();
 
         // --------------------------------------------------
         // 1. Gráf felépítése az ExtendedRouteButtonök miatt
@@ -539,7 +550,7 @@ export class Layout {
         // mert a RouteGraphBuilder összekoszolja az isVisited mezőket.
         // Innentől a régi RouteButton startWalk() tiszta lappal indul.
         // --------------------------------------------------
-        elems.forEach((elem: BaseElement) => {
+        elems.forEach((elem: TrackElement) => {
             elem.isVisited = false;
             elem.isRoute = false;
         });
@@ -547,7 +558,8 @@ export class Layout {
         // --------------------------------------------------
         // 2. Régi, kézzel felépített RouteButtonök ellenőrzése
         // --------------------------------------------------
-        const routeButtons = elems.filter(
+        const belems = this.getAllElements();
+        const routeButtons = belems.filter(
             (elem: BaseElement) => elem instanceof RouteButtonElement
         ) as RouteButtonElement[];
 
@@ -578,7 +590,7 @@ export class Layout {
         // --------------------------------------------------
         // 3. Új, gráfos ExtendedRouteButtonök ellenőrzése
         // --------------------------------------------------
-        const extendedRouteButtons = elems.filter(
+        const extendedRouteButtons = belems.filter(
             (elem: BaseElement) => elem instanceof ExtendedRouteButtonElement
         ) as ExtendedRouteButtonElement[];
 
@@ -619,7 +631,7 @@ export class Layout {
     }
 
 
-    startWalk(obj: BaseElement) {
+    startWalk(obj: TrackElement) {
         // Lehet meg kellene vizsgálni, hogy a következő elem az
         // a route váltóiban szerepel e?
         // vagy váltótól váltói kellene vizsgálódni??
@@ -629,7 +641,7 @@ export class Layout {
         var p1 = obj.getNextItemXy()
         var p2 = obj.getPrevItemXy()
 
-        var next = this.getObjectXy(p1)
+        var next = this.getObjectXy(p1) as TrackElement
         if (next) {
             if (!next.isVisited && (obj.pos.isEqual(next.getNextItemXy()) || obj.pos.isEqual(next.getPrevItemXy()))) {
                 next.isRoute = true
@@ -637,7 +649,7 @@ export class Layout {
             }
         }
 
-        var prev = this.getObjectXy(p2)
+        var prev = this.getObjectXy(p2) as TrackElement
         if (prev) {
             if (!prev.isVisited && (obj.pos.isEqual(prev.getNextItemXy()) || obj.pos.isEqual(prev.getPrevItemXy()))) {
                 prev.isRoute = true
@@ -647,7 +659,7 @@ export class Layout {
     }
 
 
-    walkTrack(obj: BaseElement, section: number) {
+    walkTrack(obj: TrackElement, section: number) {
         // Lehet meg kellene vizsgálni, hogy a következő elem az
         // a route váltóiban szerepel e?
         // vagy váltótól váltói kellene vizsgálódni??
@@ -657,7 +669,7 @@ export class Layout {
         var p1 = obj.getNextItemXy()
         var p2 = obj.getPrevItemXy()
 
-        var next = this.getObjectXy(p1)
+        var next = this.getObjectXy(p1) as TrackElement;
         if (next && !(next instanceof TrackTurnoutElement)) {
             if (!next.isVisited && (obj.pos.isEqual(next.getNextItemXy()) || obj.pos.isEqual(next.getPrevItemXy()))) {
                 next.isRoute = true
@@ -665,7 +677,7 @@ export class Layout {
             }
         }
 
-        var prev = this.getObjectXy(p2)
+        var prev = this.getObjectXy(p2) as TrackElement;
         if (prev && !(prev instanceof TrackTurnoutElement)) {
             if (!prev.isVisited && (obj.pos.isEqual(prev.getNextItemXy()) || obj.pos.isEqual(prev.getPrevItemXy()))) {
                 prev.isRoute = true
@@ -680,44 +692,13 @@ export class Layout {
         let t1 = this.getElementByName("T21") as TrackTurnoutElement;
         t1.isVisited = true;
         t1.isRoute = true;
-        const entry = this.getObjectXy(t1.getConnections().div);
+        const entry = this.getObjectXy(t1.getConnections().div) as TrackElement;
         if (entry) {
             this.walkTrack(entry, section)
         }
 
     }
-    processRoutes2() {
-        //this.test();
 
-        let section = 1;
-        const elems = this.getAllElements();
-        const turnouts = elems.filter((elem: BaseElement) => isTurnoutElement(elem)) as TrackTurnoutElement[];
-        turnouts.forEach(t => {
-            this.resetRoutes();
-            t.isVisited = true;
-            t.isRoute = true;
-            var connections = t.getConnections();
-
-            const entry = this.getObjectXy(connections.entry);
-            if (entry) {
-                this.walkTrack(entry, section++)
-            }
-
-            const staright = this.getObjectXy(connections.straight);
-            if (staright) {
-                this.walkTrack(staright, section++)
-            }
-
-            const div = this.getObjectXy(connections.div);
-            if (div) {
-                this.walkTrack(div, section++)
-            }
-
-            //return;
-            console.log("CONNECTIONS: ", connections)
-        });
-
-    }
 
 
     // ==================================================

@@ -1,10 +1,10 @@
 
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { AddressedElement } from "../core/AddressedElement";
+import { TrackElement } from "../core/TrackElement";
 import { DrawOptions, ELEMENT_TYPES, ITrackCrossingElement } from "../types/EditorTypes";
 
-export class TrackCrossingElement extends AddressedElement implements ITrackCrossingElement {
+export class TrackCrossingElement extends TrackElement implements ITrackCrossingElement {
 
     override type = ELEMENT_TYPES.TRACK_CROSSING;
     constructor(x: number, y: number) {

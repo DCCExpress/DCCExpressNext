@@ -8,18 +8,6 @@ import { getDirectionXy } from "./helpers";
 import { LayerId } from "./Layer";
 import { IRect, Point } from "./Rect";
 
-export enum RailStates {
-    free, selected, occupied
-}
-
-export type TravelDirection =
-    | "unknown"
-    | "forward"
-    | "reverse";
-
-export const RailColors = { free: "gray", selected: "yellow", occupied: "red" }
-
-
 
 export abstract class BaseElement implements IBaseElement {
     id: string = "";
@@ -38,17 +26,14 @@ export abstract class BaseElement implements IBaseElement {
     enabled: boolean = true;
     locked: boolean = false;
     visible: boolean = true;
-    isVisited: boolean = false; // 
-    isRoute: boolean = false; // útvonal => sárgára
     bg: string = "black";
     fg: string = "white";
     occupied: boolean = false;
     alpha: number = 0.5;
-    state: RailStates = RailStates.free;
-    section: number = 0;
+    isVisited: boolean = false; // 
     debug: boolean = false;
     //length: number = 1;
-    travelDirection: TravelDirection = "unknown";
+
     trackName: string = "";
 
     constructor(x: number, y: number) {
@@ -132,17 +117,6 @@ export abstract class BaseElement implements IBaseElement {
         return "black";
     }
 
-    get stateColor(): string {
-        if (this.isRoute) {
-            return "yellow";
-        }
-
-        switch (this.state) {
-            case RailStates.selected: return RailColors.selected;
-            case RailStates.occupied: return RailColors.occupied;
-        }
-        return RailColors.free;
-    }
 
     protected normalizeRotation(value: number): number {
         let result = value % 360;
@@ -265,64 +239,7 @@ export abstract class BaseElement implements IBaseElement {
         }
     }
 
-    
-protected drawSectionInfo(
-    ctx: CanvasRenderingContext2D,
-    options?: DrawOptions
-): void {
-    if (!options?.showSection || this.section <= 0) {
-        return;
-    }
 
-    ctx.save();
-
-    drawTextWithRoundedBackground(
-        ctx,
-        this.centerX,
-        this.centerY + 12,
-        "S" + this.section.toString(),
-        "white",
-        "black"
-    );
-
-    drawTextWithRoundedBackground(
-        ctx,
-        this.centerX,
-        this.centerY - 0,
-        this.getTravelDirectionArrow(),
-        "white",
-        "black",
-        2,
-        2
-    );
-
-    ctx.restore();
-}
-
-protected getTravelDirectionArrow(): string {
-    if (this.travelDirection === "unknown") {
-        return "?";
-    }
-
-    const target =
-        this.travelDirection === "forward"
-            ? this.getNextItemXy()
-            : this.getPrevItemXy();
-
-    const dx = target.x - this.pos.x;
-    const dy = target.y - this.pos.y;
-
-    if (dx > 0 && dy === 0) return "→";
-    if (dx > 0 && dy > 0) return "↘";
-    if (dx === 0 && dy > 0) return "↓";
-    if (dx < 0 && dy > 0) return "↙";
-    if (dx < 0 && dy === 0) return "←";
-    if (dx < 0 && dy < 0) return "↖";
-    if (dx === 0 && dy < 0) return "↑";
-    if (dx > 0 && dy < 0) return "↗";
-
-    return "?";
-}
     mouseDown(ev: MouseEvent) {
     }
 

@@ -1,12 +1,13 @@
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
+import { TrackElement } from "../core/TrackElement";
 import { DrawOptions, ELEMENT_TYPES, ElementType, IBaseElement, ITrackSensorElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 export enum SensorTypes { circle, rect }
 
-export class TrackSensorElement extends BaseElement implements ITrackSensorElement {
+export class TrackSensorElement extends TrackElement implements ITrackSensorElement {
     //override type: ElementType = ELEMENT_TYPES.TRACK_SENSOR;
     override type: typeof ELEMENT_TYPES.TRACK_SENSOR = ELEMENT_TYPES.TRACK_SENSOR;
     address: number = 0;

@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { Box, Group, Popover, Text, Stack, useMantineColorScheme } from "@mantine/core";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { DrawOptions, ELEMENT_TYPES, EditorTool } from "../models/editor/types/EditorTypes";
-import { TrackElement } from "../models/editor/elements/TrackElement";
+import { TrackStraightElement } from "../models/editor/elements/TrackStraightElement";
 import { TrackEndElement } from "../models/editor/elements/TrackEndElement";
 import { TrackCornerElement } from "../models/editor/elements/TrackCornerElement";
 import { TrackCurveElement } from "../models/editor/elements/TrackCurveElement";
@@ -123,7 +123,7 @@ type SelectionState = {
   endGridY: number;
 };
 
-const CursorTrackElement = new TrackElement(0, 0);
+const CursorTrackElement = new TrackStraightElement(0, 0);
 const CursorTrackDirectionElement = new TrackDirectionElement(0, 0);
 const CursorTrackEndElement = new TrackEndElement(0, 0);
 const CursorTrackCornerElement = new TrackCornerElement(0, 0);
@@ -1909,7 +1909,7 @@ export default function TrackCanvas({
 
 function createCursorElement(tool: EditorTool): BaseElement | null {
   switch (tool.elementType) {
-    case ELEMENT_TYPES.TRACK:
+    case ELEMENT_TYPES.TRACK_STRAIGHT:
       return CursorTrackElement;
 
     case ELEMENT_TYPES.TRACK_DIRECTION:

@@ -1,19 +1,12 @@
 
-import { SetTurnoutMessage } from "../../../../../common/src/types";
-import Api from "../../../api/Api";
 import { drawTextWithRoundedBackground } from "../../../graphics";
-import { generateId } from "../../../helpers";
 import { wsApi } from "../../../services/wsApi";
-import { AddressedElement } from "../core/AddressedElement";
-import { BaseElement } from "../core/BaseElement";
-import { ClickableBaseElement } from "../core/ClickableBaseElement";
-import { getDirectionXy } from "../core/helpers";
+import { TrackElement } from "../core/TrackElement";
 import { Point } from "../core/Rect";
-import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackCornerElement, ITrackTurnoutLeftElement } from "../types/EditorTypes";
+import { DrawOptions } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
-import { TrackTurnoutRightElement } from "./TrackTurnoutRightElement";
 
-export abstract class TrackTurnoutElement extends ClickableBaseElement {
+export abstract class TrackTurnoutElement extends TrackElement {
     //override type: typeof ELEMENT_TYPES.TRACK_TURNOUT = ELEMENT_TYPES.TRACK_TURNOUT;
     address: number = 0;
     turnoutLockedColor: string | CanvasGradient | CanvasPattern = "red";

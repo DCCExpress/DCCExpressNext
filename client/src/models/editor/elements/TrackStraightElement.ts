@@ -1,17 +1,17 @@
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { AddressedElement } from "../core/AddressedElement";
+import { TrackElement } from "../core/TrackElement";
 import { TrackBaseElement } from "../core/TrackBaseElement";
-import { DrawOptions, ELEMENT_TYPES, IBaseElement, ITrackElement } from "../types/EditorTypes";
+import { DrawOptions, ELEMENT_TYPES, IBaseElement, ITrackElement as ITrackStarightElement } from "../types/EditorTypes";
 
 
 
-export class TrackElement extends AddressedElement implements ITrackElement {
-    override type: typeof ELEMENT_TYPES.TRACK = ELEMENT_TYPES.TRACK;
+export class TrackStraightElement extends TrackElement implements ITrackStarightElement {
+    override type: typeof ELEMENT_TYPES.TRACK_STRAIGHT = ELEMENT_TYPES.TRACK_STRAIGHT;
 
     constructor(x: number, y: number) {
         super(x, y);
-        this.type = ELEMENT_TYPES.TRACK;
+        this.type = ELEMENT_TYPES.TRACK_STRAIGHT;
         this.rotationStep = 45;
         this.length = 200;
     }
@@ -162,8 +162,8 @@ export class TrackElement extends AddressedElement implements ITrackElement {
     //     };
     // }
 
-    static fromJSON(data: ITrackElement): TrackElement {
-        const track = new TrackElement(data.x, data.y);
+    static fromJSON(data: ITrackStarightElement): TrackStraightElement {
+        const track = new TrackStraightElement(data.x, data.y);
         track.id = data.id;
         track.name = data.name;
         track.rotation = data.rotation;
@@ -173,8 +173,8 @@ export class TrackElement extends AddressedElement implements ITrackElement {
 
         return track;
     }
-    override clone(): TrackElement {
-        const copy = new TrackElement(this.x, this.y);
+    override clone(): TrackStraightElement {
+        const copy = new TrackStraightElement(this.x, this.y);
         copy.id = generateId();
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;

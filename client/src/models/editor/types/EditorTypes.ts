@@ -7,7 +7,7 @@ import { TrackSignalElement as TrackSignal2Element } from "../elements/TrackSign
 export const ELEMENT_TYPES = {
   GENERAL: "general",
   ADDRESSED_ELEMENT: "addressedelement",
-  TRACK: "track",
+  TRACK_STRAIGHT: "track",
   TRACK_DIRECTION: "trackdirection",
   TRACK_BASE_ELEMENT: "trackbaseelement",
   TRACK_END: "trackend",
@@ -98,63 +98,65 @@ export interface ITrackBaseElement extends IBaseElement   {
   //length: number;
 }
 
-export interface IAddressedElement extends ITrackBaseElement { 
+export interface ITrackElement extends ITrackBaseElement { 
   address: number,
+  length: number,
 }
 
-export interface ITrackElement extends IAddressedElement {
-  type: typeof ELEMENT_TYPES.TRACK;
+
+export interface ITrackStraightElement extends ITrackElement {
+  type: typeof ELEMENT_TYPES.TRACK_STRAIGHT;
 }
 
-export interface ITrackDirectionElement extends IAddressedElement {
+export interface ITrackDirectionElement extends ITrackElement {
     type: typeof ELEMENT_TYPES.TRACK_DIRECTION;
 }
 
-export interface ITrackEndElement extends IAddressedElement {
+export interface ITrackEndElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_END;
 }
 
-export interface ITrackCornerElement extends IAddressedElement {
+export interface ITrackCornerElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_CORNER;
 }
 
-export interface ITrackCurveElement extends IAddressedElement {
+export interface ITrackCurveElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_CURVE;
 }
 
-export interface ITrackCrossingElement extends IAddressedElement {
+export interface ITrackCrossingElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_CROSSING;
 }
 
-export interface ITrackTurnoutLeftElement extends IAddressedElement {
+export interface ITrackTurnoutLeftElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_TURNOUT_LEFT;
   turnoutAddress: number;
   turnoutClosedValue: boolean;
 }
 
-export interface ITrackTurnoutRightElement extends IAddressedElement {
+export interface ITrackTurnoutRightElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_TURNOUT_RIGHT;
   turnoutAddress: number;
   turnoutClosedValue: boolean;
 }
 
-export interface ITrackTurnoutTwoWayElement extends IAddressedElement {
+export interface ITrackTurnoutTwoWayElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY;
 }
 
-export interface ITrackTurnoutDoubleElement extends IAddressedElement {
+export interface ITrackTurnoutDoubleElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE;
   turnout1Address: number;
   turnout2Address: number;
 }
 
-export interface ITrackTurnoutThreeWayElement extends IAddressedElement {
+export interface ITrackTurnoutThreeWayElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_TURNOUT_THREE_WAY;
   turnout1Address: number;
   turnout2Address: number;
 }
 
-export interface ITrackSensorElement extends IBaseElement {
+export interface ITrackSensorElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_SENSOR;
   kind: SensorTypes;
   colorOn: string;
@@ -208,7 +210,7 @@ export interface IClockElement extends IBaseElement {
   type: typeof ELEMENT_TYPES.CLOCK;
 }
 
-export interface IBlockElement extends IBaseElement {
+export interface IBlockElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_BLOCK;
   //text: string;
   length: number;
@@ -233,7 +235,7 @@ export interface ILabelElement extends IBaseElement {
   
 }
 
-export interface ITrackSignalElement extends IBaseElement {
+export interface ITrackSignalElement extends ITrackElement {
   type: typeof ELEMENT_TYPES.TRACK_SIGNAL2;
   aspect: number;
   address: number;
@@ -250,7 +252,7 @@ export interface ITrackSignalElement extends IBaseElement {
 // }
 
 export type EditorElementData =
-  | ITrackElement
+  | ITrackStraightElement
   | ITrackDirectionElement
   | ITrackEndElement
   | ITrackCornerElement

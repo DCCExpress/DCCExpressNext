@@ -1,4 +1,5 @@
-import { TravelDirection } from "./BaseElement";
+import { TravelDirection } from "./TrackElement";
+
 
 export type TurnoutStateRequirement = {
     address: number;

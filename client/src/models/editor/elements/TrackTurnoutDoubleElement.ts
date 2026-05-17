@@ -1,8 +1,8 @@
 import { generateId } from "../../../helpers";
-import { AddressedElement } from "../core/AddressedElement";
+import { TrackElement } from "../core/TrackElement";
 import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackTurnoutDoubleElement, RotationStep } from "../types/EditorTypes";
 
-export default class TrackTurnoutDoubleElement extends AddressedElement {
+export default class TrackTurnoutDoubleElement extends TrackElement {
     type = ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE;
     name: string = ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE;
     rotationStep: RotationStep = 45;
