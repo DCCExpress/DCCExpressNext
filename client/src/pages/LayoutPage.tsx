@@ -76,6 +76,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
   const layoutRef = useRef(layout);
   const locosRef = useRef(locos);
+  const layoutLoadedRef = useRef(false);
 
   const [turnoutSelection, setTurnoutSelection] = useState<boolean>(false);
   const [canvasBusy, setCanvasBusy] = useState(false);
@@ -194,6 +195,19 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     }
   };
 
+  const requestInitialRuntimeSync = useCallback(() => {
+  if (!layoutLoadedRef.current) {
+    return;
+  }
+
+  if (!wsClient.isConnected()) {
+    return;
+  }
+
+  wsApi.getBlocks();
+  wsApi.getRouteReservations();
+}, []);
+
 const loadLayoutFromServer = async () => {
   try {
     const loaded = await getLayout();
@@ -215,13 +229,27 @@ const loadLayoutFromServer = async () => {
     setUndoStack([]);
     setRedoStack([]);
 
-    wsApi.getBlocks();
-    wsApi.getRouteReservations();
+    layoutLoadedRef.current = true;
+    requestInitialRuntimeSync();
   } catch (error) {
     console.error(error);
     showErrorMessage("Error", "Failed to load layout: " + error);
   }
-};  
+};
+
+useEffect(() => {
+  const unsubscribe = wsClient.subscribeStatus(status => {
+    if (status === "connected") {
+      requestInitialRuntimeSync();
+    }
+  });
+
+  return () => {
+    unsubscribe();
+  };
+}, [requestInitialRuntimeSync]);
+
+
   const saveLayoutToServer = async () => {
     await saveLayout(layoutRef.current);
 

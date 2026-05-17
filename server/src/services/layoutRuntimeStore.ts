@@ -23,6 +23,10 @@ class LayoutRuntimeStore {
   }
 
   async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
     this.layout = await this.readLayoutFromDisk();
     this.initialized = true;
 
@@ -31,13 +35,12 @@ class LayoutRuntimeStore {
     routeGraphRuntimeStore.rebuildFromTopology(
       railwayTopologyStore.getTopology()
     );
-    
+
     console.log(
       "[LayoutRuntimeStore] Initialized:",
       this.layout ? "layout loaded" : "no layout found"
     );
   }
-
   getLayout(): ServerLayoutDto | null {
     return this.layout;
   }

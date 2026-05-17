@@ -10,6 +10,9 @@ class LayoutRuntimeStore {
         return path.resolve(dataDir, "layout.json");
     }
     async initialize() {
+        if (this.initialized) {
+            return;
+        }
         this.layout = await this.readLayoutFromDisk();
         this.initialized = true;
         railwayTopologyStore.rebuildFromLayout(this.layout);
