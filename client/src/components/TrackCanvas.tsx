@@ -40,6 +40,7 @@ import { routeGraphStore } from "../services/routeGraphStore";
 import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
 import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
 import { getRouteGraph } from "../api/http";
+import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -326,7 +327,12 @@ export default function TrackCanvas({
     commandCenterRef.current = commandCenter;
   }, [commandCenter]);
 
-
+  useEffect(() => {
+    return subscribeCanvasImageCache(() => {
+      onInvalidate();
+    });
+  }, [onInvalidate]);
+  
   useEffect(() => {
     invalidate();
   }, [invalidateCounter]);

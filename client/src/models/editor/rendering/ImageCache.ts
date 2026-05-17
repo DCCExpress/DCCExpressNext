@@ -1,14 +1,46 @@
-
 const imageCache = new Map<string, HTMLImageElement>();
 
-export function getCanvasImage(imageSrc: string): HTMLImageElement {
-    let img = imageCache.get(imageSrc);
+type ImageCacheListener = () => void;
 
-    if (!img) {
-        img = new Image();
-        img.src = imageSrc;
-        imageCache.set(imageSrc, img);
-    }
+const imageCacheListeners =
+  new Set<ImageCacheListener>();
 
-    return img;
+function notifyImageCacheListeners(): void {
+  for (const listener of imageCacheListeners) {
+    listener();
+  }
+}
+
+export function subscribeCanvasImageCache(
+  listener: ImageCacheListener
+): () => void {
+  imageCacheListeners.add(listener);
+
+  return () => {
+    imageCacheListeners.delete(listener);
+  };
+}
+
+export function getCanvasImage(
+  imageSrc: string
+): HTMLImageElement {
+  let img = imageCache.get(imageSrc);
+
+  if (!img) {
+    img = new Image();
+
+    img.onload = () => {
+      notifyImageCacheListeners();
+    };
+
+    img.onerror = () => {
+      notifyImageCacheListeners();
+    };
+
+    img.src = imageSrc;
+
+    imageCache.set(imageSrc, img);
+  }
+
+  return img;
 }

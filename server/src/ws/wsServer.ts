@@ -101,12 +101,10 @@ function initCommandCenter(conf: CommandCenterConfig | null) {
   commandCenter.onRuntimeStateLoaded((blocks, turnouts) => {
     console.log("[Server] Restored runtime state, rebroadcasting...");
 
-    for (const [, block] of blocks) {
-      broadcastAll({
-        type: "blockChanged",
-        data: block,
-      });
-    }
+    broadcastAll({
+      type: "blockStateChanged",
+      data: Object.fromEntries(blocks),
+    });
 
     for (const [, turnout] of turnouts) {
       broadcastAll({
