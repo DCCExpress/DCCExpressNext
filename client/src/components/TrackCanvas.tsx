@@ -38,6 +38,8 @@ import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRo
 import { TurnoutStateRequirement } from "../models/editor/core/Graph";
 import { routeGraphStore } from "../services/routeGraphStore";
 import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
+import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
+import { getRouteGraph } from "../api/http";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -639,41 +641,6 @@ export default function TrackCanvas({
       }
     }
 
-    const applyGraphTurnoutStates = async (
-      turnoutStates: TurnoutStateRequirement[]
-    ) => {
-      const elems = layoutRef.current.getAllElements();
-
-      for (const turnoutState of turnoutStates) {
-        const turnout = elems.find(
-          (elem) =>
-            elem instanceof TrackTurnoutElement &&
-            elem.turnoutAddress === turnoutState.address
-        ) as TrackTurnoutElement | undefined;
-
-        if (!turnout) {
-          throw new Error(
-            `Turnout not found for address: ${turnoutState.address}`
-          );
-        }
-
-        /**
-         * turnoutState.closed:
-         *   logikai gráfállapot:
-         *   true = C, false = T
-         *
-         * turnout.turnoutClosedValue:
-         *   az adott fizikai váltónál mit kell küldeni a szervernek,
-         *   hogy a képen Closed legyen.
-         */
-        wsApi.setTurnout(
-          turnoutState.address,
-          turnoutState.closed === turnout.turnoutClosedValue
-        );
-
-        await sleep(1000);
-      }
-    };
 
     const executeExtendedRoute = async function (
       rb: ExtendedRouteButtonElement
@@ -694,79 +661,54 @@ export default function TrackCanvas({
         return;
       }
 
-      let graph;
-
       try {
-        graph = routeGraphStore.getGraph();
+        let graph = routeGraphStore.getGraph();
 
         if (!graph) {
-          graph = layoutRef.current.processRoutes();
+          const response = await getRouteGraph();
+
+          if (!response.ready) {
+            showWarningMessage(
+              "Warning",
+              "No server route graph is available."
+            );
+            return;
+          }
+
+          graph = createClientGraphFromRouteGraphDto(response);
           routeGraphStore.setGraph(graph);
         }
-      } catch (error) {
-        showErrorMessage(
-          "ERROR",
-          error instanceof Error
-            ? error.message
-            : "Could not generate route graph."
+
+        const fromBlock = graph.findBlockById(rb.fromBlockId);
+        const toBlock = graph.findBlockById(rb.toBlockId);
+
+        if (!fromBlock || !toBlock) {
+          showWarningMessage(
+            "Warning",
+            "The configured From / To block could not be found in the server graph."
+          );
+          return;
+        }
+
+        wsApi.reserveRoute(
+          fromBlock.name,
+          toBlock.name
         );
-        return;
-      }
-
-      const solution = graph.findRouteBetweenBlocks(
-        rb.fromBlockId,
-        rb.toBlockId
-      );
-
-      if (!solution) {
-        const fromBlockLabel =
-          graph.findBlockById(rb.fromBlockId)?.label ?? rb.fromBlockId;
-
-        const toBlockLabel =
-          graph.findBlockById(rb.toBlockId)?.label ?? rb.toBlockId;
-
-        showWarningMessage(
-          "Warning",
-          `No valid route found: ${fromBlockLabel} → ${toBlockLabel}`
-        );
-        return;
-      }
-
-      const fromBlockLabel =
-        solution.fromBlock.label;
-
-      const toBlockLabel =
-        solution.toBlock.label;
-
-      wsApi.routeLock();
-      setBusy?.(
-        true,
-        `Route is being set: ${fromBlockLabel} → ${toBlockLabel}`
-      );
-
-      try {
-        await sleep(1000);
-
-        await applyGraphTurnoutStates(solution.turnoutStates);
-
-        invalidate();
 
         showOkMessage(
-          "SUCCESSFUL",
-          `Route set: ${fromBlockLabel} → ${toBlockLabel}`
+          "Route request",
+          `Reservation requested: ${fromBlock.label} → ${toBlock.label}`
         );
       } catch (error) {
         showErrorMessage(
           "ERROR",
           error instanceof Error
             ? error.message
-            : "Could not set automatic route."
+            : "Could not request automatic route."
         );
-      } finally {
-        wsApi.routeUnlock();
-        setBusy?.(false);
       }
     };
+
     const handleClickableDown = (
       hitElement: BaseElement | null,
       ev: MouseEvent | PointerEvent

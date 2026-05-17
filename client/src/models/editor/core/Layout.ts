@@ -1,21 +1,18 @@
-import { measure, showWarningMessage } from "../../../helpers";
+import { Loco } from "../../../../../common/src/types";
+import { showWarningMessage } from "../../../helpers";
+import { BlockElement } from "../elements/BlockElement";
+import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackStraightElement } from "../elements/TrackStraightElement";
-import TrackTurnoutDoubleElement from "../elements/TrackTurnoutDoubleElement";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
 import { TrackTurnoutLeftElement } from "../elements/TrackTurnoutLeftElement";
 import { TrackTurnoutRightElement } from "../elements/TrackTurnoutRightElement";
-import { TrackTurnoutTwoWayElement } from "../elements/TrackTurnoutTwoWayElement";
 import { DrawOptions } from "../types/EditorTypes";
 import { BaseElement } from "./BaseElement";
 import { ElementFactory } from "./ElementFactory";
+import { Graph, RouteSolution } from "./Graph";
 import { Layer, LayerId } from "./Layer";
 import { Point } from "./Rect";
-import { BlockElement } from "../elements/BlockElement";
-import { Loco } from "../../../../../common/src/types";
-import { Edge, Graph, GraphNode, RouteSolution, TurnoutStateRequirement } from "./Graph";
-import { RouteGraphBuilder } from "./RouteGraphBuilder";
-import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
 import { TrackElement } from "./TrackElement";
 
 export function isTurnoutElement(el: BaseElement | null | undefined) {
@@ -693,15 +690,16 @@ export class Layout {
     // ==================================================
     // GRAPH
     // ==================================================
-    createRouteGraph(): Graph {
-        //return new RouteGraphBuilder(this).build();
-        return measure("Route graph build", () => {
-            return new RouteGraphBuilder(this).build();
-        });
-    }
-    processRoutes(): Graph {
-        return this.createRouteGraph();
-    }
+    // createRouteGraph(): Graph {
+    //     //return new RouteGraphBuilder(this).build();
+    //     return measure("Route graph build", () => {
+    //         return new RouteGraphBuilder(this).build();
+    //     });
+    // }
+   
+    // processRoutes(): Graph {
+    //     return this.createRouteGraph();
+    // }
     //     private addRouteEdgeIfMissing(
     //         graph: Graph,
     //         createdEdgeKeys: Set<string>,
