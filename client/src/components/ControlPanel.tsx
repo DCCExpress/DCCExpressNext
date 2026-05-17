@@ -1,52 +1,49 @@
 import {
-  useState,
+    useEffect,
+    useState,
 } from "react";
 
 import {
-  Badge,
-  Box,
-  Button,
-  Card,
-  Checkbox,
-  Divider,
-  Group,
-  ScrollArea,
-  Stack,
-  Table,
-  Tabs,
-  Text,
-  TextInput,
+    Badge,
+    Box,
+    Button,
+    Card,
+    Divider,
+    Group,
+    ScrollArea,
+    Stack,
+    Table,
+    Tabs,
+    Text,
+    TextInput
 } from "@mantine/core";
 import {
-  IconAlertTriangle,
-  IconBolt,
-  IconCode,
-  IconDeviceGamepad2,
-  IconEye,
-  IconPlayerPause,
-  IconPlayerPlay,
-  IconPlayerStop,
-  IconPower,
-  IconRoute,
-  IconRoute2,
+    IconAlertTriangle,
+    IconBolt,
+    IconDeviceGamepad2,
+    IconEye,
+    IconPlayerPause,
+    IconPlayerPlay,
+    IconPlayerStop,
+    IconPower,
+    IconRoute,
+    IconRoute2
 } from "@tabler/icons-react";
 
 import { useCommandCenter } from "../context/CommandCenterContext";
-import { wsApi } from "../services/wsApi";
+import { Edge, RouteSolution, TurnoutStateRequirement } from "../models/editor/core/Graph";
 import { Layout } from "../models/editor/core/Layout";
+import { wsApi } from "../services/wsApi";
 import GraphDialog from "./common/GraphDialog";
-import { Edge, Graph, RouteSolution, TurnoutStateRequirement, } from "../models/editor/core/Graph";
 
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
-import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
-import VisibilitySettings from "./VisibilitySettings";
 import { useRouteGraph } from "../hooks/useRouteGraph";
-import TaskManagerDialog from "./common/TaskManagerDialog";
+import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { TrainTask, TrainTaskStatus } from "../services/tasks/TaskTypes";
 import { useTaskManager } from "../services/tasks/useTaskManager";
-import { getRouteGraph } from "../api/http";
-import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
+import TaskManagerDialog from "./common/TaskManagerDialog";
+import VisibilitySettings from "./VisibilitySettings";
 
 
 type ControlPanelProps = {
@@ -59,7 +56,7 @@ type ControlPanelProps = {
   onEmergencyStop?: () => void;
 
   routes?: string | undefined;
-  
+
   layout: Layout
 };
 
@@ -830,43 +827,47 @@ function RoutesTab(p: RoutesTabProps) {
   //const { settings, updateSettings } = useEditorSettings();
   const {
     graph,
-    setGraph,
+    ensureLoaded,
+    reload,
   } = useRouteGraph();
+
+  useEffect(() => {
+    void ensureLoaded().catch(error => {
+      console.error(
+        "[RouteGraph] Could not load graph from global store:",
+        error
+      );
+    });
+  }, []);
+
   const [graphDialogOpened, setGraphDialogOpened] = useState(false);
 
-const handleRunRouteProcess = async () => {
-  try {
-    const response = await getRouteGraph();
+  const handleRunRouteProcess = async () => {
+    try {
+      const loadedGraph = await reload();
 
-    if (!response.ready) {
-      setGraph(null);
+      if (!loadedGraph) {
+        showWarningMessage(
+          "Route graph",
+          "A szerveren még nincs aktív route gráf."
+        );
+        return;
+      }
 
-      showWarningMessage(
+      showOkMessage(
         "Route graph",
-        "A szerveren még nincs aktív route gráf."
+        `Szerveroldali gráf frissítve: ${loadedGraph.nodes.length} node, ${loadedGraph.edges.length} edge.`
       );
-
-      return;
+    } catch (error) {
+      showErrorMessage(
+        "ERROR",
+        error instanceof Error
+          ? error.message
+          : "Could not reload server route graph."
+      );
     }
+  };
 
-    const clientGraph =
-      createClientGraphFromRouteGraphDto(response);
-
-    setGraph(clientGraph);
-
-    showOkMessage(
-      "Route graph",
-      `Szerveroldali gráf betöltve: ${response.nodes.length} node, ${response.edges.length} edge.`
-    );
-  } catch (error) {
-    showErrorMessage(
-      "ERROR",
-      error instanceof Error
-        ? error.message
-        : "Could not load server route graph."
-    );
-  }
-};
   const applyTurnoutStates = async (
     turnoutStates: TurnoutStateRequirement[]
   ) => {
@@ -931,6 +932,7 @@ const handleRunRouteProcess = async () => {
       );
     }
   };
+
   return (
     <>
       <Stack gap="md">

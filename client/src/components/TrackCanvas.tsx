@@ -662,23 +662,16 @@ export default function TrackCanvas({
       }
 
       try {
-        let graph = routeGraphStore.getGraph();
+        const graph =
+          await routeGraphStore.ensureLoaded();
 
         if (!graph) {
-          const response = await getRouteGraph();
-
-          if (!response.ready) {
-            showWarningMessage(
-              "Warning",
-              "No server route graph is available."
-            );
-            return;
-          }
-
-          graph = createClientGraphFromRouteGraphDto(response);
-          routeGraphStore.setGraph(graph);
+          showWarningMessage(
+            "Warning",
+            "No server route graph is available."
+          );
+          return;
         }
-
         const fromBlock = graph.findBlockById(rb.fromBlockId);
         const toBlock = graph.findBlockById(rb.toBlockId);
 

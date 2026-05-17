@@ -195,26 +195,49 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   };
 
   const loadLayoutFromServer = async () => {
+  try {
+    const loaded = await getLayout();
+    const nextLayout = Layout.fromJSON(loaded);
+
+    setLayout(nextLayout);
+    layoutStore.setLayout(nextLayout);
+
+    routeGraphStore.clear();
+
+    /**
+     * A GET /api/layout szerveroldalon már felépíti
+     * a topology-t és a route graphot is.
+     * Így itt már biztonságosan be tudjuk tölteni
+     * a közös kliens routeGraphStore cache-t.
+     */
     try {
-      const loaded = await getLayout();
-      const nextLayout = Layout.fromJSON(loaded);
-
-      setLayout(nextLayout);
-      layoutStore.setLayout(nextLayout);
-      routeGraphStore.clear();
-      setUndoStack([]);
-      setRedoStack([]);
-
-      wsApi.getBlocks();
-      //showOkMessage("", "Layout loaded!");
+      await routeGraphStore.ensureLoaded();
     } catch (error) {
-      console.error(error);
-      showErrorMessage("Error", "Failed to load layout: " + error);
+      console.warn(
+        "[RouteGraph] Could not preload graph after layout load:",
+        error
+      );
     }
-  };
 
+    setUndoStack([]);
+    setRedoStack([]);
+
+    wsApi.getBlocks();
+  } catch (error) {
+    console.error(error);
+    showErrorMessage("Error", "Failed to load layout: " + error);
+  }
+};
   const saveLayoutToServer = async () => {
     await saveLayout(layoutRef.current);
+
+    /**
+     * A szerver PUT /layout után újraépíti
+     * a topology + route graph runtime-ot.
+     * A kliens cache innentől elavult.
+     */
+    routeGraphStore.invalidate();
+
     showOkMessage("", "Layout saved!");
   };
 

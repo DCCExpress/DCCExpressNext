@@ -1,34 +1,31 @@
-import { Accordion, ActionIcon, Badge, Box, Button, Card, Checkbox, ColorInput, ColorPicker, ColorSwatch, DEFAULT_THEME, Divider, Group, NumberInput, ScrollArea, Select, Stack, Text, TextInput, Title, useMantineColorScheme, useMantineTheme } from "@mantine/core";
-import { BaseElement } from "../models/editor/core/BaseElement";
+import { Accordion, ActionIcon, Box, Button, Card, Checkbox, ColorSwatch, Group, NumberInput, ScrollArea, Select, Stack, Text, TextInput, useMantineColorScheme } from "@mantine/core";
+import { IconPlayerPlayFilled, IconTrash } from "@tabler/icons-react";
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
-import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
+import ControlPanel from "../components/ControlPanel";
 import BitToggleElement from "../components/editor/BitToggleElement";
+import { useEditorSettings } from "../context/EditorSettingsContext";
+import { BaseElement } from "../models/editor/core/BaseElement";
+import { Layout } from "../models/editor/core/Layout";
+import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
+import { RouteButtonElement, RouteTurnoutItem } from "../models/editor/elements/RouteButtonElement";
+import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
+import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../services/wsApi";
-import { useEditorSettings } from "../context/EditorSettingsContext";
-import { SetTurnoutMessage } from "../../../common/src/types";
-import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
-import { TrackTurnoutTwoWayElement } from "../models/editor/elements/TrackTurnoutTwoWayElement";
-import TrackTurnoutDoubleElement from "../models/editor/elements/TrackTurnoutDoubleElement";
-import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
-import { RouteButtonElement, RouteTurnoutItem } from "../models/editor/elements/RouteButtonElement";
-import { IconPlayerPlayFilled, IconTrash } from "@tabler/icons-react";
-import "../styles/propertypanel.css"
-import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
-import ControlPanel from "../components/ControlPanel";
+import "../styles/propertypanel.css";
 
 //import { Graph } from "../models/editor/core/Graph";
-import { useRouteGraph } from "../hooks/useRouteGraph";
-import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
-import { showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
-import VisibilitySettings from "../components/VisibilitySettings";
-import { Graph } from "../models/editor/core/Graph";
 import { useTranslation } from "react-i18next";
 import { BLOCK_TYPES, ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
-import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
 import { getRouteGraph } from "../api/http";
+import VisibilitySettings from "../components/VisibilitySettings";
+import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
+import { useRouteGraph } from "../hooks/useRouteGraph";
+import { Graph } from "../models/editor/core/Graph";
+import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
+import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
 
 type PropertyPanelProps = {
   selectedElement: BaseElement | null;
@@ -88,7 +85,12 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   const [helpOpened, setHelpOpened] = useState<string | null>("help");
   const { settings, updateSettings } = useEditorSettings();
   const [panelOpen, setPanelOpen] = useState(opened);
-  const { graph: routeGraph, setGraph: setRouteGraph, } = useRouteGraph();
+  const {
+    graph: routeGraph,
+    ensureLoaded: ensureRouteGraphLoaded,
+    reload: reloadRouteGraph,
+  } = useRouteGraph();
+
   const [routeGraphError, setRouteGraphError] = useState<string | null>(null);
   const { colorScheme } = useMantineColorScheme();
 
@@ -266,46 +268,34 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   }, [opened])
 
 
-  const loadServerRouteGraph = async (): Promise<Graph | null> => {
-    const response = await getRouteGraph();
+  
+const refreshExtendedRouteGraph = async () => {
+  if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+    setRouteGraphError(null);
+    return;
+  }
 
-    if (!response.ready) {
-      setRouteGraph(null);
+  try {
+    const graph = await reloadRouteGraph();
+
+    if (!graph) {
       setRouteGraphError(
         "A szerveren még nincs aktív route gráf."
       );
-
-      return null;
-    }
-
-    const graph = createClientGraphFromRouteGraphDto(response);
-
-    setRouteGraph(graph);
-    setRouteGraphError(null);
-
-    return graph;
-  };
-
-  const refreshExtendedRouteGraph = async () => {
-    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
-      setRouteGraphError(null);
       return;
     }
 
-    try {
-      await loadServerRouteGraph();
-    } catch (error) {
-      setRouteGraph(null);
-      setRouteGraphError(
-        error instanceof Error
-          ? error.message
-          : "Could not load server route graph."
-      );
-    } finally {
-      onUpdateSelectedElement(selectedElement);
-    }
-  };
-
+    setRouteGraphError(null);
+  } catch (error) {
+    setRouteGraphError(
+      error instanceof Error
+        ? error.message
+        : "Could not reload server route graph."
+    );
+  } finally {
+    onUpdateSelectedElement(selectedElement);
+  }
+};
   const handleTestExtendedRoute = async () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
       return;
@@ -323,7 +313,7 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
 
     try {
       if (!graph) {
-        graph = await loadServerRouteGraph();
+        graph = await ensureRouteGraphLoaded();
       }
 
       if (!graph) {

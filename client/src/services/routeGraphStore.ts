@@ -1,40 +1,98 @@
-import { BlockRouteSolution, Graph } from "../models/editor/core/Graph";
-
-
-type RouteReservationResult =
-  | {
-    ok: true;
-  }
-  | {
-    ok: false;
-    error: string;
-  };
+import { Graph } from "../models/editor/core/Graph";
+import { getRouteGraph } from "../api/http";
+import { createClientGraphFromRouteGraphDto } from "./routeGraphDtoMapper";
 
 type RouteGraphListener = (graph: Graph | null) => void;
 
 class RouteGraphStore {
   private graph: Graph | null = null;
   private listeners = new Set<RouteGraphListener>();
-  private readonly busyTurnoutAddresses = new Set<number>();
+
+  /**
+   * true = a cache nem tekinthető frissnek,
+   * következő ensureLoaded() újratölt a szerverről.
+   */
+  private stale = true;
+
+  /**
+   * Ha több komponens egyszerre kér gráfot,
+   * ne induljon több HTTP kérés.
+   */
+  private loadingPromise: Promise<Graph | null> | null = null;
 
   getGraph(): Graph | null {
     return this.graph;
   }
 
+  isLoaded(): boolean {
+    return this.graph !== null && !this.stale;
+  }
+
+  /**
+   * Kézi beállítás főleg akkor kell,
+   * ha valahol már létrejött Graph objektum.
+   */
   setGraph(graph: Graph | null): void {
     this.graph = graph;
+    this.stale = graph === null;
     this.emit();
   }
 
+  /**
+   * A jelenlegi kliens cache már nem biztos, hogy a szerver aktuális gráfja.
+   * Példa: layout mentés után.
+   */
+  invalidate(): void {
+    this.graph = null;
+    this.stale = true;
+    this.emit();
+  }
+
+  /**
+   * Régi clear() hívások kompatibilitására.
+   * Most ugyanaz, mint invalidate().
+   */
   clear(): void {
+    this.invalidate();
+  }
+
+  /**
+   * Ha már van friss gráf, nem csinál semmit.
+   * Ha nincs, pontosan egyszer lekéri.
+   */
+  async ensureLoaded(): Promise<Graph | null> {
+    if (this.graph && !this.stale) {
+      return this.graph;
+    }
+
+    if (this.loadingPromise) {
+      return this.loadingPromise;
+    }
+
+    this.loadingPromise = this.loadFromServer();
+
+    try {
+      return await this.loadingPromise;
+    } finally {
+      this.loadingPromise = null;
+    }
+  }
+
+  /**
+   * Mindig újratölti a szerver aktuális route graphját.
+   * Generate / Refresh gombhoz ezt használjuk.
+   */
+  async reload(): Promise<Graph | null> {
+    this.stale = true;
     this.graph = null;
     this.emit();
+
+    return this.ensureLoaded();
   }
 
   subscribe(listener: RouteGraphListener): () => void {
     this.listeners.add(listener);
 
-    // Az új feliratkozó azonnal megkapja az aktuális gráfot
     listener(this.graph);
 
     return () => {
@@ -42,87 +100,30 @@ class RouteGraphStore {
     };
   }
 
+  private async loadFromServer(): Promise<Graph | null> {
+    const response = await getRouteGraph();
+
+    if (!response.ready) {
+      this.graph = null;
+      this.stale = true;
+      this.emit();
+      return null;
+    }
+
+    const graph =
+      createClientGraphFromRouteGraphDto(response);
+
+    this.graph = graph;
+    this.stale = false;
+    this.emit();
+
+    return graph;
+  }
+
   private emit(): void {
     for (const listener of this.listeners) {
       listener(this.graph);
     }
-  }
-
-  setRouteBusy(
-    solution: BlockRouteSolution,
-    busy: boolean
-  ): void {
-    for (const node of solution.nodes) {
-      node.busy = busy;
-    }
-
-    this.emit();
-  }
-
-  tryReserveRoute(
-    solution: BlockRouteSolution
-  ): RouteReservationResult {
-    const busyNodes = solution.nodes.filter(node => node.busy);
-
-    if (busyNodes.length > 0) {
-      return {
-        ok: false,
-        error:
-          "Az útvonal nem foglalható, mert ezek a szegmensek már busy-k: " +
-          busyNodes.map(node => node.name).join(", "),
-      };
-    }
-
-    const busyTurnouts = solution.turnoutStates.filter(turnoutState =>
-      this.busyTurnoutAddresses.has(turnoutState.address)
-    );
-
-    if (busyTurnouts.length > 0) {
-      return {
-        ok: false,
-        error:
-          "Az útvonal nem foglalható, mert ezek a váltók már busy-k: " +
-          busyTurnouts.map(t => `#${t.address}`).join(", "),
-      };
-    }
-
-    // Szegmensek foglalása a gráfban
-    for (const node of solution.nodes) {
-      node.busy = true;
-    }
-
-    // Váltók foglalása a gráf-store nyilvántartásában
-    for (const turnoutState of solution.turnoutStates) {
-      this.busyTurnoutAddresses.add(turnoutState.address);
-    }
-
-    this.emit();
-
-    return {
-      ok: true,
-    };
-  }
-
-  releaseRoute(solution: BlockRouteSolution): void {
-    for (const node of solution.nodes) {
-      node.busy = false;
-    }
-
-    for (const turnoutState of solution.turnoutStates) {
-      this.busyTurnoutAddresses.delete(turnoutState.address);
-    }
-
-    this.emit();
-  }
-
-  clearAllBusy(): void {
-    if (this.graph) {
-      for (const node of this.graph.nodes) {
-        node.busy = false;
-      }
-    }
-    this.busyTurnoutAddresses.clear();
-    this.emit();
   }
 }
 

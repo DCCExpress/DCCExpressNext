@@ -21,5 +21,13 @@ export function useRouteGraph() {
     clearGraph: () => {
       routeGraphStore.clear();
     },
+
+    ensureLoaded: () => {
+      return routeGraphStore.ensureLoaded();
+    },
+
+    reload: () => {
+      return routeGraphStore.reload();
+    },
   };
 }
