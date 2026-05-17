@@ -43,6 +43,7 @@ class RouteGraphRuntimeStore {
     }
 
     this.busyTurnoutAddresses.clear();
+    this.reservations.clear();
     this.graph =
       new RouteGraphBuilder(topology).build();
 

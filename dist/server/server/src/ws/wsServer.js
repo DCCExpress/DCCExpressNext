@@ -270,16 +270,6 @@ export function setupWebSocketServer(server) {
                                 });
                                 return;
                             }
-                            const reservation = routeGraphRuntimeStore.tryReserveRoute(fromBlockName, toBlockName, solution);
-                            if (!reservation.ok) {
-                                sendToClient(ws, {
-                                    type: "routeReservationRejected",
-                                    data: {
-                                        reason: reservation.error,
-                                    },
-                                });
-                                return;
-                            }
                             const topology = railwayTopologyStore.getTopology();
                             if (!topology) {
                                 sendToClient(ws, {
@@ -290,84 +280,88 @@ export function setupWebSocketServer(server) {
                                 });
                                 return;
                             }
+                            const reservation = routeGraphRuntimeStore.tryReserveRoute(fromBlockName, toBlockName, solution);
+                            if (!reservation.ok) {
+                                sendToClient(ws, {
+                                    type: "routeReservationRejected",
+                                    data: {
+                                        reason: reservation.error,
+                                    },
+                                });
+                                return;
+                            }
                             /**
-                             * A graph logikai closed értékét itt fordítjuk át
-                             * az adott váltó fizikai command-center boolean értékére.
+                             * A route foglalása már sikerült,
+                             * ezt rögtön broadcastoljuk minden kliensnek.
                              */
-                            for (const turnoutState of solution.turnoutStates) {
-                                const turnout = topology
-                                    .getTurnouts()
-                                    .find(item => item.turnoutAddress === turnoutState.address);
-                                if (!turnout) {
-                                    logError(`[RouteReserve] Turnout not found in topology: ${turnoutState.address}`);
-                                    continue;
+                            broadcast(wss, {
+                                type: "routeReservationChanged",
+                                data: {
+                                    busy: true,
+                                    sectionNames: reservation.reservation.sectionNames,
+                                    turnoutAddresses: reservation.reservation.turnoutAddresses,
+                                    fromBlockName,
+                                    toBlockName,
+                                },
+                            });
+                            /**
+                             * A fizikai váltóállítás idejére lockoljuk a command centert.
+                             * Ettől villog a StatusBar busy/lock jelzése.
+                             */
+                            if (commandCenter) {
+                                commandCenter.locked = true;
+                                commandCenter.lockOwnerUUID = msg.uuid;
+                                broadcast(wss, {
+                                    type: "commandCenterLockChanged",
+                                    data: {
+                                        locked: true,
+                                        lockOwner: commandCenter.lockOwnerUUID,
+                                        reason: "route",
+                                    },
+                                });
+                            }
+                            try {
+                                /**
+                                 * A graph logikai closed értékét átfordítjuk
+                                 * az adott váltó fizikai command-center boolean értékére.
+                                 */
+                                for (const turnoutState of solution.turnoutStates) {
+                                    const turnout = topology
+                                        .getTurnouts()
+                                        .find(item => item.turnoutAddress === turnoutState.address);
+                                    if (!turnout) {
+                                        logError(`[RouteReserve] Turnout not found in topology: ${turnoutState.address}`);
+                                        continue;
+                                    }
+                                    const physicalClosed = turnoutState.closed === turnout.turnoutClosedValue;
+                                    if (commandCenter) {
+                                        await commandCenter.setTurnout(turnoutState.address, physicalClosed);
+                                        commandCenter.saveRuntimeState();
+                                    }
+                                    await new Promise(resolve => setTimeout(resolve, 500));
                                 }
-                                const physicalClosed = turnoutState.closed === turnout.turnoutClosedValue;
+                            }
+                            finally {
+                                /**
+                                 * A műveleti lockot akkor is elengedjük,
+                                 * ha váltóállítás közben történik valami gebasz.
+                                 *
+                                 * FONTOS:
+                                 * Ez csak a command center lock,
+                                 * maga a route reservation továbbra is megmarad.
+                                 */
                                 if (commandCenter) {
-                                    commandCenter.locked = true;
-                                    commandCenter.lockOwnerUUID = msg.uuid;
+                                    commandCenter.locked = false;
+                                    commandCenter.lockOwnerUUID = null;
                                     broadcast(wss, {
                                         type: "commandCenterLockChanged",
                                         data: {
-                                            locked: true,
-                                            lockOwner: commandCenter.lockOwnerUUID,
-                                            reason: "route",
+                                            locked: false,
+                                            lockOwner: null,
+                                            reason: null,
                                         },
                                     });
                                 }
-                                try {
-                                    /**
-                                     * A graph logikai closed értékét átfordítjuk
-                                     * az adott váltó fizikai command-center boolean értékére.
-                                     */
-                                    for (const turnoutState of solution.turnoutStates) {
-                                        const turnout = topology
-                                            .getTurnouts()
-                                            .find(item => item.turnoutAddress === turnoutState.address);
-                                        if (!turnout) {
-                                            logError(`[RouteReserve] Turnout not found in topology: ${turnoutState.address}`);
-                                            continue;
-                                        }
-                                        const physicalClosed = turnoutState.closed === turnout.turnoutClosedValue;
-                                        if (commandCenter) {
-                                            await commandCenter.setTurnout(turnoutState.address, physicalClosed);
-                                            commandCenter.saveRuntimeState();
-                                        }
-                                        await new Promise(resolve => setTimeout(resolve, 500));
-                                    }
-                                }
-                                finally {
-                                    /**
-                                     * Akkor is feloldjuk a LOCK-ot,
-                                     * ha közben valamelyik váltóállításnál gebasz lenne.
-                                     */
-                                    if (commandCenter) {
-                                        commandCenter.locked = false;
-                                        commandCenter.lockOwnerUUID = null;
-                                        broadcast(wss, {
-                                            type: "commandCenterLockChanged",
-                                            data: {
-                                                locked: false,
-                                                lockOwner: null,
-                                                reason: null,
-                                            },
-                                        });
-                                    }
-                                }
-                                /**
-                                 * A route maga továbbra is foglalt marad,
-                                 * csak a command center "művelet közbeni busy" lockját oldjuk fel.
-                                 */
-                                broadcast(wss, {
-                                    type: "routeReservationChanged",
-                                    data: {
-                                        busy: true,
-                                        sectionNames: reservation.reservation.sectionNames,
-                                        turnoutAddresses: reservation.reservation.turnoutAddresses,
-                                        fromBlockName,
-                                        toBlockName,
-                                    },
-                                });
                             }
                             return;
                         }
@@ -402,6 +396,17 @@ export function setupWebSocketServer(server) {
                                     turnoutAddresses: result.releasedTurnoutAddresses,
                                     fromBlockName,
                                     toBlockName,
+                                },
+                            });
+                            sendToClient(ws, {
+                                type: "routeReservationReleased",
+                                data: {
+                                    fromBlockName,
+                                    toBlockName,
+                                    releasedSectionNames: result.releasedSectionNames,
+                                    retainedSectionNames: result.retainedSectionNames,
+                                    releasedTurnoutAddresses: result.releasedTurnoutAddresses,
+                                    retainedTurnoutAddresses: result.retainedTurnoutAddresses,
                                 },
                             });
                             return;

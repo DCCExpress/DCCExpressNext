@@ -552,7 +552,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       }
     );
 
- 
+
     const unsubscribeRouteReservationRejected =
       wsClient.on<{ reason: string }>(
         "routeReservationRejected",
@@ -607,6 +607,67 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         }
       );
 
+    const unsubscribeRouteReleased =
+      wsClient.on<{
+        fromBlockName: string;
+        toBlockName: string;
+        releasedSectionNames: string[];
+        retainedSectionNames: string[];
+        releasedTurnoutAddresses: number[];
+        retainedTurnoutAddresses: number[];
+      }>(
+        "routeReservationReleased",
+        data => {
+          const partiallyRetained =
+            data.retainedSectionNames.length > 0 ||
+            data.retainedTurnoutAddresses.length > 0;
+
+          if (partiallyRetained) {
+            showWarningMessage(
+              "Route release",
+              `${data.fromBlockName} → ${data.toBlockName} feloldva, de egyes elemek továbbra is foglaltak.`
+            );
+
+            return;
+          }
+
+          showOkMessage(
+            "Route release",
+            `${data.fromBlockName} → ${data.toBlockName} felszabadult.`
+          );
+        }
+      );
+
+    // const unsubscribeRouteReleaseRejected =
+    //   wsClient.on<{
+    //     reason: string;
+    //     fromBlockName?: string;
+    //     toBlockName?: string;
+    //   }>(
+    //     "routeReservationReleaseRejected",
+    //     data => {
+    //       showWarningMessage(
+    //         "Route release",
+    //         data.reason
+    //       );
+    //     }
+    //   );
+
+    const unsubscribeRouteReleaseRejected =
+      wsClient.on<{
+        reason: string;
+      }>(
+        "routeReservationReleaseRejected",
+        data => {
+          showWarningMessage(
+            "Route release",
+            data.reason
+          );
+        }
+      );
+
+
+
     return () => {
       unsubscribeSensor();
       unsubscribeTurnout();
@@ -616,8 +677,9 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       unsubscribeBlockStateChanged();
       unsubscribeRouteReservationChanged();
       unsubscribeRouteReservationRejected();
+      unsubscribeRouteReleaseRejected();
+      unsubscribeRouteReleased();
       unsubscribeAllRouteReservationsCleared();
-
       //wsApi.disconnect();
     };
   }, []);

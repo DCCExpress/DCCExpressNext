@@ -11,6 +11,7 @@ class RouteGraphRuntimeStore {
             return;
         }
         this.busyTurnoutAddresses.clear();
+        this.reservations.clear();
         this.graph =
             new RouteGraphBuilder(topology).build();
         const blockCount = this.graph.nodes.reduce((sum, node) => sum + node.blocks.length, 0);
