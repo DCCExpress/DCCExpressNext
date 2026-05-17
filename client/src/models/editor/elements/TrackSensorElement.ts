@@ -1,8 +1,8 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { BaseElement } from "../core/BaseElement";
 import { TrackElement } from "../core/TrackElement";
-import { DrawOptions, ELEMENT_TYPES, ElementType, IBaseElement, ITrackSensorElement } from "../types/EditorTypes";
+import { DrawOptions, ITrackSensorElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 export enum SensorTypes { circle, rect }

@@ -3,7 +3,8 @@ import { generateId } from "../../../helpers";
 import { TrackElement } from "../core/TrackElement";
 import { BaseElement } from "../core/BaseElement";
 import { sampleLayout } from "../sample/sampleLayout";
-import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackEndElement } from "../types/EditorTypes";
+import { DrawOptions, ITrackEndElement } from "../types/EditorTypes";
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
 export class TrackEndElement extends TrackElement implements ITrackEndElement {
     override type = ELEMENT_TYPES.TRACK_END

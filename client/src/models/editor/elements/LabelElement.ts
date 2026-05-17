@@ -1,7 +1,8 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
-import { DrawOptions, ELEMENT_TYPES, ILabelElement } from "../types/EditorTypes";
+import { DrawOptions, ILabelElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 

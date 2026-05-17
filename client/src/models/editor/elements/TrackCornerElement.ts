@@ -3,12 +3,12 @@ import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { TrackElement } from "../core/TrackElement";
 import { BaseElement } from "../core/BaseElement";
-import { getDirectionXy } from "../core/helpers";
+import { getDirectionXy } from "../../../../../common/src/helpers";
 import { LayerId } from "../core/Layer";
 import { Point } from "../core/Rect";
 import { sampleLayout } from "../sample/sampleLayout";
-import { ELEMENT_TYPES, ElementType } from "../types/EditorTypes";
 import { DrawOptions, ITrackCornerElement } from "../types/EditorTypes";
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
 export class TrackCornerElement extends TrackElement implements ITrackCornerElement {
     override type = ELEMENT_TYPES.TRACK_CORNER;

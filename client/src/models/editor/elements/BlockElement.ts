@@ -4,12 +4,13 @@ import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
 import { IRect } from "../core/Rect";
 
-import { BLOCK_TYPES, BlockType, DrawOptions, ELEMENT_TYPES, IBlockElement } from "../types/EditorTypes";
+import { DrawOptions, IBlockElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 import { getCanvasImage } from "../rendering/ImageCache";
 
 import i18n from "../../../i18n";
 import { TrackElement } from "../core/TrackElement";
+import { BLOCK_TYPES, BlockType, ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
 export class BlockElement extends TrackElement implements IBlockElement {
     override type: typeof ELEMENT_TYPES.TRACK_BLOCK = ELEMENT_TYPES.TRACK_BLOCK;

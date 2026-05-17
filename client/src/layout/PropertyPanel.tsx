@@ -6,7 +6,6 @@ import BitToggleElement from "../components/editor/BitToggleElement";
 import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
-import { BLOCK_TYPES, ELEMENT_TYPES } from "../models/editor/types/EditorTypes";
 import { wsApi } from "../services/wsApi";
 import { useEditorSettings } from "../context/EditorSettingsContext";
 import { SetTurnoutMessage } from "../../../common/src/types";
@@ -27,6 +26,7 @@ import { showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../h
 import VisibilitySettings from "../components/VisibilitySettings";
 import { Graph } from "../models/editor/core/Graph";
 import { useTranslation } from "react-i18next";
+import { BLOCK_TYPES, ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
 
 type PropertyPanelProps = {
   selectedElement: BaseElement | null;

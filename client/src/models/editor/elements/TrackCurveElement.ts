@@ -3,10 +3,11 @@ import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { TrackElement } from "../core/TrackElement";
 import { BaseElement } from "../core/BaseElement";
-import { getDirectionXy } from "../core/helpers";
+import { getDirectionXy } from "../../../../../common/src/helpers";
 import { Point } from "../core/Rect";
-import { sampleLayout } from "../sample/sampleLayout";
-import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackCurveElement } from "../types/EditorTypes";
+
+import { DrawOptions, ITrackCurveElement } from "../types/EditorTypes";
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
 export class TrackCurveElement extends TrackElement implements ITrackCurveElement {
 

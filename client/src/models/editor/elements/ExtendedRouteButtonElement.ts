@@ -1,8 +1,8 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
 import { ClickableBaseElement } from "../core/ClickableBaseElement";
 import {
     DrawOptions,
-    ELEMENT_TYPES,
     IExtendedRouteButtonElement,
 } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";

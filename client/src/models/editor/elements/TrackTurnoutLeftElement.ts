@@ -1,8 +1,9 @@
 
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
-import { getDirectionXy } from "../core/helpers";
+import { getDirectionXy } from "../../../../../common/src/helpers";
 import { Point } from "../core/Rect";
-import { ELEMENT_TYPES, ITrackTurnoutLeftElement } from "../types/EditorTypes";
+import { ITrackTurnoutLeftElement } from "../types/EditorTypes";
 import { TrackTurnoutElement } from "./TrackTurnoutElement";
 
 export class TrackTurnoutLeftElement extends TrackTurnoutElement implements ITrackTurnoutLeftElement {

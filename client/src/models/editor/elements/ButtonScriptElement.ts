@@ -1,6 +1,7 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
-import { DrawOptions, ELEMENT_TYPES, ElementType, IButtonElement, IButtonScriptElement, ITrackSensorElement } from "../types/EditorTypes";
+import { DrawOptions, IButtonScriptElement, ITrackSensorElement } from "../types/EditorTypes";
 import { ButtonElement } from "./ButtonElement";
 import { IEditableProperty } from "./PropertyDescriptor";
 

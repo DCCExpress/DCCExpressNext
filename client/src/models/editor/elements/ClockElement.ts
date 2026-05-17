@@ -1,6 +1,7 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
-import { DrawOptions, ELEMENT_TYPES, IClockElement } from "../types/EditorTypes";
+import { DrawOptions, IClockElement } from "../types/EditorTypes";
 
 export class ClockElement extends BaseElement implements IClockElement {
     override type: typeof ELEMENT_TYPES.CLOCK = ELEMENT_TYPES.CLOCK;

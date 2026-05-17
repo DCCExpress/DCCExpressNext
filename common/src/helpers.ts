@@ -1,4 +1,5 @@
-import { Point } from "./Rect";
+import { Point } from "./Rect.js";
+
 
 type Direction = { x: number; y: number };
 const directions: Direction[] = [

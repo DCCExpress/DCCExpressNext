@@ -1,8 +1,8 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { drawPolarLine, getPolarXy } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
-import { ClickableBaseElement } from "../core/ClickableBaseElement";
-import { DrawOptions, ELEMENT_TYPES, IRouteButtonElement } from "../types/EditorTypes";
+import { DrawOptions, IRouteButtonElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 export type RouteTurnoutItem = {

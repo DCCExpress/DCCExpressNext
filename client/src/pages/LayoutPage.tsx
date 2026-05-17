@@ -9,7 +9,7 @@ import StatusBar from "../layout/StatusBar";
 import LocoPanel from "../layout/LocoPanel";
 import { getLayout, getLocos, saveLayout } from "../api/http";
 
-import { ELEMENT_TYPES, type EditorTool } from "../models/editor/types/EditorTypes";
+import { type EditorTool } from "../models/editor/types/EditorTypes";
 import ElementPickerDialog from "../components/editor/ElementPickerDialog";
 import { isTouchDevice, showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { Layout } from "../models/editor/core/Layout";
@@ -35,6 +35,7 @@ import { routeGraphStore } from "../services/routeGraphStore";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { locoStore } from "../services/locoStore";
+import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
 type LayoutPageProps = {
   onGoHome: () => void;
 };

@@ -1,7 +1,8 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { TrackElement } from "../core/TrackElement";
-import { DrawOptions, ELEMENT_TYPES, ITrackElement as ITrackStraightElement } from "../types/EditorTypes";
+import { DrawOptions, ITrackElement as ITrackStraightElement } from "../types/EditorTypes";
 
 
 

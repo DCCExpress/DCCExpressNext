@@ -1,6 +1,7 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
 import { TrackElement } from "../core/TrackElement";
-import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackTurnoutDoubleElement, RotationStep } from "../types/EditorTypes";
+import { DrawOptions, ITrackTurnoutDoubleElement, RotationStep } from "../types/EditorTypes";
 
 export default class TrackTurnoutDoubleElement extends TrackElement {
     type = ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE;

@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";
 import { BaseElement } from "../models/editor/core/BaseElement";
-import { DrawOptions, ELEMENT_TYPES, EditorTool } from "../models/editor/types/EditorTypes";
+import { DrawOptions, EditorTool } from "../models/editor/types/EditorTypes";
 import { TrackStraightElement } from "../models/editor/elements/TrackStraightElement";
 import { TrackEndElement } from "../models/editor/elements/TrackEndElement";
 import { TrackCornerElement } from "../models/editor/elements/TrackCornerElement";
@@ -37,6 +37,7 @@ import { TrackDirectionElement } from "../models/editor/elements/TrackDirectionE
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 import { TurnoutStateRequirement } from "../models/editor/core/Graph";
 import { routeGraphStore } from "../services/routeGraphStore";
+import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
 
 type TrackCanvasProps = {
   editMode?: boolean;

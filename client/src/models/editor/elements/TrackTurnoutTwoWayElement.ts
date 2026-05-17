@@ -3,8 +3,8 @@ import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { TrackElement } from "../core/TrackElement";
 import { BaseElement } from "../core/BaseElement";
-import { DrawOptions, ELEMENT_TYPES, ElementType, ITrackCornerElement, ITrackTurnoutLeftElement, ITrackTurnoutTwoWayElement } from "../types/EditorTypes";
-import { TrackTurnoutRightElement } from "./TrackTurnoutRightElement";
+import { DrawOptions, ITrackTurnoutTwoWayElement } from "../types/EditorTypes";
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
 export class TrackTurnoutTwoWayElement extends TrackElement implements ITrackTurnoutTwoWayElement {
     override type: typeof ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY = ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY;

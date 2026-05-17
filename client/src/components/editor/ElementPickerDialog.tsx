@@ -1,6 +1,5 @@
 import { Card, Group, Modal, Stack } from "@mantine/core";
 
-import { ElementType, ELEMENT_TYPES } from "../../models/editor/types/EditorTypes";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import { TrackStraightElement } from "../../models/editor/elements/TrackStraightElement";
 import { TrackEndElement } from "../../models/editor/elements/TrackEndElement";
@@ -23,6 +22,7 @@ import { ButtonScriptElement } from "../../models/editor/elements/ButtonScriptEl
 import { LabelElement } from "../../models/editor/elements/LabelElement";
 import { TrackDirectionElement } from "../../models/editor/elements/TrackDirectionElement";
 import { ExtendedRouteButtonElement } from "../../models/editor/elements/ExtendedRouteButtonElement";
+import { ELEMENT_TYPES, ElementType } from "../../../../common/src/layout/elementTypes";
 
 type ElementPickerDialogProps = {
   opened: boolean;

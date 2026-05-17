@@ -1,9 +1,9 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { errorToString, generateId, showErrorMessage, showWarningMessage } from "../../../helpers";
 import { audioManager } from "../../../services/audioManager";
 import { BaseElement } from "../core/BaseElement";
 import {
     DrawOptions,
-    ELEMENT_TYPES,
     IAudioButtonElement,
 } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";

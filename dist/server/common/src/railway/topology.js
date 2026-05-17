@@ -1,4 +1,5 @@
 // common/src/railway/topology.ts
+import { ELEMENT_TYPES } from "../layout/elementTypes.js";
 export class TopologyPoint {
     x;
     y;
@@ -32,21 +33,6 @@ export function getDirectionPoint(point, angle) {
     const d = getDirection(angle);
     return new TopologyPoint(point.x + d.x, point.y + d.y);
 }
-export const TOPOLOGY_ELEMENT_TYPES = {
-    TRACK_STRAIGHT: "trackstraight",
-    TRACK_DIRECTION: "trackdirection",
-    TRACK_END: "trackend",
-    TRACK_CORNER: "trackcorner",
-    TRACK_CURVE: "trackcurve",
-    TRACK_CROSSING: "trackcrossing",
-    TRACK_TURNOUT_LEFT: "trackturnoutleft",
-    TRACK_TURNOUT_RIGHT: "trackturnoutright",
-    TRACK_SENSOR: "tracksensor",
-    TRACK_SIGNAL2: "tracksignal2",
-    TRACK_SIGNAL3: "tracksignal3",
-    TRACK_SIGNAL4: "tracksignal4",
-    TRACK_BLOCK: "trackblock",
-};
 export class TopologyBaseElement {
     id;
     type;
@@ -109,9 +95,9 @@ export class TopologyTrackElement extends TopologyBaseElement {
     }
     getNextItemPoint() {
         switch (this.type) {
-            case TOPOLOGY_ELEMENT_TYPES.TRACK_CORNER:
+            case ELEMENT_TYPES.TRACK_CORNER:
                 return getDirectionPoint(this.pos, this.rotation + 90);
-            case TOPOLOGY_ELEMENT_TYPES.TRACK_CURVE:
+            case ELEMENT_TYPES.TRACK_CURVE:
                 return getDirectionPoint(this.pos, this.rotation);
             default:
                 return getDirectionPoint(this.pos, this.rotation);
@@ -119,9 +105,9 @@ export class TopologyTrackElement extends TopologyBaseElement {
     }
     getPrevItemPoint() {
         switch (this.type) {
-            case TOPOLOGY_ELEMENT_TYPES.TRACK_CORNER:
+            case ELEMENT_TYPES.TRACK_CORNER:
                 return getDirectionPoint(this.pos, this.rotation - 180);
-            case TOPOLOGY_ELEMENT_TYPES.TRACK_CURVE:
+            case ELEMENT_TYPES.TRACK_CURVE:
                 return getDirectionPoint(this.pos, this.rotation + 225);
             default:
                 return getDirectionPoint(this.pos, this.rotation + 180);
@@ -143,7 +129,7 @@ export class TopologyTurnoutElement extends TopologyTrackElement {
                 : false;
     }
     getConnections() {
-        if (this.type === TOPOLOGY_ELEMENT_TYPES.TRACK_TURNOUT_LEFT) {
+        if (this.type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT) {
             return {
                 straight: getDirectionPoint(this.pos, -this.rotation),
                 entry: getDirectionPoint(this.pos, -this.rotation + 180),
@@ -235,14 +221,13 @@ export class RailwayTopologyLayout {
     }
     getPhysicalTrackElements() {
         return this.elements.filter((element) => {
-            return (element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_DIRECTION ||
-                element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_STRAIGHT ||
-                element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_END ||
-                element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_CORNER ||
-                element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_CURVE ||
-                element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_CROSSING ||
-                element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_TURNOUT_LEFT ||
-                element.type === TOPOLOGY_ELEMENT_TYPES.TRACK_TURNOUT_RIGHT);
+            return (element.type === ELEMENT_TYPES.TRACK_STRAIGHT ||
+                element.type === ELEMENT_TYPES.TRACK_END ||
+                element.type === ELEMENT_TYPES.TRACK_CORNER ||
+                element.type === ELEMENT_TYPES.TRACK_CURVE ||
+                element.type === ELEMENT_TYPES.TRACK_CROSSING ||
+                element.type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT ||
+                element.type === ELEMENT_TYPES.TRACK_TURNOUT_RIGHT);
         });
     }
     getTurnouts() {
@@ -285,24 +270,24 @@ export function buildRailwayTopologyFromLayout(layout) {
 }
 function createTopologyElement(data) {
     switch (data.type) {
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_STRAIGHT:
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_END:
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_CORNER:
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_CURVE:
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_CROSSING:
+        case ELEMENT_TYPES.TRACK_STRAIGHT:
+        case ELEMENT_TYPES.TRACK_END:
+        case ELEMENT_TYPES.TRACK_CORNER:
+        case ELEMENT_TYPES.TRACK_CURVE:
+        case ELEMENT_TYPES.TRACK_CROSSING:
             return new TopologyTrackElement(data);
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_TURNOUT_LEFT:
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_TURNOUT_RIGHT:
+        case ELEMENT_TYPES.TRACK_TURNOUT_LEFT:
+        case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT:
             return new TopologyTurnoutElement(data);
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_BLOCK:
+        case ELEMENT_TYPES.TRACK_BLOCK:
             return new TopologyBlockElement(data);
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_SENSOR:
+        case ELEMENT_TYPES.TRACK_SENSOR:
             return new TopologySensorElement(data);
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_SIGNAL2:
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_SIGNAL3:
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_SIGNAL4:
+        case ELEMENT_TYPES.TRACK_SIGNAL2:
+        case ELEMENT_TYPES.TRACK_SIGNAL3:
+        case ELEMENT_TYPES.TRACK_SIGNAL4:
             return new TopologySignalElement(data);
-        case TOPOLOGY_ELEMENT_TYPES.TRACK_DIRECTION:
+        case ELEMENT_TYPES.TRACK_DIRECTION:
             return new TopologyDirectionElement(data);
         default:
             return null;

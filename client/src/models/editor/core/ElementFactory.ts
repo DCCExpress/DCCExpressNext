@@ -1,6 +1,6 @@
 import { BaseElement } from "./BaseElement";
 import { TrackStraightElement } from "../elements/TrackStraightElement";
-import { EditorElementData, ELEMENT_TYPES } from "../types/EditorTypes";
+import { EditorElementData } from "../types/EditorTypes";
 import { TrackCornerElement } from "../elements/TrackCornerElement";
 import { TrackEndElement } from "../elements/TrackEndElement";
 import { TrackCurveElement } from "../elements/TrackCurveElement";
@@ -22,6 +22,7 @@ import ca from "zod/v4/locales/ca.cjs";
 import { LabelElement } from "../elements/LabelElement";
 import { TrackDirectionElement } from "../elements/TrackDirectionElement";
 import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
 export class ElementFactory {
   static create(data: EditorElementData): BaseElement {

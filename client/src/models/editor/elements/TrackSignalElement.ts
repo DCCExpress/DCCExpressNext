@@ -1,10 +1,11 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { wsApi } from "../../../services/wsApi";
 import { BaseElement } from "../core/BaseElement";
 import { Layer } from "../core/Layer";
 import { TrackElement } from "../core/TrackElement";
-import { DrawOptions, ELEMENT_TYPES, IBaseElement, ITrackSignalElement } from "../types/EditorTypes";
+import { DrawOptions, ITrackSignalElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 export enum SignalStates {

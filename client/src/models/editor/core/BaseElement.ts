@@ -1,10 +1,10 @@
+import { ELEMENT_TYPES, ElementType } from "../../../../../common/src/layout/elementTypes";
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { IEditableProperty } from "../elements/PropertyDescriptor";
 import { sampleLayout } from "../sample/sampleLayout";
-import { ELEMENT_TYPES, ElementType } from "../types/EditorTypes";
 import { DrawOptions, IBaseElement, RotationStep } from "../types/EditorTypes";
-import { getDirectionXy } from "./helpers";
+import { getDirectionXy } from "../../../../../common/src/helpers";
 import { LayerId } from "./Layer";
 import { IRect, Point } from "./Rect";
 
