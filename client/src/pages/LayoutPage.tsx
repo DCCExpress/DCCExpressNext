@@ -194,22 +194,15 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     }
   };
 
-  const loadLayoutFromServer = async () => {
+const loadLayoutFromServer = async () => {
   try {
     const loaded = await getLayout();
     const nextLayout = Layout.fromJSON(loaded);
 
     setLayout(nextLayout);
     layoutStore.setLayout(nextLayout);
-
     routeGraphStore.clear();
 
-    /**
-     * A GET /api/layout szerveroldalon már felépíti
-     * a topology-t és a route graphot is.
-     * Így itt már biztonságosan be tudjuk tölteni
-     * a közös kliens routeGraphStore cache-t.
-     */
     try {
       await routeGraphStore.ensureLoaded();
     } catch (error) {
@@ -223,11 +216,12 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     setRedoStack([]);
 
     wsApi.getBlocks();
+    wsApi.getRouteReservations();
   } catch (error) {
     console.error(error);
     showErrorMessage("Error", "Failed to load layout: " + error);
   }
-};
+};  
   const saveLayoutToServer = async () => {
     await saveLayout(layoutRef.current);
 
@@ -278,9 +272,9 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     await loadLayoutFromServer();
     await loadCommandCentersFromServer();
     await loadScriptFromServer();
-    wsApi.getBlocks();
     setInvalidateCounter((v) => v + 1);
   }
+
   useEffect(() => {
     loadPartsFromServer();
 

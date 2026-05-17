@@ -298,7 +298,7 @@ export function setupWebSocketServer(server: http.Server) {
             }
 
             // ================================
-            // GRAPH
+            // GRAPH/ROUTES
             // ================================
 
             case "reserveRoute": {
@@ -562,6 +562,38 @@ export function setupWebSocketServer(server: http.Server) {
               return;
             }
 
+            case "getRouteReservations": {
+              const reservations =
+                routeGraphRuntimeStore.getActiveReservations();
+
+              for (const reservation of reservations) {
+                sendToClient(ws, {
+                  type: "routeReservationChanged",
+                  data: {
+                    busy: true,
+
+                    sectionNames:
+                      reservation.sectionNames,
+
+                    elementIds:
+                      routeGraphRuntimeStore.getElementIdsForSections(
+                        reservation.sectionNames
+                      ),
+
+                    turnoutAddresses:
+                      reservation.turnoutAddresses,
+
+                    fromBlockName:
+                      reservation.fromBlockName,
+
+                    toBlockName:
+                      reservation.toBlockName,
+                  },
+                });
+              }
+
+              return;
+            }
             //===============================
             // setLoco
             //===============================

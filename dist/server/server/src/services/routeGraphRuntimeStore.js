@@ -155,5 +155,13 @@ class RouteGraphRuntimeStore {
     isTurnoutBusy(address) {
         return this.busyTurnoutAddresses.has(address);
     }
+    getActiveReservations() {
+        return [...this.reservations.values()].map(reservation => ({
+            fromBlockName: reservation.fromBlockName,
+            toBlockName: reservation.toBlockName,
+            sectionNames: [...reservation.sectionNames],
+            turnoutAddresses: [...reservation.turnoutAddresses],
+        }));
+    }
 }
 export const routeGraphRuntimeStore = new RouteGraphRuntimeStore();

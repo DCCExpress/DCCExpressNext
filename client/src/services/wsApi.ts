@@ -124,13 +124,21 @@ class WebscoketApi {
       toBlockName,
     });
   }
-  
+
   clearAllRouteReservations() {
     return this.send(
       "clearAllRouteReservations",
       {}
     );
   }
+
+  getRouteReservations() {
+    return this.send(
+      "getRouteReservations",
+      {}
+    );
+  }
+
 }
 
 export function getDefaultWsUrl(): string {

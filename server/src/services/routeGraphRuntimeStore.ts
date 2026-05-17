@@ -286,9 +286,23 @@ class RouteGraphRuntimeStore {
       .filter(node => sectionNameSet.has(node.name))
       .flatMap(node => node.elementIds);
   }
-  
+
   isTurnoutBusy(address: number): boolean {
     return this.busyTurnoutAddresses.has(address);
+  }
+
+  getActiveReservations(): {
+    fromBlockName: string;
+    toBlockName: string;
+    sectionNames: string[];
+    turnoutAddresses: number[];
+  }[] {
+    return [...this.reservations.values()].map(reservation => ({
+      fromBlockName: reservation.fromBlockName,
+      toBlockName: reservation.toBlockName,
+      sectionNames: [...reservation.sectionNames],
+      turnoutAddresses: [...reservation.turnoutAddresses],
+    }));
   }
 }
 
