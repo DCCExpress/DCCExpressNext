@@ -21,11 +21,39 @@ export type TrainTaskCreateInput = {
   toBlockId: string;
 };
 
+export type TrainTaskSimulationPhase =
+  | "idle"
+  | "waitingForLoco"
+  | "departing"
+  | "transit";
+
+export type TrainTaskSimulationProgress = {
+  phase: TrainTaskSimulationPhase;
+
+  /**
+   * 0-based index.
+   * Pl. A1→B1 = 0, B1→C1 = 1
+   */
+  legIndex: number;
+
+  /**
+   * Összes blokk-közti leg száma.
+   */
+  legCount: number;
+
+  fromBlockId: string | null;
+  fromBlockName: string | null;
+
+  toBlockId: string | null;
+  toBlockName: string | null;
+};
+
 export type TrainTaskRuntimeState = {
   loco: Loco | null;
   hasLeftFromBlock: boolean;
   hasReachedToBlock: boolean;
   inTransit: boolean;
+  simulation: TrainTaskSimulationProgress;
 };
 
 export type TrainTask = {

@@ -18,11 +18,17 @@ class TaskRuntimeStore {
         this.getBlockState = params.getBlockState;
         trainSimulatorRuntimeStore.configure({
             getTasks: () => this.tasks.map(cloneTask),
+            tryResolveTaskLoco: (taskId) => {
+                return this.tryResolveTaskLoco(taskId);
+            },
             markTaskLeftFromBlock: (taskId) => {
                 return this.markTaskLeftFromBlock(taskId);
             },
             markTaskReachedToBlock: (taskId) => {
                 return this.markTaskReachedToBlock(taskId);
+            },
+            updateTaskSimulationProgress: (taskId, progress) => {
+                return this.updateTaskSimulationProgress(taskId, progress);
             },
             getSimulatorCommandCenter: params.getSimulatorCommandCenter,
         });
@@ -172,26 +178,46 @@ class TaskRuntimeStore {
         if (task.status === "paused") {
             return this.actionError("A feladat szüneteltetett állapotban van. Resume kell, nem Start.");
         }
-        if (task.status === "completed") {
-            return this.actionError("A feladat már befejeződött.");
-        }
-        const blockState = this.getBlockState?.(task.fromBlockId) ?? null;
-        if (!blockState?.locoId) {
-            return this.actionError("Az induló blokkban nincs mozdony, ezért a feladat nem indítható.");
-        }
-        const loco = (await readLocos()).find(item => item.id === blockState.locoId) ?? null;
-        if (!loco) {
-            return this.actionError(`Az induló blokkhoz rendelt mozdony nem található: ${blockState.locoId}.`);
-        }
-        if (task.status === "stopped") {
+        /**
+         * Régi completed / stopped állapotból
+         * újra elindítható a folyamatos task.
+         */
+        if (task.status === "stopped" ||
+            task.status === "completed") {
             task.runtime = this.createRuntimeState();
             delete task.stoppedAt;
             delete task.completedAt;
         }
-        task.runtime.loco = loco;
         task.status = "running";
         task.startedAt = Date.now();
         delete task.error;
+        task.runtime.simulation = {
+            phase: "waitingForLoco",
+            legIndex: 0,
+            legCount: 0,
+            fromBlockId: task.fromBlockId,
+            fromBlockName: task.transition.fromBlock.name,
+            toBlockId: null,
+            toBlockName: null,
+        };
+        /**
+         * Ha már most van mozdony az induló blokkban,
+         * azonnal feloldjuk.
+         * Ha nincs, akkor running marad,
+         * és a simulator tick fogja figyelni.
+         */
+        const locoResolved = await this.tryAssignLocoFromStartBlock(task);
+        if (!locoResolved) {
+            this.broadcast?.({
+                type: "taskWaitingForLoco",
+                data: {
+                    taskId: task.id,
+                    taskName: task.name,
+                    blockId: task.fromBlockId,
+                    message: "A task elindult, de az induló blokkban még nincs mozdony. Várakozás...",
+                },
+            });
+        }
         this.broadcastSnapshot();
         return this.actionOk();
     }
@@ -218,6 +244,48 @@ class TaskRuntimeStore {
             return this.actionError("Csak szüneteltetett feladat folytatható.");
         }
         task.status = "running";
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async tryResolveTaskLoco(taskId) {
+        await this.initialize();
+        const task = this.findTask(taskId);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
+        }
+        if (task.status !== "running" &&
+            task.status !== "paused") {
+            return this.actionOk();
+        }
+        if (task.runtime.loco) {
+            return this.actionOk();
+        }
+        const locoResolved = await this.tryAssignLocoFromStartBlock(task);
+        if (locoResolved) {
+            this.broadcastSnapshot();
+        }
+        return this.actionOk();
+    }
+    async updateTaskSimulationProgress(taskId, progress) {
+        await this.initialize();
+        const task = this.findTask(taskId);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
+        }
+        const previous = task.runtime.simulation;
+        const changed = previous.phase !== progress.phase ||
+            previous.legIndex !== progress.legIndex ||
+            previous.legCount !== progress.legCount ||
+            previous.fromBlockId !== progress.fromBlockId ||
+            previous.fromBlockName !== progress.fromBlockName ||
+            previous.toBlockId !== progress.toBlockId ||
+            previous.toBlockName !== progress.toBlockName;
+        if (!changed) {
+            return this.actionOk();
+        }
+        task.runtime.simulation = {
+            ...progress,
+        };
         this.broadcastSnapshot();
         return this.actionOk();
     }
@@ -271,8 +339,28 @@ class TaskRuntimeStore {
         }
         task.runtime.hasReachedToBlock = true;
         task.runtime.inTransit = false;
-        task.status = "completed";
         task.completedAt = Date.now();
+        /**
+         * Kliensoldali jó kis completed üzenethez.
+         */
+        this.broadcast?.({
+            type: "taskCycleCompleted",
+            data: {
+                taskId: task.id,
+                taskName: task.name,
+                fromBlockId: task.fromBlockId,
+                toBlockId: task.toBlockId,
+                completedAt: task.completedAt,
+                message: "A task ciklusa lefutott, újra várakozik az induló blokk mozdonyára.",
+            },
+        });
+        /**
+         * FONTOS:
+         * Nem tesszük completed végállapotba.
+         * A task továbbra is running marad,
+         * csak a ciklus runtime állapotát nullázzuk.
+         */
+        task.runtime = this.createRuntimeState();
         this.broadcastSnapshot();
         return this.actionOk();
     }
@@ -370,6 +458,15 @@ class TaskRuntimeStore {
             hasLeftFromBlock: false,
             hasReachedToBlock: false,
             inTransit: false,
+            simulation: {
+                phase: "idle",
+                legIndex: 0,
+                legCount: 0,
+                fromBlockId: null,
+                fromBlockName: null,
+                toBlockId: null,
+                toBlockName: null,
+            },
         };
     }
     createOverlayState() {
@@ -411,6 +508,18 @@ class TaskRuntimeStore {
     findTask(taskIdOrName) {
         return this.tasks.find(task => task.id === taskIdOrName ||
             task.name === taskIdOrName);
+    }
+    async tryAssignLocoFromStartBlock(task) {
+        const blockState = this.getBlockState?.(task.fromBlockId) ?? null;
+        if (!blockState?.locoId) {
+            return false;
+        }
+        const loco = (await readLocos()).find(item => item.id === blockState.locoId) ?? null;
+        if (!loco) {
+            return false;
+        }
+        task.runtime.loco = loco;
+        return true;
     }
     createTaskId() {
         return `task-${Date.now()}-${randomUUID().slice(0, 8)}`;

@@ -6,8 +6,8 @@ import type {
 import type {
   TaskManagerActionResult,
   TrainTask,
+  TrainTaskSimulationProgress,
 } from "../../../common/src/task.js";
-
 
 import { log, logError } from "../utility.js";
 
@@ -30,12 +30,21 @@ type SimulatorCommandCenterPort = {
 type TrainSimulatorConfigureParams = {
   getTasks: () => TrainTask[];
 
+  tryResolveTaskLoco: (
+    taskId: string
+  ) => Promise<TaskManagerActionResult>;
+
   markTaskLeftFromBlock: (
     taskId: string
   ) => Promise<TaskManagerActionResult>;
 
   markTaskReachedToBlock: (
     taskId: string
+  ) => Promise<TaskManagerActionResult>;
+
+  updateTaskSimulationProgress: (
+    taskId: string,
+    progress: TrainTaskSimulationProgress
   ) => Promise<TaskManagerActionResult>;
 
   getSimulatorCommandCenter: () => SimulatorCommandCenterPort | null;
@@ -45,17 +54,42 @@ type SimulationPhase =
   | "departing"
   | "transit";
 
+type SimulationLeg = {
+  fromBlockId: string;
+  fromBlockName: string;
+  toBlockId: string;
+  toBlockName: string;
+  segmentCount: number;
+};
+
 type SimulationSession = {
   taskId: string;
+  legs: SimulationLeg[];
+  legIndex: number;
   phase: SimulationPhase;
   phaseStartedAt: number;
   pausedAt: number | null;
 };
 
 const TICK_MS = 250;
+
+/**
+ * Mennyi ideig álljon a köztes blokkban,
+ * mielőtt "elhagyja" azt.
+ */
 const DEPARTURE_DELAY_MS = 1200;
-const BASE_TRANSIT_PER_NODE_MS = 1400;
-const MIN_TRANSIT_MS = 2800;
+
+/**
+ * Egy útvonalszegmenshez tartozó szimulált haladási idő.
+ * Ha két blokk között több szakasz van, arányosan nő az idő.
+ */
+const BASE_TRANSIT_PER_SEGMENT_MS = 1400;
+
+/**
+ * Legyen minimális menetidő két blokk között,
+ * hogy ne villanjon át túl gyorsan.
+ */
+const MIN_TRANSIT_PER_LEG_MS = 2800;
 
 class TrainSimulatorRuntimeStore {
   private params: TrainSimulatorConfigureParams | null = null;
@@ -110,13 +144,15 @@ class TrainSimulatorRuntimeStore {
 
       const tasks = this.params.getTasks();
 
+      /**
+       * Már nem aktív sessionök kipucolása.
+       */
       for (const [taskId, session] of this.sessions.entries()) {
         const task = tasks.find(item => item.id === taskId);
 
         if (
           !task ||
           task.status === "stopped" ||
-          task.status === "completed" ||
           task.status === "error" ||
           task.status === "queued"
         ) {
@@ -125,6 +161,9 @@ class TrainSimulatorRuntimeStore {
         }
       }
 
+      /**
+       * Aktív taskok futtatása.
+       */
       for (const task of tasks) {
         if (
           task.status !== "running" &&
@@ -133,21 +172,76 @@ class TrainSimulatorRuntimeStore {
           continue;
         }
 
+        /**
+         * Running task, de még nincs hozzárendelt mozdony.
+         * Nézzük meg újra, bekerült-e már az induló blokkba.
+         */
         if (!task.runtime.loco) {
+          if (task.status === "running") {
+            await this.params.tryResolveTaskLoco(task.id);
+
+            await this.params.updateTaskSimulationProgress(
+              task.id,
+              {
+                phase: "waitingForLoco",
+                legIndex: 0,
+                legCount: 0,
+                fromBlockId: task.fromBlockId,
+                fromBlockName: task.transition.fromBlock.name,
+                toBlockId: null,
+                toBlockName: null,
+              }
+            );
+          }
+
           continue;
         }
+        let session =
+          this.sessions.get(task.id);
 
-        let session = this.sessions.get(task.id);
-
+        /**
+         * Új ciklus indul.
+         */
         if (!session) {
+          const legs =
+            this.createSimulationLegs(task);
+
+
+
+          if (legs.length === 0) {
+            logError(
+              `[TrainSimulator] No block legs found for task: ${task.name} (${task.id})`
+            );
+            continue;
+          }
+
           session = {
             taskId: task.id,
+            legs,
+            legIndex: 0,
             phase: "departing",
             phaseStartedAt: Date.now(),
-            pausedAt: task.status === "paused"
-              ? Date.now()
-              : null,
+            pausedAt:
+              task.status === "paused"
+                ? Date.now()
+                : null,
           };
+
+          const firstLeg =
+            legs[0]!;
+
+          await this.params.updateTaskSimulationProgress(
+            task.id,
+            {
+              phase: "departing",
+              legIndex: 0,
+              legCount: legs.length,
+              fromBlockId: firstLeg.fromBlockId,
+              fromBlockName: firstLeg.fromBlockName,
+              toBlockId: firstLeg.toBlockId,
+              toBlockName: firstLeg.toBlockName,
+            }
+          );
 
           this.sessions.set(task.id, session);
 
@@ -160,17 +254,33 @@ class TrainSimulatorRuntimeStore {
           );
 
           log(
-            `[TrainSimulator] Session created: ${task.name} (${task.id})`
+            `[TrainSimulator] Session created: ${task.name} (${task.id}), legs: ${legs
+              .map(leg => `${leg.fromBlockName}→${leg.toBlockName}`)
+              .join(", ")}`
           );
         }
 
         if (task.status === "paused") {
-          await this.pauseSession(simulator, task, session);
+          await this.pauseSession(
+            simulator,
+            task,
+            session
+          );
+
           continue;
         }
 
-        await this.resumeSessionIfNeeded(simulator, task, session);
-        await this.advanceRunningSession(simulator, task, session);
+        await this.resumeSessionIfNeeded(
+          simulator,
+          task,
+          session
+        );
+
+        await this.advanceRunningSession(
+          simulator,
+          task,
+          session
+        );
       }
     } catch (error) {
       logError("[TrainSimulator] Tick failed:", error);
@@ -232,51 +342,144 @@ class TrainSimulatorRuntimeStore {
     task: TrainTask,
     session: SimulationSession
   ): Promise<void> {
+
+    const params = this.params;
+
+    if (!params) {
+      return;
+    }
     const elapsed =
       Date.now() - session.phaseStartedAt;
 
+    const currentLeg =
+      session.legs[session.legIndex];
+
+    if (!currentLeg) {
+      logError(
+        `[TrainSimulator] Missing current leg for task: ${task.name} (${task.id})`
+      );
+      this.sessions.delete(task.id);
+      return;
+    }
+
+    /**
+     * 1. fázis:
+     * a jelenlegi blokk elhagyása.
+     *
+     * Első legnél A1 ürül.
+     * Köztes legnél például B1 ürül.
+     */
     if (
       session.phase === "departing" &&
       elapsed >= DEPARTURE_DELAY_MS
     ) {
       simulator.setBlockRemove({
-        blockId: task.fromBlockId,
+        blockId: currentLeg.fromBlockId,
         locoId: task.runtime.loco!.id,
       });
 
-      await this.params!.markTaskLeftFromBlock(task.id);
+      /**
+       * Csak az első induló blokk elhagyásakor
+       * jelezzük a task runtime felé.
+       */
+      if (session.legIndex === 0) {
+        await params.markTaskLeftFromBlock(task.id);
+      }
 
       session.phase = "transit";
       session.phaseStartedAt = Date.now();
+      await params.updateTaskSimulationProgress(
+        task.id,
+        {
+          phase: "transit",
+          legIndex: session.legIndex,
+          legCount: session.legs.length,
+          fromBlockId: currentLeg.fromBlockId,
+          fromBlockName: currentLeg.fromBlockName,
+          toBlockId: currentLeg.toBlockId,
+          toBlockName: currentLeg.toBlockName,
+        }
+      );
 
       log(
-        `[TrainSimulator] Loco left block ${task.fromBlockId}: ${task.name} (${task.id})`
+        `[TrainSimulator] Loco left block ${currentLeg.fromBlockName}: ${task.name} (${task.id})`
       );
 
       return;
     }
 
+    /**
+     * 2. fázis:
+     * megérkezés a következő blokkba.
+     */
     if (
       session.phase === "transit" &&
-      elapsed >= this.getTransitDurationMs(task)
+      elapsed >= this.getLegTransitDurationMs(currentLeg)
     ) {
       simulator.setBlock({
-        blockId: task.toBlockId,
+        blockId: currentLeg.toBlockId,
         locoId: task.runtime.loco!.id,
       });
 
-      await simulator.setLoco(
-        task.runtime.loco!.address,
-        0,
-        this.resolveDirection(task)
-      );
-
-      await this.params!.markTaskReachedToBlock(task.id);
-      this.sessions.delete(task.id);
-
       log(
-        `[TrainSimulator] Loco reached block ${task.toBlockId}: ${task.name} (${task.id})`
+        `[TrainSimulator] Loco reached block ${currentLeg.toBlockName}: ${task.name} (${task.id})`
       );
+
+      const isLastLeg =
+        session.legIndex >= session.legs.length - 1;
+
+      /**
+       * Ha ez volt az utolsó blokk:
+       * megállítjuk a mozdonyt,
+       * a task runtime lezárja az aktuális ciklust,
+       * majd újra várakozás következik.
+       */
+      if (isLastLeg) {
+        await simulator.setLoco(
+          task.runtime.loco!.address,
+          0,
+          this.resolveDirection(task)
+        );
+
+        await this.params!.markTaskReachedToBlock(task.id);
+
+        this.sessions.delete(task.id);
+
+        log(
+          `[TrainSimulator] Route cycle finished: ${task.name} (${task.id})`
+        );
+
+        return;
+      }
+
+      /**
+       * Van még következő blokk:
+       * továbblépünk a következő legre.
+       *
+       * Példa:
+       * A1→B1 után jön B1→C1.
+       */
+      session.legIndex += 1;
+      session.phase = "departing";
+      session.phaseStartedAt = Date.now();
+
+      const nextLeg =
+        session.legs[session.legIndex]!;
+
+      await this.params!.updateTaskSimulationProgress(
+        task.id,
+        {
+          phase: "departing",
+          legIndex: session.legIndex,
+          legCount: session.legs.length,
+          fromBlockId: nextLeg.fromBlockId,
+          fromBlockName: nextLeg.fromBlockName,
+          toBlockId: nextLeg.toBlockId,
+          toBlockName: nextLeg.toBlockName,
+        }
+      );
+
+      return;
     }
   }
 
@@ -295,16 +498,81 @@ class TrainSimulatorRuntimeStore {
     );
   }
 
-  private getTransitDurationMs(task: TrainTask): number {
-    const nodeCount =
-      Math.max(
-        1,
-        task.transition.solution.nodes.length
-      );
+  /**
+   * A teljes route path-ból dinamikusan blokk-lépéseket gyártunk.
+   *
+   * Például:
+   * path:
+   *   A1, S1, B1, S2, C1
+   *
+   * legs:
+   *   A1 -> B1
+   *   B1 -> C1
+   */
+  private createSimulationLegs(
+    task: TrainTask
+  ): SimulationLeg[] {
+    const legs: SimulationLeg[] = [];
 
+    let previousBlock:
+      | {
+        id: string;
+        name: string;
+      }
+      | null = null;
+
+    let segmentCountSincePreviousBlock = 0;
+
+    for (const item of task.transition.solution.path) {
+      if (item.type === "segment") {
+        segmentCountSincePreviousBlock += 1;
+        continue;
+      }
+
+      if (item.type !== "block") {
+        continue;
+      }
+
+      const currentBlock = {
+        id: item.block.id,
+        name: item.block.name,
+      };
+
+      if (!previousBlock) {
+        previousBlock = currentBlock;
+        segmentCountSincePreviousBlock = 0;
+        continue;
+      }
+
+      if (previousBlock.id === currentBlock.id) {
+        continue;
+      }
+
+      legs.push({
+        fromBlockId: previousBlock.id,
+        fromBlockName: previousBlock.name,
+        toBlockId: currentBlock.id,
+        toBlockName: currentBlock.name,
+        segmentCount:
+          Math.max(
+            1,
+            segmentCountSincePreviousBlock
+          ),
+      });
+
+      previousBlock = currentBlock;
+      segmentCountSincePreviousBlock = 0;
+    }
+
+    return legs;
+  }
+
+  private getLegTransitDurationMs(
+    leg: SimulationLeg
+  ): number {
     return Math.max(
-      MIN_TRANSIT_MS,
-      nodeCount * BASE_TRANSIT_PER_NODE_MS
+      MIN_TRANSIT_PER_LEG_MS,
+      leg.segmentCount * BASE_TRANSIT_PER_SEGMENT_MS
     );
   }
 
@@ -316,7 +584,6 @@ class TrainSimulatorRuntimeStore {
       ? "reverse"
       : "forward";
   }
-
 }
 
 export const trainSimulatorRuntimeStore =

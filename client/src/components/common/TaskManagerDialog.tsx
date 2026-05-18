@@ -24,7 +24,7 @@ import {
     IconPencil,
     IconTrash,
 } from "@tabler/icons-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import AppModal from "./AppModal";
 
@@ -85,6 +85,24 @@ export default function TaskManagerDialog({
 
     const selectedTask = useMemo(() => {
         return snapshot.tasks.find(task => task.id === selectedTaskId) ?? null;
+    }, [snapshot.tasks, selectedTaskId]);
+
+    useEffect(() => {
+        if (snapshot.tasks.length === 0) {
+            if (selectedTaskId !== null) {
+                setSelectedTaskId(null);
+            }
+
+            return;
+        }
+
+        const selectedTaskStillExists =
+            selectedTaskId !== null &&
+            snapshot.tasks.some(task => task.id === selectedTaskId);
+
+        if (!selectedTaskStillExists) {
+            setSelectedTaskId(snapshot.tasks[0]!.id);
+        }
     }, [snapshot.tasks, selectedTaskId]);
 
     const runnableRoutes = useMemo(() => {
@@ -414,105 +432,53 @@ export default function TaskManagerDialog({
         solution: BlockRouteSolution,
         badgeSize: "sm" | "md" | "lg" = "sm"
     ) {
-        const firstItem = solution.path[0];
-        const lastItem = solution.path[solution.path.length - 1];
-
-        const segmentItems = solution.path.filter(
-            item => item.type === "segment"
-        );
-
-        const firstSegment = segmentItems[0];
-        const lastSegment = segmentItems[segmentItems.length - 1];
-
-        if (
-            !firstItem ||
-            firstItem.type !== "block" ||
-            !lastItem ||
-            lastItem.type !== "block" ||
-            !firstSegment ||
-            !lastSegment
-        ) {
+        if (solution.path.length === 0) {
             return null;
         }
 
-        const middleSegments = segmentItems.slice(1, -1);
-
-        const items: ReactNode[] = [];
-
-        items.push(
-            <Badge
-                key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
-                size={badgeSize}
-                color="violet"
-                variant="filled"
-                styles={{
-                    label: {
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                    },
-                }}
-            >
-                <span>{firstItem.block.name}</span>
-
-                <Badge
-                    size="xs"
-                    color="gray"
-                    variant="filled"
-                    radius="sm"
-                >
-                    {firstSegment.node.name}
-                </Badge>
-            </Badge>
-        );
-
-        for (const segment of middleSegments) {
-            items.push(
-                <Badge
-                    key={`middle-segment-${segment.node.name}`}
-                    size={badgeSize}
-                    color="gray"
-                    variant="light"
-                >
-                    {segment.node.name}
-                </Badge>
-            );
-        }
-
-        items.push(
-            <Badge
-                key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
-                size={badgeSize}
-                color="violet"
-                variant="filled"
-                styles={{
-                    label: {
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                    },
-                }}
-            >
-                <span>{lastItem.block.name}</span>
-
-                <Badge
-                    size="xs"
-                    color="gray"
-                    variant="filled"
-                    radius="sm"
-                >
-                    {lastSegment.node.name}
-                </Badge>
-            </Badge>
-        );
-
         return (
             <Group gap="xs" wrap="wrap">
-                {items.map((item, index) => (
-                    <Group key={`task-route-item-${index}`} gap="xs">
-                        {item}
+                {solution.path.map((item, index) => (
+                    <Group
+                        key={`task-route-path-${item.type}-${index}`}
+                        gap="xs"
+                        wrap="nowrap"
+                    >
+                        {item.type === "block" ? (
+                            <Badge
+                                size={badgeSize}
+                                color="violet"
+                                variant="filled"
+                                styles={{
+                                    label: {
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                    },
+                                }}
+                            >
+                                <span>{item.block.name}</span>
 
-                        {index < items.length - 1 && (
+                                <Badge
+                                    size="xs"
+                                    color="gray"
+                                    variant="filled"
+                                    radius="sm"
+                                >
+                                    {item.node.name}
+                                </Badge>
+                            </Badge>
+                        ) : (
+                            <Badge
+                                size={badgeSize}
+                                color="gray"
+                                variant="light"
+                            >
+                                {item.node.name}
+                            </Badge>
+                        )}
+
+                        {index < solution.path.length - 1 && (
                             <Text fw={700}>→</Text>
                         )}
                     </Group>
@@ -717,129 +683,177 @@ export default function TaskManagerDialog({
         }
     }
     function renderTaskSteps(task: TrainTask) {
+        type StepState =
+            | "done"
+            | "active"
+            | "upcoming";
+
+        type TaskVisualStep = {
+            key: string;
+            title: string;
+            description: string;
+            state: StepState;
+        };
+
+        const simulation =
+            task.runtime.simulation;
+
+        const pathBlocks =
+            task.transition.solution.path
+                .filter(item => item.type === "block")
+                .map(item => item.block);
+
+        const legs = pathBlocks
+            .slice(0, -1)
+            .map((block, index) => ({
+                from: block,
+                to: pathBlocks[index + 1]!,
+            }));
+
+        const steps: TaskVisualStep[] = [];
+
         const taskStarted =
-            task.startedAt !== undefined ||
             task.status !== "queued";
 
-        const locoResolved =
-            task.runtime.loco !== null;
+        steps.push({
+            key: "task-start",
+            title: "Task indítása",
+            description:
+                taskStarted
+                    ? "A task fut vagy már elindult."
+                    : "A feladat Start parancsra vár.",
+            state:
+                taskStarted
+                    ? "done"
+                    : "active",
+        });
 
-        const leftFromBlock =
-            task.runtime.hasLeftFromBlock;
+        steps.push({
+            key: "waiting-for-loco",
+            title: `Mozdonyra vár az ${task.transition.fromBlock.name} blokkban`,
+            description:
+                task.runtime.loco
+                    ? `${task.runtime.loco.name} • address ${task.runtime.loco.address}`
+                    : "A task figyeli az induló blokkot, és mozdonyra vár.",
+            state:
+                !taskStarted
+                    ? "upcoming"
+                    : task.runtime.loco
+                        ? "done"
+                        : "active",
+        });
 
-        const reachedTarget =
-            task.runtime.hasReachedToBlock ||
-            task.status === "completed";
+        for (let legIndex = 0; legIndex < legs.length; legIndex++) {
+            const leg = legs[legIndex]!;
 
-        let activeIndex = 0;
+            const departureDone =
+                simulation.legIndex > legIndex ||
+                (
+                    simulation.legIndex === legIndex &&
+                    simulation.phase === "transit"
+                );
 
-        if (!taskStarted) {
-            activeIndex = 0;
-        } else if (!locoResolved) {
-            activeIndex = 1;
-        } else if (!leftFromBlock) {
-            activeIndex = 2;
-        } else if (!reachedTarget) {
-            activeIndex = 3;
-        } else {
-            activeIndex = 4;
+            const departureActive =
+                simulation.legIndex === legIndex &&
+                simulation.phase === "departing";
+
+            steps.push({
+                key: `depart-${leg.from.id}-${leg.to.id}`,
+                title: `${leg.from.name} blokk elhagyása`,
+                description:
+                    departureDone
+                        ? `A mozdony elhagyta a(z) ${leg.from.name} blokkot.`
+                        : departureActive
+                            ? `A mozdony a(z) ${leg.from.name} blokk elhagyására készül.`
+                            : `Ez a lépés még hátravan.`,
+                state:
+                    departureDone
+                        ? "done"
+                        : departureActive
+                            ? "active"
+                            : "upcoming",
+            });
+
+            const arrivalDone =
+                simulation.legIndex > legIndex;
+
+            const arrivalActive =
+                simulation.legIndex === legIndex &&
+                simulation.phase === "transit";
+
+            steps.push({
+                key: `arrive-${leg.from.id}-${leg.to.id}`,
+                title: `${leg.to.name} blokk érkezésére vár`,
+                description:
+                    arrivalDone
+                        ? `A mozdony megérkezett a(z) ${leg.to.name} blokkba.`
+                        : arrivalActive
+                            ? `A mozdony úton van a(z) ${leg.to.name} blokk felé.`
+                            : `Ez a lépés még hátravan.`,
+                state:
+                    arrivalDone
+                        ? "done"
+                        : arrivalActive
+                            ? "active"
+                            : "upcoming",
+            });
         }
-
-        const steps = [
-            {
-                title: "Indításra vár",
-                description:
-                    task.status === "queued"
-                        ? "A feladat Start parancsra vár."
-                        : "A feladat már elindult.",
-            },
-            {
-                title: "Mozdony azonosítása",
-                description:
-                    task.runtime.loco
-                        ? `${task.runtime.loco.name} • address ${task.runtime.loco.address}`
-                        : "Indításkor az induló blokkban álló mozdony kerül kiválasztásra.",
-            },
-            {
-                title: "Induló blokk elhagyása",
-                description:
-                    leftFromBlock
-                        ? "A mozdony elhagyta az induló blokkot."
-                        : "A rendszer erre az átmenetre vár.",
-            },
-            {
-                title: "Haladás a célblokk felé",
-                description:
-                    task.runtime.inTransit
-                        ? "A szerelvény két blokk között halad."
-                        : reachedTarget
-                            ? "A haladási szakasz befejeződött."
-                            : "Ez a lépés még hátravan.",
-            },
-            {
-                title: "Célblokk elérése",
-                description:
-                    reachedTarget
-                        ? "A feladat megérkezett a célblokkba."
-                        : "A feladat itt zárul majd le.",
-            },
-        ];
 
         return (
             <Stack gap="xs">
-                {steps.map((step, index) => {
-                    const state =
-                        reachedTarget && index === steps.length - 1
-                            ? "done"
-                            : index < activeIndex
-                                ? "done"
-                                : index === activeIndex
-                                    ? "active"
-                                    : "upcoming";
-
+                {steps.map(step => {
                     const badgeColor =
-                        state === "done"
+                        step.state === "done"
                             ? "green"
-                            : state === "active"
+                            : step.state === "active"
                                 ? "blue"
                                 : "gray";
 
                     const badgeLabel =
-                        state === "done"
+                        step.state === "done"
                             ? "Done"
-                            : state === "active"
+                            : step.state === "active"
                                 ? "Current"
                                 : "Pending";
 
                     return (
                         <Card
-                            key={step.title}
+                            key={step.key}
                             withBorder
                             radius="md"
                             padding="sm"
                             style={{
-                                opacity: state === "upcoming" ? 0.55 : 1,
+                                opacity:
+                                    step.state === "upcoming"
+                                        ? 0.55
+                                        : 1,
                                 borderLeft:
-                                    state === "done"
+                                    step.state === "done"
                                         ? "6px solid var(--mantine-color-green-6)"
-                                        : state === "active"
+                                        : step.state === "active"
                                             ? "6px solid var(--mantine-color-blue-6)"
                                             : "6px solid var(--mantine-color-gray-4)",
                                 background:
-                                    state === "active"
+                                    step.state === "active"
                                         ? "var(--mantine-color-blue-light)"
                                         : undefined,
                             }}
                         >
                             <Group justify="space-between" align="flex-start">
                                 <Stack gap={2}>
-                                    <Text fw={700}>{step.title}</Text>
+                                    <Text fw={700}>
+                                        {step.title}
+                                    </Text>
+
                                     <Text size="sm" c="dimmed">
                                         {step.description}
                                     </Text>
                                 </Stack>
 
-                                <Badge color={badgeColor} variant="light">
+                                <Badge
+                                    color={badgeColor}
+                                    variant="light"
+                                >
                                     {badgeLabel}
                                 </Badge>
                             </Group>
@@ -849,7 +863,6 @@ export default function TaskManagerDialog({
             </Stack>
         );
     }
-
 
 
     const taskRows = snapshot.tasks.map((task, index) => (
@@ -1319,51 +1332,71 @@ export default function TaskManagerDialog({
 
                             </Card>
 
-                            {selectedTask && (
-                                <Card
-                                    withBorder
-                                    radius="lg"
-                                    padding="md"
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        minHeight: 0,
-                                        overflow: "hidden",
-                                    }}
+                            <Card
+                                withBorder
+                                radius="lg"
+                                padding="md"
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    minHeight: 0,
+                                    overflow: "hidden",
+                                }}
+                            >
+                                <Group
+                                    justify="space-between"
+                                    align="center"
+                                    mb="md"
                                 >
-                                    <Group
-                                        justify="space-between"
-                                        align="center"
-                                        mb="md"
-                                    >
-                                        <Stack gap={0}>
-                                            <Text fw={800}>Task steps</Text>
-                                            <Text size="sm" c="dimmed">
-                                                {selectedTask.name}
-                                            </Text>
-                                        </Stack>
+                                    <Stack gap={0}>
+                                        <Text fw={800}>Task steps</Text>
 
+                                        <Text size="sm" c="dimmed">
+                                            {selectedTask
+                                                ? selectedTask.name
+                                                : "Nincs kiválasztott feladat"}
+                                        </Text>
+                                    </Stack>
+
+                                    {selectedTask && (
                                         <Badge
                                             color={getStatusColor(selectedTask.status)}
                                             variant="light"
                                         >
                                             {getStatusLabel(selectedTask.status)}
                                         </Badge>
-                                    </Group>
+                                    )}
+                                </Group>
 
-                                    <ScrollArea
-                                        type="auto"
-                                        offsetScrollbars
-                                        style={{
-                                            flex: 1,
-                                            minHeight: 0,
-                                        }}
-                                    >
-                                        {renderTaskSteps(selectedTask)}
-                                    </ScrollArea>
-                                </Card>
-                            )}
-                        </div>
+                                <ScrollArea
+                                    type="auto"
+                                    offsetScrollbars
+                                    style={{
+                                        flex: 1,
+                                        minHeight: 0,
+                                    }}
+                                >
+                                    {selectedTask ? (
+                                        renderTaskSteps(selectedTask)
+                                    ) : (
+                                        <Card
+                                            withBorder
+                                            radius="md"
+                                            padding="md"
+                                            style={{
+                                                minHeight: 120,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                        >
+                                            <Text c="dimmed" ta="center">
+                                                Válassz egy feladatot a táblázatból.
+                                            </Text>
+                                        </Card>
+                                    )}
+                                </ScrollArea>
+                            </Card>                        </div>
 
 
                     </Stack>

@@ -825,7 +825,39 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
         }
       );
 
+    const unsubscribeTaskWaitingForLoco =
+      wsClient.on<{
+        taskId: string;
+        taskName: string;
+        blockId: string;
+        message: string;
+      }>(
+        "taskWaitingForLoco",
+        data => {
+          showWarningMessage(
+            "Task waiting",
+            `${data.taskName}: ${data.message}`
+          );
+        }
+      );
 
+    const unsubscribeTaskCycleCompleted =
+      wsClient.on<{
+        taskId: string;
+        taskName: string;
+        fromBlockId: string;
+        toBlockId: string;
+        completedAt: number;
+        message: string;
+      }>(
+        "taskCycleCompleted",
+        data => {
+          showOkMessage(
+            "Task completed",
+            `${data.taskName}: ${data.message}`
+          );
+        }
+      );
 
     return () => {
       unsubscribeSensor();
@@ -839,6 +871,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       unsubscribeRouteReleaseRejected();
       unsubscribeRouteReleased();
       unsubscribeAllRouteReservationsCleared();
+      unsubscribeTaskWaitingForLoco();
+      unsubscribeTaskCycleCompleted();
       //wsApi.disconnect();
     };
   }, []);

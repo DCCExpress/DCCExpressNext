@@ -188,16 +188,30 @@ export class Graph {
                 block: fromBlock,
                 node: fromNode,
             },
-            ...segmentRoute.nodes.map(node => ({
+        ];
+        for (const node of segmentRoute.nodes) {
+            path.push({
                 type: "segment",
                 node,
-            })),
-            {
-                type: "block",
-                block: toBlock,
-                node: toNode,
-            },
-        ];
+            });
+            for (const block of node.blocks) {
+                const isFromBlock = block.id === fromBlock.id;
+                const isToBlock = block.id === toBlock.id;
+                if (isFromBlock || isToBlock) {
+                    continue;
+                }
+                path.push({
+                    type: "block",
+                    block,
+                    node,
+                });
+            }
+        }
+        path.push({
+            type: "block",
+            block: toBlock,
+            node: toNode,
+        });
         return {
             ...segmentRoute,
             fromBlock,
