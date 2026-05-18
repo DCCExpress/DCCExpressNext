@@ -8,11 +8,13 @@ import { railwayTopologyStore } from "./railwayTopologyStore.js";
 class TaskRuntimeStore {
     initialized = false;
     broadcast = null;
+    getBlockState = null;
     tasks = [];
     savedTasks = [];
     tasksFilePath = path.resolve(dataDir, "tasks.json");
     configure(params) {
         this.broadcast = params.broadcast;
+        this.getBlockState = params.getBlockState;
     }
     async initialize() {
         if (this.initialized) {
@@ -36,11 +38,7 @@ class TaskRuntimeStore {
         if (!graph) {
             return this.addError("Nincs aktív szerveroldali útvonalgráf.");
         }
-        const locoAddress = Number(input.locoAddress);
         const targetSpeed = Number(input.targetSpeed);
-        if (!Number.isFinite(locoAddress) || locoAddress <= 0) {
-            return this.addError("Adj meg érvényes mozdony címet.");
-        }
         if (!Number.isFinite(targetSpeed) || targetSpeed < 0) {
             return this.addError("Adj meg érvényes célsebességet.");
         }
@@ -57,7 +55,6 @@ class TaskRuntimeStore {
         const saved = {
             id,
             name,
-            locoAddress,
             targetSpeed,
             fromBlockId: input.fromBlockId,
             toBlockId: input.toBlockId,
@@ -73,6 +70,63 @@ class TaskRuntimeStore {
             task: cloneTask(task),
             snapshot: this.getSnapshot(),
         };
+    }
+    async updateTask(taskId, input) {
+        await this.initialize();
+        const task = this.findTask(taskId);
+        const saved = this.savedTasks.find(item => item.id === taskId);
+        if (!task || !saved) {
+            return this.actionError("A feladat nem található.");
+        }
+        if (task.status === "running" ||
+            task.status === "paused") {
+            return this.actionError("Futó vagy szüneteltetett feladat nem módosítható.");
+        }
+        const graph = routeGraphRuntimeStore.getGraph();
+        if (!graph) {
+            return this.actionError("Nincs aktív szerveroldali útvonalgráf.");
+        }
+        const targetSpeed = Number(input.targetSpeed);
+        if (!Number.isFinite(targetSpeed) ||
+            targetSpeed < 0) {
+            return this.actionError("Adj meg érvényes célsebességet.");
+        }
+        if (!input.fromBlockId ||
+            !input.toBlockId) {
+            return this.actionError("Válassz induló és cél blokkot.");
+        }
+        const transition = graph
+            .getRunnableBlockTransitions()
+            .find(item => item.fromBlock.id === input.fromBlockId &&
+            item.toBlock.id === input.toBlockId);
+        if (!transition) {
+            return this.actionError("A kiválasztott blokkok között nincs közvetlenül automatizálható útvonal.");
+        }
+        const nextName = input.name?.trim() ||
+            `${transition.fromBlock.name} → ${transition.toBlock.name}`;
+        const routeChanged = saved.fromBlockId !== input.fromBlockId ||
+            saved.toBlockId !== input.toBlockId;
+        const speedChanged = saved.targetSpeed !== targetSpeed;
+        saved.name = nextName;
+        saved.targetSpeed = targetSpeed;
+        saved.fromBlockId = input.fromBlockId;
+        saved.toBlockId = input.toBlockId;
+        task.name = nextName;
+        task.targetSpeed = targetSpeed;
+        task.fromBlockId = input.fromBlockId;
+        task.toBlockId = input.toBlockId;
+        task.transition = transition;
+        if (routeChanged || speedChanged) {
+            task.status = "queued";
+            task.runtime = this.createRuntimeState();
+            delete task.startedAt;
+            delete task.stoppedAt;
+            delete task.completedAt;
+            delete task.error;
+        }
+        await this.persistTasks();
+        this.broadcastSnapshot();
+        return this.actionOk();
     }
     async removeTask(taskId) {
         await this.initialize();
@@ -109,9 +163,13 @@ class TaskRuntimeStore {
         if (task.status === "completed") {
             return this.actionError("A feladat már befejeződött.");
         }
-        const loco = (await readLocos()).find(item => item.address === task.locoAddress) ?? null;
+        const blockState = this.getBlockState?.(task.fromBlockId) ?? null;
+        if (!blockState?.locoId) {
+            return this.actionError("Az induló blokkban nincs mozdony, ezért a feladat nem indítható.");
+        }
+        const loco = (await readLocos()).find(item => item.id === blockState.locoId) ?? null;
         if (!loco) {
-            return this.actionError(`A megadott mozdonycímhez nem található mozdony: ${task.locoAddress}.`);
+            return this.actionError(`Az induló blokkhoz rendelt mozdony nem található: ${blockState.locoId}.`);
         }
         if (task.status === "stopped") {
             task.runtime = this.createRuntimeState();
@@ -285,7 +343,6 @@ class TaskRuntimeStore {
         return {
             id: saved.id,
             name: saved.name,
-            locoAddress: saved.locoAddress,
             targetSpeed: saved.targetSpeed,
             fromBlockId: saved.fromBlockId,
             toBlockId: saved.toBlockId,
@@ -401,9 +458,6 @@ function normalizeSavedTask(raw) {
     const name = typeof item.name === "string"
         ? item.name
         : "";
-    const locoAddress = typeof item.locoAddress === "number"
-        ? item.locoAddress
-        : 0;
     const targetSpeed = typeof item.targetSpeed === "number"
         ? item.targetSpeed
         : Number.NaN;
@@ -418,8 +472,6 @@ function normalizeSavedTask(raw) {
         : Date.now();
     if (!id ||
         !name ||
-        !Number.isFinite(locoAddress) ||
-        locoAddress <= 0 ||
         !Number.isFinite(targetSpeed) ||
         targetSpeed < 0 ||
         !fromBlockId ||
@@ -429,7 +481,6 @@ function normalizeSavedTask(raw) {
     return {
         id,
         name,
-        locoAddress,
         targetSpeed,
         fromBlockId,
         toBlockId,

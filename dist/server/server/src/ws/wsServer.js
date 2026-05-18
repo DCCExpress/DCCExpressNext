@@ -167,6 +167,9 @@ function configureTaskRuntime() {
         broadcast: message => {
             broadcastAll(message);
         },
+        getBlockState: (blockId) => {
+            return commandCenter?.getBlockState(blockId) ?? null;
+        },
     });
 }
 setCommandCenterConfigLoadedCallback((conf) => {

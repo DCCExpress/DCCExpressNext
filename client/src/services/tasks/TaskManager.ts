@@ -8,6 +8,7 @@ import {
   saveTrainTasks,
   startTrainTask,
   stopTrainTask,
+  updateTrainTask,
 } from "../../api/http";
 
 import { wsClient } from "../wsClient";
@@ -68,6 +69,20 @@ export class TaskManager {
     if (result.ok) {
       this.setSnapshot(result.snapshot);
     } else if (result.snapshot) {
+      this.setSnapshot(result.snapshot);
+    }
+
+    return result;
+  }
+
+  async updateTask(
+    taskId: string,
+    input: TrainTaskCreateInput
+  ): Promise<TaskManagerActionResult> {
+    const result =
+      await updateTrainTask(taskId, input);
+
+    if (result.snapshot) {
       this.setSnapshot(result.snapshot);
     }
 

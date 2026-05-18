@@ -246,6 +246,12 @@ function configureTaskRuntime() {
     broadcast: message => {
       broadcastAll(message);
     },
+
+    getBlockState: (
+      blockId: string
+    ) => {
+      return commandCenter?.getBlockState(blockId) ?? null;
+    },
   });
 }
 

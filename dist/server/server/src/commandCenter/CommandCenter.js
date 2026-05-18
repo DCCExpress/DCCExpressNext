@@ -91,6 +91,12 @@ export class CommandCenter {
             log("Failed to load runtime state in getBlocks:", err);
         });
     }
+    getBlockState(blockId) {
+        const block = this.blocks.get(blockId);
+        return block
+            ? { ...block }
+            : null;
+    }
     getOrCreateLoco(address) {
         let loco = this.locos.get(address);
         if (!loco) {

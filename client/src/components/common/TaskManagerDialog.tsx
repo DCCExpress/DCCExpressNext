@@ -20,7 +20,8 @@ import {
     IconPlayerPlay,
     IconPlayerStop,
     IconPlus,
-    IconTrash,
+        IconPencil,
+IconTrash,
 } from "@tabler/icons-react";
 import { useMemo, useState, type ReactNode } from "react";
 
@@ -55,8 +56,7 @@ export default function TaskManagerDialog({
 }: TaskManagerDialogProps) {
     const snapshot = useTaskManager();
 
-    const [taskName, setTaskName] = useState("");
-    const [locoAddress, setLocoAddress] = useState<number | string>(3);
+    const [taskName, setTaskName] = useState("");
     const [targetSpeed, setTargetSpeed] = useState<number | string>(40);
 
     const [fromBlockId, setFromBlockId] = useState<string | null>(null);
@@ -67,7 +67,14 @@ export default function TaskManagerDialog({
 
     const [deleteTask, setDeleteTask] = useState<TrainTask | null>(null);
 
-    const graph = routeGraphStore.getGraph();
+    
+    const [editTask, setEditTask] = useState<TrainTask | null>(null);
+    const [editTaskName, setEditTaskName] = useState("");
+    const [editTargetSpeed, setEditTargetSpeed] = useState<number | string>(40);
+    const [editFromBlockId, setEditFromBlockId] = useState<string | null>(null);
+    const [editToBlockId, setEditToBlockId] = useState<string | null>(null);
+    const [editError, setEditError] = useState<string | null>(null);
+const graph = routeGraphStore.getGraph();
 
     const runnableTransitions = useMemo(() => {
         return graph?.getRunnableBlockTransitions() ?? [];
@@ -114,6 +121,31 @@ export default function TaskManagerDialog({
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [runnableTransitions, fromBlockId]);
+    const editToBlockSelectData = useMemo(() => {
+        const filtered = editFromBlockId
+            ? runnableTransitions.filter(
+                transition => transition.fromBlock.id === editFromBlockId
+            )
+            : runnableTransitions;
+
+        const map = new Map<string, string>();
+
+        for (const transition of filtered) {
+            map.set(
+                transition.toBlock.id,
+                transition.toBlock.label
+            );
+        }
+
+        return [...map.entries()]
+            .map(([value, label]) => ({
+                value,
+                label,
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [runnableTransitions, editFromBlockId]);
+
+
 
     const selectedTransition = useMemo<RunnableBlockTransition | null>(() => {
         if (!fromBlockId || !toBlockId) {
@@ -142,12 +174,7 @@ export default function TaskManagerDialog({
         if (!fromBlockId || !toBlockId) {
             setFormError("Válassz induló és cél blokkot.");
             return;
-        }
-
-        if (typeof locoAddress !== "number" || locoAddress <= 0) {
-            setFormError("Adj meg érvényes mozdony címet.");
-            return;
-        }
+        }
 
         if (typeof targetSpeed !== "number" || targetSpeed < 0) {
             setFormError("Adj meg érvényes célsebességet.");
@@ -158,8 +185,7 @@ export default function TaskManagerDialog({
 
         const result = await taskManager.addTask({
             ...(trimmedTaskName ? { name: trimmedTaskName } : {}),
-            locoAddress,
-            targetSpeed,
+targetSpeed,
             fromBlockId,
             toBlockId,
         });
@@ -186,6 +212,60 @@ export default function TaskManagerDialog({
             setActionError(result.error);
         }
     };
+    const openEditTask = (task: TrainTask) => {
+        setEditTask(task);
+        setEditTaskName(task.name);
+        setEditTargetSpeed(task.targetSpeed);
+        setEditFromBlockId(task.fromBlockId);
+        setEditToBlockId(task.toBlockId);
+        setEditError(null);
+    };
+
+    const handleEditFromBlockChange = (value: string | null) => {
+        setEditFromBlockId(value);
+        setEditToBlockId(null);
+        setEditError(null);
+    };
+
+    const handleSaveEditedTask = async () => {
+        if (!editTask) {
+            return;
+        }
+
+        setEditError(null);
+        setActionError(null);
+
+        if (!editFromBlockId || !editToBlockId) {
+            setEditError("Válassz induló és cél blokkot.");
+            return;
+        }
+
+        if (typeof editTargetSpeed !== "number" || editTargetSpeed < 0) {
+            setEditError("Adj meg érvényes célsebességet.");
+            return;
+        }
+
+        const trimmedTaskName = editTaskName.trim();
+
+        const result = await taskManager.updateTask(editTask.id, {
+            ...(trimmedTaskName ? { name: trimmedTaskName } : {}),
+            targetSpeed: editTargetSpeed,
+            fromBlockId: editFromBlockId,
+            toBlockId: editToBlockId,
+        });
+
+        if (!result.ok) {
+            setEditError(result.error);
+            return;
+        }
+
+        setEditTask(null);
+        setEditError(null);
+
+        showOkMessage("SUCCESSFUL", "Task updated.");
+    };
+
+
 
     const handleSaveTasks = async () => {
         setActionError(null);
@@ -459,6 +539,32 @@ export default function TaskManagerDialog({
             </Badge>
         );
     }
+    function renderEditButton(task: TrainTask) {
+        const disabled =
+            task.status === "running" ||
+            task.status === "paused";
+
+        return (
+            <Tooltip
+                label={
+                    disabled
+                        ? "Futó vagy szüneteltetett task nem módosítható"
+                        : "Edit"
+                }
+            >
+                <ActionIcon
+                    color="blue"
+                    variant="light"
+                    disabled={disabled}
+                    onClick={() => openEditTask(task)}
+                >
+                    <IconPencil size={18} />
+                </ActionIcon>
+            </Tooltip>
+        );
+    }
+
+
 
     function renderDeleteButton(task: TrainTask) {
         return (
@@ -492,6 +598,10 @@ export default function TaskManagerDialog({
                                 <IconPlayerPlay size={18} />
                             </ActionIcon>
                         </Tooltip>
+
+                        {renderEditButton(task)}
+
+
 
                         {renderDeleteButton(task)}
                     </Group>
@@ -580,6 +690,10 @@ export default function TaskManagerDialog({
                             </ActionIcon>
                         </Tooltip>
 
+                        {renderEditButton(task)}
+
+
+
                         {renderDeleteButton(task)}
                     </Group>
                 );
@@ -653,6 +767,86 @@ export default function TaskManagerDialog({
 
     return (
         <>
+            <Modal
+                opened={editTask !== null}
+                onClose={() => setEditTask(null)}
+                title="Feladat szerkesztése"
+                centered
+                size="lg"
+                zIndex={10000}
+            >
+                <Stack gap="md">
+                    {editError && (
+                        <Alert color="red" title="Feladat nem módosítható">
+                            {editError}
+                        </Alert>
+                    )}
+
+                    <TextInput
+                        label="Task name"
+                        placeholder="Pl. B1 → C1"
+                        value={editTaskName}
+                        onChange={event =>
+                            setEditTaskName(event.currentTarget.value)
+                        }
+                    />
+
+                    <Group grow align="end">
+                        <Select
+                            label="From block"
+                            placeholder="Induló blokk"
+                            data={fromBlockSelectData}
+                            value={editFromBlockId}
+                            onChange={handleEditFromBlockChange}
+                            searchable
+                            clearable
+                        />
+
+                        <Select
+                            label="To block"
+                            placeholder="Cél blokk"
+                            data={editToBlockSelectData}
+                            value={editToBlockId}
+                            onChange={value => {
+                                setEditToBlockId(value);
+                                setEditError(null);
+                            }}
+                            searchable
+                            clearable
+                            disabled={!editFromBlockId}
+                        />
+
+                        <NumberInput
+                            label="Target speed"
+                            value={editTargetSpeed}
+                            onChange={setEditTargetSpeed}
+                            min={0}
+                            max={126}
+                            hideControls={false}
+                        />
+                    </Group>
+
+                    <Group justify="flex-end">
+                        <Button
+                            variant="default"
+                            onClick={() => setEditTask(null)}
+                        >
+                            Mégse
+                        </Button>
+
+                        <Button
+                            color="blue"
+                            onClick={() => {
+                                void handleSaveEditedTask();
+                            }}
+                        >
+                            Mentés
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
+
+
             <Modal
                 opened={deleteTask !== null}
                 onClose={() => setDeleteTask(null)}
@@ -747,15 +941,7 @@ export default function TaskManagerDialog({
                                 onChange={event =>
                                     setTaskName(event.currentTarget.value)
                                 }
-                            />
-
-                            <NumberInput
-                                label="Loco address"
-                                value={locoAddress}
-                                onChange={setLocoAddress}
-                                min={1}
-                                hideControls={false}
-                            />
+                            />
 
                             <NumberInput
                                 label="Target speed"

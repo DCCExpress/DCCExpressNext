@@ -19,17 +19,28 @@ import type {
   TrainTaskRuntimeState,
 } from "../../../common/src/task.js";
 
+import type {
+  BlockState,
+} from "../../../common/src/types.js";
+
 type BroadcastFn = (
   message: unknown
 ) => void;
 
 type ConfigureParams = {
   broadcast: BroadcastFn;
+  getBlockState: (
+    blockId: string
+  ) => BlockState | null;
 };
 
 class TaskRuntimeStore {
   private initialized = false;
   private broadcast: BroadcastFn | null = null;
+
+  private getBlockState:
+    | ((blockId: string) => BlockState | null)
+    | null = null;
 
   private readonly tasks: TrainTask[] = [];
   private readonly savedTasks: SavedTrainTask[] = [];
@@ -39,6 +50,7 @@ class TaskRuntimeStore {
 
   configure(params: ConfigureParams): void {
     this.broadcast = params.broadcast;
+    this.getBlockState = params.getBlockState;
   }
 
   async initialize(): Promise<void> {
@@ -78,14 +90,7 @@ class TaskRuntimeStore {
       );
     }
 
-    const locoAddress = Number(input.locoAddress);
     const targetSpeed = Number(input.targetSpeed);
-
-    if (!Number.isFinite(locoAddress) || locoAddress <= 0) {
-      return this.addError(
-        "Adj meg érvényes mozdony címet."
-      );
-    }
 
     if (!Number.isFinite(targetSpeed) || targetSpeed < 0) {
       return this.addError(
@@ -115,7 +120,6 @@ class TaskRuntimeStore {
     const saved: SavedTrainTask = {
       id,
       name,
-      locoAddress,
       targetSpeed,
       fromBlockId: input.fromBlockId,
       toBlockId: input.toBlockId,
@@ -139,6 +143,115 @@ class TaskRuntimeStore {
       task: cloneTask(task),
       snapshot: this.getSnapshot(),
     };
+  }
+
+  async updateTask(
+    taskId: string,
+    input: TrainTaskCreateInput
+  ): Promise<TaskManagerActionResult> {
+    await this.initialize();
+
+    const task =
+      this.findTask(taskId);
+
+    const saved =
+      this.savedTasks.find(item => item.id === taskId);
+
+    if (!task || !saved) {
+      return this.actionError(
+        "A feladat nem található."
+      );
+    }
+
+    if (
+      task.status === "running" ||
+      task.status === "paused"
+    ) {
+      return this.actionError(
+        "Futó vagy szüneteltetett feladat nem módosítható."
+      );
+    }
+
+    const graph =
+      routeGraphRuntimeStore.getGraph();
+
+    if (!graph) {
+      return this.actionError(
+        "Nincs aktív szerveroldali útvonalgráf."
+      );
+    }
+
+    const targetSpeed =
+      Number(input.targetSpeed);
+
+    if (
+      !Number.isFinite(targetSpeed) ||
+      targetSpeed < 0
+    ) {
+      return this.actionError(
+        "Adj meg érvényes célsebességet."
+      );
+    }
+
+    if (
+      !input.fromBlockId ||
+      !input.toBlockId
+    ) {
+      return this.actionError(
+        "Válassz induló és cél blokkot."
+      );
+    }
+
+    const transition =
+      graph
+        .getRunnableBlockTransitions()
+        .find(item =>
+          item.fromBlock.id === input.fromBlockId &&
+          item.toBlock.id === input.toBlockId
+        );
+
+    if (!transition) {
+      return this.actionError(
+        "A kiválasztott blokkok között nincs közvetlenül automatizálható útvonal."
+      );
+    }
+
+    const nextName =
+      input.name?.trim() ||
+      `${transition.fromBlock.name} → ${transition.toBlock.name}`;
+
+    const routeChanged =
+      saved.fromBlockId !== input.fromBlockId ||
+      saved.toBlockId !== input.toBlockId;
+
+    const speedChanged =
+      saved.targetSpeed !== targetSpeed;
+
+    saved.name = nextName;
+    saved.targetSpeed = targetSpeed;
+    saved.fromBlockId = input.fromBlockId;
+    saved.toBlockId = input.toBlockId;
+
+    task.name = nextName;
+    task.targetSpeed = targetSpeed;
+    task.fromBlockId = input.fromBlockId;
+    task.toBlockId = input.toBlockId;
+    task.transition = transition;
+
+    if (routeChanged || speedChanged) {
+      task.status = "queued";
+      task.runtime = this.createRuntimeState();
+
+      delete task.startedAt;
+      delete task.stoppedAt;
+      delete task.completedAt;
+      delete task.error;
+    }
+
+    await this.persistTasks();
+    this.broadcastSnapshot();
+
+    return this.actionOk();
   }
 
   async removeTask(
@@ -215,14 +328,25 @@ class TaskRuntimeStore {
       );
     }
 
+    const blockState =
+      this.getBlockState?.(
+        task.fromBlockId
+      ) ?? null;
+
+    if (!blockState?.locoId) {
+      return this.actionError(
+        "Az induló blokkban nincs mozdony, ezért a feladat nem indítható."
+      );
+    }
+
     const loco =
       (await readLocos()).find(
-        item => item.address === task.locoAddress
+        item => item.id === blockState.locoId
       ) ?? null;
 
     if (!loco) {
       return this.actionError(
-        `A megadott mozdonycímhez nem található mozdony: ${task.locoAddress}.`
+        `Az induló blokkhoz rendelt mozdony nem található: ${blockState.locoId}.`
       );
     }
 
@@ -531,7 +655,6 @@ class TaskRuntimeStore {
     return {
       id: saved.id,
       name: saved.name,
-      locoAddress: saved.locoAddress,
       targetSpeed: saved.targetSpeed,
       fromBlockId: saved.fromBlockId,
       toBlockId: saved.toBlockId,
@@ -704,11 +827,6 @@ function normalizeSavedTask(
       ? item.name
       : "";
 
-  const locoAddress =
-    typeof item.locoAddress === "number"
-      ? item.locoAddress
-      : 0;
-
   const targetSpeed =
     typeof item.targetSpeed === "number"
       ? item.targetSpeed
@@ -732,8 +850,6 @@ function normalizeSavedTask(
   if (
     !id ||
     !name ||
-    !Number.isFinite(locoAddress) ||
-    locoAddress <= 0 ||
     !Number.isFinite(targetSpeed) ||
     targetSpeed < 0 ||
     !fromBlockId ||
@@ -745,7 +861,6 @@ function normalizeSavedTask(
   return {
     id,
     name,
-    locoAddress,
     targetSpeed,
     fromBlockId,
     toBlockId,

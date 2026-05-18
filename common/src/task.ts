@@ -16,7 +16,6 @@ export type TrainTaskStatus =
 
 export type TrainTaskCreateInput = {
   name?: string | undefined;
-  locoAddress: number;
   targetSpeed: number;
   fromBlockId: string;
   toBlockId: string;
@@ -32,7 +31,6 @@ export type TrainTaskRuntimeState = {
 export type TrainTask = {
   id: string;
   name: string;
-  locoAddress: number;
   targetSpeed: number;
   fromBlockId: string;
   toBlockId: string;
@@ -49,7 +47,6 @@ export type TrainTask = {
 export type SavedTrainTask = {
   id: string;
   name: string;
-  locoAddress: number;
   targetSpeed: number;
   fromBlockId: string;
   toBlockId: string;

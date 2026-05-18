@@ -162,6 +162,14 @@ export abstract class CommandCenter {
     });
   }
 
+  getBlockState(blockId: string): BlockState | null {
+    const block = this.blocks.get(blockId);
+
+    return block
+      ? { ...block }
+      : null;
+  }
+
   abstract getConnectionString(): string;
   abstract start(): Promise<boolean>;
   abstract stop(): Promise<boolean>;

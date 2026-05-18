@@ -166,6 +166,27 @@ export async function addTrainTask(
   );
 }
 
+export async function updateTrainTask(
+  taskId: string,
+  input: TrainTaskCreateInput
+): Promise<TaskManagerActionResult> {
+  const res = await fetch(
+    `/api/tasks/${encodeURIComponent(taskId)}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    }
+  );
+
+  return readTaskResponse<TaskManagerActionResult>(
+    res,
+    "Failed to update task"
+  );
+}
+
 export async function deleteTrainTask(
   taskId: string
 ): Promise<TaskManagerActionResult> {

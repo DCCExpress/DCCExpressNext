@@ -52,6 +52,29 @@ export function createTaskRouter() {
     }
   });
 
+  router.put("/:taskId", async (req, res) => {
+    try {
+      const input =
+        req.body as TrainTaskCreateInput;
+
+      const result =
+        await taskRuntimeStore.updateTask(
+          req.params.taskId ?? "",
+          input
+        );
+
+      res.status(result.ok ? 200 : 400).json(result);
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update task.",
+      });
+    }
+  });
+
   router.delete("/:taskId", async (req, res) => {
     try {
       const result =
