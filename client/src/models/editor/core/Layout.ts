@@ -10,7 +10,15 @@ import { TrackTurnoutRightElement } from "../elements/TrackTurnoutRightElement";
 import { DrawOptions } from "../types/EditorTypes";
 import { BaseElement } from "./BaseElement";
 import { ElementFactory } from "./ElementFactory";
-import { Graph, RouteSolution } from "./Graph";
+import type {
+    Graph,
+    RouteSolution,
+} from "../../../../../common/src/railway/graph";
+
+import type {
+    RouteGraphTrackRuntimeDto,
+} from "../../../../../common/src/railway/routeGraphDto";
+
 import { Layer, LayerId } from "./Layer";
 import { Point } from "./Rect";
 import { TrackElement } from "./TrackElement";
@@ -698,15 +706,19 @@ export class Layout {
         }
 
     }
-    applyRouteGraphRuntime(graph: Graph | null): void {
-        const trackElements = this.getTrackElements();
+
+    applyRouteGraphRuntime(
+        trackRuntime: RouteGraphTrackRuntimeDto[] | null | undefined
+    ): void {
+        const trackElements =
+            this.getTrackElements();
 
         for (const elem of trackElements) {
             elem.section = 0;
             elem.travelDirection = "unknown";
         }
 
-        if (!graph) {
+        if (!trackRuntime) {
             return;
         }
 
@@ -714,15 +726,19 @@ export class Layout {
             trackElements.map(elem => [elem.id, elem])
         );
 
-        for (const runtime of graph.trackRuntime) {
-            const elem = elementsById.get(runtime.id);
+        for (const runtime of trackRuntime) {
+            const elem =
+                elementsById.get(runtime.id);
 
             if (!elem) {
                 continue;
             }
 
-            elem.section = runtime.section;
-            elem.travelDirection = runtime.travelDirection;
+            elem.section =
+                runtime.section;
+
+            elem.travelDirection =
+                runtime.travelDirection;
         }
     }
 

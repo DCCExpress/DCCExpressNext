@@ -1,4 +1,8 @@
-import { Graph } from "../models/editor/core/Graph";
+import { Graph } from "../../../common/src/railway/graph";
+import type {
+  RouteGraphTrackRuntimeDto,
+} from "../../../common/src/railway/routeGraphDto";
+
 import { getRouteGraph } from "../api/http";
 import { createClientGraphFromRouteGraphDto } from "./routeGraphDtoMapper";
 
@@ -6,6 +10,7 @@ type RouteGraphListener = (graph: Graph | null) => void;
 
 class RouteGraphStore {
   private graph: Graph | null = null;
+  private trackRuntime: RouteGraphTrackRuntimeDto[] = [];
   private listeners = new Set<RouteGraphListener>();
 
   /**
@@ -24,6 +29,10 @@ class RouteGraphStore {
     return this.graph;
   }
 
+  getTrackRuntime(): RouteGraphTrackRuntimeDto[] {
+    return [...this.trackRuntime];
+  }
+
   isLoaded(): boolean {
     return this.graph !== null && !this.stale;
   }
@@ -35,19 +44,23 @@ class RouteGraphStore {
   setGraph(graph: Graph | null): void {
     this.graph = graph;
     this.stale = graph === null;
+
+    if (graph === null) {
+      this.trackRuntime = [];
+    }
+
     this.emit();
   }
-
   /**
    * A jelenlegi kliens cache már nem biztos, hogy a szerver aktuális gráfja.
    * Példa: layout mentés után.
    */
   invalidate(): void {
     this.graph = null;
+    this.trackRuntime = [];
     this.stale = true;
     this.emit();
   }
-
   /**
    * Régi clear() hívások kompatibilitására.
    * Most ugyanaz, mint invalidate().
@@ -85,11 +98,11 @@ class RouteGraphStore {
   async reload(): Promise<Graph | null> {
     this.stale = true;
     this.graph = null;
+    this.trackRuntime = [];
     this.emit();
 
     return this.ensureLoaded();
   }
-
   subscribe(listener: RouteGraphListener): () => void {
     this.listeners.add(listener);
 
@@ -105,6 +118,7 @@ class RouteGraphStore {
 
     if (!response.ready) {
       this.graph = null;
+      this.trackRuntime = [];
       this.stale = true;
       this.emit();
       return null;
@@ -114,6 +128,7 @@ class RouteGraphStore {
       createClientGraphFromRouteGraphDto(response);
 
     this.graph = graph;
+    this.trackRuntime = response.trackRuntime ?? [];
     this.stale = false;
     this.emit();
 

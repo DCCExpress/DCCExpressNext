@@ -26,10 +26,7 @@ import { useMemo, useState, type ReactNode } from "react";
 
 import AppModal from "./AppModal";
 
-import type {
-    BlockRouteSolution,
-    RunnableBlockTransition,
-} from "../../models/editor/core/Graph";
+
 import { useTaskManager } from "../../services/tasks/useTaskManager";
 import { routeGraphStore } from "../../services/routeGraphStore";
 import { taskManager } from "../../services/tasks/taskManagerSingleton";
@@ -42,6 +39,10 @@ import {
     showOkMessage,
     showWarningMessage,
 } from "../../helpers";
+import type {
+  BlockRouteSolution,
+  RunnableBlockTransition,
+} from "../../../../common/src/railway/graph";
 
 type TaskManagerDialogProps = {
     opened: boolean;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Graph } from "../models/editor/core/Graph";
+import type { Graph } from "../../../common/src/railway/graph";
 import { routeGraphStore } from "../services/routeGraphStore";
 
 export function useRouteGraph() {

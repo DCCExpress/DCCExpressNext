@@ -11,14 +11,24 @@ import {
     Tabs,
     Text,
 } from "@mantine/core";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import CanvasElement from "../common/CanvasElement";
 import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
+
+import CanvasElement from "../common/CanvasElement";
+import type {
     BlockRouteSolution,
     Graph,
     GraphNode,
     RouteSolution,
-} from "../../models/editor/core/Graph";
+} from "../../../../common/src/railway/graph";
+
+import GraphRenderer from "../../models/editor/rendering/GraphRenderer";
+import { getGraphBlockSelectData } from "../../services/routeGraphUi";
 import AppModal from "./AppModal";
 
 type GraphDialogProps = {
@@ -39,6 +49,8 @@ export default function GraphDialog({
     const [routeSolution, setRouteSolution] =
         useState<BlockRouteSolution | null>(null);
     const [routeSearched, setRouteSearched] = useState(false);
+    const graphRendererRef = useRef(new GraphRenderer());
+
 
     useEffect(() => {
         setFromBlockId(null);
@@ -48,7 +60,7 @@ export default function GraphDialog({
     }, [graph]);
 
     const blockSelectData = useMemo(() => {
-        return graph?.getBlockSelectData() ?? [];
+        return getGraphBlockSelectData(graph);
     }, [graph]);
 
     const handleSolveRoute = () => {
@@ -72,10 +84,16 @@ export default function GraphDialog({
             width: number,
             height: number
         ) => {
-            if (!graph) return;
+            if (!graph) {
+                return;
+            }
 
-            graph.autoLayout(width, height);
-            graph.draw(ctx);
+            graphRendererRef.current.draw(
+                ctx,
+                graph,
+                width,
+                height
+            );
         },
         [graph]
     );
@@ -186,7 +204,7 @@ export default function GraphDialog({
                 </Table.Td>
 
                 <Table.Td>
-                 {renderTurnoutRequirementBadges(edge.turnoutStates)}
+                    {renderTurnoutRequirementBadges(edge.turnoutStates)}
                 </Table.Td>
             </Table.Tr>
         )) ?? [];
@@ -211,7 +229,7 @@ export default function GraphDialog({
                 {turnoutStates.map((turnoutState, index) => (
                     <Badge
                         key={`turnout-${turnoutState.address}-${turnoutState.closed}-${index}`}
-                        
+
                         variant="light"
                         styles={{
                             label: {
@@ -228,7 +246,7 @@ export default function GraphDialog({
                             color={turnoutState.closed ? "green" : "orange"}
                             variant="filled"
                             radius="xs"
-                           
+
                         >
                             {turnoutState.closed ? "C" : "T"}
                         </Badge>

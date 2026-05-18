@@ -1,5 +1,6 @@
+import { RunnableBlockTransition } from "../../../../common/src/railway/graph";
 import { Loco } from "../../../../common/src/types";
-import type { RunnableBlockTransition } from "../../models/editor/core/Graph";
+
 
 export type TrainTaskStatus =
     | "queued"

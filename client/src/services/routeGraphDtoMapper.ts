@@ -6,13 +6,12 @@ import {
   Edge,
   Graph,
   GraphNode,
-} from "../models/editor/core/Graph";
+} from "../../../common/src/railway/graph";
 
 export function createClientGraphFromRouteGraphDto(
   dto: RouteGraphDto
 ): Graph {
   const graph = new Graph();
-  graph.trackRuntime = dto.trackRuntime ?? [];
 
   const nodesByName = new Map<string, GraphNode>();
 

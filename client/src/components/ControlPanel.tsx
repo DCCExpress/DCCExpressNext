@@ -31,10 +31,15 @@ import {
 } from "@tabler/icons-react";
 
 import { useCommandCenter } from "../context/CommandCenterContext";
-import { Edge, RouteSolution, TurnoutStateRequirement } from "../models/editor/core/Graph";
+
 import { Layout } from "../models/editor/core/Layout";
 import { wsApi } from "../services/wsApi";
 import GraphDialog from "./common/GraphDialog";
+import type {
+  Edge,
+  RouteSolution,
+  TurnoutStateRequirement,
+} from "../../../common/src/railway/graph";
 
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { useRouteGraph } from "../hooks/useRouteGraph";

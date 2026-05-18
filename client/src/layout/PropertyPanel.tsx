@@ -14,6 +14,7 @@ import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutL
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../services/wsApi";
+import { getGraphBlockSelectData } from "../services/routeGraphUi";
 import "../styles/propertypanel.css";
 
 //import { Graph } from "../models/editor/core/Graph";
@@ -23,7 +24,10 @@ import { getRouteGraph } from "../api/http";
 import VisibilitySettings from "../components/VisibilitySettings";
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { useRouteGraph } from "../hooks/useRouteGraph";
-import { Graph } from "../models/editor/core/Graph";
+import type {
+  Graph,
+} from "../../../common/src/railway/graph";
+
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
 
@@ -90,6 +94,10 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
     ensureLoaded: ensureRouteGraphLoaded,
     reload: reloadRouteGraph,
   } = useRouteGraph();
+
+  const routeGraphBlockSelectData = useMemo(() => {
+    return getGraphBlockSelectData(routeGraph);
+  }, [routeGraph]);
 
   const [routeGraphError, setRouteGraphError] = useState<string | null>(null);
   const { colorScheme } = useMantineColorScheme();
@@ -268,34 +276,34 @@ export default function RightPropertyPanel({ selectedElement, onUpdateSelectedEl
   }, [opened])
 
 
-  
-const refreshExtendedRouteGraph = async () => {
-  if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
-    setRouteGraphError(null);
-    return;
-  }
 
-  try {
-    const graph = await reloadRouteGraph();
-
-    if (!graph) {
-      setRouteGraphError(
-        "A szerveren még nincs aktív route gráf."
-      );
+  const refreshExtendedRouteGraph = async () => {
+    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+      setRouteGraphError(null);
       return;
     }
 
-    setRouteGraphError(null);
-  } catch (error) {
-    setRouteGraphError(
-      error instanceof Error
-        ? error.message
-        : "Could not reload server route graph."
-    );
-  } finally {
-    onUpdateSelectedElement(selectedElement);
-  }
-};
+    try {
+      const graph = await reloadRouteGraph();
+
+      if (!graph) {
+        setRouteGraphError(
+          "A szerveren még nincs aktív route gráf."
+        );
+        return;
+      }
+
+      setRouteGraphError(null);
+    } catch (error) {
+      setRouteGraphError(
+        error instanceof Error
+          ? error.message
+          : "Could not reload server route graph."
+      );
+    } finally {
+      onUpdateSelectedElement(selectedElement);
+    }
+  };
   const handleTestExtendedRoute = async () => {
     if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
       return;
@@ -813,7 +821,7 @@ const refreshExtendedRouteGraph = async () => {
                     <Select
                       label={prop.label}
                       placeholder="Select block"
-                      data={routeGraph?.getBlockSelectData() ?? []}
+                      data={routeGraphBlockSelectData}
                       value={(selectedElement as any)[prop.key] || null}
                       onChange={(value: string | null) =>
                         handleChange(prop, value ?? "")
@@ -822,10 +830,9 @@ const refreshExtendedRouteGraph = async () => {
                       clearable
                       disabled={
                         !routeGraph ||
-                        routeGraph.getBlockSelectData().length === 0
+                        routeGraphBlockSelectData.length === 0
                       }
                     />
-
                     {!routeGraph && (
                       <Text size="xs" c="dimmed">
                         No route graph available.
@@ -833,7 +840,7 @@ const refreshExtendedRouteGraph = async () => {
                     )}
 
                     {routeGraph &&
-                      routeGraph.getBlockSelectData().length === 0 && (
+                      routeGraphBlockSelectData.length === 0 && (
                         <Text size="xs" c="dimmed">
                           No blocks available in the generated route graph.
                         </Text>

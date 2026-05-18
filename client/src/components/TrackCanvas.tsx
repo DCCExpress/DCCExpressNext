@@ -35,7 +35,7 @@ import LocoPicker from "./loco/LocoPicker";
 import { Loco } from "../../../common/src/types";
 import { TrackDirectionElement } from "../models/editor/elements/TrackDirectionElement";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
-import { TurnoutStateRequirement } from "../models/editor/core/Graph";
+
 import { routeGraphStore } from "../services/routeGraphStore";
 import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
 import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";

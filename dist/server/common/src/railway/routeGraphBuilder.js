@@ -24,6 +24,7 @@ export class RouteGraphBuilder {
         this.turnouts = this.topology.getTurnouts();
         this.markTurnoutsVisited();
         this.discoverPhysicalSections();
+        this.discoverSectionsFromDirectionElements();
         this.createRouteEdges();
         return this.graph;
     }
@@ -62,6 +63,25 @@ export class RouteGraphBuilder {
                 }
                 this.createPhysicalSection(firstElem);
             }
+        }
+    }
+    discoverSectionsFromDirectionElements() {
+        const directionElements = this.topology.getDirectionElements();
+        for (const directionElement of directionElements) {
+            /**
+             * Ha ezt a pályahálózatot már a váltók felől
+             * megtalálta a discoverPhysicalSections(),
+             * akkor nem csinálunk vele semmit.
+             */
+            if (directionElement.isVisited) {
+                continue;
+            }
+            /**
+             * Ez tipikusan a váltó nélküli pálya esete.
+             * Innen indulva az egész összefüggő sínrendszer
+             * egy fizikai szakaszként feltárható.
+             */
+            this.createPhysicalSection(directionElement);
         }
     }
     createPhysicalSection(firstElem) {

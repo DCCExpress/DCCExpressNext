@@ -235,7 +235,16 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       routeGraphStore.clear();
 
       try {
-        await routeGraphStore.ensureLoaded();
+        const graph =
+          await routeGraphStore.ensureLoaded();
+
+        nextLayout.applyRouteGraphRuntime(
+          routeGraphStore.getTrackRuntime()
+        );
+
+        nextLayout.checkRoutes(graph);
+
+        setInvalidateCounter(prev => prev + 1);
       } catch (error) {
         console.warn(
           "[RouteGraph] Could not preload graph after layout load:",
@@ -290,9 +299,13 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
        */
       routeGraphStore.invalidate();
 
-      const graph = await routeGraphStore.ensureLoaded();
+      const graph =
+        await routeGraphStore.ensureLoaded();
 
-      layoutRef.current.applyRouteGraphRuntime(graph);
+      layoutRef.current.applyRouteGraphRuntime(
+        routeGraphStore.getTrackRuntime()
+      );
+
       layoutRef.current.checkRoutes(graph);
 
       setInvalidateCounter((prev) => prev + 1);
@@ -486,8 +499,11 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
 
   useEffect(() => {
-    const unsubscribe = routeGraphStore.subscribe((graph) => {
-      layoutRef.current.applyRouteGraphRuntime(graph);
+    const unsubscribe = routeGraphStore.subscribe(() => {
+      layoutRef.current.applyRouteGraphRuntime(
+        routeGraphStore.getTrackRuntime()
+      );
+
       setInvalidateCounter((prev) => prev + 1);
     });
 
