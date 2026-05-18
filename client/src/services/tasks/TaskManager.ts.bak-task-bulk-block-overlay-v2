@@ -6,16 +6,12 @@ import {
   reloadTrainTasks,
   resumeTrainTask,
   saveTrainTasks,
-  startAllTrainTasks,
   startTrainTask,
-  stopAllTrainTasks,
   stopTrainTask,
   updateTrainTask,
 } from "../../api/http";
 
 import { wsClient } from "../wsClient";
-import { layoutStore } from "../layoutStore";
-import { BlockElement } from "../../models/editor/elements/BlockElement";
 
 import type {
   AddTrainTaskResult,
@@ -158,27 +154,6 @@ export class TaskManager {
     return result;
   }
 
-  async startAllTasks(): Promise<TaskManagerActionResult> {
-    const result =
-      await startAllTrainTasks();
-
-    if (result.snapshot) {
-      this.setSnapshot(result.snapshot);
-    }
-
-    return result;
-  }
-
-  async stopAllTasks(): Promise<TaskManagerActionResult> {
-    const result =
-      await stopAllTrainTasks();
-
-    if (result.snapshot) {
-      this.setSnapshot(result.snapshot);
-    }
-
-    return result;
-  }
   async saveTasks(): Promise<TaskManagerActionResult> {
     const result =
       await saveTrainTasks();
@@ -242,79 +217,8 @@ export class TaskManager {
     }
   }
 
-  private applyTransitBlockOverlay(
-    snapshot: TaskManagerSnapshot
-  ): void {
-    const layout =
-      layoutStore.getLayout();
-
-    if (!layout) {
-      return;
-    }
-
-    let changed = false;
-
-    for (const element of layout.getAllElements()) {
-      if (
-        element instanceof BlockElement &&
-        element.runtimeTransitLocoAddress !== 0
-      ) {
-        element.runtimeTransitLocoAddress = 0;
-        changed = true;
-      }
-    }
-
-    for (const task of snapshot.tasks) {
-      if (
-        task.status !== "running" &&
-        task.status !== "paused"
-      ) {
-        continue;
-      }
-
-      const simulation =
-        task.runtime.simulation;
-
-      if (simulation.phase !== "transit") {
-        continue;
-      }
-
-      const locoAddress =
-        task.runtime.loco?.address ?? 0;
-
-      if (locoAddress <= 0) {
-        continue;
-      }
-
-      for (const blockId of [
-        simulation.fromBlockId,
-        simulation.toBlockId,
-      ]) {
-        if (!blockId) {
-          continue;
-        }
-
-        const element =
-          layout.getElementById(blockId);
-
-        if (!(element instanceof BlockElement)) {
-          continue;
-        }
-
-        if (element.runtimeTransitLocoAddress !== locoAddress) {
-          element.runtimeTransitLocoAddress = locoAddress;
-          changed = true;
-        }
-      }
-    }
-
-    if (changed) {
-      layoutStore.setLayout(layout);
-    }
-  }
   private setSnapshot(snapshot: TaskManagerSnapshot): void {
     this.snapshot = cloneSnapshot(snapshot);
-    this.applyTransitBlockOverlay(this.snapshot);
     this.emitChange();
   }
 
@@ -349,9 +253,6 @@ function cloneSnapshot(
       transition: task.transition,
       runtime: {
         ...task.runtime,
-        simulation: {
-          ...task.runtime.simulation,
-        },
         ...(task.runtime.loco
           ? {
               loco: {

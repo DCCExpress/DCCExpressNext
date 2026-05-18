@@ -436,6 +436,22 @@ class TaskRuntimeStore {
         this.broadcastSnapshot();
         return this.actionOk();
     }
+    async startAllTasks() {
+        await this.initialize();
+        for (const task of this.tasks) {
+            if (task.status === "queued" ||
+                task.status === "stopped" ||
+                task.status === "completed") {
+                await this.startTask(task.id);
+                continue;
+            }
+            if (task.status === "paused") {
+                await this.resumeTask(task.id);
+            }
+        }
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
     async stopTask(taskIdOrName) {
         await this.initialize();
         const task = this.findTask(taskIdOrName);

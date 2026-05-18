@@ -455,6 +455,29 @@ function ControllerTab() {
     }
   };
 
+  const handleStartAllTasks = async () => {
+    const result =
+      await taskManager.startAllTasks();
+
+    if (!result.ok) {
+      showErrorMessage("ERROR", result.error);
+      return;
+    }
+
+    showOkMessage("SUCCESSFUL", "All tasks started.");
+  };
+
+  const handleStopAllTasks = async () => {
+    const result =
+      await taskManager.stopAllTasks();
+
+    if (!result.ok) {
+      showErrorMessage("ERROR", result.error);
+      return;
+    }
+
+    showOkMessage("SUCCESSFUL", "All tasks stopped.");
+  };
   function getStatusColor(status: TrainTaskStatus): string {
     switch (status) {
       case "queued":
@@ -492,6 +515,17 @@ function ControllerTab() {
   function getTaskProgressLabel(task: TrainTask): string {
     if (task.status === "completed") {
       return "Megérkezett";
+    }
+
+    switch (task.runtime.simulation.phase) {
+      case "waitingForLoco":
+        return "Mozdonyra vár";
+      case "waitingForRoute":
+        return "Útvonal foglalására vár";
+      case "departing":
+        return "Indulási szakasz";
+      case "transit":
+        return "Két blokk között halad";
     }
 
     if (task.runtime.inTransit) {
@@ -671,163 +705,228 @@ function ControllerTab() {
         onClose={() => setTaskManagerOpened(false)}
       />
 
-      <Group align="end" gap="xs">
-        <TextInput
-          label="From block"
-          value={fromBlockName}
-          onChange={(event) =>
-            setFromBlockName(event.currentTarget.value)
-          }
-          placeholder="A1"
-          w={120}
-        />
-
-        <TextInput
-          label="To block"
-          value={toBlockName}
-          onChange={(event) =>
-            setToBlockName(event.currentTarget.value)
-          }
-          placeholder="C1"
-          w={120}
-        />
-
-        <Button
-          color="orange"
-          variant="light"
-          onClick={handleReserveRoute}
+      <Stack gap="sm">
+        {/* =========================
+          ROUTE / TASK CONTROL CARD
+         ========================= */}
+        <Card
+          withBorder
+          radius="md"
+          p="sm"
         >
-          Set route
-        </Button>
+          <Stack gap="sm">
+            <Group justify="space-between" align="center">
+              <Text size="sm" fw={700}>
+                Route & Task control
+              </Text>
 
-        <Button
-          color="gray"
-          variant="light"
-          onClick={() =>
-            wsApi.releaseRouteReservation(
-              fromBlockName.trim(),
-              toBlockName.trim()
-            )
-          }
+              <Badge variant="light">
+                {snapshot.tasks.length} task
+              </Badge>
+            </Group>
+
+            <Divider />
+
+            <Group align="end" gap="xs">
+              <TextInput
+                label="From block"
+                value={fromBlockName}
+                onChange={(event) =>
+                  setFromBlockName(event.currentTarget.value)
+                }
+                placeholder="A1"
+                w={120}
+              />
+
+              <TextInput
+                label="To block"
+                value={toBlockName}
+                onChange={(event) =>
+                  setToBlockName(event.currentTarget.value)
+                }
+                placeholder="C1"
+                w={120}
+              />
+
+              <Button
+                color="orange"
+                variant="light"
+                onClick={handleReserveRoute}
+              >
+                Set route
+              </Button>
+
+              <Button
+                color="gray"
+                variant="light"
+                onClick={() =>
+                  wsApi.releaseRouteReservation(
+                    fromBlockName.trim(),
+                    toBlockName.trim()
+                  )
+                }
+              >
+                Release route
+              </Button>
+
+              <Button
+                color="gray"
+                variant="light"
+                onClick={handleClearAllBusy}
+              >
+                Clear all busy
+              </Button>
+            </Group>
+
+            <Group grow>
+              <Button
+                size="xs"
+                variant="light"
+                color="violet"
+                leftSection={<IconRoute size={16} />}
+                onClick={() => setTaskManagerOpened(true)}
+              >
+                Task Manager...
+              </Button>
+
+              <Button
+                size="xs"
+                variant="light"
+                color="green"
+                leftSection={<IconPlayerPlay size={16} />}
+                onClick={() => {
+                  void handleStartAllTasks();
+                }}
+                disabled={snapshot.tasks.length === 0}
+              >
+                Start all tasks
+              </Button>
+
+              <Button
+                size="xs"
+                variant="light"
+                color="red"
+                leftSection={<IconPlayerStop size={16} />}
+                onClick={() => {
+                  void handleStopAllTasks();
+                }}
+                disabled={
+                  !snapshot.tasks.some(task =>
+                    task.status === "running" ||
+                    task.status === "paused"
+                  )
+                }
+              >
+                Stop all tasks
+              </Button>
+            </Group>
+          </Stack>
+        </Card>
+
+        {/* =========================
+          TASK LIST CARD
+         ========================= */}
+        <Card
+          withBorder
+          radius="md"
+          p="sm"
         >
-          Release route
-        </Button>
-
-        <Button
-          color="gray"
-          variant="light"
-          onClick={handleClearAllBusy}
-          mt={25}
-        >
-          Clear all busy
-        </Button>
-      </Group>
-
-      <ScrollArea.Autosize
-        mah="calc(100vh - 220px)"
-        type="auto"
-        offsetScrollbars
-      >
-        <Stack gap="sm">
-          <Group justify="space-between" align="center">
-            <Text size="sm" fw={700}>
-              Controller
-            </Text>
-
-            <Badge variant="light">
-              {snapshot.tasks.length} task
-            </Badge>
-          </Group>
-
-          <Button
-            size="xs"
-            variant="light"
-            color="violet"
-            leftSection={<IconRoute size={16} />}
-            onClick={() => setTaskManagerOpened(true)}
+          <ScrollArea.Autosize
+            mah="calc(100vh - 420px)"
+            type="auto"
+            offsetScrollbars
           >
-            Task Manager...
-          </Button>
-
-          <Divider />
-
-          {snapshot.tasks.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              Nincs aktív vagy felvett feladat.
-            </Text>
-          ) : (
             <Stack gap="sm">
-              {snapshot.tasks.map(task => (
-                <Card
-                  key={task.id}
-                  withBorder
-                  radius="sm"
-                  p="xs"
-                >
-                  <Stack gap="xs">
-                    <Group justify="space-between" align="flex-start">
-                      <Stack gap={2}>
-                        <Text size="sm" fw={700}>
-                          {task.name}
-                        </Text>
+              <Group justify="space-between" align="center">
+                <Text size="sm" fw={700}>
+                  Task list
+                </Text>
 
-                        <Group gap="xs" wrap="wrap">
-                          {task.runtime.loco && (
-                            <>
-                              <Badge color="indigo" variant="light">
-                                {task.runtime.loco.name}
+                <Badge variant="light">
+                  {snapshot.tasks.length} task
+                </Badge>
+              </Group>
+
+              <Divider />
+
+              {snapshot.tasks.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  Nincs aktív vagy felvett feladat.
+                </Text>
+              ) : (
+                <Stack gap="sm">
+                  {snapshot.tasks.map(task => (
+                    <Card
+                      key={task.id}
+                      withBorder
+                      radius="sm"
+                      p="xs"
+                    >
+                      <Stack gap="xs">
+                        <Group justify="space-between" align="flex-start">
+                          <Stack gap={2}>
+                            <Text size="sm" fw={700}>
+                              {task.name}
+                            </Text>
+
+                            <Group gap="xs" wrap="wrap">
+                              {task.runtime.loco && (
+                                <>
+                                  <Badge color="indigo" variant="light">
+                                    {task.runtime.loco.name}
+                                  </Badge>
+
+                                  <Badge color="gray" variant="light">
+                                    Address {task.runtime.loco.address}
+                                  </Badge>
+                                </>
+                              )}
+
+                              <Badge color="cyan" variant="light">
+                                Speed {task.targetSpeed}
                               </Badge>
+                            </Group>
+                          </Stack>
 
-                              <Badge color="gray" variant="light">
-                                Address {task.runtime.loco.address}
-                              </Badge>
-                            </>
-                          )}
-
-                          <Badge color="cyan" variant="light">
-                            Speed {task.targetSpeed}
+                          <Badge
+                            size="sm"
+                            color={getStatusColor(task.status)}
+                            variant="light"
+                          >
+                            {getStatusLabel(task.status)}
                           </Badge>
                         </Group>
 
+                        <Group gap="xs" wrap="wrap">
+                          <Badge color="violet" variant="filled">
+                            {task.transition.fromBlock.name}
+                          </Badge>
+
+                          <Text fw={700}>→</Text>
+
+                          <Badge color="violet" variant="filled">
+                            {task.transition.toBlock.name}
+                          </Badge>
+                        </Group>
+
+                        <Badge
+                          color={getProgressColor(task)}
+                          variant="light"
+                          style={{ alignSelf: "flex-start" }}
+                        >
+                          {getTaskProgressLabel(task)}
+                        </Badge>
+
+                        {renderTaskControls(task)}
                       </Stack>
-
-                      <Badge
-                        size="sm"
-                        color={getStatusColor(task.status)}
-                        variant="light"
-                      >
-                        {getStatusLabel(task.status)}
-                      </Badge>
-                    </Group>
-
-                    <Group gap="xs" wrap="wrap">
-                      <Badge color="violet" variant="filled">
-                        {task.transition.fromBlock.name}
-                      </Badge>
-
-                      <Text fw={700}>→</Text>
-
-                      <Badge color="violet" variant="filled">
-                        {task.transition.toBlock.name}
-                      </Badge>
-                    </Group>
-
-                    <Badge
-                      color={getProgressColor(task)}
-                      variant="light"
-                      style={{ alignSelf: "flex-start" }}
-                    >
-                      {getTaskProgressLabel(task)}
-                    </Badge>
-
-                    {renderTaskControls(task)}
-                  </Stack>
-                </Card>
-              ))}
+                    </Card>
+                  ))}
+                </Stack>
+              )}
             </Stack>
-          )}
-        </Stack>
-      </ScrollArea.Autosize>
+          </ScrollArea.Autosize>
+        </Card>
+      </Stack>
     </>
   );
 }

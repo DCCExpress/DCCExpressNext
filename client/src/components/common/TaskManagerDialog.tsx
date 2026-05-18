@@ -291,6 +291,35 @@ export default function TaskManagerDialog({
         showOkMessage("SUCCESSFUL", "Task updated.");
     };
 
+    const handleStartAllTasks = async () => {
+        setActionError(null);
+
+        const result =
+            await taskManager.startAllTasks();
+
+        if (!result.ok) {
+            setActionError(result.error);
+            showErrorMessage("ERROR", result.error);
+            return;
+        }
+
+        showOkMessage("SUCCESSFUL", "All tasks started.");
+    };
+
+    const handleStopAllTasks = async () => {
+        setActionError(null);
+
+        const result =
+            await taskManager.stopAllTasks();
+
+        if (!result.ok) {
+            setActionError(result.error);
+            showErrorMessage("ERROR", result.error);
+            return;
+        }
+
+        showOkMessage("SUCCESSFUL", "All tasks stopped.");
+    };
     const handleSaveTasks = async () => {
         setActionError(null);
 
@@ -1261,7 +1290,34 @@ export default function TaskManagerDialog({
                                     Add task
                                 </Button>
 
+                                
                                 <Button
+                                    size="xs"
+                                    variant="light"
+                                    color="green"
+                                    leftSection={<IconPlayerPlay size={16} />}
+                                    onClick={() => {
+                                        void handleStartAllTasks();
+                                    }}
+                                    disabled={snapshot.tasks.length === 0}
+                                >
+                                    Start all
+                                </Button>
+
+                                <Button
+                                    size="xs"
+                                    variant="light"
+                                    color="red"
+                                    leftSection={<IconPlayerStop size={16} />}
+                                    onClick={() => {
+                                        void handleStopAllTasks();
+                                    }}
+                                    disabled={snapshot.tasks.length === 0}
+                                >
+                                    Stop all
+                                </Button>
+
+<Button
                                     size="xs"
                                     variant="light"
                                     color="blue"

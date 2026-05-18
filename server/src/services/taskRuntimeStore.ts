@@ -772,6 +772,29 @@ class TaskRuntimeStore {
     return this.actionOk();
   }
 
+  async startAllTasks(): Promise<TaskManagerActionResult> {
+    await this.initialize();
+
+    for (const task of this.tasks) {
+      if (
+        task.status === "queued" ||
+        task.status === "stopped" ||
+        task.status === "completed"
+      ) {
+        await this.startTask(task.id);
+        continue;
+      }
+
+      if (task.status === "paused") {
+        await this.resumeTask(task.id);
+      }
+    }
+
+    this.broadcastSnapshot();
+
+    return this.actionOk();
+  }
+
   async stopTask(
     taskIdOrName: string
   ): Promise<TaskManagerActionResult> {

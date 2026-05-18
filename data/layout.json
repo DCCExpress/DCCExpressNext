@@ -413,7 +413,7 @@
           "fg": "white",
           "address": 0,
           "length": 100,
-          "locoAddress": 0,
+          "locoAddress": 18,
           "sensorAddress": 102,
           "blockType": "terminal"
         },

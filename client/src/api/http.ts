@@ -270,6 +270,16 @@ export async function stopTrainTask(
   return runTaskAction(taskId, "stop");
 }
 
+export async function startAllTrainTasks(): Promise<TaskManagerActionResult> {
+  const res = await fetch("/api/tasks/start-all", {
+    method: "POST",
+  });
+
+  return readTaskResponse<TaskManagerActionResult>(
+    res,
+    "Failed to start all tasks"
+  );
+}
 export async function stopAllTrainTasks(): Promise<TaskManagerActionResult> {
   const res = await fetch("/api/tasks/stop-all", {
     method: "POST",

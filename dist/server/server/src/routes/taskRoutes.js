@@ -105,6 +105,10 @@ export function createTaskRouter() {
         const result = await taskRuntimeStore.stopTask(req.params.taskId ?? "");
         res.status(result.ok ? 200 : 400).json(result);
     });
+    router.post("/start-all", async (_req, res) => {
+        const result = await taskRuntimeStore.startAllTasks();
+        res.status(result.ok ? 200 : 400).json(result);
+    });
     router.post("/stop-all", async (_req, res) => {
         const result = await taskRuntimeStore.stopAllTasks();
         res.status(result.ok ? 200 : 400).json(result);

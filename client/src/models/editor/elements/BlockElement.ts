@@ -17,6 +17,14 @@ export class BlockElement extends TrackElement implements IBlockElement {
     text: string = 'HELLO';
     textColor: string = 'black';
     locoAddress: number = 0;
+
+    /**
+     * Csak kliensoldali, átmeneti overlay:
+     * ha a task két blokk között halad,
+     * mindkét érintett blokkban ezt a címet mutatjuk.
+     */
+    runtimeTransitLocoAddress: number = 0;
+
     length: number = 1;
     sensorAddress: number = 0;
     blockType: BlockType = BLOCK_TYPES.NORMAL;
@@ -164,8 +172,27 @@ export class BlockElement extends TrackElement implements IBlockElement {
         const blockW = this.width - 10;
         const blockH = this.height - 20;
 
-        const bg = options?.darkMode ? "#888888" : "#f0f0f0";
+        const occupied =
+            this.locoAddress > 0;
+
+        const inTransit =
+            !occupied &&
+            this.runtimeTransitLocoAddress > 0;
+
+        const bg = occupied
+            ? (options?.darkMode ? "#7f1d1d" : "#ffc9c9")
+            : inTransit
+                ? (options?.darkMode ? "#8a5a00" : "#ffe8a3")
+                : options?.darkMode
+                    ? "#888888"
+                    : "#f0f0f0";
+
         const fg = "black";
+
+        const displayLocoAddress =
+            occupied
+                ? this.locoAddress
+                : this.runtimeTransitLocoAddress;
 
         const showBlockName =
             options?.showBlockNames === true &&
@@ -214,7 +241,7 @@ export class BlockElement extends TrackElement implements IBlockElement {
         // ----------------------------------------------------
         // NINCS MOZDONYA, DE A BLOKK NEVE AKKOR IS LÁTSZÓDHAT
         // ----------------------------------------------------
-        if (this.locoAddress <= 0) {
+        if (displayLocoAddress <= 0) {
             withReadableOverlayAt180(() => {
                 drawBlockName();
             });
@@ -223,9 +250,9 @@ export class BlockElement extends TrackElement implements IBlockElement {
         // ----------------------------------------------------
         // LOCO IMAGE / ADDRESS
         // ----------------------------------------------------
-        if (this.locoAddress > 0) {
+        if (displayLocoAddress > 0) {
             const loco = options?.locos?.find(
-                l => l.address === this.locoAddress
+                l => l.address === displayLocoAddress
             );
 
             if (loco?.image) {
@@ -265,7 +292,7 @@ export class BlockElement extends TrackElement implements IBlockElement {
                         ctx.textBaseline = "middle";
 
                         ctx.fillText(
-                            "#" + this.locoAddress.toString(),
+                            "#" + displayLocoAddress.toString(),
                             imgX - 10,
                             contentY + contentH / 2
                         );
@@ -287,7 +314,7 @@ export class BlockElement extends TrackElement implements IBlockElement {
                         (blockH - blockNameHeight) / 2;
 
                     ctx.fillText(
-                        this.locoAddress.toString(),
+                        displayLocoAddress.toString(),
                         blockX + blockW / 2,
                         addressY
                     );
