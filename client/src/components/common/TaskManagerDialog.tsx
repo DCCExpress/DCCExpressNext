@@ -3,6 +3,7 @@ import {
     Alert,
     Badge,
     Button,
+    Card,
     Divider,
     Group,
     Modal,
@@ -65,7 +66,10 @@ export default function TaskManagerDialog({
     const [formError, setFormError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
 
-    const [deleteTask, setDeleteTask] = useState<TrainTask | null>(null);
+    
+    const [addTaskOpened, setAddTaskOpened] = useState(false);
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+const [deleteTask, setDeleteTask] = useState<TrainTask | null>(null);
 
     
     const [editTask, setEditTask] = useState<TrainTask | null>(null);
@@ -76,7 +80,11 @@ export default function TaskManagerDialog({
     const [editError, setEditError] = useState<string | null>(null);
 const graph = routeGraphStore.getGraph();
 
-    const runnableTransitions = useMemo(() => {
+    
+    const selectedTask = useMemo(() => {
+        return snapshot.tasks.find(task => task.id === selectedTaskId) ?? null;
+    }, [snapshot.tasks, selectedTaskId]);
+const runnableTransitions = useMemo(() => {
         return graph?.getRunnableBlockTransitions() ?? [];
     }, [graph, snapshot.hasGraph]);
 
@@ -199,6 +207,7 @@ targetSpeed,
         setFromBlockId(null);
         setToBlockId(null);
         setFormError(null);
+        setAddTaskOpened(false);
     };
 
     const runTaskAction = async (
@@ -703,9 +712,154 @@ targetSpeed,
                 return renderDeleteButton(task);
         }
     }
+    function renderTaskSteps(task: TrainTask) {
+        const taskStarted =
+            task.startedAt !== undefined ||
+            task.status !== "queued";
+
+        const locoResolved =
+            task.runtime.loco !== null;
+
+        const leftFromBlock =
+            task.runtime.hasLeftFromBlock;
+
+        const reachedTarget =
+            task.runtime.hasReachedToBlock ||
+            task.status === "completed";
+
+        let activeIndex = 0;
+
+        if (!taskStarted) {
+            activeIndex = 0;
+        } else if (!locoResolved) {
+            activeIndex = 1;
+        } else if (!leftFromBlock) {
+            activeIndex = 2;
+        } else if (!reachedTarget) {
+            activeIndex = 3;
+        } else {
+            activeIndex = 4;
+        }
+
+        const steps = [
+            {
+                title: "Indításra vár",
+                description:
+                    task.status === "queued"
+                        ? "A feladat Start parancsra vár."
+                        : "A feladat már elindult.",
+            },
+            {
+                title: "Mozdony azonosítása",
+                description:
+                    task.runtime.loco
+                        ? `${task.runtime.loco.name} • address ${task.runtime.loco.address}`
+                        : "Indításkor az induló blokkban álló mozdony kerül kiválasztásra.",
+            },
+            {
+                title: "Induló blokk elhagyása",
+                description:
+                    leftFromBlock
+                        ? "A mozdony elhagyta az induló blokkot."
+                        : "A rendszer erre az átmenetre vár.",
+            },
+            {
+                title: "Haladás a célblokk felé",
+                description:
+                    task.runtime.inTransit
+                        ? "A szerelvény két blokk között halad."
+                        : reachedTarget
+                            ? "A haladási szakasz befejeződött."
+                            : "Ez a lépés még hátravan.",
+            },
+            {
+                title: "Célblokk elérése",
+                description:
+                    reachedTarget
+                        ? "A feladat megérkezett a célblokkba."
+                        : "A feladat itt zárul majd le.",
+            },
+        ];
+
+        return (
+            <Stack gap="xs">
+                {steps.map((step, index) => {
+                    const state =
+                        reachedTarget && index === steps.length - 1
+                            ? "done"
+                            : index < activeIndex
+                                ? "done"
+                                : index === activeIndex
+                                    ? "active"
+                                    : "upcoming";
+
+                    const badgeColor =
+                        state === "done"
+                            ? "green"
+                            : state === "active"
+                                ? "blue"
+                                : "gray";
+
+                    const badgeLabel =
+                        state === "done"
+                            ? "Done"
+                            : state === "active"
+                                ? "Current"
+                                : "Pending";
+
+                    return (
+                        <Card
+                            key={step.title}
+                            withBorder
+                            radius="md"
+                            padding="sm"
+                            style={{
+                                opacity: state === "upcoming" ? 0.55 : 1,
+                                borderLeft:
+                                    state === "done"
+                                        ? "6px solid var(--mantine-color-green-6)"
+                                        : state === "active"
+                                            ? "6px solid var(--mantine-color-blue-6)"
+                                            : "6px solid var(--mantine-color-gray-4)",
+                                background:
+                                    state === "active"
+                                        ? "var(--mantine-color-blue-light)"
+                                        : undefined,
+                            }}
+                        >
+                            <Group justify="space-between" align="flex-start">
+                                <Stack gap={2}>
+                                    <Text fw={700}>{step.title}</Text>
+                                    <Text size="sm" c="dimmed">
+                                        {step.description}
+                                    </Text>
+                                </Stack>
+
+                                <Badge color={badgeColor} variant="light">
+                                    {badgeLabel}
+                                </Badge>
+                            </Group>
+                        </Card>
+                    );
+                })}
+            </Stack>
+        );
+    }
+
+
 
     const taskRows = snapshot.tasks.map((task, index) => (
-        <Table.Tr key={task.id}>
+        <Table.Tr
+            key={task.id}
+            onClick={() => setSelectedTaskId(task.id)}
+            style={{
+                cursor: "pointer",
+                background:
+                    selectedTaskId === task.id
+                        ? "var(--mantine-color-blue-light)"
+                        : undefined,
+            }}
+        >
             <Table.Td>{index + 1}</Table.Td>
 
             <Table.Td>
@@ -767,6 +921,122 @@ targetSpeed,
 
     return (
         <>
+            <Modal
+                opened={addTaskOpened}
+                onClose={() => setAddTaskOpened(false)}
+                title="Új feladat"
+                centered
+                size="lg"
+                zIndex={10000}
+            >
+                <Stack gap="md">
+                    {formError && (
+                        <Alert color="red" title="Feladat nem vehető fel">
+                            {formError}
+                        </Alert>
+                    )}
+
+                    <TextInput
+                        label="Task name"
+                        placeholder="Pl. B1 → C1"
+                        value={taskName}
+                        onChange={event =>
+                            setTaskName(event.currentTarget.value)
+                        }
+                    />
+
+                    <Group grow align="end">
+                        <Select
+                            label="From block"
+                            placeholder="Induló blokk"
+                            data={fromBlockSelectData}
+                            value={fromBlockId}
+                            onChange={handleFromBlockChange}
+                            searchable
+                            clearable
+                            disabled={!snapshot.hasGraph}
+                        />
+
+                        <Select
+                            label="To block"
+                            placeholder="Cél blokk"
+                            data={toBlockSelectData}
+                            value={toBlockId}
+                            onChange={value => {
+                                setToBlockId(value);
+                                setFormError(null);
+                            }}
+                            searchable
+                            clearable
+                            disabled={!snapshot.hasGraph || !fromBlockId}
+                        />
+
+                        <NumberInput
+                            label="Target speed"
+                            value={targetSpeed}
+                            onChange={setTargetSpeed}
+                            min={0}
+                            max={126}
+                            hideControls={false}
+                        />
+                    </Group>
+
+                    {selectedTransition && (
+                        <Stack gap="xs">
+                            <Text size="sm" fw={600}>
+                                Kiválasztott végrehajtható blokkátmenet
+                            </Text>
+
+                            {renderBlockRoutePath(
+                                selectedTransition.solution,
+                                "md"
+                            )}
+
+                            <Group gap="xs">
+                                <Badge
+                                    color={
+                                        selectedTransition.solution.locoDirection ===
+                                            "forward"
+                                            ? "green"
+                                            : selectedTransition.solution
+                                                .locoDirection === "reverse"
+                                                ? "orange"
+                                                : "gray"
+                                    }
+                                    variant="light"
+                                >
+                                    {selectedTransition.solution.locoDirection.toUpperCase()}
+                                </Badge>
+
+                                {renderTurnoutRequirementBadges(
+                                    selectedTransition.solution.turnoutStates
+                                )}
+                            </Group>
+                        </Stack>
+                    )}
+
+                    <Group justify="flex-end">
+                        <Button
+                            variant="default"
+                            onClick={() => setAddTaskOpened(false)}
+                        >
+                            Mégse
+                        </Button>
+
+                        <Button
+                            leftSection={<IconPlus size={18} />}
+                            onClick={() => {
+                                void handleAddTask();
+                            }}
+                            disabled={!snapshot.hasGraph}
+                        >
+                            Hozzáadás
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
+
+
             <Modal
                 opened={editTask !== null}
                 onClose={() => setEditTask(null)}
@@ -929,105 +1199,7 @@ targetSpeed,
                             {actionError}
                         </Alert>
                     )}
-
-                    <Stack gap="sm">
-                        <Text fw={700}>Új feladat</Text>
-
-                        <Group grow align="end">
-                            <TextInput
-                                label="Task name"
-                                placeholder="Pl. B1 → C1"
-                                value={taskName}
-                                onChange={event =>
-                                    setTaskName(event.currentTarget.value)
-                                }
-                            />
-
-                            <NumberInput
-                                label="Target speed"
-                                value={targetSpeed}
-                                onChange={setTargetSpeed}
-                                min={0}
-                                max={126}
-                                hideControls={false}
-                            />
-                        </Group>
-
-                        <Group grow align="end">
-                            <Select
-                                label="From block"
-                                placeholder="Induló blokk"
-                                data={fromBlockSelectData}
-                                value={fromBlockId}
-                                onChange={handleFromBlockChange}
-                                searchable
-                                clearable
-                                disabled={!snapshot.hasGraph}
-                            />
-
-                            <Select
-                                label="To block"
-                                placeholder="Cél blokk"
-                                data={toBlockSelectData}
-                                value={toBlockId}
-                                onChange={value => {
-                                    setToBlockId(value);
-                                    setFormError(null);
-                                }}
-                                searchable
-                                clearable
-                                disabled={!snapshot.hasGraph || !fromBlockId}
-                            />
-
-                            <Button
-                                leftSection={<IconPlus size={18} />}
-                                onClick={() => {
-                                    void handleAddTask();
-                                }}
-                                disabled={!snapshot.hasGraph}
-                            >
-                                Add task
-                            </Button>
-                        </Group>
-
-                        {selectedTransition && (
-                            <Stack gap="xs">
-                                <Text size="sm" fw={600}>
-                                    Kiválasztott végrehajtható blokkátmenet
-                                </Text>
-
-                                {renderBlockRoutePath(
-                                    selectedTransition.solution,
-                                    "md"
-                                )}
-
-                                <Group gap="xs">
-                                    <Badge
-                                        color={
-                                            selectedTransition.solution.locoDirection ===
-                                                "forward"
-                                                ? "green"
-                                                : selectedTransition.solution
-                                                    .locoDirection === "reverse"
-                                                    ? "orange"
-                                                    : "gray"
-                                        }
-                                        variant="light"
-                                    >
-                                        {selectedTransition.solution.locoDirection.toUpperCase()}
-                                    </Badge>
-
-                                    {renderTurnoutRequirementBadges(
-                                        selectedTransition.solution.turnoutStates
-                                    )}
-                                </Group>
-                            </Stack>
-                        )}
-                    </Stack>
-
-                    <Divider />
-
-                    <Stack
+<Stack
                         gap="sm"
                         style={{
                             flex: 1,
@@ -1044,6 +1216,15 @@ targetSpeed,
                             </Group>
 
                             <Group gap="xs">
+                                <Button
+                                    size="xs"
+                                    leftSection={<IconPlus size={16} />}
+                                    onClick={() => setAddTaskOpened(true)}
+                                >
+                                    Add task
+                                </Button>
+
+                                
                                 <Button
                                     size="xs"
                                     variant="light"
@@ -1105,6 +1286,29 @@ targetSpeed,
                                 Még nincs felvett feladat.
                             </Text>
                         )}
+                    {selectedTask && (
+                        <Card withBorder radius="lg" padding="md">
+                            <Group justify="space-between" align="center" mb="md">
+                                <Stack gap={0}>
+                                    <Text fw={800}>Task steps</Text>
+                                    <Text size="sm" c="dimmed">
+                                        {selectedTask.name}
+                                    </Text>
+                                </Stack>
+
+                                <Badge
+                                    color={getStatusColor(selectedTask.status)}
+                                    variant="light"
+                                >
+                                    {getStatusLabel(selectedTask.status)}
+                                </Badge>
+                            </Group>
+
+                            {renderTaskSteps(selectedTask)}
+                        </Card>
+                    )}
+
+
                     </Stack>
                 </Stack>
             </AppModal>
