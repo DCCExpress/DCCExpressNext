@@ -61,6 +61,12 @@ export type RunnableBlockTransition = {
     solution: BlockRouteSolution;
 };
 
+export type TrackRuntimeState = {
+  id: string;
+  section: number;
+  travelDirection: TravelDirection;
+};
+
 export class GraphNode {
     name: string = "";
     trackName: string = "";
@@ -285,7 +291,8 @@ export class Edge {
 export class Graph {
     nodes: GraphNode[] = [];
     edges: Edge[] = [];
-
+    trackRuntime: TrackRuntimeState[] = [];
+    
     private layoutInitialized = false;
 
     addNode(node: GraphNode): GraphNode {

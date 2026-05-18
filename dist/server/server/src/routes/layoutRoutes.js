@@ -181,6 +181,7 @@ layoutRoutes.get("/route-test", (req, res) => {
 });
 layoutRoutes.get("/route-graph", (_req, res) => {
     const graph = routeGraphRuntimeStore.getGraph();
+    const topology = railwayTopologyStore.getTopology();
     if (!graph) {
         const response = {
             ready: false,
@@ -208,6 +209,11 @@ layoutRoutes.get("/route-graph", (_req, res) => {
             turnoutStates: edge.turnoutStates,
             locoDirection: edge.locoDirection,
         })),
+        trackRuntime: topology?.getPhysicalTrackElements().map(elem => ({
+            id: elem.id,
+            section: elem.section,
+            travelDirection: elem.travelDirection,
+        })) ?? [],
     };
     res.json(response);
 });

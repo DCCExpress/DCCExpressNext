@@ -109,7 +109,7 @@ export abstract class TopologyBaseElement {
   readonly y: number;
   readonly rotation: number;
 
-  readonly trackName: string;
+  trackName: string;
 
   protected constructor(data: SerializedLayoutElementDto) {
     this.id =

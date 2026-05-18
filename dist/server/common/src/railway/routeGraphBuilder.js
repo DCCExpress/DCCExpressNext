@@ -1,6 +1,7 @@
 // common/src/railway/routeGraphBuilder.ts
 import { Edge, Graph, GraphNode, } from "./graph.js";
 import { TopologyTurnoutElement, } from "./topology.js";
+import { TrackTravelDirectionResolver } from "./trackTravelDirectionResolver.js";
 export class RouteGraphBuilder {
     topology;
     graph = new Graph();
@@ -19,6 +20,7 @@ export class RouteGraphBuilder {
     }
     build() {
         this.resetRoutes();
+        new TrackTravelDirectionResolver(this.topology).resolve();
         this.turnouts = this.topology.getTurnouts();
         this.markTurnoutsVisited();
         this.discoverPhysicalSections();
@@ -130,7 +132,7 @@ export class RouteGraphBuilder {
         return new GraphNode(`S${section}`, trackName, x, y, detectors, signals, blocks, elementIds);
     }
     getSectionTrackName(sectionElements) {
-        return (sectionElements.find(elem => elem.trackName.trim().length > 0)?.trackName ?? "Unnamed track");
+        return (sectionElements.find(elem => elem.trackName.trim().length > 0)?.trackName.trim() ?? "");
     }
     collectSectionDetectors(sectionElements) {
         const sectionPositions = new Set(sectionElements.map(elem => `${elem.x}:${elem.y}`));
@@ -237,7 +239,7 @@ export class RouteGraphBuilder {
                  * ezért most unknown.
                  * A következő körben ezt is portoljuk.
                  */
-                const locoDirection = "unknown";
+                const locoDirection = this.getLocoDirectionFromSectionTowardsTurnout(connectedElem, turnout);
                 this.walkTurnoutChainToSections(fromNode, turnout, side, [], new Set(), locoDirection);
             }
         }
@@ -369,5 +371,21 @@ export class RouteGraphBuilder {
             return "div";
         }
         return undefined;
+    }
+    getLocoDirectionFromSectionTowardsTurnout(sectionElem, turnout) {
+        if (sectionElem.travelDirection === "unknown") {
+            return "unknown";
+        }
+        const towardsNext = sectionElem.getNextItemPoint().isEqual(turnout.pos);
+        const towardsPrev = sectionElem.getPrevItemPoint().isEqual(turnout.pos);
+        if (towardsNext) {
+            return sectionElem.travelDirection;
+        }
+        if (towardsPrev) {
+            return sectionElem.travelDirection === "forward"
+                ? "reverse"
+                : "forward";
+        }
+        return "unknown";
     }
 }

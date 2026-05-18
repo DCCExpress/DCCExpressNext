@@ -435,7 +435,7 @@ export class Layout {
 
     }
 
-    private isExtendedRouteSolutionActive(solution: RouteSolution): boolean {
+    private isExtendedRouteSolutionActive22(solution: RouteSolution): boolean {
         const elems = this.getAllElements();
 
         for (const turnoutState of solution.turnoutStates) {
@@ -467,7 +467,7 @@ export class Layout {
         return true;
     }
 
-    private markExtendedRouteSolution(solution: RouteSolution): void {
+    private markExtendedRouteSolution22(solution: RouteSolution): void {
         const elems = this.getTrackElements();
 
         /**
@@ -574,39 +574,53 @@ export class Layout {
         });
 
         // --------------------------------------------------
-        // 3. Új, gráfos ExtendedRouteButtonök ellenőrzése
+        // 3. ExtendedRouteButtonök
         // --------------------------------------------------
+        //
+        // FONTOS:
+        // Az ExtendedRouteButton aktív állapota NEM attól függ,
+        // hogy a route-hoz tartozó váltók éppen megfelelő állásban vannak-e.
+        //
+        // Az aktív állapotot kizárólag a szerveroldali
+        // route reservation események kezelik:
+        //   - routeReservationChanged { busy: true }
+        //   - routeReservationChanged { busy: false }
+        //
+        // Emiatt itt szándékosan nem állítunk:
+        //   - rb.active értéket
+        //   - elem.isRoute értéket
+        // 
         const extendedRouteButtons = belems.filter(
             (elem: BaseElement) => elem instanceof ExtendedRouteButtonElement
         ) as ExtendedRouteButtonElement[];
 
-        extendedRouteButtons.forEach(rb => {
-            rb.active = false;
+        // extendedRouteButtons.forEach(rb => {
+        //     rb.active = false;
 
-            if (!graph) {
-                return;
-            }
+        //     if (!graph) {
+        //         return;
+        //     }
 
-            if (!rb.fromBlockId || !rb.toBlockId) {
-                return;
-            }
+        //     if (!rb.fromBlockId || !rb.toBlockId) {
+        //         return;
+        //     }
 
-            const solution = graph.findRouteBetweenBlocks(
-                rb.fromBlockId,
-                rb.toBlockId
-            );
-            if (!solution) {
-                return;
-            }
+        //     const solution = graph.findRouteBetweenBlocks(
+        //         rb.fromBlockId,
+        //         rb.toBlockId
+        //     );
+        //     if (!solution) {
+        //         return;
+        //     }
 
-            const active = this.isExtendedRouteSolutionActive(solution);
+        //     const active = this.isExtendedRouteSolutionActive(solution);
 
-            rb.active = active;
+        //     rb.active = active;
 
-            if (active) {
-                this.markExtendedRouteSolution(solution);
-            }
-        });
+        //     if (active) {
+        //         this.markExtendedRouteSolution(solution);
+        //     }
+        // });
         console.log(
             `⏱️ checkRoutes total: ${(performance.now() - checkRoutesStart).toFixed(2)} ms`
         );
@@ -684,8 +698,33 @@ export class Layout {
         }
 
     }
+    applyRouteGraphRuntime(graph: Graph | null): void {
+        const trackElements = this.getTrackElements();
 
+        for (const elem of trackElements) {
+            elem.section = 0;
+            elem.travelDirection = "unknown";
+        }
 
+        if (!graph) {
+            return;
+        }
+
+        const elementsById = new Map(
+            trackElements.map(elem => [elem.id, elem])
+        );
+
+        for (const runtime of graph.trackRuntime) {
+            const elem = elementsById.get(runtime.id);
+
+            if (!elem) {
+                continue;
+            }
+
+            elem.section = runtime.section;
+            elem.travelDirection = runtime.travelDirection;
+        }
+    }
 
     // ==================================================
     // GRAPH
@@ -696,7 +735,7 @@ export class Layout {
     //         return new RouteGraphBuilder(this).build();
     //     });
     // }
-   
+
     // processRoutes(): Graph {
     //     return this.createRouteGraph();
     // }

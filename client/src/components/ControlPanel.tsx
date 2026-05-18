@@ -1,33 +1,33 @@
 import {
-    useEffect,
-    useState,
+  useEffect,
+  useState,
 } from "react";
 
 import {
-    Badge,
-    Box,
-    Button,
-    Card,
-    Divider,
-    Group,
-    ScrollArea,
-    Stack,
-    Table,
-    Tabs,
-    Text,
-    TextInput
+  Badge,
+  Box,
+  Button,
+  Card,
+  Divider,
+  Group,
+  ScrollArea,
+  Stack,
+  Table,
+  Tabs,
+  Text,
+  TextInput
 } from "@mantine/core";
 import {
-    IconAlertTriangle,
-    IconBolt,
-    IconDeviceGamepad2,
-    IconEye,
-    IconPlayerPause,
-    IconPlayerPlay,
-    IconPlayerStop,
-    IconPower,
-    IconRoute,
-    IconRoute2
+  IconAlertTriangle,
+  IconBolt,
+  IconDeviceGamepad2,
+  IconEye,
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconPlayerStop,
+  IconPower,
+  IconRoute,
+  IconRoute2
 } from "@tabler/icons-react";
 
 import { useCommandCenter } from "../context/CommandCenterContext";
@@ -44,6 +44,7 @@ import { TrainTask, TrainTaskStatus } from "../services/tasks/TaskTypes";
 import { useTaskManager } from "../services/tasks/useTaskManager";
 import TaskManagerDialog from "./common/TaskManagerDialog";
 import VisibilitySettings from "./VisibilitySettings";
+import { NotificationLogEntry, NotificationLogLevel, notificationLogStore } from "../services/notificationLogStore";
 
 
 type ControlPanelProps = {
@@ -120,6 +121,13 @@ export default function ControlPanel(p: ControlPanelProps) {
           <Tabs.Tab value="visibility" leftSection={<IconEye size={16} />}>
             {/* Visibility */}
           </Tabs.Tab>
+          <Tabs.Tab
+            value="log"
+            leftSection={<IconAlertTriangle size={16} />}
+          >
+            {/* Log */}
+          </Tabs.Tab>
+
         </Tabs.List>
 
         <Tabs.Panel value="command-center" pt="sm">
@@ -142,6 +150,9 @@ export default function ControlPanel(p: ControlPanelProps) {
         </Tabs.Panel>
         <Tabs.Panel value="visibility" pt="sm">
           <VisibilityTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="log" pt="sm">
+          <LogTab />
         </Tabs.Panel>
       </Tabs>
     </Card>
@@ -1056,6 +1067,121 @@ function VisibilityTab() {
       </Stack>
     </ScrollArea.Autosize>
   );
+}
+
+function LogTab() {
+  const [entries, setEntries] = useState<NotificationLogEntry[]>(
+    () => notificationLogStore.getEntries()
+  );
+
+  useEffect(() => {
+    return notificationLogStore.subscribe(setEntries);
+  }, []);
+
+  return (
+    <ScrollArea.Autosize
+      mah="calc(100vh - 220px)"
+      type="auto"
+      offsetScrollbars
+    >
+      <Stack gap="xs">
+        <Group justify="space-between" align="center">
+          <Group gap="xs">
+            <Text size="sm" fw={700}>
+              Application log
+            </Text>
+
+            <Badge variant="light">
+              {entries.length}
+            </Badge>
+          </Group>
+
+          <Button
+            size="xs"
+            variant="light"
+            color="gray"
+            onClick={() => notificationLogStore.clear()}
+            disabled={entries.length === 0}
+          >
+            Clear
+          </Button>
+        </Group>
+
+        <Divider />
+
+        {entries.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            No warning, success or error messages yet.
+          </Text>
+        ) : (
+          <Stack gap="xs">
+            {entries.map(entry => (
+              <Card
+                key={entry.id}
+                withBorder
+                radius="sm"
+                p="xs"
+              >
+                <Stack gap={6}>
+                  <Group justify="space-between" align="flex-start">
+                    <Badge
+                      size="sm"
+                      color={getLogColor(entry.level)}
+                      variant="light"
+                    >
+                      {getLogLabel(entry.level)}
+                    </Badge>
+
+                    <Text size="xs" c="dimmed">
+                      {formatLogTime(entry.createdAt)}
+                    </Text>
+                  </Group>
+
+                  <Text size="sm" fw={700}>
+                    {entry.title}
+                  </Text>
+
+                  <Text size="sm">
+                    {entry.message}
+                  </Text>
+                </Stack>
+              </Card>
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </ScrollArea.Autosize>
+  );
+}
+
+function getLogColor(level: NotificationLogLevel): string {
+  switch (level) {
+    case "success":
+      return "green";
+    case "warning":
+      return "yellow";
+    case "error":
+      return "red";
+  }
+}
+
+function getLogLabel(level: NotificationLogLevel): string {
+  switch (level) {
+    case "success":
+      return "OK";
+    case "warning":
+      return "WARNING";
+    case "error":
+      return "ERROR";
+  }
+}
+
+function formatLogTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("hu-HU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 function InfoSection({
   title,

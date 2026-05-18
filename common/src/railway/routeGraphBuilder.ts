@@ -20,6 +20,7 @@ import {
   TopologyTurnoutElement,
   type TravelDirection,
 } from "./topology.js";
+import { TrackTravelDirectionResolver } from "./trackTravelDirectionResolver.js";
 
 type TurnoutSide =
   | "entry"
@@ -55,6 +56,10 @@ export class RouteGraphBuilder {
 
   build(): Graph {
     this.resetRoutes();
+
+    new TrackTravelDirectionResolver(
+      this.topology
+    ).resolve();
 
     this.turnouts = this.topology.getTurnouts();
 
@@ -249,10 +254,10 @@ export class RouteGraphBuilder {
         trackName
       );
 
-   const elementIds =
+    const elementIds =
       sectionElements.map(elem => elem.id);
 
-  return new GraphNode(
+    return new GraphNode(
       `S${section}`,
       trackName,
       x,
@@ -270,7 +275,7 @@ export class RouteGraphBuilder {
     return (
       sectionElements.find(
         elem => elem.trackName.trim().length > 0
-      )?.trackName ?? "Unnamed track"
+      )?.trackName.trim() ?? ""
     );
   }
 
@@ -444,8 +449,11 @@ export class RouteGraphBuilder {
          * ezért most unknown.
          * A következő körben ezt is portoljuk.
          */
-        const locoDirection: TravelDirection =
-          "unknown";
+        const locoDirection =
+          this.getLocoDirectionFromSectionTowardsTurnout(
+            connectedElem,
+            turnout
+          );
 
         this.walkTurnoutChainToSections(
           fromNode,
@@ -688,5 +696,31 @@ export class RouteGraphBuilder {
     }
 
     return undefined;
+  }
+  private getLocoDirectionFromSectionTowardsTurnout(
+    sectionElem: TopologyTrackElement,
+    turnout: TopologyTurnoutElement
+  ): TravelDirection {
+    if (sectionElem.travelDirection === "unknown") {
+      return "unknown";
+    }
+
+    const towardsNext =
+      sectionElem.getNextItemPoint().isEqual(turnout.pos);
+
+    const towardsPrev =
+      sectionElem.getPrevItemPoint().isEqual(turnout.pos);
+
+    if (towardsNext) {
+      return sectionElem.travelDirection;
+    }
+
+    if (towardsPrev) {
+      return sectionElem.travelDirection === "forward"
+        ? "reverse"
+        : "forward";
+    }
+
+    return "unknown";
   }
 }

@@ -198,36 +198,36 @@ layoutRoutes.get("/route-test", (req, res) => {
 
     fromNode: fromNode
       ? {
-          name: fromNode.name,
-          blocks: fromNode.blocks.map(b => b.name),
-        }
+        name: fromNode.name,
+        blocks: fromNode.blocks.map(b => b.name),
+      }
       : null,
 
     toNode: toNode
       ? {
-          name: toNode.name,
-          blocks: toNode.blocks.map(b => b.name),
-        }
+        name: toNode.name,
+        blocks: toNode.blocks.map(b => b.name),
+      }
       : null,
 
     nodeRoute: nodeRoute
       ? {
-          nodes: nodeRoute.nodes.map(node => node.name),
-          edges: nodeRoute.edges.length,
-          turnoutStates: nodeRoute.turnoutStates,
-          locoDirection: nodeRoute.locoDirection,
-        }
+        nodes: nodeRoute.nodes.map(node => node.name),
+        edges: nodeRoute.edges.length,
+        turnoutStates: nodeRoute.turnoutStates,
+        locoDirection: nodeRoute.locoDirection,
+      }
       : null,
 
     blockRoute: blockRoute
       ? {
-          fromBlock: blockRoute.fromBlock.name,
-          toBlock: blockRoute.toBlock.name,
-          nodes: blockRoute.nodes.map(node => node.name),
-          edges: blockRoute.edges.length,
-          turnoutStates: blockRoute.turnoutStates,
-          locoDirection: blockRoute.locoDirection,
-        }
+        fromBlock: blockRoute.fromBlock.name,
+        toBlock: blockRoute.toBlock.name,
+        nodes: blockRoute.nodes.map(node => node.name),
+        edges: blockRoute.edges.length,
+        turnoutStates: blockRoute.turnoutStates,
+        locoDirection: blockRoute.locoDirection,
+      }
       : null,
 
     graphSummary: {
@@ -247,6 +247,7 @@ layoutRoutes.get("/route-test", (req, res) => {
 
 layoutRoutes.get("/route-graph", (_req, res) => {
   const graph = routeGraphRuntimeStore.getGraph();
+  const topology = railwayTopologyStore.getTopology();
 
   if (!graph) {
     const response: RouteGraphResponseDto = {
@@ -267,11 +268,10 @@ layoutRoutes.get("/route-graph", (_req, res) => {
       y: node.y,
       isVirtual: node.isVirtual,
       busy: node.busy,
-
       detectors: node.detectors,
       signals: node.signals,
       blocks: node.blocks,
-       elementIds: node.elementIds,
+      elementIds: node.elementIds,
     })),
 
     edges: graph.edges.map(edge => ({
@@ -280,6 +280,13 @@ layoutRoutes.get("/route-graph", (_req, res) => {
       turnoutStates: edge.turnoutStates,
       locoDirection: edge.locoDirection,
     })),
+
+    trackRuntime:
+      topology?.getPhysicalTrackElements().map(elem => ({
+        id: elem.id,
+        section: elem.section,
+        travelDirection: elem.travelDirection,
+      })) ?? [],
   };
 
   res.json(response);

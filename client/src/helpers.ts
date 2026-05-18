@@ -1,4 +1,5 @@
 import { notifications } from "@mantine/notifications";
+import { notificationLogStore } from "./services/notificationLogStore";
 
 
 export function generateId() {
@@ -8,30 +9,62 @@ export function generateId() {
     return v.toString(16);
   });
 }
-export function showOkMessage(title: string, message: string, autoClose: number = 5000) {
+export function showOkMessage(
+  title: string,
+  message: string,
+  autoClose: number = 5000
+) {
+  const finalTitle = title == "" ? "SUCCESSFUL" : title;
+
+  notificationLogStore.add({
+    level: "success",
+    title: finalTitle,
+    message,
+  });
+
   notifications.show({
-    title: title == "" ? "SUCCESSFULL" : title,
-    message: message,
+    title: finalTitle,
+    message,
     color: "green",
-    autoClose: autoClose,
+    autoClose,
   });
 }
 
-export function showErrorMessage(title: string, message: string, autoClose: number = 5000) {
+export function showErrorMessage(
+  title: string,
+  message: string,
+  autoClose: number = 5000
+) {
+  notificationLogStore.add({
+    level: "error",
+    title,
+    message,
+  });
+
   notifications.show({
-    title: title,
-    message: message,
+    title,
+    message,
     color: "red",
-    autoClose: autoClose
+    autoClose,
   });
 }
 
-export function showWarningMessage(title: string, message: string, autoClose: number = 5000) {
+export function showWarningMessage(
+  title: string,
+  message: string,
+  autoClose: number = 5000
+) {
+  notificationLogStore.add({
+    level: "warning",
+    title,
+    message,
+  });
+
   notifications.show({
-    title: title,
-    message: message,
+    title,
+    message,
     color: "yellow",
-    autoClose: autoClose,
+    autoClose,
   });
 }
 

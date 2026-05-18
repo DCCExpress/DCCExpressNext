@@ -12,6 +12,7 @@ export function createClientGraphFromRouteGraphDto(
   dto: RouteGraphDto
 ): Graph {
   const graph = new Graph();
+  graph.trackRuntime = dto.trackRuntime ?? [];
 
   const nodesByName = new Map<string, GraphNode>();
 

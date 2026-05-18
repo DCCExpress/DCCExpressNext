@@ -436,6 +436,18 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     return () => window.removeEventListener("keydown", onHistoryKeys);
   }, [undo, redo]);
 
+
+  useEffect(() => {
+    const unsubscribe = routeGraphStore.subscribe((graph) => {
+      layoutRef.current.applyRouteGraphRuntime(graph);
+      setInvalidateCounter((prev) => prev + 1);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
 
     const syncExtendedRouteButtonActiveState = (
@@ -649,38 +661,38 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       );
 
     const unsubscribeRouteReservationChanged =
-  wsClient.on<{
-    busy: boolean;
-    sectionNames: string[];
-    elementIds: string[];
-    turnoutAddresses: number[];
-    fromBlockName?: string;
-    toBlockName?: string;
-  }>(
-    "routeReservationChanged",
-    data => {
-      const routeButtonChanged =
-        syncExtendedRouteButtonActiveState(
-          data.busy,
-          data.fromBlockName,
-          data.toBlockName
-        );
+      wsClient.on<{
+        busy: boolean;
+        sectionNames: string[];
+        elementIds: string[];
+        turnoutAddresses: number[];
+        fromBlockName?: string;
+        toBlockName?: string;
+      }>(
+        "routeReservationChanged",
+        data => {
+          const routeButtonChanged =
+            syncExtendedRouteButtonActiveState(
+              data.busy,
+              data.fromBlockName,
+              data.toBlockName
+            );
 
-      layoutStore.setElementsBusyByIds(
-        data.elementIds,
-        data.busy
+          layoutStore.setElementsBusyByIds(
+            data.elementIds,
+            data.busy
+          );
+
+          layoutStore.setTurnoutsBusyByAddresses(
+            data.turnoutAddresses,
+            data.busy
+          );
+
+          if (routeButtonChanged) {
+            setInvalidateCounter(prev => prev + 1);
+          }
+        }
       );
-
-      layoutStore.setTurnoutsBusyByAddresses(
-        data.turnoutAddresses,
-        data.busy
-      );
-
-      if (routeButtonChanged) {
-        setInvalidateCounter(prev => prev + 1);
-      }
-    }
-  );
 
     const unsubscribeAllRouteReservationsCleared =
       wsClient.on(
