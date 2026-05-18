@@ -5,6 +5,7 @@ import { Z21CommandCenter } from "../commandCenter/z21CommandCenter.js";
 import { log, logError } from "../utility.js";
 import { routeGraphRuntimeStore } from "../services/routeGraphRuntimeStore.js";
 import { railwayTopologyStore } from "../services/railwayTopologyStore.js";
+import { scriptRuntimeStore } from "../services/scriptRuntimeStore.js";
 // type SetTurnoutMessage = {
 //   type: "setTurnout";
 //   data: {
@@ -94,6 +95,69 @@ function initCommandCenter(conf) {
     });
 }
 let commandCenter = null; //new CommandCenterSimulator("Simulator");
+function configureScriptRuntime() {
+    scriptRuntimeStore.configure({
+        broadcast: message => {
+            broadcastAll(message);
+        },
+        commands: {
+            setTrackPower: async (on) => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.setTrackPower(on);
+            },
+            emergencyStop: async () => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.emergencyStop();
+            },
+            setTurnout: async (address, closed) => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.setTurnout(address, closed);
+            },
+            getTurnoutState: (address) => {
+                const physicalClosed = commandCenter
+                    ?.getTurnoutInfo(address)
+                    ?.closed;
+                if (typeof physicalClosed !== "boolean") {
+                    return null;
+                }
+                const topology = railwayTopologyStore.getTopology();
+                if (!topology) {
+                    return null;
+                }
+                const turnout = topology.getTurnouts().find(item => item.turnoutAddress === address);
+                if (!turnout) {
+                    return null;
+                }
+                /**
+                 * Fizikai command-center állapotból
+                 * vissza logikai C/T állapot.
+                 */
+                return (physicalClosed === turnout.turnoutClosedValue);
+            },
+            setLocoFunction: async (address, fn, active) => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.setLocoFunction(address, fn, active);
+            },
+            setBasicAccessory: async (address, active) => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.setBasicAccessory(address, active);
+            },
+            isTurnoutBusy: (address) => {
+                return routeGraphRuntimeStore.isTurnoutBusy(address);
+            },
+        },
+    });
+}
 setCommandCenterConfigLoadedCallback((conf) => {
     log("Command center config loaded:", conf);
     initCommandCenter(conf);
@@ -119,12 +183,31 @@ export function setupWebSocketServer(server) {
         server,
         path: "/ws",
     });
+    configureScriptRuntime();
+    readCommandCenter()
+        .then(async (conf) => {
+        log("Initial command center config:", conf);
+        initCommandCenter(conf);
+        await scriptRuntimeStore.initialize();
+        await scriptRuntimeStore.autoStartIfEnabled();
+    })
+        .catch(err => {
+        logError("Failed to read initial command center config:", err);
+    });
     wss.on("connection", (ws, req) => {
         log("WebSocket client connected:", req.socket.remoteAddress);
         let clientUUID = null;
         sendToClient(ws, {
             type: "ws:welcome",
             data: { message: "Connected" },
+        });
+        sendToClient(ws, {
+            type: "scriptDocumentChanged",
+            data: scriptRuntimeStore.getDocument(),
+        });
+        sendToClient(ws, {
+            type: "scriptStateChanged",
+            data: scriptRuntimeStore.getCurrentState(),
         });
         // sendToClient(ws, {
         //   type: "commandCenterInfo",
@@ -695,6 +778,52 @@ export function setupWebSocketServer(server) {
                             log("Getting blocks");
                             commandCenter.getBlocks();
                             break;
+                        //==================================
+                        // SCRIPT
+                        //==================================
+                        case "runScript": {
+                            try {
+                                const script = typeof msg.data?.script === "string"
+                                    ? msg.data.script
+                                    : undefined;
+                                const source = typeof msg.data?.source === "string"
+                                    ? msg.data.source
+                                    : "unknown";
+                                const elementId = typeof msg.data?.elementId === "string"
+                                    ? msg.data.elementId
+                                    : null;
+                                await scriptRuntimeStore.run(script, {
+                                    source,
+                                    elementId,
+                                });
+                            }
+                            catch (error) {
+                                sendToClient(ws, {
+                                    type: "scriptRejected",
+                                    data: {
+                                        reason: error instanceof Error
+                                            ? error.message
+                                            : String(error),
+                                    },
+                                });
+                            }
+                            return;
+                        }
+                        case "stopScript": {
+                            scriptRuntimeStore.stopCurrent();
+                            return;
+                        }
+                        case "getScriptRuntimeState": {
+                            sendToClient(ws, {
+                                type: "scriptDocumentChanged",
+                                data: scriptRuntimeStore.getDocument(),
+                            });
+                            sendToClient(ws, {
+                                type: "scriptStateChanged",
+                                data: scriptRuntimeStore.getCurrentState(),
+                            });
+                            return;
+                        }
                         //==================================
                         // DEFAULT
                         //==================================

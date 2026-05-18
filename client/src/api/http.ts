@@ -94,15 +94,20 @@ export async function getScript(): Promise<SingleScriptFile> {
   return await res.json();
 }
 
-export async function saveScript(content: string): Promise<SingleScriptFile> {
+export async function saveScript(
+  input: string | SingleScriptFile
+): Promise<SingleScriptFile> {
+  const payload =
+    typeof input === "string"
+      ? { content: input }
+      : input;
+
   const res = await fetch("/api/script", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      content,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {

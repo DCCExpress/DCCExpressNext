@@ -1,73 +1,51 @@
-// server/src/routes/script.ts
-
 import { Router } from "express";
-import fs from "node:fs/promises";
-import path from "node:path";
+import { scriptRuntimeStore } from "../services/scriptRuntimeStore.js";
 
-export function createScriptRouter(dataDir: string) {
+export function createScriptRouter(_dataDir: string) {
   const router = Router();
-
-  const fileName = path.join(dataDir, "script.json");
-
-  async function ensureFile() {
-    await fs.mkdir(dataDir, { recursive: true });
-
-    try {
-      await fs.access(fileName);
-    } catch {
-      await fs.writeFile(
-        fileName,
-        JSON.stringify(
-          {
-            content: "",
-            updatedAt: new Date().toISOString(),
-          },
-          null,
-          2
-        ),
-        "utf-8"
-      );
-    }
-  }
 
   router.get("/", async (_req, res) => {
     try {
-      await ensureFile();
+      await scriptRuntimeStore.initialize();
 
-      const raw = await fs.readFile(fileName, "utf-8");
-      const parsed = JSON.parse(raw);
-
-      res.json({
-        content: String(parsed.content ?? ""),
-        updatedAt: parsed.updatedAt,
-      });
+      res.json(
+        scriptRuntimeStore.getDocument()
+      );
     } catch (error) {
-      console.error("Failed to read script:", error);
-      res.status(500).json({ error: "Failed to read script" });
+      console.error(
+        "Failed to read script:",
+        error
+      );
+
+      res.status(500).json({
+        error: "Failed to read script",
+      });
     }
   });
 
   router.post("/", async (req, res) => {
     try {
-      await fs.mkdir(dataDir, { recursive: true });
+      const saved =
+        await scriptRuntimeStore.saveDocument({
+          content:
+            typeof req.body?.content === "string"
+              ? req.body.content
+              : "",
 
-      const content = String(req.body?.content ?? "");
+          autoStart:
+            req.body?.autoStart === true,
+        });
 
-      const scriptFile = {
-        content,
-        updatedAt: new Date().toISOString(),
-      };
-
-      await fs.writeFile(
-        fileName,
-        JSON.stringify(scriptFile, null, 2),
-        "utf-8"
+      res.json(saved);
+    } catch (error) {
+      console.error(
+        "Failed to save script:",
+        error
       );
 
-      res.json(scriptFile);
-    } catch (error) {
-      console.error("Failed to save script:", error);
-      res.status(500).json({ error: "Failed to save script" });
+      res.status(500).json({
+        error: "Failed to save script",
+      });
     }
   });
 

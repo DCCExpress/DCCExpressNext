@@ -139,6 +139,31 @@ class WebscoketApi {
     );
   }
 
+  runScript(
+    script?: string,
+    context?: {
+      source?: string;
+      elementId?: string | null;
+    }
+  ) {
+    return this.send("runScript", {
+      script,
+      source: context?.source ?? "unknown",
+      elementId: context?.elementId ?? null,
+    });
+  }
+
+  stopScript() {
+    return this.send("stopScript", {});
+  }
+
+  getScriptRuntimeState() {
+    return this.send(
+      "getScriptRuntimeState",
+      {}
+    );
+  }
+
 }
 
 export function getDefaultWsUrl(): string {

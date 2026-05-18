@@ -194,6 +194,10 @@ export class TopologySensorElement extends TopologyTrackElement {
 export class TopologySignalElement extends TopologyTrackElement {
     aspect;
     addressLength;
+    valueGreen;
+    valueRed;
+    valueYellow;
+    valueWhite;
     constructor(data) {
         super(data);
         this.aspect =
@@ -204,6 +208,22 @@ export class TopologySignalElement extends TopologyTrackElement {
             typeof data.addressLength === "number"
                 ? data.addressLength
                 : 1;
+        this.valueGreen =
+            typeof data.valueGreen === "number"
+                ? data.valueGreen
+                : 0;
+        this.valueRed =
+            typeof data.valueRed === "number"
+                ? data.valueRed
+                : 0;
+        this.valueYellow =
+            typeof data.valueYellow === "number"
+                ? data.valueYellow
+                : 0;
+        this.valueWhite =
+            typeof data.valueWhite === "number"
+                ? data.valueWhite
+                : 0;
     }
 }
 export class TopologyDirectionElement extends TopologyTrackElement {

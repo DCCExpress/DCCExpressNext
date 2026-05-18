@@ -1,6 +1,6 @@
 // common/src/railway/topology.ts
 
-import {ELEMENT_TYPES} from "../layout/elementTypes.js"
+import { ELEMENT_TYPES } from "../layout/elementTypes.js"
 export type TravelDirection =
   | "unknown"
   | "forward"
@@ -10,7 +10,7 @@ export class TopologyPoint {
   constructor(
     public x: number,
     public y: number
-  ) {}
+  ) { }
 
   isEqual(other: TopologyPoint): boolean {
     return this.x === other.x && this.y === other.y;
@@ -79,6 +79,10 @@ export type SerializedLayoutElementDto = {
 
   aspect?: number;
   addressLength?: number;
+  valueGreen?: number;
+  valueRed?: number;
+  valueYellow?: number;
+  valueWhite?: number;
 
   [key: string]: unknown;
 };
@@ -309,6 +313,11 @@ export class TopologySignalElement extends TopologyTrackElement {
   readonly aspect: number;
   readonly addressLength: number;
 
+  readonly valueGreen: number;
+  readonly valueRed: number;
+  readonly valueYellow: number;
+  readonly valueWhite: number;
+
   constructor(data: SerializedLayoutElementDto) {
     super(data);
 
@@ -321,6 +330,26 @@ export class TopologySignalElement extends TopologyTrackElement {
       typeof data.addressLength === "number"
         ? data.addressLength
         : 1;
+
+    this.valueGreen =
+      typeof data.valueGreen === "number"
+        ? data.valueGreen
+        : 0;
+
+    this.valueRed =
+      typeof data.valueRed === "number"
+        ? data.valueRed
+        : 0;
+
+    this.valueYellow =
+      typeof data.valueYellow === "number"
+        ? data.valueYellow
+        : 0;
+
+    this.valueWhite =
+      typeof data.valueWhite === "number"
+        ? data.valueWhite
+        : 0;
   }
 }
 
@@ -341,7 +370,7 @@ export type RailwayTopologyElement =
 export class RailwayTopologyLayout {
   constructor(
     private readonly elements: RailwayTopologyElement[]
-  ) {}
+  ) { }
 
   getAllElements(): RailwayTopologyElement[] {
     return this.elements;
