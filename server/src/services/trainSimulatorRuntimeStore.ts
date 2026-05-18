@@ -34,6 +34,10 @@ type TrainSimulatorConfigureParams = {
     taskId: string
   ) => Promise<TaskManagerActionResult>;
 
+  tryPrepareTaskRoute: (
+    taskId: string
+  ) => Promise<boolean>;
+
   markTaskLeftFromBlock: (
     taskId: string
   ) => Promise<TaskManagerActionResult>;
@@ -196,6 +200,7 @@ class TrainSimulatorRuntimeStore {
 
           continue;
         }
+
         let session =
           this.sessions.get(task.id);
 
@@ -206,12 +211,22 @@ class TrainSimulatorRuntimeStore {
           const legs =
             this.createSimulationLegs(task);
 
-
-
           if (legs.length === 0) {
             logError(
               `[TrainSimulator] No block legs found for task: ${task.name} (${task.id})`
             );
+            continue;
+          }
+
+          /**
+           * A mozdony már megvan, de csak akkor indulhatunk,
+           * ha a teljes útvonal lefoglalható és a váltók beálltak.
+           * Ha nem sikerül, a task futva marad és később újrapróbálkozik.
+           */
+          const routePrepared =
+            await this.params.tryPrepareTaskRoute(task.id);
+
+          if (!routePrepared) {
             continue;
           }
 
@@ -342,12 +357,12 @@ class TrainSimulatorRuntimeStore {
     task: TrainTask,
     session: SimulationSession
   ): Promise<void> {
-
     const params = this.params;
 
     if (!params) {
       return;
     }
+
     const elapsed =
       Date.now() - session.phaseStartedAt;
 
@@ -388,6 +403,7 @@ class TrainSimulatorRuntimeStore {
 
       session.phase = "transit";
       session.phaseStartedAt = Date.now();
+
       await params.updateTaskSimulationProgress(
         task.id,
         {
@@ -441,7 +457,7 @@ class TrainSimulatorRuntimeStore {
           this.resolveDirection(task)
         );
 
-        await this.params!.markTaskReachedToBlock(task.id);
+        await params.markTaskReachedToBlock(task.id);
 
         this.sessions.delete(task.id);
 
@@ -464,9 +480,17 @@ class TrainSimulatorRuntimeStore {
       session.phaseStartedAt = Date.now();
 
       const nextLeg =
-        session.legs[session.legIndex]!;
+        session.legs[session.legIndex];
 
-      await this.params!.updateTaskSimulationProgress(
+      if (!nextLeg) {
+        logError(
+          `[TrainSimulator] Missing next leg for task: ${task.name} (${task.id})`
+        );
+        this.sessions.delete(task.id);
+        return;
+      }
+
+      await params.updateTaskSimulationProgress(
         task.id,
         {
           phase: "departing",

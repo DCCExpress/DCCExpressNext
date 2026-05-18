@@ -24,6 +24,7 @@ export type TrainTaskCreateInput = {
 export type TrainTaskSimulationPhase =
   | "idle"
   | "waitingForLoco"
+  | "waitingForRoute"
   | "departing"
   | "transit";
 

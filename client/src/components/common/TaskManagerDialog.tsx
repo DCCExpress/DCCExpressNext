@@ -28,7 +28,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import AppModal from "./AppModal";
 
-
 import { useTaskManager } from "../../services/tasks/useTaskManager";
 import { routeGraphStore } from "../../services/routeGraphStore";
 import { taskManager } from "../../services/tasks/taskManagerSingleton";
@@ -59,7 +58,6 @@ export default function TaskManagerDialog({
     const snapshot = useTaskManager();
 
     const [taskName, setTaskName] = useState("");
-
     const [targetSpeed, setTargetSpeed] = useState<number | string>(40);
 
     const [fromBlockId, setFromBlockId] = useState<string | null>(null);
@@ -68,11 +66,9 @@ export default function TaskManagerDialog({
     const [formError, setFormError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
 
-
     const [addTaskOpened, setAddTaskOpened] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [deleteTask, setDeleteTask] = useState<TrainTask | null>(null);
-
 
     const [editTask, setEditTask] = useState<TrainTask | null>(null);
     const [editTaskName, setEditTaskName] = useState("");
@@ -80,8 +76,8 @@ export default function TaskManagerDialog({
     const [editFromBlockId, setEditFromBlockId] = useState<string | null>(null);
     const [editToBlockId, setEditToBlockId] = useState<string | null>(null);
     const [editError, setEditError] = useState<string | null>(null);
-    const graph = routeGraphStore.getGraph();
 
+    const graph = routeGraphStore.getGraph();
 
     const selectedTask = useMemo(() => {
         return snapshot.tasks.find(task => task.id === selectedTaskId) ?? null;
@@ -150,6 +146,7 @@ export default function TaskManagerDialog({
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [runnableRoutes, fromBlockId]);
+
     const editToBlockSelectData = useMemo(() => {
         const filtered = editFromBlockId
             ? runnableRoutes.filter(
@@ -173,8 +170,6 @@ export default function TaskManagerDialog({
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [runnableRoutes, editFromBlockId]);
-
-
 
     const selectedRoute = useMemo<RunnableBlockRoute | null>(() => {
         if (!fromBlockId || !toBlockId) {
@@ -204,7 +199,6 @@ export default function TaskManagerDialog({
             setFormError("Válassz induló és cél blokkot.");
             return;
         }
-
 
         if (typeof targetSpeed !== "number" || targetSpeed < 0) {
             setFormError("Adj meg érvényes célsebességet.");
@@ -243,6 +237,7 @@ export default function TaskManagerDialog({
             setActionError(result.error);
         }
     };
+
     const openEditTask = (task: TrainTask) => {
         setEditTask(task);
         setEditTaskName(task.name);
@@ -295,8 +290,6 @@ export default function TaskManagerDialog({
 
         showOkMessage("SUCCESSFUL", "Task updated.");
     };
-
-
 
     const handleSaveTasks = async () => {
         setActionError(null);
@@ -496,6 +489,14 @@ export default function TaskManagerDialog({
             );
         }
 
+        if (task.runtime.simulation.phase === "waitingForRoute") {
+            return (
+                <Badge color="yellow" variant="light">
+                    Waiting route
+                </Badge>
+            );
+        }
+
         if (task.runtime.inTransit) {
             return (
                 <Badge color="red" variant="light">
@@ -518,6 +519,7 @@ export default function TaskManagerDialog({
             </Badge>
         );
     }
+
     function renderEditButton(task: TrainTask) {
         const disabled =
             task.status === "running" ||
@@ -542,8 +544,6 @@ export default function TaskManagerDialog({
             </Tooltip>
         );
     }
-
-
 
     function renderDeleteButton(task: TrainTask) {
         return (
@@ -579,9 +579,6 @@ export default function TaskManagerDialog({
                         </Tooltip>
 
                         {renderEditButton(task)}
-
-
-
                         {renderDeleteButton(task)}
                     </Group>
                 );
@@ -670,9 +667,6 @@ export default function TaskManagerDialog({
                         </Tooltip>
 
                         {renderEditButton(task)}
-
-
-
                         {renderDeleteButton(task)}
                     </Group>
                 );
@@ -682,6 +676,7 @@ export default function TaskManagerDialog({
                 return renderDeleteButton(task);
         }
     }
+
     function renderTaskSteps(task: TrainTask) {
         type StepState =
             | "done"
@@ -743,6 +738,32 @@ export default function TaskManagerDialog({
                         : "active",
         });
 
+        const routeStepDone =
+            simulation.phase === "departing" ||
+            simulation.phase === "transit";
+
+        const routeStepActive =
+            (task.status === "running" || task.status === "paused") &&
+            task.runtime.loco !== null &&
+            simulation.phase === "waitingForRoute";
+
+        steps.push({
+            key: "waiting-for-route",
+            title: "Útvonal foglalására vár",
+            description:
+                routeStepActive
+                    ? "A mozdony megvan, de az útvonal vagy a command center még foglalt. A task újrapróbálkozik."
+                    : routeStepDone
+                        ? "Az útvonal lefoglalva, a váltók beállítva."
+                        : "Ez a lépés még hátravan.",
+            state:
+                routeStepDone
+                    ? "done"
+                    : routeStepActive
+                        ? "active"
+                        : "upcoming",
+        });
+
         for (let legIndex = 0; legIndex < legs.length; legIndex++) {
             const leg = legs[legIndex]!;
 
@@ -765,7 +786,7 @@ export default function TaskManagerDialog({
                         ? `A mozdony elhagyta a(z) ${leg.from.name} blokkot.`
                         : departureActive
                             ? `A mozdony a(z) ${leg.from.name} blokk elhagyására készül.`
-                            : `Ez a lépés még hátravan.`,
+                            : "Ez a lépés még hátravan.",
                 state:
                     departureDone
                         ? "done"
@@ -789,7 +810,7 @@ export default function TaskManagerDialog({
                         ? `A mozdony megérkezett a(z) ${leg.to.name} blokkba.`
                         : arrivalActive
                             ? `A mozdony úton van a(z) ${leg.to.name} blokk felé.`
-                            : `Ez a lépés még hátravan.`,
+                            : "Ez a lépés még hátravan.",
                 state:
                     arrivalDone
                         ? "done"
@@ -864,7 +885,6 @@ export default function TaskManagerDialog({
         );
     }
 
-
     const taskRows = snapshot.tasks.map((task, index) => (
         <Table.Tr
             key={task.id}
@@ -905,6 +925,7 @@ export default function TaskManagerDialog({
                     </Text>
                 )}
             </Table.Td>
+
             <Table.Td>
                 <Badge color="cyan" variant="light">
                     {task.targetSpeed}
@@ -970,7 +991,6 @@ export default function TaskManagerDialog({
                             value={fromBlockId}
                             onChange={handleFromBlockChange}
                             comboboxProps={{ zIndex: 10001 }}
-                            searchable
                             clearable
                             disabled={!snapshot.hasGraph}
                         />
@@ -985,7 +1005,6 @@ export default function TaskManagerDialog({
                                 setToBlockId(value);
                                 setFormError(null);
                             }}
-                            searchable
                             clearable
                             disabled={!snapshot.hasGraph || !fromBlockId}
                         />
@@ -1055,7 +1074,6 @@ export default function TaskManagerDialog({
                 </Stack>
             </Modal>
 
-
             <Modal
                 opened={editTask !== null}
                 onClose={() => setEditTask(null)}
@@ -1088,7 +1106,6 @@ export default function TaskManagerDialog({
                             value={editFromBlockId}
                             comboboxProps={{ zIndex: 10001 }}
                             onChange={handleEditFromBlockChange}
-                            searchable
                             clearable
                         />
 
@@ -1102,7 +1119,6 @@ export default function TaskManagerDialog({
                                 setEditToBlockId(value);
                                 setEditError(null);
                             }}
-                            searchable
                             clearable
                             disabled={!editFromBlockId}
                         />
@@ -1136,7 +1152,6 @@ export default function TaskManagerDialog({
                     </Group>
                 </Stack>
             </Modal>
-
 
             <Modal
                 opened={deleteTask !== null}
@@ -1220,6 +1235,7 @@ export default function TaskManagerDialog({
                             {actionError}
                         </Alert>
                     )}
+
                     <Stack
                         gap="sm"
                         style={{
@@ -1245,7 +1261,6 @@ export default function TaskManagerDialog({
                                     Add task
                                 </Button>
 
-
                                 <Button
                                     size="xs"
                                     variant="light"
@@ -1269,12 +1284,12 @@ export default function TaskManagerDialog({
                                 </Button>
                             </Group>
                         </Group>
+
                         <div
                             style={{
                                 display: "grid",
-                                gridTemplateColumns: selectedTask
-                                    ? "minmax(0, 1.6fr) minmax(340px, 1fr)"
-                                    : "minmax(0, 1fr)",
+                                gridTemplateColumns:
+                                    "minmax(0, 1.6fr) minmax(340px, 1fr)",
                                 gap: 16,
                                 flex: 1,
                                 minHeight: 0,
@@ -1291,7 +1306,6 @@ export default function TaskManagerDialog({
                                     overflow: "hidden",
                                 }}
                             >
-
                                 {snapshot.tasks.length > 0 ? (
                                     <ScrollArea
                                         type="auto"
@@ -1329,7 +1343,6 @@ export default function TaskManagerDialog({
                                         Még nincs felvett feladat.
                                     </Text>
                                 )}
-
                             </Card>
 
                             <Card
@@ -1396,9 +1409,8 @@ export default function TaskManagerDialog({
                                         </Card>
                                     )}
                                 </ScrollArea>
-                            </Card>                        </div>
-
-
+                            </Card>
+                        </div>
                     </Stack>
                 </Stack>
             </AppModal>

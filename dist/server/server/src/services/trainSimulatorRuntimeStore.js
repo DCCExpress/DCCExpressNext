@@ -103,6 +103,15 @@ class TrainSimulatorRuntimeStore {
                         logError(`[TrainSimulator] No block legs found for task: ${task.name} (${task.id})`);
                         continue;
                     }
+                    /**
+                     * A mozdony már megvan, de csak akkor indulhatunk,
+                     * ha a teljes útvonal lefoglalható és a váltók beálltak.
+                     * Ha nem sikerül, a task futva marad és később újrapróbálkozik.
+                     */
+                    const routePrepared = await this.params.tryPrepareTaskRoute(task.id);
+                    if (!routePrepared) {
+                        continue;
+                    }
                     session = {
                         taskId: task.id,
                         legs,
@@ -230,7 +239,7 @@ class TrainSimulatorRuntimeStore {
              */
             if (isLastLeg) {
                 await simulator.setLoco(task.runtime.loco.address, 0, this.resolveDirection(task));
-                await this.params.markTaskReachedToBlock(task.id);
+                await params.markTaskReachedToBlock(task.id);
                 this.sessions.delete(task.id);
                 log(`[TrainSimulator] Route cycle finished: ${task.name} (${task.id})`);
                 return;
@@ -246,7 +255,12 @@ class TrainSimulatorRuntimeStore {
             session.phase = "departing";
             session.phaseStartedAt = Date.now();
             const nextLeg = session.legs[session.legIndex];
-            await this.params.updateTaskSimulationProgress(task.id, {
+            if (!nextLeg) {
+                logError(`[TrainSimulator] Missing next leg for task: ${task.name} (${task.id})`);
+                this.sessions.delete(task.id);
+                return;
+            }
+            await params.updateTaskSimulationProgress(task.id, {
                 phase: "departing",
                 legIndex: session.legIndex,
                 legCount: session.legs.length,
