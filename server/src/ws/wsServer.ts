@@ -246,114 +246,6 @@ function configureTaskRuntime() {
     broadcast: message => {
       broadcastAll(message);
     },
-
-    commands: {
-      setLoco: async (
-        address: number,
-        speed: number,
-        direction: "forward" | "reverse"
-      ) => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.setLoco(
-          address,
-          speed,
-          direction
-        );
-      },
-
-      setLocoFunction: async (
-        address: number,
-        fn: number,
-        active: boolean
-      ) => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.setLocoFunction(
-          address,
-          fn,
-          active
-        );
-      },
-
-      setTurnout: async (
-        address: number,
-        closed: boolean
-      ) => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.setTurnout(
-          address,
-          closed
-        );
-      },
-
-      getTurnoutState: (
-        address: number
-      ) => {
-        return getLogicalTurnoutState(address);
-      },
-
-      setBasicAccessory: async (
-        address: number,
-        active: boolean
-      ) => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.setBasicAccessory(
-          address,
-          active
-        );
-      },
-
-      getAccessoryState: (
-        address: number
-      ) => {
-        const accessory =
-          commandCenter
-            ?.getAccessories()
-            .find(item => item.address === address);
-
-        return typeof accessory?.active === "boolean"
-          ? accessory.active
-          : null;
-      },
-
-      getSensorState: async (
-        address: number
-      ) => {
-        if (!commandCenter) {
-          return null;
-        }
-
-        try {
-          const sensor =
-            await commandCenter.getSensor(address);
-
-          return typeof sensor?.active === "boolean"
-            ? sensor.active
-            : null;
-        } catch {
-          return null;
-        }
-      },
-
-      isTurnoutBusy: (
-        address: number
-      ) => {
-        return routeGraphRuntimeStore.isTurnoutBusy(
-          address
-        );
-      },
-    },
   });
 }
 
@@ -402,8 +294,7 @@ export function setupWebSocketServer(server: http.Server) {
       await scriptRuntimeStore.autoStartIfEnabled();
 
       await taskRuntimeStore.initialize();
-      await taskRuntimeStore.autoStartEnabledTasks();
-    })
+})
     .catch(err => {
       logError(
         "Failed to read initial command center config:",
@@ -428,15 +319,9 @@ export function setupWebSocketServer(server: http.Server) {
       type: "scriptStateChanged",
       data: scriptRuntimeStore.getCurrentState(),
     });
-
     sendToClient(ws, {
-      type: "taskDocumentChanged",
-      data: taskRuntimeStore.getDocument(),
-    });
-
-    sendToClient(ws, {
-      type: "taskStatesChanged",
-      data: taskRuntimeStore.getStates(),
+      type: "taskManagerSnapshotChanged",
+      data: taskRuntimeStore.getSnapshot(),
     });
 
     // sendToClient(ws, {
@@ -1236,9 +1121,14 @@ export function setupWebSocketServer(server: http.Server) {
                   throw new Error("Missing taskIdOrName.");
                 }
 
-                await taskRuntimeStore.startTask(
-                  taskIdOrName
-                );
+                const result =
+                  await taskRuntimeStore.startTask(
+                    taskIdOrName
+                  );
+
+                if (!result.ok) {
+                  throw new Error(result.error);
+                }
               } catch (error) {
                 sendToClient(ws, {
                   type: "taskRejected",
@@ -1261,7 +1151,17 @@ export function setupWebSocketServer(server: http.Server) {
                   : "";
 
               if (taskIdOrName) {
-                taskRuntimeStore.stopTask(taskIdOrName);
+                const result =
+                  await taskRuntimeStore.stopTask(taskIdOrName);
+
+                if (!result.ok) {
+                  sendToClient(ws, {
+                    type: "taskRejected",
+                    data: {
+                      reason: result.error,
+                    },
+                  });
+                }
               }
 
               return;
@@ -1274,7 +1174,17 @@ export function setupWebSocketServer(server: http.Server) {
                   : "";
 
               if (taskIdOrName) {
-                taskRuntimeStore.pauseTask(taskIdOrName);
+                const result =
+                  await taskRuntimeStore.pauseTask(taskIdOrName);
+
+                if (!result.ok) {
+                  sendToClient(ws, {
+                    type: "taskRejected",
+                    data: {
+                      reason: result.error,
+                    },
+                  });
+                }
               }
 
               return;
@@ -1287,26 +1197,31 @@ export function setupWebSocketServer(server: http.Server) {
                   : "";
 
               if (taskIdOrName) {
-                taskRuntimeStore.resumeTask(taskIdOrName);
+                const result =
+                  await taskRuntimeStore.resumeTask(taskIdOrName);
+
+                if (!result.ok) {
+                  sendToClient(ws, {
+                    type: "taskRejected",
+                    data: {
+                      reason: result.error,
+                    },
+                  });
+                }
               }
 
               return;
             }
 
             case "stopAllTasks": {
-              taskRuntimeStore.stopAll();
+              await taskRuntimeStore.stopAllTasks();
               return;
             }
 
             case "getTaskRuntimeState": {
               sendToClient(ws, {
-                type: "taskDocumentChanged",
-                data: taskRuntimeStore.getDocument(),
-              });
-
-              sendToClient(ws, {
-                type: "taskStatesChanged",
-                data: taskRuntimeStore.getStates(),
+                type: "taskManagerSnapshotChanged",
+                data: taskRuntimeStore.getSnapshot(),
               });
 
               return;

@@ -167,60 +167,6 @@ function configureTaskRuntime() {
         broadcast: message => {
             broadcastAll(message);
         },
-        commands: {
-            setLoco: async (address, speed, direction) => {
-                if (!commandCenter) {
-                    return false;
-                }
-                return commandCenter.setLoco(address, speed, direction);
-            },
-            setLocoFunction: async (address, fn, active) => {
-                if (!commandCenter) {
-                    return false;
-                }
-                return commandCenter.setLocoFunction(address, fn, active);
-            },
-            setTurnout: async (address, closed) => {
-                if (!commandCenter) {
-                    return false;
-                }
-                return commandCenter.setTurnout(address, closed);
-            },
-            getTurnoutState: (address) => {
-                return getLogicalTurnoutState(address);
-            },
-            setBasicAccessory: async (address, active) => {
-                if (!commandCenter) {
-                    return false;
-                }
-                return commandCenter.setBasicAccessory(address, active);
-            },
-            getAccessoryState: (address) => {
-                const accessory = commandCenter
-                    ?.getAccessories()
-                    .find(item => item.address === address);
-                return typeof accessory?.active === "boolean"
-                    ? accessory.active
-                    : null;
-            },
-            getSensorState: async (address) => {
-                if (!commandCenter) {
-                    return null;
-                }
-                try {
-                    const sensor = await commandCenter.getSensor(address);
-                    return typeof sensor?.active === "boolean"
-                        ? sensor.active
-                        : null;
-                }
-                catch {
-                    return null;
-                }
-            },
-            isTurnoutBusy: (address) => {
-                return routeGraphRuntimeStore.isTurnoutBusy(address);
-            },
-        },
     });
 }
 setCommandCenterConfigLoadedCallback((conf) => {
@@ -251,7 +197,6 @@ export function setupWebSocketServer(server) {
         await scriptRuntimeStore.initialize();
         await scriptRuntimeStore.autoStartIfEnabled();
         await taskRuntimeStore.initialize();
-        await taskRuntimeStore.autoStartEnabledTasks();
     })
         .catch(err => {
         logError("Failed to read initial command center config:", err);
@@ -272,12 +217,8 @@ export function setupWebSocketServer(server) {
             data: scriptRuntimeStore.getCurrentState(),
         });
         sendToClient(ws, {
-            type: "taskDocumentChanged",
-            data: taskRuntimeStore.getDocument(),
-        });
-        sendToClient(ws, {
-            type: "taskStatesChanged",
-            data: taskRuntimeStore.getStates(),
+            type: "taskManagerSnapshotChanged",
+            data: taskRuntimeStore.getSnapshot(),
         });
         // sendToClient(ws, {
         //   type: "commandCenterInfo",
@@ -905,7 +846,10 @@ export function setupWebSocketServer(server) {
                                 if (!taskIdOrName) {
                                     throw new Error("Missing taskIdOrName.");
                                 }
-                                await taskRuntimeStore.startTask(taskIdOrName);
+                                const result = await taskRuntimeStore.startTask(taskIdOrName);
+                                if (!result.ok) {
+                                    throw new Error(result.error);
+                                }
                             }
                             catch (error) {
                                 sendToClient(ws, {
@@ -924,7 +868,15 @@ export function setupWebSocketServer(server) {
                                 ? msg.data.taskIdOrName
                                 : "";
                             if (taskIdOrName) {
-                                taskRuntimeStore.stopTask(taskIdOrName);
+                                const result = await taskRuntimeStore.stopTask(taskIdOrName);
+                                if (!result.ok) {
+                                    sendToClient(ws, {
+                                        type: "taskRejected",
+                                        data: {
+                                            reason: result.error,
+                                        },
+                                    });
+                                }
                             }
                             return;
                         }
@@ -933,7 +885,15 @@ export function setupWebSocketServer(server) {
                                 ? msg.data.taskIdOrName
                                 : "";
                             if (taskIdOrName) {
-                                taskRuntimeStore.pauseTask(taskIdOrName);
+                                const result = await taskRuntimeStore.pauseTask(taskIdOrName);
+                                if (!result.ok) {
+                                    sendToClient(ws, {
+                                        type: "taskRejected",
+                                        data: {
+                                            reason: result.error,
+                                        },
+                                    });
+                                }
                             }
                             return;
                         }
@@ -942,22 +902,26 @@ export function setupWebSocketServer(server) {
                                 ? msg.data.taskIdOrName
                                 : "";
                             if (taskIdOrName) {
-                                taskRuntimeStore.resumeTask(taskIdOrName);
+                                const result = await taskRuntimeStore.resumeTask(taskIdOrName);
+                                if (!result.ok) {
+                                    sendToClient(ws, {
+                                        type: "taskRejected",
+                                        data: {
+                                            reason: result.error,
+                                        },
+                                    });
+                                }
                             }
                             return;
                         }
                         case "stopAllTasks": {
-                            taskRuntimeStore.stopAll();
+                            await taskRuntimeStore.stopAllTasks();
                             return;
                         }
                         case "getTaskRuntimeState": {
                             sendToClient(ws, {
-                                type: "taskDocumentChanged",
-                                data: taskRuntimeStore.getDocument(),
-                            });
-                            sendToClient(ws, {
-                                type: "taskStatesChanged",
-                                data: taskRuntimeStore.getStates(),
+                                type: "taskManagerSnapshotChanged",
+                                data: taskRuntimeStore.getSnapshot(),
                             });
                             return;
                         }

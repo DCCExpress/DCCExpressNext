@@ -1,17 +1,32 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { taskManager } from "./taskManagerSingleton";
-import type { TaskManagerSnapshot } from "./TaskTypes";
+
+import type {
+  TaskManagerSnapshot,
+} from "./TaskTypes";
 
 export function useTaskManager(): TaskManagerSnapshot {
-    const [snapshot, setSnapshot] = useState<TaskManagerSnapshot>(() =>
-        taskManager.getSnapshot()
+  const [snapshot, setSnapshot] =
+    useState<TaskManagerSnapshot>(() =>
+      taskManager.getSnapshot()
     );
 
-    useEffect(() => {
-        return taskManager.subscribe(() => {
-            setSnapshot(taskManager.getSnapshot());
-        });
-    }, []);
+  useEffect(() => {
+    const unsubscribe =
+      taskManager.subscribe(() => {
+        setSnapshot(
+          taskManager.getSnapshot()
+        );
+      });
 
-    return snapshot;
+    void taskManager.loadTasks();
+
+    return unsubscribe;
+  }, []);
+
+  return snapshot;
 }

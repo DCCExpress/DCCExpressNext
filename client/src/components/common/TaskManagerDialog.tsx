@@ -135,7 +135,7 @@ export default function TaskManagerDialog({
         setFormError(null);
     };
 
-    const handleAddTask = () => {
+    const handleAddTask = async () => {
         setFormError(null);
         setActionError(null);
 
@@ -156,9 +156,9 @@ export default function TaskManagerDialog({
 
         const trimmedTaskName = taskName.trim();
 
-        const result = taskManager.addTask({
+        const result = await taskManager.addTask({
             ...(trimmedTaskName ? { name: trimmedTaskName } : {}),
-
+            locoAddress,
             targetSpeed,
             fromBlockId,
             toBlockId,
@@ -175,12 +175,12 @@ export default function TaskManagerDialog({
         setFormError(null);
     };
 
-    const runTaskAction = (
-        action: () => { ok: true } | { ok: false; error: string }
+    const runTaskAction = async (
+        action: () => Promise<{ ok: true } | { ok: false; error: string }>
     ) => {
         setActionError(null);
 
-        const result = action();
+        const result = await action();
 
         if (!result.ok) {
             setActionError(result.error);
@@ -225,12 +225,12 @@ export default function TaskManagerDialog({
         }
     };
 
-    const handleConfirmDeleteTask = () => {
+    const handleConfirmDeleteTask = async () => {
         if (!deleteTask) {
             return;
         }
 
-        const result = taskManager.removeTask(deleteTask.id);
+        const result = await taskManager.removeTask(deleteTask.id);
 
         if (!result.ok) {
             setActionError(result.error);
@@ -484,7 +484,7 @@ export default function TaskManagerDialog({
                                 color="green"
                                 variant="light"
                                 onClick={() =>
-                                    runTaskAction(() =>
+                                    void runTaskAction(() =>
                                         taskManager.startTask(task.id)
                                     )
                                 }
@@ -505,7 +505,7 @@ export default function TaskManagerDialog({
                                 color="yellow"
                                 variant="light"
                                 onClick={() =>
-                                    runTaskAction(() =>
+                                    void runTaskAction(() =>
                                         taskManager.pauseTask(task.id)
                                     )
                                 }
@@ -519,7 +519,7 @@ export default function TaskManagerDialog({
                                 color="red"
                                 variant="light"
                                 onClick={() =>
-                                    runTaskAction(() =>
+                                    void runTaskAction(() =>
                                         taskManager.stopTask(task.id)
                                     )
                                 }
@@ -538,7 +538,7 @@ export default function TaskManagerDialog({
                                 color="green"
                                 variant="light"
                                 onClick={() =>
-                                    runTaskAction(() =>
+                                    void runTaskAction(() =>
                                         taskManager.resumeTask(task.id)
                                     )
                                 }
@@ -552,7 +552,7 @@ export default function TaskManagerDialog({
                                 color="red"
                                 variant="light"
                                 onClick={() =>
-                                    runTaskAction(() =>
+                                    void runTaskAction(() =>
                                         taskManager.stopTask(task.id)
                                     )
                                 }
@@ -571,7 +571,7 @@ export default function TaskManagerDialog({
                                 color="green"
                                 variant="light"
                                 onClick={() =>
-                                    runTaskAction(() =>
+                                    void runTaskAction(() =>
                                         taskManager.startTask(task.id)
                                     )
                                 }
@@ -686,7 +686,9 @@ export default function TaskManagerDialog({
 
                         <Button
                             color="red"
-                            onClick={handleConfirmDeleteTask}
+                            onClick={() => {
+                                void handleConfirmDeleteTask();
+                            }}
                         >
                             Törlés
                         </Button>
@@ -793,7 +795,9 @@ export default function TaskManagerDialog({
 
                             <Button
                                 leftSection={<IconPlus size={18} />}
-                                onClick={handleAddTask}
+                                onClick={() => {
+                                    void handleAddTask();
+                                }}
                                 disabled={!snapshot.hasGraph}
                             >
                                 Add task

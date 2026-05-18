@@ -1,6 +1,13 @@
 import { ElementType } from "react";
 import { Loco, SingleScriptFile } from "../../../common/src/types";
-import type { TaskDocumentDto } from "../../../common/src/task";
+
+import type {
+  AddTrainTaskResult,
+  LoadTrainTasksResult,
+  TaskManagerActionResult,
+  TaskManagerSnapshot,
+  TrainTaskCreateInput,
+} from "../../../common/src/task";
 
 import { Layout } from "../models/editor/core/Layout";
 import type {
@@ -30,7 +37,6 @@ export async function saveLocos(locos: Loco[]): Promise<void> {
     throw new Error("Nem sikerült elmenteni a mozdonyokat.");
   }
 }
-
 
 export type LayoutElementDto = {
   id: string;
@@ -84,7 +90,6 @@ export async function refreshLayoutRuntime(
   }
 }
 
-
 export async function getScript(): Promise<SingleScriptFile> {
   const res = await fetch("/api/script");
 
@@ -118,7 +123,23 @@ export async function saveScript(
   return await res.json();
 }
 
-export async function getTasks(): Promise<TaskDocumentDto> {
+async function readTaskResponse<T>(
+  response: Response,
+  fallbackError: string
+): Promise<T> {
+  const json = await response.json() as T & {
+    ok?: boolean;
+    error?: string;
+  };
+
+  if (!response.ok && typeof json.error !== "string") {
+    throw new Error(fallbackError);
+  }
+
+  return json;
+}
+
+export async function getTaskManagerSnapshot(): Promise<TaskManagerSnapshot> {
   const res = await fetch("/api/tasks");
 
   if (!res.ok) {
@@ -128,9 +149,9 @@ export async function getTasks(): Promise<TaskDocumentDto> {
   return await res.json();
 }
 
-export async function saveTasks(
-  input: TaskDocumentDto
-): Promise<TaskDocumentDto> {
+export async function addTrainTask(
+  input: TrainTaskCreateInput
+): Promise<AddTrainTaskResult> {
   const res = await fetch("/api/tasks", {
     method: "POST",
     headers: {
@@ -139,11 +160,104 @@ export async function saveTasks(
     body: JSON.stringify(input),
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to save tasks");
-  }
+  return readTaskResponse<AddTrainTaskResult>(
+    res,
+    "Failed to add task"
+  );
+}
 
-  return await res.json();
+export async function deleteTrainTask(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  const res = await fetch(
+    `/api/tasks/${encodeURIComponent(taskId)}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  return readTaskResponse<TaskManagerActionResult>(
+    res,
+    "Failed to delete task"
+  );
+}
+
+export async function saveTrainTasks(): Promise<TaskManagerActionResult> {
+  const res = await fetch("/api/tasks/save", {
+    method: "POST",
+  });
+
+  return readTaskResponse<TaskManagerActionResult>(
+    res,
+    "Failed to save tasks"
+  );
+}
+
+export async function reloadTrainTasks(): Promise<LoadTrainTasksResult> {
+  const res = await fetch("/api/tasks/reload", {
+    method: "POST",
+  });
+
+  return readTaskResponse<LoadTrainTasksResult>(
+    res,
+    "Failed to reload tasks"
+  );
+}
+
+async function runTaskAction(
+  taskId: string,
+  action:
+    | "start"
+    | "pause"
+    | "resume"
+    | "stop"
+): Promise<TaskManagerActionResult> {
+  const res = await fetch(
+    `/api/tasks/${encodeURIComponent(taskId)}/${action}`,
+    {
+      method: "POST",
+    }
+  );
+
+  return readTaskResponse<TaskManagerActionResult>(
+    res,
+    `Failed to ${action} task`
+  );
+}
+
+export async function startTrainTask(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return runTaskAction(taskId, "start");
+}
+
+export async function pauseTrainTask(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return runTaskAction(taskId, "pause");
+}
+
+export async function resumeTrainTask(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return runTaskAction(taskId, "resume");
+}
+
+export async function stopTrainTask(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return runTaskAction(taskId, "stop");
+}
+
+export async function stopAllTrainTasks(): Promise<TaskManagerActionResult> {
+  const res = await fetch("/api/tasks/stop-all", {
+    method: "POST",
+  });
+
+  return readTaskResponse<TaskManagerActionResult>(
+    res,
+    "Failed to stop all tasks"
+  );
 }
 
 export async function getRouteGraph(): Promise<RouteGraphResponseDto> {

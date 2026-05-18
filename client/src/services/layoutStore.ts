@@ -57,73 +57,73 @@ class LayoutStore {
     });
   }
 
-  findSignalByAddress(address: number) {
-    const elems = this.getElements();
-    return elems.find(e => {
-      return (e instanceof TrackSignalElement && (e as any).address === address);
-    });
-  }
+  // findSignalByAddress(address: number) {
+  //   const elems = this.getElements();
+  //   return elems.find(e => {
+  //     return (e instanceof TrackSignalElement && (e as any).address === address);
+  //   });
+  // }
 
-  getTurnoutStateByAddress(address: number): boolean | undefined {
-    const turnout = this.findTurnoutByAddress(address) as any;
+  // getTurnoutStateByAddress(address: number): boolean | undefined {
+  //   const turnout = this.findTurnoutByAddress(address) as any;
 
-    if (!turnout) return undefined;
+  //   if (!turnout) return undefined;
 
-    // Nálad itt lehet más mezőnév, ezt igazítsuk a konkrét váltó osztályhoz
-    return (turnout as TrackTurnoutElement).isClosed;
-  }
+  //   // Nálad itt lehet más mezőnév, ezt igazítsuk a konkrét váltó osztályhoz
+  //   return (turnout as TrackTurnoutElement).isClosed;
+  // }
 
-  setTurnoutStateByAddress(address: number, closed: boolean): boolean {
-    const turnout = this.findTurnoutByAddress(address) as any;
+  // setTurnoutStateByAddress(address: number, closed: boolean): boolean {
+  //   const turnout = this.findTurnoutByAddress(address) as any;
 
-    if (!turnout) return false;
+  //   if (!turnout) return false;
 
-    turnout.closed = closed;
-    this.emit();
+  //   turnout.closed = closed;
+  //   this.emit();
 
-    return true;
-  }
+  //   return true;
+  // }
 
-  setSignalGreenByAddress(address: number): boolean {
-    const signal = this.findSignalByAddress(address) as TrackSignalElement;
-    if (signal) {
-      signal.sendGreenIfNotGreen();
+  // setSignalGreenByAddress(address: number): boolean {
+  //   const signal = this.findSignalByAddress(address) as TrackSignalElement;
+  //   if (signal) {
+  //     signal.sendGreenIfNotGreen();
 
-    }
-    //this.emit();
+  //   }
+  //   //this.emit();
 
-    return true;
-  }
+  //   return true;
+  // }
 
-  setSignalYellowByAddress(address: number): boolean {
-    const signal = this.findSignalByAddress(address) as TrackSignalElement;
-    if (signal) {
-      signal.sendYellowIfNotYellow();
-    }
-    //this.emit();
+  // setSignalYellowByAddress(address: number): boolean {
+  //   const signal = this.findSignalByAddress(address) as TrackSignalElement;
+  //   if (signal) {
+  //     signal.sendYellowIfNotYellow();
+  //   }
+  //   //this.emit();
 
-    return true;
-  }
+  //   return true;
+  // }
 
-  setSignalRedByAddress(address: number): boolean {
-    const signal = this.findSignalByAddress(address) as TrackSignalElement;
-    if (signal) {
-      signal.sendRedIfNotRed();
-    }
-    //this.emit();
+  // setSignalRedByAddress(address: number): boolean {
+  //   const signal = this.findSignalByAddress(address) as TrackSignalElement;
+  //   if (signal) {
+  //     signal.sendRedIfNotRed();
+  //   }
+  //   //this.emit();
 
-    return true;
-  }
+  //   return true;
+  // }
 
-  setSignalWhiteByAddress(address: number): boolean {
-    const signal = this.findSignalByAddress(address) as TrackSignalElement;
-    if (signal) {
-      signal.sendWhiteIfNotWhite();
-    }
-    //this.emit();
+  // setSignalWhiteByAddress(address: number): boolean {
+  //   const signal = this.findSignalByAddress(address) as TrackSignalElement;
+  //   if (signal) {
+  //     signal.sendWhiteIfNotWhite();
+  //   }
+  //   //this.emit();
 
-    return true;
-  }
+  //   return true;
+  // }
 
 
   private isTurnout(e: BaseElement): boolean {
@@ -135,80 +135,80 @@ class LayoutStore {
     );
   }
 
-//   setRouteSegmentsBusy(
-//     solution: BlockRouteSolution,
-//     busy: boolean
-//   ): boolean {
-//     const layout = this.layout;
+  //   setRouteSegmentsBusy(
+  //     solution: BlockRouteSolution,
+  //     busy: boolean
+  //   ): boolean {
+  //     const layout = this.layout;
 
-//     if (!layout) {
-//       return false;
-//     }
+  //     if (!layout) {
+  //       return false;
+  //     }
 
-//     const sectionNumbers = new Set<number>();
+  //     const sectionNumbers = new Set<number>();
 
-//     for (const node of solution.nodes) {
-//       const match = /^S(\d+)$/.exec(node.name);
+  //     for (const node of solution.nodes) {
+  //       const match = /^S(\d+)$/.exec(node.name);
 
-//       if (!match) {
-//         continue;
-//       }
+  //       if (!match) {
+  //         continue;
+  //       }
 
-//       sectionNumbers.add(Number(match[1]));
-//     }
+  //       sectionNumbers.add(Number(match[1]));
+  //     }
 
-//     let changed = false;
+  //     let changed = false;
 
-//     for (const elem of layout.getTrackElements()) {
-//       if (!sectionNumbers.has(elem.section)) {
-//         continue;
-//       }
+  //     for (const elem of layout.getTrackElements()) {
+  //       if (!sectionNumbers.has(elem.section)) {
+  //         continue;
+  //       }
 
 
 
-//       // elem.state = busy
-//       //   ? TrackStates.occupied
-//       //   : TrackStates.free;
+  //       // elem.state = busy
+  //       //   ? TrackStates.occupied
+  //       //   : TrackStates.free;
 
-//       elem.isBusy = busy;
-//       changed = true;
-//     }
+  //       elem.isBusy = busy;
+  //       changed = true;
+  //     }
 
-//     if (changed) {
-//       this.emit();
-//     }
+  //     if (changed) {
+  //       this.emit();
+  //     }
 
-//     return changed;
-//   }
-//   setRouteTurnoutsBusy(
-//     solution: BlockRouteSolution,
-//     busy: boolean
-//   ): boolean {
-//     let changed = false;
+  //     return changed;
+  //   }
+  //   setRouteTurnoutsBusy(
+  //     solution: BlockRouteSolution,
+  //     busy: boolean
+  //   ): boolean {
+  //     let changed = false;
 
-//     for (const turnoutState of solution.turnoutStates) {
-//       const turnout = this.findTurnoutByAddress(
-//         turnoutState.address
-//       ) as TrackTurnoutElement | undefined;
+  //     for (const turnoutState of solution.turnoutStates) {
+  //       const turnout = this.findTurnoutByAddress(
+  //         turnoutState.address
+  //       ) as TrackTurnoutElement | undefined;
 
-//       if (!turnout) {
-//         continue;
-//       }
+  //       if (!turnout) {
+  //         continue;
+  //       }
 
-//       // turnout.state = busy
-//       //   ? TrackStates.occupied
-//       //   : TrackStates.free;
+  //       // turnout.state = busy
+  //       //   ? TrackStates.occupied
+  //       //   : TrackStates.free;
 
-//       turnout.isBusy = busy;
-//       changed = true;
-//     }
+  //       turnout.isBusy = busy;
+  //       changed = true;
+  //     }
 
-//     if (changed) {
-//       this.emit();
-//     }
+  //     if (changed) {
+  //       this.emit();
+  //     }
 
-//     return changed;
-//   }
+  //     return changed;
+  //   }
 
   clearAllBusy(): void {
     const layout = this.layout;
@@ -231,45 +231,71 @@ class LayoutStore {
     }
   }
 
-//   setSectionsBusyByNames(
-//     sectionNames: string[],
-//     busy: boolean
-//   ): boolean {
-//     const layout = this.layout;
+  //   setSectionsBusyByNames(
+  //     sectionNames: string[],
+  //     busy: boolean
+  //   ): boolean {
+  //     const layout = this.layout;
 
-//     if (!layout) {
-//       return false;
-//     }
+  //     if (!layout) {
+  //       return false;
+  //     }
 
-//     const sectionNumbers = new Set<number>();
+  //     const sectionNumbers = new Set<number>();
 
-//     for (const name of sectionNames) {
-//       const match = /^S(\d+)$/.exec(name);
+  //     for (const name of sectionNames) {
+  //       const match = /^S(\d+)$/.exec(name);
 
-//       if (!match) {
-//         continue;
-//       }
+  //       if (!match) {
+  //         continue;
+  //       }
 
-//       sectionNumbers.add(Number(match[1]));
-//     }
+  //       sectionNumbers.add(Number(match[1]));
+  //     }
 
-//     let changed = false;
+  //     let changed = false;
 
-//     for (const elem of layout.getTrackElements()) {
-//       if (!sectionNumbers.has(elem.section)) {
-//         continue;
-//       }
+  //     for (const elem of layout.getTrackElements()) {
+  //       if (!sectionNumbers.has(elem.section)) {
+  //         continue;
+  //       }
 
-//       elem.isBusy = busy;
-//       changed = true;
-//     }
+  //       elem.isBusy = busy;
+  //       changed = true;
+  //     }
 
-//     if (changed) {
-//       this.emit();
-//     }
+  //     if (changed) {
+  //       this.emit();
+  //     }
 
-//     return changed;
-//   }
+  //     return changed;
+  //   }
+
+  // setTurnoutsBusyByAddresses(
+  //   turnoutAddresses: number[],
+  //   busy: boolean
+  // ): boolean {
+  //   let changed = false;
+
+  //   for (const address of turnoutAddresses) {
+  //     const turnout = this.findTurnoutByAddress(
+  //       address
+  //     ) as TrackTurnoutElement | undefined;
+
+  //     if (!turnout) {
+  //       continue;
+  //     }
+
+  //     turnout.isBusy = busy;
+  //     changed = true;
+  //   }
+
+  //   if (changed) {
+  //     this.emit();
+  //   }
+
+  //   return changed;
+  // }
 
   setTurnoutsBusyByAddresses(
     turnoutAddresses: number[],
@@ -296,7 +322,6 @@ class LayoutStore {
 
     return changed;
   }
-
   setElementsBusyByIds(
     elementIds: string[],
     busy: boolean

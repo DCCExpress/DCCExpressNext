@@ -2,878 +2,438 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { dataDir } from "../paths.js";
+import { readLocos } from "../routes/locoRoutes.js";
+import { routeGraphRuntimeStore } from "./routeGraphRuntimeStore.js";
 import { railwayTopologyStore } from "./railwayTopologyStore.js";
-class TaskStoppedError extends Error {
-    constructor() {
-        super("Task stopped");
-        this.name = "TaskStoppedError";
-    }
-}
-class ServerTaskSession {
-    definition;
-    commands;
-    broadcast;
-    id = randomUUID();
-    state;
-    listeners = new Set();
-    index = 0;
-    locoAddress = 0;
-    stopRequested = false;
-    paused = false;
-    pauseResolver = null;
-    constructor(definition, commands, broadcast) {
-        this.definition = definition;
-        this.commands = commands;
-        this.broadcast = broadcast;
-        this.state = {
-            id: this.id,
-            taskId: definition.id,
-            taskName: definition.name,
-            status: "idle",
-            index: 0,
-            totalSteps: definition.steps.length,
-            logs: [],
-        };
-    }
-    getState() {
-        return {
-            ...this.state,
-            ...(this.state.currentStep
-                ? { currentStep: cloneStep(this.state.currentStep) }
-                : {}),
-            logs: [...this.state.logs],
-        };
-    }
-    subscribe(listener) {
-        this.listeners.add(listener);
-        listener(this.getState());
-        return () => {
-            this.listeners.delete(listener);
-        };
-    }
-    async start() {
-        if (this.state.status !== "idle") {
-            return;
-        }
-        this.setState({
-            status: "running",
-            startedAt: new Date().toISOString(),
-        });
-        this.log("Task started");
-        try {
-            while (true) {
-                await this.check();
-                if (this.index >= this.definition.steps.length) {
-                    if (!this.definition.finishOnComplete) {
-                        this.index = 0;
-                        this.setIndexState();
-                        this.log("Task restarted from the first step");
-                        continue;
-                    }
-                    this.setState({
-                        status: "finished",
-                        finishedAt: new Date().toISOString(),
-                    });
-                    this.log("Task finished");
-                    return;
-                }
-                const step = this.definition.steps[this.index];
-                if (!step) {
-                    this.index++;
-                    this.setIndexState();
-                    continue;
-                }
-                this.setState({
-                    status: this.paused ? "paused" : "running",
-                    index: this.index,
-                    currentStep: cloneStep(step),
-                });
-                this.log(`Step ${this.index + 1}/${this.definition.steps.length}: ${step.type}`);
-                await this.executeStep(step);
-            }
-        }
-        catch (error) {
-            if (error instanceof TaskStoppedError) {
-                this.setState({
-                    status: "stopped",
-                    finishedAt: new Date().toISOString(),
-                });
-                this.log("Task stopped");
-                return;
-            }
-            const message = error instanceof Error
-                ? error.message
-                : String(error);
-            this.setState({
-                status: "error",
-                error: message,
-                finishedAt: new Date().toISOString(),
-            });
-            this.log(`Task error: ${message}`);
-            console.error("[TaskRuntimeStore]", error);
-        }
-    }
-    stop() {
-        if (this.state.status !== "running" &&
-            this.state.status !== "paused") {
-            return;
-        }
-        this.stopRequested = true;
-        this.paused = false;
-        this.pauseResolver?.();
-        this.pauseResolver = null;
-        this.setState({
-            status: "stopping",
-        });
-        this.log("Stopping task...");
-    }
-    pause() {
-        if (this.state.status !== "running") {
-            return;
-        }
-        this.paused = true;
-        this.setState({
-            status: "paused",
-        });
-        this.log("Task paused");
-    }
-    resume() {
-        if (this.state.status !== "paused") {
-            return;
-        }
-        this.paused = false;
-        this.pauseResolver?.();
-        this.pauseResolver = null;
-        this.setState({
-            status: "running",
-        });
-        this.log("Task resumed");
-    }
-    async executeStep(step) {
-        switch (step.type) {
-            case "setLoco": {
-                this.locoAddress = numberData(step, "address");
-                this.next();
-                return;
-            }
-            case "setTurnout": {
-                const address = numberData(step, "address");
-                const closed = booleanData(step, "closed");
-                await this.setTurnout(address, closed);
-                this.next();
-                return;
-            }
-            case "forward": {
-                const speed = numberData(step, "speed");
-                await this.setLocoSpeed(speed, "forward");
-                this.next();
-                return;
-            }
-            case "reverse": {
-                const speed = numberData(step, "speed");
-                await this.setLocoSpeed(speed, "reverse");
-                this.next();
-                return;
-            }
-            case "stopLoco": {
-                await this.setLocoSpeed(0, "forward");
-                this.next();
-                return;
-            }
-            case "setFunction": {
-                const fn = numberData(step, "fn");
-                const active = booleanData(step, "on");
-                if (!this.locoAddress) {
-                    throw new Error("setFunction requires a prior setLoco step.");
-                }
-                const ok = await this.commands.setLocoFunction(this.locoAddress, fn, active);
-                if (!ok) {
-                    throw new Error(`Could not set F${fn} for loco ${this.locoAddress}.`);
-                }
-                this.next();
-                return;
-            }
-            case "delay": {
-                const ms = numberData(step, "ms");
-                await this.sleep(ms);
-                this.next();
-                return;
-            }
-            case "waitForSensor": {
-                const address = numberData(step, "address");
-                const on = booleanData(step, "on");
-                await this.waitUntil(async () => {
-                    const state = await this.commands.getSensorState(address);
-                    return state === on;
-                });
-                this.next();
-                return;
-            }
-            case "waitForMinutes": {
-                const minute = numberData(step, "minute");
-                if (minute <= 0) {
-                    throw new Error("waitForMinutes.minute must be greater than 0.");
-                }
-                await this.waitUntil(async () => {
-                    return new Date().getMinutes() % minute === 0;
-                }, 1000);
-                this.next();
-                return;
-            }
-            case "startAtMinutes": {
-                const minutes = numberArrayData(step, "minutes");
-                await this.waitUntil(async () => {
-                    return minutes.includes(new Date().getMinutes());
-                }, 1000);
-                this.next();
-                return;
-            }
-            case "playSound": {
-                const fname = stringData(step, "fname");
-                this.broadcast?.({
-                    type: "taskPlaySound",
-                    data: {
-                        taskId: this.definition.id,
-                        taskName: this.definition.name,
-                        fname,
-                    },
-                });
-                this.next();
-                return;
-            }
-            case "label": {
-                this.next();
-                return;
-            }
-            case "goto": {
-                const label = stringData(step, "text");
-                this.gotoLabel(label);
-                return;
-            }
-            case "ifClosed": {
-                const address = numberData(step, "address");
-                const state = this.commands.getTurnoutState(address);
-                if (state === true) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "ifOpen": {
-                const address = numberData(step, "address");
-                const state = this.commands.getTurnoutState(address);
-                if (state === false) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "else": {
-                this.gotoNextEnd();
-                return;
-            }
-            case "endIf": {
-                this.next();
-                return;
-            }
-            case "break": {
-                const text = typeof step.data?.text === "string"
-                    ? step.data.text
-                    : "";
-                this.log(text ? `Break: ${text}` : "Break");
-                this.stopRequested = true;
-                await this.check();
-                return;
-            }
-            case "restart": {
-                if (this.definition.finishOnComplete) {
-                    this.setState({
-                        status: "finished",
-                        finishedAt: new Date().toISOString(),
-                    });
-                    this.log("Task finished on restart step");
-                    throw new TaskStoppedError();
-                }
-                this.index = 0;
-                this.setIndexState();
-                return;
-            }
-            case "setOutput":
-            case "setAccessory": {
-                const address = numberData(step, "address");
-                const active = booleanData(step, "on");
-                const ok = await this.commands.setBasicAccessory(address, active);
-                if (!ok) {
-                    throw new Error(`Could not set accessory/output #${address}.`);
-                }
-                this.next();
-                return;
-            }
-            case "ifOutputIsOn":
-            case "ifAccessoryIsOn": {
-                const address = numberData(step, "address");
-                const state = this.commands.getAccessoryState(address);
-                if (state === true) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "ifOutputIsOff":
-            case "ifAccessoryIsOff": {
-                const address = numberData(step, "address");
-                const state = this.commands.getAccessoryState(address);
-                if (state === false) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "setSignalGreen": {
-                await this.setSignalAspect(numberData(step, "address"), "green");
-                this.next();
-                return;
-            }
-            case "setSignalYellow": {
-                await this.setSignalAspect(numberData(step, "address"), "yellow");
-                this.next();
-                return;
-            }
-            case "setSignalRed": {
-                await this.setSignalAspect(numberData(step, "address"), "red");
-                this.next();
-                return;
-            }
-            case "setSignalWhite": {
-                await this.setSignalAspect(numberData(step, "address"), "white");
-                this.next();
-                return;
-            }
-            case "ifSignalIsGreen": {
-                if (this.isSignalAspect(numberData(step, "address"), "green")) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "ifSignalIsYellow": {
-                if (this.isSignalAspect(numberData(step, "address"), "yellow")) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "ifSignalIsRed": {
-                if (this.isSignalAspect(numberData(step, "address"), "red")) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "ifSignalIsWhite": {
-                if (this.isSignalAspect(numberData(step, "address"), "white")) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "ifSensorIsOn": {
-                const address = numberData(step, "address");
-                const state = await this.commands.getSensorState(address);
-                if (state === true) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "ifSensorIsOff": {
-                const address = numberData(step, "address");
-                const state = await this.commands.getSensorState(address);
-                if (state === false) {
-                    this.next();
-                }
-                else {
-                    this.gotoNextEndOrElse();
-                }
-                return;
-            }
-            case "setRoute": {
-                const routeName = stringData(step, "routeName");
-                throw new Error(`setRoute("${routeName}") is not migrated yet. Use the server route reservation flow instead.`);
-            }
-            case "ifFree": {
-                throw new Error("ifFree is not migrated yet because the current server route model uses reservations.");
-            }
-            default: {
-                const neverStep = step.type;
-                throw new Error(`Unsupported task step: ${String(neverStep)}`);
-            }
-        }
-    }
-    async setTurnout(address, closed) {
-        await this.check();
-        if (this.commands.isTurnoutBusy(address)) {
-            throw new Error(`Turnout #${address} is reserved by an active route.`);
-        }
-        const topology = railwayTopologyStore.getTopology();
-        if (!topology) {
-            throw new Error("No server-side topology is available.");
-        }
-        const turnout = topology.getTurnouts().find(item => item.turnoutAddress === address);
-        if (!turnout) {
-            throw new Error(`Turnout not found for address ${address}.`);
-        }
-        const physicalClosed = closed === turnout.turnoutClosedValue;
-        const ok = await this.commands.setTurnout(address, physicalClosed);
-        if (!ok) {
-            throw new Error(`Could not set turnout #${address}.`);
-        }
-        await this.check();
-    }
-    async setLocoSpeed(speed, direction) {
-        if (!this.locoAddress) {
-            throw new Error("Loco motion requires a prior setLoco step.");
-        }
-        const ok = await this.commands.setLoco(this.locoAddress, speed, direction);
-        if (!ok) {
-            throw new Error(`Could not set loco ${this.locoAddress}.`);
-        }
-    }
-    async setSignalAspect(address, aspect) {
-        await this.check();
-        const signal = this.getSignal(address);
-        const bits = aspect === "green"
-            ? signal.valueGreen
-            : aspect === "yellow"
-                ? signal.valueYellow
-                : aspect === "red"
-                    ? signal.valueRed
-                    : signal.valueWhite;
-        for (let i = 0; i < signal.addressLength; i++) {
-            const active = ((bits >> i) & 1) === 1;
-            const ok = await this.commands.setBasicAccessory(signal.address + i, active);
-            if (!ok) {
-                throw new Error(`Could not set signal accessory ${signal.address + i}.`);
-            }
-        }
-    }
-    isSignalAspect(address, aspect) {
-        const signal = this.getSignal(address);
-        const bits = aspect === "green"
-            ? signal.valueGreen
-            : aspect === "yellow"
-                ? signal.valueYellow
-                : aspect === "red"
-                    ? signal.valueRed
-                    : signal.valueWhite;
-        for (let i = 0; i < signal.addressLength; i++) {
-            const expected = ((bits >> i) & 1) === 1;
-            const current = this.commands.getAccessoryState(signal.address + i);
-            if (current !== expected) {
-                return false;
-            }
-        }
-        return true;
-    }
-    getSignal(address) {
-        const topology = railwayTopologyStore.getTopology();
-        if (!topology) {
-            throw new Error("No server-side topology is available.");
-        }
-        const signal = topology.getSignals().find(item => item.address === address);
-        if (!signal) {
-            throw new Error(`Signal not found for address ${address}.`);
-        }
-        return signal;
-    }
-    gotoLabel(label) {
-        const targetIndex = this.definition.steps.findIndex(step => {
-            return (step.type === "label" &&
-                step.data?.text === label);
-        });
-        if (targetIndex < 0) {
-            throw new Error(`Could not find task label "${label}".`);
-        }
-        this.index = targetIndex;
-        this.setIndexState();
-    }
-    gotoNextEndOrElse() {
-        const target = this.findMatchingBranchTarget(this.index, true);
-        if (target < 0) {
-            throw new Error("Could not find matching else/endIf.");
-        }
-        const step = this.definition.steps[target];
-        this.index =
-            step?.type === "else"
-                ? target + 1
-                : target + 1;
-        this.setIndexState();
-    }
-    gotoNextEnd() {
-        const target = this.findMatchingBranchTarget(this.index, false);
-        if (target < 0) {
-            throw new Error("Could not find matching endIf.");
-        }
-        this.index = target + 1;
-        this.setIndexState();
-    }
-    findMatchingBranchTarget(fromIndex, includeElse) {
-        let depth = 0;
-        for (let i = fromIndex + 1; i < this.definition.steps.length; i++) {
-            const type = this.definition.steps[i]?.type;
-            if (isIfStep(type)) {
-                depth++;
-                continue;
-            }
-            if (type === "endIf") {
-                if (depth === 0) {
-                    return i;
-                }
-                depth--;
-                continue;
-            }
-            if (includeElse &&
-                type === "else" &&
-                depth === 0) {
-                return i;
-            }
-        }
-        return -1;
-    }
-    next() {
-        this.index++;
-        this.setIndexState();
-    }
-    setIndexState() {
-        this.setState({
-            index: this.index,
-            totalSteps: this.definition.steps.length,
-            ...(this.definition.steps[this.index]
-                ? { currentStep: cloneStep(this.definition.steps[this.index]) }
-                : { currentStep: undefined }),
-        });
-    }
-    async waitUntil(predicate, pollMs = 100) {
-        while (true) {
-            await this.check();
-            if (await predicate()) {
-                return;
-            }
-            await this.sleep(pollMs);
-        }
-    }
-    async sleep(ms) {
-        const total = Number.isFinite(ms) && ms > 0
-            ? ms
-            : 0;
-        const step = 50;
-        let elapsed = 0;
-        while (elapsed < total) {
-            await this.check();
-            const currentDelay = Math.min(step, total - elapsed);
-            await new Promise(resolve => setTimeout(resolve, currentDelay));
-            elapsed += currentDelay;
-        }
-        await this.check();
-    }
-    async check() {
-        if (this.stopRequested) {
-            throw new TaskStoppedError();
-        }
-        while (this.paused) {
-            await new Promise(resolve => {
-                this.pauseResolver = resolve;
-            });
-            if (this.stopRequested) {
-                throw new TaskStoppedError();
-            }
-        }
-    }
-    log(message) {
-        const entry = {
-            time: new Date().toISOString(),
-            taskId: this.definition.id,
-            taskName: this.definition.name,
-            message,
-        };
-        this.state = {
-            ...this.state,
-            logs: [
-                ...this.state.logs,
-                entry,
-            ],
-        };
-        this.emit();
-    }
-    setState(partial) {
-        this.state = {
-            ...this.state,
-            ...partial,
-        };
-        this.emit();
-    }
-    emit() {
-        const snapshot = this.getState();
-        for (const listener of this.listeners) {
-            listener(snapshot);
-        }
-    }
-}
-function cloneStep(step) {
-    return {
-        type: step.type,
-        ...(step.data
-            ? { data: { ...step.data } }
-            : {}),
-    };
-}
-function numberData(step, key) {
-    const value = step.data?.[key];
-    if (typeof value !== "number") {
-        throw new Error(`${step.type}.${key} must be a number.`);
-    }
-    return value;
-}
-function booleanData(step, key) {
-    const value = step.data?.[key];
-    if (typeof value !== "boolean") {
-        throw new Error(`${step.type}.${key} must be a boolean.`);
-    }
-    return value;
-}
-function stringData(step, key) {
-    const value = step.data?.[key];
-    if (typeof value !== "string") {
-        throw new Error(`${step.type}.${key} must be a string.`);
-    }
-    return value;
-}
-function numberArrayData(step, key) {
-    const value = step.data?.[key];
-    if (!Array.isArray(value) ||
-        !value.every(item => typeof item === "number")) {
-        throw new Error(`${step.type}.${key} must be a number array.`);
-    }
-    return value;
-}
-function isIfStep(type) {
-    return (type === "ifClosed" ||
-        type === "ifOpen" ||
-        type === "ifFree" ||
-        type === "ifOutputIsOn" ||
-        type === "ifOutputIsOff" ||
-        type === "ifAccessoryIsOn" ||
-        type === "ifAccessoryIsOff" ||
-        type === "ifSignalIsGreen" ||
-        type === "ifSignalIsYellow" ||
-        type === "ifSignalIsRed" ||
-        type === "ifSignalIsWhite" ||
-        type === "ifSensorIsOn" ||
-        type === "ifSensorIsOff");
-}
 class TaskRuntimeStore {
     initialized = false;
-    commands = null;
     broadcast = null;
-    document = {
-        tasks: [],
-    };
-    sessions = new Map();
-    filePath = path.resolve(dataDir, "tasks.json");
+    tasks = [];
+    savedTasks = [];
+    tasksFilePath = path.resolve(dataDir, "tasks.json");
     configure(params) {
-        this.commands = params.commands;
         this.broadcast = params.broadcast;
     }
     async initialize() {
         if (this.initialized) {
             return;
         }
-        await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-        try {
-            const raw = await fs.readFile(this.filePath, "utf8");
-            const parsed = JSON.parse(raw);
-            this.document =
-                normalizeTaskDocument(parsed);
-        }
-        catch {
-            this.document = {
-                tasks: [],
-                updatedAt: new Date().toISOString(),
-            };
-            await this.persistDocument();
-        }
+        await fs.mkdir(path.dirname(this.tasksFilePath), { recursive: true });
+        await this.loadTasksFromDiskInternal();
         this.initialized = true;
     }
-    getDocument() {
+    getSnapshot() {
         return {
-            ...this.document,
-            tasks: this.document.tasks.map(task => ({
-                ...task,
-                steps: task.steps.map(cloneStep),
-            })),
+            tasks: this.tasks.map(cloneTask),
+            overlay: this.createOverlayState(),
+            hasGraph: routeGraphRuntimeStore.hasGraph(),
+            hasLayout: railwayTopologyStore.getTopology() !== null,
         };
     }
-    getStates() {
-        return Array.from(this.sessions.values()).map(session => session.getState());
-    }
-    async saveDocument(input) {
+    async addTask(input) {
         await this.initialize();
-        this.document = {
-            ...normalizeTaskDocument(input),
-            updatedAt: new Date().toISOString(),
+        const graph = routeGraphRuntimeStore.getGraph();
+        if (!graph) {
+            return this.addError("Nincs aktív szerveroldali útvonalgráf.");
+        }
+        const locoAddress = Number(input.locoAddress);
+        const targetSpeed = Number(input.targetSpeed);
+        if (!Number.isFinite(locoAddress) || locoAddress <= 0) {
+            return this.addError("Adj meg érvényes mozdony címet.");
+        }
+        if (!Number.isFinite(targetSpeed) || targetSpeed < 0) {
+            return this.addError("Adj meg érvényes célsebességet.");
+        }
+        const transition = graph
+            .getRunnableBlockTransitions()
+            .find(item => item.fromBlock.id === input.fromBlockId &&
+            item.toBlock.id === input.toBlockId);
+        if (!transition) {
+            return this.addError("A kiválasztott blokkok között nincs közvetlenül automatizálható útvonal.");
+        }
+        const id = this.createTaskId();
+        const name = input.name?.trim() ||
+            `${transition.fromBlock.name} → ${transition.toBlock.name}`;
+        const saved = {
+            id,
+            name,
+            locoAddress,
+            targetSpeed,
+            fromBlockId: input.fromBlockId,
+            toBlockId: input.toBlockId,
+            createdAt: Date.now(),
         };
-        await this.persistDocument();
-        this.broadcast?.({
-            type: "taskDocumentChanged",
-            data: this.getDocument(),
-        });
-        return this.getDocument();
+        const task = this.createRuntimeTask(saved, transition);
+        this.savedTasks.push(saved);
+        this.tasks.push(task);
+        await this.persistTasks();
+        this.broadcastSnapshot();
+        return {
+            ok: true,
+            task: cloneTask(task),
+            snapshot: this.getSnapshot(),
+        };
+    }
+    async removeTask(taskId) {
+        await this.initialize();
+        const taskIndex = this.tasks.findIndex(task => task.id === taskId);
+        if (taskIndex < 0) {
+            return this.actionError("A feladat nem található.");
+        }
+        const task = this.tasks[taskIndex];
+        if (task.status === "running" ||
+            task.status === "paused") {
+            return this.actionError("Futó vagy szüneteltetett feladatot előbb állíts le.");
+        }
+        this.tasks.splice(taskIndex, 1);
+        const savedIndex = this.savedTasks.findIndex(item => item.id === taskId);
+        if (savedIndex >= 0) {
+            this.savedTasks.splice(savedIndex, 1);
+        }
+        await this.persistTasks();
+        this.broadcastSnapshot();
+        return this.actionOk();
     }
     async startTask(taskIdOrName) {
         await this.initialize();
-        if (!this.commands) {
-            throw new Error("Task runtime commands are not configured.");
+        const task = this.findTask(taskIdOrName);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
         }
-        const definition = this.findTask(taskIdOrName);
-        if (!definition) {
-            throw new Error(`Task not found: ${taskIdOrName}`);
+        if (task.status === "running") {
+            return this.actionError("A feladat már fut.");
         }
-        const current = this.sessions.get(definition.id);
-        const currentState = current?.getState();
-        if (currentState?.status === "running" ||
-            currentState?.status === "paused" ||
-            currentState?.status === "stopping") {
-            throw new Error(`Task "${definition.name}" is already active.`);
+        if (task.status === "paused") {
+            return this.actionError("A feladat szüneteltetett állapotban van. Resume kell, nem Start.");
         }
-        const session = new ServerTaskSession(definition, this.commands, this.broadcast);
-        this.sessions.set(definition.id, session);
-        session.subscribe(() => {
-            this.broadcastStates();
-        });
-        void session.start();
-        return session.getState();
+        if (task.status === "completed") {
+            return this.actionError("A feladat már befejeződött.");
+        }
+        const loco = (await readLocos()).find(item => item.address === task.locoAddress) ?? null;
+        if (!loco) {
+            return this.actionError(`A megadott mozdonycímhez nem található mozdony: ${task.locoAddress}.`);
+        }
+        if (task.status === "stopped") {
+            task.runtime = this.createRuntimeState();
+            delete task.stoppedAt;
+            delete task.completedAt;
+        }
+        task.runtime.loco = loco;
+        task.status = "running";
+        task.startedAt = Date.now();
+        delete task.error;
+        this.broadcastSnapshot();
+        return this.actionOk();
     }
-    stopTask(taskIdOrName) {
-        const definition = this.findTask(taskIdOrName);
-        if (!definition) {
-            return;
-        }
-        this.sessions
-            .get(definition.id)
-            ?.stop();
-        this.broadcastStates();
-    }
-    pauseTask(taskIdOrName) {
-        const definition = this.findTask(taskIdOrName);
-        if (!definition) {
-            return;
-        }
-        this.sessions
-            .get(definition.id)
-            ?.pause();
-        this.broadcastStates();
-    }
-    resumeTask(taskIdOrName) {
-        const definition = this.findTask(taskIdOrName);
-        if (!definition) {
-            return;
-        }
-        this.sessions
-            .get(definition.id)
-            ?.resume();
-        this.broadcastStates();
-    }
-    stopAll() {
-        for (const session of this.sessions.values()) {
-            session.stop();
-        }
-        this.broadcastStates();
-    }
-    async autoStartEnabledTasks() {
+    async pauseTask(taskIdOrName) {
         await this.initialize();
-        for (const task of this.document.tasks) {
-            if (!task.autoStart) {
+        const task = this.findTask(taskIdOrName);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
+        }
+        if (task.status !== "running") {
+            return this.actionError("Csak futó feladat szüneteltethető.");
+        }
+        task.status = "paused";
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async resumeTask(taskIdOrName) {
+        await this.initialize();
+        const task = this.findTask(taskIdOrName);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
+        }
+        if (task.status !== "paused") {
+            return this.actionError("Csak szüneteltetett feladat folytatható.");
+        }
+        task.status = "running";
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async stopTask(taskIdOrName) {
+        await this.initialize();
+        const task = this.findTask(taskIdOrName);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
+        }
+        if (task.status === "stopped") {
+            return this.actionError("A feladat már le van állítva.");
+        }
+        if (task.status === "completed") {
+            return this.actionError("A befejezett feladatot már nem kell leállítani.");
+        }
+        task.status = "stopped";
+        task.stoppedAt = Date.now();
+        task.runtime.inTransit = false;
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async stopAllTasks() {
+        await this.initialize();
+        for (const task of this.tasks) {
+            if (task.status === "running" ||
+                task.status === "paused") {
+                task.status = "stopped";
+                task.stoppedAt = Date.now();
+                task.runtime.inTransit = false;
+            }
+        }
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async markTaskLeftFromBlock(taskId) {
+        await this.initialize();
+        const task = this.findTask(taskId);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
+        }
+        task.runtime.hasLeftFromBlock = true;
+        task.runtime.inTransit = true;
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async markTaskReachedToBlock(taskId) {
+        await this.initialize();
+        const task = this.findTask(taskId);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
+        }
+        task.runtime.hasReachedToBlock = true;
+        task.runtime.inTransit = false;
+        task.status = "completed";
+        task.completedAt = Date.now();
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async saveTasks() {
+        await this.initialize();
+        await this.persistTasks();
+        return this.actionOk();
+    }
+    async reloadTasks() {
+        await this.initialize();
+        const result = await this.loadTasksFromDiskInternal();
+        this.broadcastSnapshot();
+        return result;
+    }
+    async loadTasksFromDiskInternal() {
+        const graph = routeGraphRuntimeStore.getGraph();
+        if (!graph) {
+            this.tasks.splice(0, this.tasks.length);
+            this.savedTasks.splice(0, this.savedTasks.length);
+            return {
+                ok: false,
+                error: "A feladatok visszatöltéséhez előbb szükség van az útvonalgráfra.",
+                snapshot: this.getSnapshot(),
+            };
+        }
+        let rawSavedTasks = [];
+        try {
+            const raw = await fs.readFile(this.tasksFilePath, "utf8");
+            const parsed = JSON.parse(raw);
+            rawSavedTasks =
+                Array.isArray(parsed)
+                    ? parsed
+                    : (parsed &&
+                        typeof parsed === "object" &&
+                        Array.isArray(parsed.tasks))
+                        ? parsed.tasks
+                        : [];
+        }
+        catch (error) {
+            const code = typeof error === "object" &&
+                error !== null &&
+                "code" in error
+                ? String(error.code)
+                : "";
+            if (code !== "ENOENT") {
+                console.error("[TaskRuntimeStore] Failed to read tasks.json:", error);
+            }
+            rawSavedTasks = [];
+        }
+        const loadedTasks = [];
+        const normalizedSavedTasks = [];
+        const warnings = [];
+        const transitions = graph.getRunnableBlockTransitions();
+        for (const rawItem of Array.isArray(rawSavedTasks) ? rawSavedTasks : []) {
+            const saved = normalizeSavedTask(rawItem);
+            if (!saved) {
+                warnings.push("Kihagyva: hibás tasks.json bejegyzés.");
                 continue;
             }
-            try {
-                await this.startTask(task.id);
+            const transition = transitions.find(item => item.fromBlock.id === saved.fromBlockId &&
+                item.toBlock.id === saved.toBlockId);
+            if (!transition) {
+                warnings.push(`Kihagyva: ${saved.name} — az útvonal már nem található vagy nem automatizálható.`);
+                continue;
             }
-            catch (error) {
-                console.error(`[TaskRuntimeStore] Could not auto-start task "${task.name}":`, error);
+            normalizedSavedTasks.push(saved);
+            loadedTasks.push(this.createRuntimeTask(saved, transition));
+        }
+        this.savedTasks.splice(0, this.savedTasks.length, ...normalizedSavedTasks);
+        this.tasks.splice(0, this.tasks.length, ...loadedTasks);
+        return {
+            ok: true,
+            loadedCount: loadedTasks.length,
+            skippedCount: warnings.length,
+            warnings,
+            snapshot: this.getSnapshot(),
+        };
+    }
+    createRuntimeTask(saved, transition) {
+        return {
+            id: saved.id,
+            name: saved.name,
+            locoAddress: saved.locoAddress,
+            targetSpeed: saved.targetSpeed,
+            fromBlockId: saved.fromBlockId,
+            toBlockId: saved.toBlockId,
+            transition,
+            status: "queued",
+            createdAt: saved.createdAt,
+            runtime: this.createRuntimeState(),
+        };
+    }
+    createRuntimeState() {
+        return {
+            loco: null,
+            hasLeftFromBlock: false,
+            hasReachedToBlock: false,
+            inTransit: false,
+        };
+    }
+    createOverlayState() {
+        const activeTasks = this.tasks.filter(task => task.status === "running" ||
+            task.status === "paused");
+        const reservedSectionNames = new Set();
+        const transitSectionNames = new Set();
+        const activeBlockIds = new Set();
+        const activeTurnoutAddresses = new Set();
+        for (const task of activeTasks) {
+            const solution = task.transition.solution;
+            for (const node of solution.nodes) {
+                reservedSectionNames.add(node.name);
+                if (task.runtime.inTransit) {
+                    transitSectionNames.add(node.name);
+                }
+            }
+            activeBlockIds.add(task.fromBlockId);
+            activeBlockIds.add(task.toBlockId);
+            for (const turnoutState of solution.turnoutStates) {
+                activeTurnoutAddresses.add(turnoutState.address);
             }
         }
+        return {
+            reservedSectionNames: [
+                ...reservedSectionNames,
+            ],
+            transitSectionNames: [
+                ...transitSectionNames,
+            ],
+            activeBlockIds: [
+                ...activeBlockIds,
+            ],
+            activeTurnoutAddresses: [
+                ...activeTurnoutAddresses,
+            ],
+        };
     }
     findTask(taskIdOrName) {
-        return this.document.tasks.find(task => {
-            return (task.id === taskIdOrName ||
-                task.name === taskIdOrName);
-        });
+        return this.tasks.find(task => task.id === taskIdOrName ||
+            task.name === taskIdOrName);
     }
-    broadcastStates() {
+    createTaskId() {
+        return `task-${Date.now()}-${randomUUID().slice(0, 8)}`;
+    }
+    async persistTasks() {
+        await fs.mkdir(path.dirname(this.tasksFilePath), { recursive: true });
+        await fs.writeFile(this.tasksFilePath, JSON.stringify(this.savedTasks, null, 2), "utf8");
+    }
+    broadcastSnapshot() {
         this.broadcast?.({
-            type: "taskStatesChanged",
-            data: this.getStates(),
+            type: "taskManagerSnapshotChanged",
+            data: this.getSnapshot(),
         });
     }
-    async persistDocument() {
-        await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-        await fs.writeFile(this.filePath, JSON.stringify(this.document, null, 2), "utf8");
+    actionOk() {
+        return {
+            ok: true,
+            snapshot: this.getSnapshot(),
+        };
+    }
+    actionError(error) {
+        return {
+            ok: false,
+            error,
+            snapshot: this.getSnapshot(),
+        };
+    }
+    addError(error) {
+        return {
+            ok: false,
+            error,
+            snapshot: this.getSnapshot(),
+        };
     }
 }
-function normalizeTaskDocument(input) {
-    const tasks = Array.isArray(input.tasks)
-        ? input.tasks
-        : [];
+function cloneTask(task) {
     return {
-        tasks: tasks
-            .filter(task => task && typeof task === "object")
-            .map((task, index) => {
-            const raw = task;
-            return {
-                id: typeof raw.id === "string" && raw.id.trim()
-                    ? raw.id
-                    : randomUUID(),
-                name: typeof raw.name === "string" && raw.name.trim()
-                    ? raw.name
-                    : `Task ${index + 1}`,
-                autoStart: raw.autoStart === true,
-                finishOnComplete: raw.finishOnComplete !== false,
-                steps: Array.isArray(raw.steps)
-                    ? raw.steps
-                        .filter(step => step && typeof step === "object")
-                        .map(step => {
-                        const rawStep = step;
-                        return {
-                            type: String(rawStep.type ?? "break"),
-                            ...(rawStep.data && typeof rawStep.data === "object"
-                                ? { data: { ...rawStep.data } }
-                                : {}),
-                        };
-                    })
-                    : [],
-            };
-        }),
-        ...(typeof input.updatedAt === "string"
-            ? { updatedAt: input.updatedAt }
-            : {}),
+        ...task,
+        transition: task.transition,
+        runtime: {
+            ...task.runtime,
+            ...(task.runtime.loco
+                ? { loco: { ...task.runtime.loco } }
+                : { loco: null }),
+        },
+    };
+}
+function normalizeSavedTask(raw) {
+    if (!raw ||
+        typeof raw !== "object") {
+        return null;
+    }
+    const item = raw;
+    const id = typeof item.id === "string"
+        ? item.id
+        : "";
+    const name = typeof item.name === "string"
+        ? item.name
+        : "";
+    const locoAddress = typeof item.locoAddress === "number"
+        ? item.locoAddress
+        : 0;
+    const targetSpeed = typeof item.targetSpeed === "number"
+        ? item.targetSpeed
+        : Number.NaN;
+    const fromBlockId = typeof item.fromBlockId === "string"
+        ? item.fromBlockId
+        : "";
+    const toBlockId = typeof item.toBlockId === "string"
+        ? item.toBlockId
+        : "";
+    const createdAt = typeof item.createdAt === "number"
+        ? item.createdAt
+        : Date.now();
+    if (!id ||
+        !name ||
+        !Number.isFinite(locoAddress) ||
+        locoAddress <= 0 ||
+        !Number.isFinite(targetSpeed) ||
+        targetSpeed < 0 ||
+        !fromBlockId ||
+        !toBlockId) {
+        return null;
+    }
+    return {
+        id,
+        name,
+        locoAddress,
+        targetSpeed,
+        fromBlockId,
+        toBlockId,
+        createdAt,
     };
 }
 export const taskRuntimeStore = new TaskRuntimeStore();

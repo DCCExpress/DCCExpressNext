@@ -445,10 +445,10 @@ function ControllerTab() {
   const [fromBlockName, setFromBlockName] = useState("A1");
   const [toBlockName, setToBlockName] = useState("C1");
 
-  const runTaskAction = (
-    action: () => { ok: true } | { ok: false; error: string }
+  const runTaskAction = async (
+    action: () => Promise<{ ok: true } | { ok: false; error: string }>
   ) => {
-    const result = action();
+    const result = await action();
 
     if (!result.ok) {
       showErrorMessage("ERROR", result.error);
@@ -552,7 +552,7 @@ function ControllerTab() {
             color="green"
             leftSection={<IconPlayerPlay size={14} />}
             onClick={() =>
-              runTaskAction(() => taskManager.startTask(task.id))
+              void runTaskAction(() => taskManager.startTask(task.id))
             }
           >
             Start
@@ -568,7 +568,7 @@ function ControllerTab() {
               color="yellow"
               leftSection={<IconPlayerPause size={14} />}
               onClick={() =>
-                runTaskAction(() => taskManager.pauseTask(task.id))
+                void runTaskAction(() => taskManager.pauseTask(task.id))
               }
             >
               Pause
@@ -580,7 +580,7 @@ function ControllerTab() {
               color="red"
               leftSection={<IconPlayerStop size={14} />}
               onClick={() =>
-                runTaskAction(() => taskManager.stopTask(task.id))
+                void runTaskAction(() => taskManager.stopTask(task.id))
               }
             >
               Stop
@@ -597,7 +597,7 @@ function ControllerTab() {
               color="green"
               leftSection={<IconPlayerPlay size={14} />}
               onClick={() =>
-                runTaskAction(() => taskManager.resumeTask(task.id))
+                void runTaskAction(() => taskManager.resumeTask(task.id))
               }
             >
               Resume
@@ -609,7 +609,7 @@ function ControllerTab() {
               color="red"
               leftSection={<IconPlayerStop size={14} />}
               onClick={() =>
-                runTaskAction(() => taskManager.stopTask(task.id))
+                void runTaskAction(() => taskManager.stopTask(task.id))
               }
             >
               Stop
@@ -625,7 +625,7 @@ function ControllerTab() {
             color="green"
             leftSection={<IconPlayerPlay size={14} />}
             onClick={() =>
-              runTaskAction(() => taskManager.startTask(task.id))
+              void runTaskAction(() => taskManager.startTask(task.id))
             }
           >
             Start again
