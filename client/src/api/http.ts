@@ -1,5 +1,6 @@
 import { ElementType } from "react";
 import { Loco, SingleScriptFile } from "../../../common/src/types";
+import type { TaskDocumentDto } from "../../../common/src/task";
 
 import { Layout } from "../models/editor/core/Layout";
 import type {
@@ -112,6 +113,34 @@ export async function saveScript(
 
   if (!res.ok) {
     throw new Error("Failed to save script");
+  }
+
+  return await res.json();
+}
+
+export async function getTasks(): Promise<TaskDocumentDto> {
+  const res = await fetch("/api/tasks");
+
+  if (!res.ok) {
+    throw new Error("Failed to load tasks");
+  }
+
+  return await res.json();
+}
+
+export async function saveTasks(
+  input: TaskDocumentDto
+): Promise<TaskDocumentDto> {
+  const res = await fetch("/api/tasks", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to save tasks");
   }
 
   return await res.json();

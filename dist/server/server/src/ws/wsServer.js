@@ -6,6 +6,7 @@ import { log, logError } from "../utility.js";
 import { routeGraphRuntimeStore } from "../services/routeGraphRuntimeStore.js";
 import { railwayTopologyStore } from "../services/railwayTopologyStore.js";
 import { scriptRuntimeStore } from "../services/scriptRuntimeStore.js";
+import { taskRuntimeStore } from "../services/taskRuntimeStore.js";
 // type SetTurnoutMessage = {
 //   type: "setTurnout";
 //   data: {
@@ -95,6 +96,27 @@ function initCommandCenter(conf) {
     });
 }
 let commandCenter = null; //new CommandCenterSimulator("Simulator");
+function getLogicalTurnoutState(address) {
+    const physicalClosed = commandCenter
+        ?.getTurnoutInfo(address)
+        ?.closed;
+    if (typeof physicalClosed !== "boolean") {
+        return null;
+    }
+    const topology = railwayTopologyStore.getTopology();
+    if (!topology) {
+        return null;
+    }
+    const turnout = topology.getTurnouts().find(item => item.turnoutAddress === address);
+    if (!turnout) {
+        return null;
+    }
+    /**
+     * Fizikai command-center állapotból
+     * vissza logikai C/T állapot.
+     */
+    return (physicalClosed === turnout.turnoutClosedValue);
+}
 function configureScriptRuntime() {
     scriptRuntimeStore.configure({
         broadcast: message => {
@@ -120,25 +142,7 @@ function configureScriptRuntime() {
                 return commandCenter.setTurnout(address, closed);
             },
             getTurnoutState: (address) => {
-                const physicalClosed = commandCenter
-                    ?.getTurnoutInfo(address)
-                    ?.closed;
-                if (typeof physicalClosed !== "boolean") {
-                    return null;
-                }
-                const topology = railwayTopologyStore.getTopology();
-                if (!topology) {
-                    return null;
-                }
-                const turnout = topology.getTurnouts().find(item => item.turnoutAddress === address);
-                if (!turnout) {
-                    return null;
-                }
-                /**
-                 * Fizikai command-center állapotból
-                 * vissza logikai C/T állapot.
-                 */
-                return (physicalClosed === turnout.turnoutClosedValue);
+                return getLogicalTurnoutState(address);
             },
             setLocoFunction: async (address, fn, active) => {
                 if (!commandCenter) {
@@ -151,6 +155,67 @@ function configureScriptRuntime() {
                     return false;
                 }
                 return commandCenter.setBasicAccessory(address, active);
+            },
+            isTurnoutBusy: (address) => {
+                return routeGraphRuntimeStore.isTurnoutBusy(address);
+            },
+        },
+    });
+}
+function configureTaskRuntime() {
+    taskRuntimeStore.configure({
+        broadcast: message => {
+            broadcastAll(message);
+        },
+        commands: {
+            setLoco: async (address, speed, direction) => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.setLoco(address, speed, direction);
+            },
+            setLocoFunction: async (address, fn, active) => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.setLocoFunction(address, fn, active);
+            },
+            setTurnout: async (address, closed) => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.setTurnout(address, closed);
+            },
+            getTurnoutState: (address) => {
+                return getLogicalTurnoutState(address);
+            },
+            setBasicAccessory: async (address, active) => {
+                if (!commandCenter) {
+                    return false;
+                }
+                return commandCenter.setBasicAccessory(address, active);
+            },
+            getAccessoryState: (address) => {
+                const accessory = commandCenter
+                    ?.getAccessories()
+                    .find(item => item.address === address);
+                return typeof accessory?.active === "boolean"
+                    ? accessory.active
+                    : null;
+            },
+            getSensorState: async (address) => {
+                if (!commandCenter) {
+                    return null;
+                }
+                try {
+                    const sensor = await commandCenter.getSensor(address);
+                    return typeof sensor?.active === "boolean"
+                        ? sensor.active
+                        : null;
+                }
+                catch {
+                    return null;
+                }
             },
             isTurnoutBusy: (address) => {
                 return routeGraphRuntimeStore.isTurnoutBusy(address);
@@ -173,23 +238,20 @@ export function broadcastAll(message, exclude) {
     broadcast(wss, message, exclude);
 }
 export function setupWebSocketServer(server) {
-    readCommandCenter().then(conf => {
-        log("Initial command center config:", conf);
-        initCommandCenter(conf);
-    }).catch(err => {
-        logError("Failed to read initial command center config:", err);
-    });
     wss = new WebSocketServer({
         server,
         path: "/ws",
     });
     configureScriptRuntime();
+    configureTaskRuntime();
     readCommandCenter()
         .then(async (conf) => {
         log("Initial command center config:", conf);
         initCommandCenter(conf);
         await scriptRuntimeStore.initialize();
         await scriptRuntimeStore.autoStartIfEnabled();
+        await taskRuntimeStore.initialize();
+        await taskRuntimeStore.autoStartEnabledTasks();
     })
         .catch(err => {
         logError("Failed to read initial command center config:", err);
@@ -208,6 +270,14 @@ export function setupWebSocketServer(server) {
         sendToClient(ws, {
             type: "scriptStateChanged",
             data: scriptRuntimeStore.getCurrentState(),
+        });
+        sendToClient(ws, {
+            type: "taskDocumentChanged",
+            data: taskRuntimeStore.getDocument(),
+        });
+        sendToClient(ws, {
+            type: "taskStatesChanged",
+            data: taskRuntimeStore.getStates(),
         });
         // sendToClient(ws, {
         //   type: "commandCenterInfo",
@@ -821,6 +891,73 @@ export function setupWebSocketServer(server) {
                             sendToClient(ws, {
                                 type: "scriptStateChanged",
                                 data: scriptRuntimeStore.getCurrentState(),
+                            });
+                            return;
+                        }
+                        //==================================
+                        // TASKS
+                        //==================================
+                        case "startTask": {
+                            try {
+                                const taskIdOrName = typeof msg.data?.taskIdOrName === "string"
+                                    ? msg.data.taskIdOrName
+                                    : "";
+                                if (!taskIdOrName) {
+                                    throw new Error("Missing taskIdOrName.");
+                                }
+                                await taskRuntimeStore.startTask(taskIdOrName);
+                            }
+                            catch (error) {
+                                sendToClient(ws, {
+                                    type: "taskRejected",
+                                    data: {
+                                        reason: error instanceof Error
+                                            ? error.message
+                                            : String(error),
+                                    },
+                                });
+                            }
+                            return;
+                        }
+                        case "stopTask": {
+                            const taskIdOrName = typeof msg.data?.taskIdOrName === "string"
+                                ? msg.data.taskIdOrName
+                                : "";
+                            if (taskIdOrName) {
+                                taskRuntimeStore.stopTask(taskIdOrName);
+                            }
+                            return;
+                        }
+                        case "pauseTask": {
+                            const taskIdOrName = typeof msg.data?.taskIdOrName === "string"
+                                ? msg.data.taskIdOrName
+                                : "";
+                            if (taskIdOrName) {
+                                taskRuntimeStore.pauseTask(taskIdOrName);
+                            }
+                            return;
+                        }
+                        case "resumeTask": {
+                            const taskIdOrName = typeof msg.data?.taskIdOrName === "string"
+                                ? msg.data.taskIdOrName
+                                : "";
+                            if (taskIdOrName) {
+                                taskRuntimeStore.resumeTask(taskIdOrName);
+                            }
+                            return;
+                        }
+                        case "stopAllTasks": {
+                            taskRuntimeStore.stopAll();
+                            return;
+                        }
+                        case "getTaskRuntimeState": {
+                            sendToClient(ws, {
+                                type: "taskDocumentChanged",
+                                data: taskRuntimeStore.getDocument(),
+                            });
+                            sendToClient(ws, {
+                                type: "taskStatesChanged",
+                                data: taskRuntimeStore.getStates(),
                             });
                             return;
                         }

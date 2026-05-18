@@ -164,6 +164,48 @@ class WebscoketApi {
     );
   }
 
+  startTask(taskIdOrName: string) {
+    return this.send(
+      "startTask",
+      { taskIdOrName }
+    );
+  }
+
+  stopTask(taskIdOrName: string) {
+    return this.send(
+      "stopTask",
+      { taskIdOrName }
+    );
+  }
+
+  pauseTask(taskIdOrName: string) {
+    return this.send(
+      "pauseTask",
+      { taskIdOrName }
+    );
+  }
+
+  resumeTask(taskIdOrName: string) {
+    return this.send(
+      "resumeTask",
+      { taskIdOrName }
+    );
+  }
+
+  stopAllTasks() {
+    return this.send(
+      "stopAllTasks",
+      {}
+    );
+  }
+
+  getTaskRuntimeState() {
+    return this.send(
+      "getTaskRuntimeState",
+      {}
+    );
+  }
+
 }
 
 export function getDefaultWsUrl(): string {
@@ -175,4 +217,3 @@ export function getDefaultWsUrl(): string {
 }
 
 export const wsApi = new WebscoketApi();
-
