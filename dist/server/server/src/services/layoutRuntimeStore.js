@@ -51,5 +51,10 @@ class LayoutRuntimeStore {
         });
         await fs.writeFile(filePath, JSON.stringify(layout, null, 2), "utf8");
     }
+    refreshRuntimeFromLayout(layout) {
+        railwayTopologyStore.rebuildFromLayout(layout);
+        routeGraphRuntimeStore.rebuildFromTopology(railwayTopologyStore.getTopology());
+        console.log("[LayoutRuntimeStore] Runtime topology and route graph refreshed without persisting layout.");
+    }
 }
 export const layoutRuntimeStore = new LayoutRuntimeStore();

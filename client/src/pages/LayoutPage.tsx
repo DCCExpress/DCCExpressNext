@@ -7,7 +7,7 @@ import TopMenuBar from "../layout/TopMenuBar";
 import RightPropertyPanel from "../layout/PropertyPanel";
 import StatusBar from "../layout/StatusBar";
 import LocoPanel from "../layout/LocoPanel";
-import { getLayout, getLocos, saveLayout } from "../api/http";
+import { getLayout, getLocos, refreshLayoutRuntime, saveLayout } from "../api/http";
 
 import { type EditorTool } from "../models/editor/types/EditorTypes";
 import ElementPickerDialog from "../components/editor/ElementPickerDialog";
@@ -156,10 +156,26 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   }, [propertyPanelCollapsed]);
 
   useEffect(() => {
+    const previousEditMode = previousEditModeRef.current;
+
+    previousEditModeRef.current = editMode;
+
     if (!editMode) {
       setTool({ mode: "cursor", elementType: "general" });
       setPickerOpened(false);
       setTurnoutSelection(false);
+
+      /**
+       * Csak valódi editMode true -> false váltáskor frissítünk.
+       * Első rendernél / layout betöltés előtt NEM.
+       */
+      if (
+        previousEditMode === true &&
+        layoutLoadedRef.current
+      ) {
+        void refreshServerRuntimeLayout();
+      }
+
       return;
     }
 
@@ -169,18 +185,19 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     setInvalidateCounter((prev) => prev + 1);
   }, [editMode]);
 
-  useEffect(() => {
-    if (editMode) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (editMode) {
+  //     return;
+  //   }
 
-    const existingGraph = routeGraphStore.getGraph();
+  //   const existingGraph = routeGraphStore.getGraph();
 
-    layoutRef.current.checkRoutes(existingGraph);
+  //   layoutRef.current.checkRoutes(existingGraph);
 
-    setInvalidateCounter((prev) => prev + 1);
-  }, [editMode]);
+  //   setInvalidateCounter((prev) => prev + 1);
+  // }, [editMode]);
 
+  const previousEditModeRef = useRef(editMode);
 
   const loadLocos = async () => {
     try {
@@ -261,6 +278,37 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     routeGraphStore.invalidate();
 
     showOkMessage("", "Layout saved!");
+  };
+
+  const refreshServerRuntimeLayout = async () => {
+    try {
+      await refreshLayoutRuntime(layoutRef.current);
+
+      /**
+       * A szerver új topology + route graph runtime-ot épített.
+       * A kliens route graph cache innentől biztosan elavult.
+       */
+      routeGraphStore.invalidate();
+
+      const graph = await routeGraphStore.ensureLoaded();
+
+      layoutRef.current.applyRouteGraphRuntime(graph);
+      layoutRef.current.checkRoutes(graph);
+
+      setInvalidateCounter((prev) => prev + 1);
+
+      showOkMessage(
+        "Runtime layout",
+        "Server runtime layout refreshed."
+      );
+    } catch (error) {
+      showErrorMessage(
+        "Runtime layout",
+        error instanceof Error
+          ? error.message
+          : "Could not refresh server runtime layout."
+      );
+    }
   };
 
   const loadCommandCentersFromServer = async () => {

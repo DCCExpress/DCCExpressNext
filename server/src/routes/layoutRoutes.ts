@@ -291,3 +291,33 @@ layoutRoutes.get("/route-graph", (_req, res) => {
 
   res.json(response);
 });
+
+layoutRoutes.put("/runtime", async (req, res) => {
+  try {
+    const layout = req.body as ServerLayoutDto;
+
+    if (!layout || typeof layout !== "object") {
+      res.status(400).json({
+        success: false,
+        message: "A kérés törzsének layout objektumnak kell lennie.",
+      });
+      return;
+    }
+
+    layoutRuntimeStore.refreshRuntimeFromLayout(layout);
+
+    res.json({
+      success: true,
+      message:
+        "Server runtime topology and route graph refreshed without saving layout.",
+    });
+  } catch (error) {
+    console.error("PUT /api/layout/runtime error:", error);
+
+    res.status(500).json({
+      success: false,
+      message:
+        "Nem sikerült frissíteni a szerveroldali runtime layoutot.",
+    });
+  }
+});

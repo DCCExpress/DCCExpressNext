@@ -65,7 +65,23 @@ export async function saveLayout(elements: Layout): Promise<void> {
   }
 }
 
+export async function refreshLayoutRuntime(
+  layout: Layout
+): Promise<void> {
+  const response = await fetch("/api/layout/runtime", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(layout),
+  });
 
+  if (!response.ok) {
+    throw new Error(
+      "Nem sikerült frissíteni a szerveroldali runtime layoutot."
+    );
+  }
+}
 
 
 export async function getScript(): Promise<SingleScriptFile> {

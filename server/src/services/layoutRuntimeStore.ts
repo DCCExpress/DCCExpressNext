@@ -96,6 +96,17 @@ class LayoutRuntimeStore {
       "utf8"
     );
   }
+  refreshRuntimeFromLayout(layout: ServerLayoutDto): void {
+    railwayTopologyStore.rebuildFromLayout(layout);
+
+    routeGraphRuntimeStore.rebuildFromTopology(
+      railwayTopologyStore.getTopology()
+    );
+
+    console.log(
+      "[LayoutRuntimeStore] Runtime topology and route graph refreshed without persisting layout."
+    );
+  }
 }
 
 export const layoutRuntimeStore = new LayoutRuntimeStore();
