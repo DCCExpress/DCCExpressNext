@@ -55,11 +55,11 @@ class TaskRuntimeStore {
             return this.addError("Adj meg érvényes célsebességet.");
         }
         const transition = graph
-            .getRunnableBlockTransitions()
+            .getRunnableBlockRoutes()
             .find(item => item.fromBlock.id === input.fromBlockId &&
             item.toBlock.id === input.toBlockId);
         if (!transition) {
-            return this.addError("A kiválasztott blokkok között nincs közvetlenül automatizálható útvonal.");
+            return this.addError("A kiválasztott blokkok között nincs automatizálható útvonal.");
         }
         const id = this.createTaskId();
         const name = input.name?.trim() ||
@@ -108,11 +108,11 @@ class TaskRuntimeStore {
             return this.actionError("Válassz induló és cél blokkot.");
         }
         const transition = graph
-            .getRunnableBlockTransitions()
+            .getRunnableBlockRoutes()
             .find(item => item.fromBlock.id === input.fromBlockId &&
             item.toBlock.id === input.toBlockId);
         if (!transition) {
-            return this.actionError("A kiválasztott blokkok között nincs közvetlenül automatizálható útvonal.");
+            return this.actionError("A kiválasztott blokkok között nincs automatizálható útvonal.");
         }
         const nextName = input.name?.trim() ||
             `${transition.fromBlock.name} → ${transition.toBlock.name}`;
@@ -325,7 +325,7 @@ class TaskRuntimeStore {
         const loadedTasks = [];
         const normalizedSavedTasks = [];
         const warnings = [];
-        const transitions = graph.getRunnableBlockTransitions();
+        const transitions = graph.getRunnableBlockRoutes();
         for (const rawItem of Array.isArray(rawSavedTasks) ? rawSavedTasks : []) {
             const saved = normalizeSavedTask(rawItem);
             if (!saved) {

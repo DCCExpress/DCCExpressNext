@@ -21,8 +21,8 @@ import {
     IconPlayerPlay,
     IconPlayerStop,
     IconPlus,
-        IconPencil,
-IconTrash,
+    IconPencil,
+    IconTrash,
 } from "@tabler/icons-react";
 import { useMemo, useState, type ReactNode } from "react";
 
@@ -41,9 +41,10 @@ import {
     showOkMessage,
     showWarningMessage,
 } from "../../helpers";
+
 import type {
-  BlockRouteSolution,
-  RunnableBlockTransition,
+    BlockRouteSolution,
+    RunnableBlockRoute,
 } from "../../../../common/src/railway/graph";
 
 type TaskManagerDialogProps = {
@@ -57,7 +58,8 @@ export default function TaskManagerDialog({
 }: TaskManagerDialogProps) {
     const snapshot = useTaskManager();
 
-    const [taskName, setTaskName] = useState("");
+    const [taskName, setTaskName] = useState("");
+
     const [targetSpeed, setTargetSpeed] = useState<number | string>(40);
 
     const [fromBlockId, setFromBlockId] = useState<string | null>(null);
@@ -66,32 +68,33 @@ export default function TaskManagerDialog({
     const [formError, setFormError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
 
-    
+
     const [addTaskOpened, setAddTaskOpened] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-const [deleteTask, setDeleteTask] = useState<TrainTask | null>(null);
+    const [deleteTask, setDeleteTask] = useState<TrainTask | null>(null);
 
-    
+
     const [editTask, setEditTask] = useState<TrainTask | null>(null);
     const [editTaskName, setEditTaskName] = useState("");
     const [editTargetSpeed, setEditTargetSpeed] = useState<number | string>(40);
     const [editFromBlockId, setEditFromBlockId] = useState<string | null>(null);
     const [editToBlockId, setEditToBlockId] = useState<string | null>(null);
     const [editError, setEditError] = useState<string | null>(null);
-const graph = routeGraphStore.getGraph();
+    const graph = routeGraphStore.getGraph();
 
-    
+
     const selectedTask = useMemo(() => {
         return snapshot.tasks.find(task => task.id === selectedTaskId) ?? null;
     }, [snapshot.tasks, selectedTaskId]);
-const runnableTransitions = useMemo(() => {
-        return graph?.getRunnableBlockTransitions() ?? [];
+
+    const runnableRoutes = useMemo(() => {
+        return graph?.getRunnableBlockRoutes() ?? [];
     }, [graph, snapshot.hasGraph]);
 
     const fromBlockSelectData = useMemo(() => {
         const map = new Map<string, string>();
 
-        for (const transition of runnableTransitions) {
+        for (const transition of runnableRoutes) {
             map.set(
                 transition.fromBlock.id,
                 transition.fromBlock.label
@@ -104,14 +107,14 @@ const runnableTransitions = useMemo(() => {
                 label,
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [runnableTransitions]);
+    }, [runnableRoutes]);
 
     const toBlockSelectData = useMemo(() => {
         const filtered = fromBlockId
-            ? runnableTransitions.filter(
+            ? runnableRoutes.filter(
                 transition => transition.fromBlock.id === fromBlockId
             )
-            : runnableTransitions;
+            : runnableRoutes;
 
         const map = new Map<string, string>();
 
@@ -128,13 +131,13 @@ const runnableTransitions = useMemo(() => {
                 label,
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [runnableTransitions, fromBlockId]);
+    }, [runnableRoutes, fromBlockId]);
     const editToBlockSelectData = useMemo(() => {
         const filtered = editFromBlockId
-            ? runnableTransitions.filter(
+            ? runnableRoutes.filter(
                 transition => transition.fromBlock.id === editFromBlockId
             )
-            : runnableTransitions;
+            : runnableRoutes;
 
         const map = new Map<string, string>();
 
@@ -151,23 +154,23 @@ const runnableTransitions = useMemo(() => {
                 label,
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [runnableTransitions, editFromBlockId]);
+    }, [runnableRoutes, editFromBlockId]);
 
 
 
-    const selectedTransition = useMemo<RunnableBlockTransition | null>(() => {
+    const selectedRoute = useMemo<RunnableBlockRoute | null>(() => {
         if (!fromBlockId || !toBlockId) {
             return null;
         }
 
         return (
-            runnableTransitions.find(
+            runnableRoutes.find(
                 transition =>
                     transition.fromBlock.id === fromBlockId &&
                     transition.toBlock.id === toBlockId
             ) ?? null
         );
-    }, [runnableTransitions, fromBlockId, toBlockId]);
+    }, [runnableRoutes, fromBlockId, toBlockId]);
 
     const handleFromBlockChange = (value: string | null) => {
         setFromBlockId(value);
@@ -182,7 +185,8 @@ const runnableTransitions = useMemo(() => {
         if (!fromBlockId || !toBlockId) {
             setFormError("Válassz induló és cél blokkot.");
             return;
-        }
+        }
+
 
         if (typeof targetSpeed !== "number" || targetSpeed < 0) {
             setFormError("Adj meg érvényes célsebességet.");
@@ -193,7 +197,7 @@ const runnableTransitions = useMemo(() => {
 
         const result = await taskManager.addTask({
             ...(trimmedTaskName ? { name: trimmedTaskName } : {}),
-targetSpeed,
+            targetSpeed,
             fromBlockId,
             toBlockId,
         });
@@ -952,6 +956,7 @@ targetSpeed,
                             data={fromBlockSelectData}
                             value={fromBlockId}
                             onChange={handleFromBlockChange}
+                            comboboxProps={{ zIndex: 10001 }}
                             searchable
                             clearable
                             disabled={!snapshot.hasGraph}
@@ -962,6 +967,7 @@ targetSpeed,
                             placeholder="Cél blokk"
                             data={toBlockSelectData}
                             value={toBlockId}
+                            comboboxProps={{ zIndex: 10001 }}
                             onChange={value => {
                                 setToBlockId(value);
                                 setFormError(null);
@@ -981,35 +987,35 @@ targetSpeed,
                         />
                     </Group>
 
-                    {selectedTransition && (
+                    {selectedRoute && (
                         <Stack gap="xs">
                             <Text size="sm" fw={600}>
                                 Kiválasztott végrehajtható blokkátmenet
                             </Text>
 
                             {renderBlockRoutePath(
-                                selectedTransition.solution,
+                                selectedRoute.solution,
                                 "md"
                             )}
 
                             <Group gap="xs">
                                 <Badge
                                     color={
-                                        selectedTransition.solution.locoDirection ===
+                                        selectedRoute.solution.locoDirection ===
                                             "forward"
                                             ? "green"
-                                            : selectedTransition.solution
+                                            : selectedRoute.solution
                                                 .locoDirection === "reverse"
                                                 ? "orange"
                                                 : "gray"
                                     }
                                     variant="light"
                                 >
-                                    {selectedTransition.solution.locoDirection.toUpperCase()}
+                                    {selectedRoute.solution.locoDirection.toUpperCase()}
                                 </Badge>
 
                                 {renderTurnoutRequirementBadges(
-                                    selectedTransition.solution.turnoutStates
+                                    selectedRoute.solution.turnoutStates
                                 )}
                             </Group>
                         </Stack>
@@ -1043,7 +1049,7 @@ targetSpeed,
                 title="Feladat szerkesztése"
                 centered
                 size="lg"
-                zIndex={10000}
+                zIndex={10001}
             >
                 <Stack gap="md">
                     {editError && (
@@ -1067,6 +1073,7 @@ targetSpeed,
                             placeholder="Induló blokk"
                             data={fromBlockSelectData}
                             value={editFromBlockId}
+                            comboboxProps={{ zIndex: 10001 }}
                             onChange={handleEditFromBlockChange}
                             searchable
                             clearable
@@ -1077,6 +1084,7 @@ targetSpeed,
                             placeholder="Cél blokk"
                             data={editToBlockSelectData}
                             value={editToBlockId}
+                            comboboxProps={{ zIndex: 10001 }}
                             onChange={value => {
                                 setEditToBlockId(value);
                                 setEditError(null);
@@ -1199,7 +1207,7 @@ targetSpeed,
                             {actionError}
                         </Alert>
                     )}
-<Stack
+                    <Stack
                         gap="sm"
                         style={{
                             flex: 1,
@@ -1224,7 +1232,7 @@ targetSpeed,
                                     Add task
                                 </Button>
 
-                                
+
                                 <Button
                                     size="xs"
                                     variant="light"
@@ -1271,44 +1279,44 @@ targetSpeed,
                                 }}
                             >
 
-                        {snapshot.tasks.length > 0 ? (
-                            <ScrollArea
-                                type="auto"
-                                offsetScrollbars
-                                style={{
-                                    flex: 1,
-                                    minHeight: 0,
-                                }}
-                            >
-                                <Table
-                                    striped
-                                    highlightOnHover
-                                    withTableBorder
-                                    withColumnBorders
-                                >
-                                    <Table.Thead>
-                                        <Table.Tr>
-                                            <Table.Th>#</Table.Th>
-                                            <Table.Th>Task</Table.Th>
-                                            <Table.Th>Loco</Table.Th>
-                                            <Table.Th>Speed</Table.Th>
-                                            <Table.Th>Route</Table.Th>
-                                            <Table.Th>Status</Table.Th>
-                                            <Table.Th>Progress</Table.Th>
-                                            <Table.Th>Turnouts</Table.Th>
-                                            <Table.Th>Controls</Table.Th>
-                                        </Table.Tr>
-                                    </Table.Thead>
+                                {snapshot.tasks.length > 0 ? (
+                                    <ScrollArea
+                                        type="auto"
+                                        offsetScrollbars
+                                        style={{
+                                            flex: 1,
+                                            minHeight: 0,
+                                        }}
+                                    >
+                                        <Table
+                                            striped
+                                            highlightOnHover
+                                            withTableBorder
+                                            withColumnBorders
+                                        >
+                                            <Table.Thead>
+                                                <Table.Tr>
+                                                    <Table.Th>#</Table.Th>
+                                                    <Table.Th>Task</Table.Th>
+                                                    <Table.Th>Loco</Table.Th>
+                                                    <Table.Th>Speed</Table.Th>
+                                                    <Table.Th>Route</Table.Th>
+                                                    <Table.Th>Status</Table.Th>
+                                                    <Table.Th>Progress</Table.Th>
+                                                    <Table.Th>Turnouts</Table.Th>
+                                                    <Table.Th>Controls</Table.Th>
+                                                </Table.Tr>
+                                            </Table.Thead>
 
-                                    <Table.Tbody>{taskRows}</Table.Tbody>
-                                </Table>
-                            </ScrollArea>
-                        ) : (
-                            <Text c="dimmed">
-                                Még nincs felvett feladat.
-                            </Text>
-                        )}
-                    
+                                            <Table.Tbody>{taskRows}</Table.Tbody>
+                                        </Table>
+                                    </ScrollArea>
+                                ) : (
+                                    <Text c="dimmed">
+                                        Még nincs felvett feladat.
+                                    </Text>
+                                )}
+
                             </Card>
 
                             {selectedTask && (

@@ -74,7 +74,7 @@ class TaskRuntimeStore {
         params.getSimulatorCommandCenter,
     });
   }
-  
+
   async initialize(): Promise<void> {
     if (this.initialized) {
       return;
@@ -124,7 +124,7 @@ class TaskRuntimeStore {
 
     const transition =
       graph
-        .getRunnableBlockTransitions()
+        .getRunnableBlockRoutes()
         .find(item =>
           item.fromBlock.id === input.fromBlockId &&
           item.toBlock.id === input.toBlockId
@@ -132,7 +132,7 @@ class TaskRuntimeStore {
 
     if (!transition) {
       return this.addError(
-        "A kiválasztott blokkok között nincs közvetlenül automatizálható útvonal."
+        "A kiválasztott blokkok között nincs automatizálható útvonal."
       );
     }
 
@@ -228,7 +228,7 @@ class TaskRuntimeStore {
 
     const transition =
       graph
-        .getRunnableBlockTransitions()
+        .getRunnableBlockRoutes()
         .find(item =>
           item.fromBlock.id === input.fromBlockId &&
           item.toBlock.id === input.toBlockId
@@ -236,7 +236,7 @@ class TaskRuntimeStore {
 
     if (!transition) {
       return this.actionError(
-        "A kiválasztott blokkok között nincs közvetlenül automatizálható útvonal."
+        "A kiválasztott blokkok között nincs automatizálható útvonal."
       );
     }
 
@@ -617,7 +617,7 @@ class TaskRuntimeStore {
     const warnings: string[] = [];
 
     const transitions =
-      graph.getRunnableBlockTransitions();
+      graph.getRunnableBlockRoutes();
 
     for (const rawItem of Array.isArray(rawSavedTasks) ? rawSavedTasks : []) {
       const saved = normalizeSavedTask(rawItem);

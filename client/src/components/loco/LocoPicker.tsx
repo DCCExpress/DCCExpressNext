@@ -19,7 +19,7 @@ export default function LocoPicker({
     opened,
     locos,
     selectedLocoId,
-    
+
     onClose,
     onSelect,
     onRemoveLoco,
@@ -54,6 +54,9 @@ export default function LocoPicker({
                     display: "flex",
                     flexDirection: "column",
                 }}
+                onMouseDown={(e) => {
+                    e.stopPropagation();
+                }}
             >
                 <Group justify="space-between" mb="sm" style={{ flexShrink: 0 }}>
                     {/* <Text fw={700}>{title}</Text> */}
@@ -61,7 +64,7 @@ export default function LocoPicker({
                     {onRemoveLoco && (
                         <Button
                             size="xs"
-                            variant="light" 
+                            variant="light"
                             color="red"
                             leftSection={<IconTrash size={14} />}
                             onClick={onRemoveLoco.bind(null, locos.find((l) => l.id === selectedLocoId)!)}
