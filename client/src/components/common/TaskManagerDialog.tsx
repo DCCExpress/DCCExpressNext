@@ -1248,6 +1248,28 @@ targetSpeed,
                                 </Button>
                             </Group>
                         </Group>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: selectedTask
+                                    ? "minmax(0, 1.6fr) minmax(340px, 1fr)"
+                                    : "minmax(0, 1fr)",
+                                gap: 16,
+                                flex: 1,
+                                minHeight: 0,
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="lg"
+                                padding="md"
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    minHeight: 0,
+                                    overflow: "hidden",
+                                }}
+                            >
 
                         {snapshot.tasks.length > 0 ? (
                             <ScrollArea
@@ -1286,27 +1308,54 @@ targetSpeed,
                                 Még nincs felvett feladat.
                             </Text>
                         )}
-                    {selectedTask && (
-                        <Card withBorder radius="lg" padding="md">
-                            <Group justify="space-between" align="center" mb="md">
-                                <Stack gap={0}>
-                                    <Text fw={800}>Task steps</Text>
-                                    <Text size="sm" c="dimmed">
-                                        {selectedTask.name}
-                                    </Text>
-                                </Stack>
+                    
+                            </Card>
 
-                                <Badge
-                                    color={getStatusColor(selectedTask.status)}
-                                    variant="light"
+                            {selectedTask && (
+                                <Card
+                                    withBorder
+                                    radius="lg"
+                                    padding="md"
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        minHeight: 0,
+                                        overflow: "hidden",
+                                    }}
                                 >
-                                    {getStatusLabel(selectedTask.status)}
-                                </Badge>
-                            </Group>
+                                    <Group
+                                        justify="space-between"
+                                        align="center"
+                                        mb="md"
+                                    >
+                                        <Stack gap={0}>
+                                            <Text fw={800}>Task steps</Text>
+                                            <Text size="sm" c="dimmed">
+                                                {selectedTask.name}
+                                            </Text>
+                                        </Stack>
 
-                            {renderTaskSteps(selectedTask)}
-                        </Card>
-                    )}
+                                        <Badge
+                                            color={getStatusColor(selectedTask.status)}
+                                            variant="light"
+                                        >
+                                            {getStatusLabel(selectedTask.status)}
+                                        </Badge>
+                                    </Group>
+
+                                    <ScrollArea
+                                        type="auto"
+                                        offsetScrollbars
+                                        style={{
+                                            flex: 1,
+                                            minHeight: 0,
+                                        }}
+                                    >
+                                        {renderTaskSteps(selectedTask)}
+                                    </ScrollArea>
+                                </Card>
+                            )}
+                        </div>
 
 
                     </Stack>
