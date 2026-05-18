@@ -65,6 +65,8 @@ type RuntimeStateLoadedCallback = (
 ) => void | Promise<void>;
 
 export abstract class CommandCenter {
+  private static activeInstance: CommandCenter | null = null;
+
   protected name: string;
   protected powerInfo: PowerInfo = {
     trackVoltageOn: false,
@@ -85,6 +87,7 @@ export abstract class CommandCenter {
 
   constructor(name: string) {
     this.name = name;
+    CommandCenter.activeInstance = this;
 
     onLocosChanged(async () => {
       const llocos = await readLocos();
@@ -98,6 +101,11 @@ export abstract class CommandCenter {
       });
     });
   }
+
+  static getActive(): CommandCenter | null {
+    return CommandCenter.activeInstance;
+  }
+
   setLocos(llocos: Loco[]): void {
     this.locos.clear();
 
@@ -131,18 +139,25 @@ export abstract class CommandCenter {
     this.saveRuntimeState();
   }
 
-  setBlockRemove(b: BlockState): void {
-    log("setBlockRemove", b);
-    const block = this.blocks.get(b.blockId);
-    if (block && block.locoId === block.locoId) {
-      block.locoId = null;
-      this.blocks.set(block.blockId, block);
-    }
-    const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
-    broadcastAll(data);
-    this.saveRuntimeState();
+setBlockRemove(b: BlockState): void {
+  log("setBlockRemove", b);
+
+  const block = this.blocks.get(b.blockId);
+
+  if (block && block.locoId === b.locoId) {
+    block.locoId = null;
+    this.blocks.set(block.blockId, block);
   }
 
+  const data = {
+    type: "blockStateChanged",
+    data: Object.fromEntries(this.blocks),
+    uuid: null,
+  };
+
+  broadcastAll(data);
+  this.saveRuntimeState();
+}
   setBlocksReset(): void {
     for (const [b, v] of this.blocks) {
       v.locoId = null;

@@ -1,0 +1,110 @@
+diff --git a/server/src/services/taskRuntimeStore.ts b/server/src/services/taskRuntimeStore.ts
+--- a/server/src/services/taskRuntimeStore.ts
++++ b/server/src/services/taskRuntimeStore.ts
+@@ -5,7 +5,8 @@
+ import { dataDir } from "../paths.js";
+ import { readLocos } from "../routes/locoRoutes.js";
+ import { routeGraphRuntimeStore } from "./routeGraphRuntimeStore.js";
+ import { railwayTopologyStore } from "./railwayTopologyStore.js";
+ import { trainSimulatorRuntimeStore } from "./trainSimulatorRuntimeStore.js";
++import type { CommandCenter } from "../commandCenter/CommandCenter.js";
+
+ import type {
+@@ -33,6 +34,7 @@
+ type ConfigureParams = {
+   broadcast: BroadcastFn;
+   getBlockState: (
+     blockId: string
+   ) => BlockState | null;
++  getSimulatorCommandCenter: () => CommandCenter | null;
+ };
+@@ -55,7 +57,9 @@
+     trainSimulatorRuntimeStore.configure({
+       getTasks: () => this.tasks.map(cloneTask),
+       markTaskLeftFromBlock: taskId =>
+         this.markTaskLeftFromBlock(taskId),
+       markTaskReachedToBlock: taskId =>
+         this.markTaskReachedToBlock(taskId),
++      getSimulatorCommandCenter:
++        params.getSimulatorCommandCenter,
+     });
+diff --git a/server/src/services/trainSimulatorRuntimeStore.ts b/server/src/services/trainSimulatorRuntimeStore.ts
+--- a/server/src/services/trainSimulatorRuntimeStore.ts
++++ b/server/src/services/trainSimulatorRuntimeStore.ts
+@@ -9,8 +9,7 @@
+ import type {
+   TaskManagerActionResult,
+   TrainTask,
+ } from "../../../common/src/task.js";
+
+-import { CommandCenter } from "../commandCenter/CommandCenter.js";
+-import { CommandCenterSimulator } from "../commandCenter/simulator.js";
++import type { CommandCenter } from "../commandCenter/CommandCenter.js";
+ import { log, logError } from "../utility.js";
+@@ -15,5 +14,6 @@
+ type TrainSimulatorConfigureParams = {
+   getTasks: () => TrainTask[];
++  getSimulatorCommandCenter: () => CommandCenter | null;
+   markTaskLeftFromBlock: (
+     taskId: string
+   ) => Promise<TaskManagerActionResult>;
+@@ -71,5 +71,6 @@
+ 
+     try {
+-      const simulator = this.getActiveSimulator();
++      const simulator =
++        this.params.getSimulatorCommandCenter();
+
+       if (!simulator) {
+@@ -150,4 +151,4 @@
+   private async pauseSession(
+-    simulator: CommandCenterSimulator,
++    simulator: CommandCenter,
+     task: TrainTask,
+     session: SimulationSession
+@@ -176,4 +177,4 @@
+   private async resumeSessionIfNeeded(
+-    simulator: CommandCenterSimulator,
++    simulator: CommandCenter,
+     task: TrainTask,
+     session: SimulationSession
+@@ -207,4 +208,4 @@
+   private async advanceRunningSession(
+-    simulator: CommandCenterSimulator,
++    simulator: CommandCenter,
+     task: TrainTask,
+     session: SimulationSession
+@@ -264,3 +265,3 @@
+   private async stopLocoIfKnown(
+-    simulator: CommandCenterSimulator,
++    simulator: CommandCenter,
+     task: TrainTask | undefined
+@@ -295,11 +296,4 @@
+ 
+-  private getActiveSimulator(): CommandCenterSimulator | null {
+-    const active = CommandCenter.getActive();
+-
+-    return active instanceof CommandCenterSimulator
+-      ? active
+-      : null;
+-  }
+ }
+
+ export const trainSimulatorRuntimeStore =
+diff --git a/server/src/ws/wsServer.ts b/server/src/ws/wsServer.ts
+--- a/server/src/ws/wsServer.ts
++++ b/server/src/ws/wsServer.ts
+@@ -234,7 +234,13 @@
+     getBlockState: (
+       blockId: string
+     ) => {
+       return commandCenter?.getBlockState(blockId) ?? null;
+     },
++
++    getSimulatorCommandCenter: () => {
++      return commandCenter instanceof CommandCenterSimulator
++        ? commandCenter
++        : null;
++    },
+   });
+ }

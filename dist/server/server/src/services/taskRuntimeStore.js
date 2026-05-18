@@ -5,6 +5,7 @@ import { dataDir } from "../paths.js";
 import { readLocos } from "../routes/locoRoutes.js";
 import { routeGraphRuntimeStore } from "./routeGraphRuntimeStore.js";
 import { railwayTopologyStore } from "./railwayTopologyStore.js";
+import { trainSimulatorRuntimeStore } from "./trainSimulatorRuntimeStore.js";
 class TaskRuntimeStore {
     initialized = false;
     broadcast = null;
@@ -15,6 +16,16 @@ class TaskRuntimeStore {
     configure(params) {
         this.broadcast = params.broadcast;
         this.getBlockState = params.getBlockState;
+        trainSimulatorRuntimeStore.configure({
+            getTasks: () => this.tasks.map(cloneTask),
+            markTaskLeftFromBlock: (taskId) => {
+                return this.markTaskLeftFromBlock(taskId);
+            },
+            markTaskReachedToBlock: (taskId) => {
+                return this.markTaskReachedToBlock(taskId);
+            },
+            getSimulatorCommandCenter: params.getSimulatorCommandCenter,
+        });
     }
     async initialize() {
         if (this.initialized) {
@@ -23,6 +34,7 @@ class TaskRuntimeStore {
         await fs.mkdir(path.dirname(this.tasksFilePath), { recursive: true });
         await this.loadTasksFromDiskInternal();
         this.initialized = true;
+        trainSimulatorRuntimeStore.start();
     }
     getSnapshot() {
         return {

@@ -170,6 +170,11 @@ function configureTaskRuntime() {
         getBlockState: (blockId) => {
             return commandCenter?.getBlockState(blockId) ?? null;
         },
+        getSimulatorCommandCenter: () => {
+            return commandCenter instanceof CommandCenterSimulator
+                ? commandCenter
+                : null;
+        },
     });
 }
 setCommandCenterConfigLoadedCallback((conf) => {

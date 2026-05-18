@@ -11,6 +11,7 @@ import { railwayTopologyStore } from "../services/railwayTopologyStore.js";
 import { scriptRuntimeStore } from "../services/scriptRuntimeStore.js";
 import { taskRuntimeStore } from "../services/taskRuntimeStore.js";
 
+
 // type SetTurnoutMessage = {
 //   type: "setTurnout";
 //   data: {
@@ -252,10 +253,14 @@ function configureTaskRuntime() {
     ) => {
       return commandCenter?.getBlockState(blockId) ?? null;
     },
+
+    getSimulatorCommandCenter: () => {
+      return commandCenter instanceof CommandCenterSimulator
+        ? commandCenter
+        : null;
+    },
   });
 }
-
-
 setCommandCenterConfigLoadedCallback((conf: CommandCenterConfig | null) => {
   log("Command center config loaded:", conf);
   initCommandCenter(conf);

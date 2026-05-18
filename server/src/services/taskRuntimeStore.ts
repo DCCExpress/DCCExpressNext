@@ -6,6 +6,7 @@ import { dataDir } from "../paths.js";
 import { readLocos } from "../routes/locoRoutes.js";
 import { routeGraphRuntimeStore } from "./routeGraphRuntimeStore.js";
 import { railwayTopologyStore } from "./railwayTopologyStore.js";
+import type { CommandCenter } from "../commandCenter/CommandCenter.js";
 
 import type {
   AddTrainTaskResult,
@@ -22,6 +23,7 @@ import type {
 import type {
   BlockState,
 } from "../../../common/src/types.js";
+import { trainSimulatorRuntimeStore } from "./trainSimulatorRuntimeStore.js";
 
 type BroadcastFn = (
   message: unknown
@@ -32,6 +34,7 @@ type ConfigureParams = {
   getBlockState: (
     blockId: string
   ) => BlockState | null;
+  getSimulatorCommandCenter: () => CommandCenter | null;
 };
 
 class TaskRuntimeStore {
@@ -51,8 +54,27 @@ class TaskRuntimeStore {
   configure(params: ConfigureParams): void {
     this.broadcast = params.broadcast;
     this.getBlockState = params.getBlockState;
-  }
 
+    trainSimulatorRuntimeStore.configure({
+      getTasks: () => this.tasks.map(cloneTask),
+
+      markTaskLeftFromBlock: (
+        taskId: string
+      ) => {
+        return this.markTaskLeftFromBlock(taskId);
+      },
+
+      markTaskReachedToBlock: (
+        taskId: string
+      ) => {
+        return this.markTaskReachedToBlock(taskId);
+      },
+
+      getSimulatorCommandCenter:
+        params.getSimulatorCommandCenter,
+    });
+  }
+  
   async initialize(): Promise<void> {
     if (this.initialized) {
       return;
@@ -66,6 +88,8 @@ class TaskRuntimeStore {
     await this.loadTasksFromDiskInternal();
 
     this.initialized = true;
+
+    trainSimulatorRuntimeStore.start();
   }
 
   getSnapshot(): TaskManagerSnapshot {
@@ -564,17 +588,17 @@ class TaskRuntimeStore {
         Array.isArray(parsed)
           ? parsed
           : (
-              parsed &&
-              typeof parsed === "object" &&
-              Array.isArray((parsed as { tasks?: unknown }).tasks)
-            )
+            parsed &&
+            typeof parsed === "object" &&
+            Array.isArray((parsed as { tasks?: unknown }).tasks)
+          )
             ? (parsed as { tasks: unknown[] }).tasks
             : [];
     } catch (error: unknown) {
       const code =
         typeof error === "object" &&
-        error !== null &&
-        "code" in error
+          error !== null &&
+          "code" in error
           ? String((error as { code?: unknown }).code)
           : "";
 

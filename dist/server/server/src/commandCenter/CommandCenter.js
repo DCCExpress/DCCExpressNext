@@ -6,6 +6,7 @@ import { dataDir } from "../paths.js";
 import path from "path/win32";
 import fs from "node:fs/promises";
 export class CommandCenter {
+    static activeInstance = null;
     name;
     powerInfo = {
         trackVoltageOn: false,
@@ -23,6 +24,7 @@ export class CommandCenter {
     lockOwnerUUID = "";
     constructor(name) {
         this.name = name;
+        CommandCenter.activeInstance = this;
         onLocosChanged(async () => {
             const llocos = await readLocos();
             this.setLocos(llocos);
@@ -32,6 +34,9 @@ export class CommandCenter {
                 log("Failed to load runtime state after loco change:", err);
             });
         });
+    }
+    static getActive() {
+        return CommandCenter.activeInstance;
     }
     setLocos(llocos) {
         this.locos.clear();
@@ -66,11 +71,15 @@ export class CommandCenter {
     setBlockRemove(b) {
         log("setBlockRemove", b);
         const block = this.blocks.get(b.blockId);
-        if (block && block.locoId === block.locoId) {
+        if (block && block.locoId === b.locoId) {
             block.locoId = null;
             this.blocks.set(block.blockId, block);
         }
-        const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
+        const data = {
+            type: "blockStateChanged",
+            data: Object.fromEntries(this.blocks),
+            uuid: null,
+        };
         broadcastAll(data);
         this.saveRuntimeState();
     }
