@@ -196,58 +196,58 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   };
 
   const requestInitialRuntimeSync = useCallback(() => {
-  if (!layoutLoadedRef.current) {
-    return;
-  }
+    if (!layoutLoadedRef.current) {
+      return;
+    }
 
-  if (!wsClient.isConnected()) {
-    return;
-  }
+    if (!wsClient.isConnected()) {
+      return;
+    }
 
-  wsApi.getBlocks();
-  wsApi.getRouteReservations();
-}, []);
+    wsApi.getBlocks();
+    wsApi.getRouteReservations();
+  }, []);
 
-const loadLayoutFromServer = async () => {
-  try {
-    const loaded = await getLayout();
-    const nextLayout = Layout.fromJSON(loaded);
-
-    setLayout(nextLayout);
-    layoutStore.setLayout(nextLayout);
-    routeGraphStore.clear();
-
+  const loadLayoutFromServer = async () => {
     try {
-      await routeGraphStore.ensureLoaded();
-    } catch (error) {
-      console.warn(
-        "[RouteGraph] Could not preload graph after layout load:",
-        error
-      );
-    }
+      const loaded = await getLayout();
+      const nextLayout = Layout.fromJSON(loaded);
 
-    setUndoStack([]);
-    setRedoStack([]);
+      setLayout(nextLayout);
+      layoutStore.setLayout(nextLayout);
+      routeGraphStore.clear();
 
-    layoutLoadedRef.current = true;
-    requestInitialRuntimeSync();
-  } catch (error) {
-    console.error(error);
-    showErrorMessage("Error", "Failed to load layout: " + error);
-  }
-};
+      try {
+        await routeGraphStore.ensureLoaded();
+      } catch (error) {
+        console.warn(
+          "[RouteGraph] Could not preload graph after layout load:",
+          error
+        );
+      }
 
-useEffect(() => {
-  const unsubscribe = wsClient.subscribeStatus(status => {
-    if (status === "connected") {
+      setUndoStack([]);
+      setRedoStack([]);
+
+      layoutLoadedRef.current = true;
       requestInitialRuntimeSync();
+    } catch (error) {
+      console.error(error);
+      showErrorMessage("Error", "Failed to load layout: " + error);
     }
-  });
-
-  return () => {
-    unsubscribe();
   };
-}, [requestInitialRuntimeSync]);
+
+  useEffect(() => {
+    const unsubscribe = wsClient.subscribeStatus(status => {
+      if (status === "connected") {
+        requestInitialRuntimeSync();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [requestInitialRuntimeSync]);
 
 
   const saveLayoutToServer = async () => {
@@ -437,11 +437,62 @@ useEffect(() => {
   }, [undo, redo]);
 
   useEffect(() => {
+
+    const syncExtendedRouteButtonActiveState = (
+      busy: boolean,
+      fromBlockName?: string,
+      toBlockName?: string
+    ) => {
+      if (!fromBlockName || !toBlockName) {
+        return false;
+      }
+
+      const graph = routeGraphStore.getGraph();
+
+      if (!graph) {
+        return false;
+      }
+
+      let changed = false;
+
+      const elements = layoutRef.current.getAllElements();
+
+      for (const elem of elements) {
+        if (!(elem instanceof ExtendedRouteButtonElement)) {
+          continue;
+        }
+
+        const fromBlock = graph.findBlockById(elem.fromBlockId);
+        const toBlock = graph.findBlockById(elem.toBlockId);
+
+        if (!fromBlock || !toBlock) {
+          continue;
+        }
+
+        const isSameRoute =
+          fromBlock.name === fromBlockName &&
+          toBlock.name === toBlockName;
+
+        if (!isSameRoute) {
+          continue;
+        }
+
+        if (elem.active !== busy) {
+          elem.active = busy;
+          changed = true;
+        }
+      }
+
+      return changed;
+    };
+
     // const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     // const host = window.location.hostname;
     // const port = 3000;
     // const url = `${protocol}://${host}:${port}/ws`;
     // wsApi.connect(url);
+
+
 
     const unsubscribeSensor = wsClient.on(
       "sensorChanged",
@@ -598,39 +649,38 @@ useEffect(() => {
       );
 
     const unsubscribeRouteReservationChanged =
-      wsClient.on<{
-        busy: boolean;
-        sectionNames: string[];
-        elementIds: string[];
-        turnoutAddresses: number[];
-        fromBlockName?: string;
-        toBlockName?: string;
-      }>(
-        "routeReservationChanged",
-        data => {
-          if (data.busy) {
-            layoutStore.setElementsBusyByIds(
-              data.elementIds,
-              true
-            );
-            layoutStore.setTurnoutsBusyByAddresses(
-              data.turnoutAddresses,
-              true
-            );
+  wsClient.on<{
+    busy: boolean;
+    sectionNames: string[];
+    elementIds: string[];
+    turnoutAddresses: number[];
+    fromBlockName?: string;
+    toBlockName?: string;
+  }>(
+    "routeReservationChanged",
+    data => {
+      const routeButtonChanged =
+        syncExtendedRouteButtonActiveState(
+          data.busy,
+          data.fromBlockName,
+          data.toBlockName
+        );
 
-            return;
-          }
+      layoutStore.setElementsBusyByIds(
+        data.elementIds,
+        data.busy
+      );
 
-          layoutStore.setElementsBusyByIds(
-            data.elementIds,
-            false
-          );
+      layoutStore.setTurnoutsBusyByAddresses(
+        data.turnoutAddresses,
+        data.busy
+      );
 
-          layoutStore.setTurnoutsBusyByAddresses(
-            data.turnoutAddresses,
-            false
-          );
-        });
+      if (routeButtonChanged) {
+        setInvalidateCounter(prev => prev + 1);
+      }
+    }
+  );
 
     const unsubscribeAllRouteReservationsCleared =
       wsClient.on(

@@ -332,7 +332,7 @@ export default function TrackCanvas({
       onInvalidate();
     });
   }, [onInvalidate]);
-  
+
   useEffect(() => {
     invalidate();
   }, [invalidateCounter]);
@@ -651,14 +651,6 @@ export default function TrackCanvas({
     const executeExtendedRoute = async function (
       rb: ExtendedRouteButtonElement
     ) {
-      if (commandCenterRef.current.locked) {
-        showWarningMessage(
-          "Warning",
-          "Command center is busy. Route cannot be started."
-        );
-        return;
-      }
-
       if (!rb.fromBlockId || !rb.toBlockId) {
         showWarningMessage(
           "Warning",
@@ -668,8 +660,7 @@ export default function TrackCanvas({
       }
 
       try {
-        const graph =
-          await routeGraphStore.ensureLoaded();
+        const graph = await routeGraphStore.ensureLoaded();
 
         if (!graph) {
           showWarningMessage(
@@ -678,6 +669,7 @@ export default function TrackCanvas({
           );
           return;
         }
+
         const fromBlock = graph.findBlockById(rb.fromBlockId);
         const toBlock = graph.findBlockById(rb.toBlockId);
 
@@ -685,6 +677,34 @@ export default function TrackCanvas({
           showWarningMessage(
             "Warning",
             "The configured From / To block could not be found in the server graph."
+          );
+          return;
+        }
+
+        // =====================================
+        // AKTÍV ROUTE GOMB -> FOGLALÁS ELENGEDÉSE
+        // =====================================
+        if (rb.active) {
+          wsApi.releaseRouteReservation(
+            fromBlock.name,
+            toBlock.name
+          );
+
+          showOkMessage(
+            "Route release",
+            `Release requested: ${fromBlock.label} → ${toBlock.label}`
+          );
+
+          return;
+        }
+
+        // =====================================
+        // INAKTÍV ROUTE GOMB -> ÚTVONAL FOGLALÁSA
+        // =====================================
+        if (commandCenterRef.current.locked) {
+          showWarningMessage(
+            "Warning",
+            "Command center is busy. Route cannot be started."
           );
           return;
         }

@@ -1,7 +1,7 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { drawPolarLine, getPolarXy } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { BaseElement } from "../core/BaseElement";
+import { ClickableBaseElement } from "../core/ClickableBaseElement";
 import { DrawOptions, IRouteButtonElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
@@ -10,7 +10,7 @@ export type RouteTurnoutItem = {
   closed: boolean;
 };
 
-export class RouteButtonElement extends BaseElement implements IRouteButtonElement {
+export class RouteButtonElement extends ClickableBaseElement implements IRouteButtonElement {
     override type: typeof ELEMENT_TYPES.BUTTON_ROUTE = ELEMENT_TYPES.BUTTON_ROUTE;
     label: string = "Route";
     colorOn: string = "lime";
