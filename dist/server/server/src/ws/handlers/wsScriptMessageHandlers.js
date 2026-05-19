@@ -1,5 +1,17 @@
 // server/src/ws/handlers/wsScriptMessageHandlers.ts
 import { scriptRuntimeStore, } from "../../services/scriptRuntimeStore.js";
+function normalizeScriptRunSource(value) {
+    switch (value) {
+        case "property-panel":
+        case "route-button":
+        case "control-panel":
+        case "auto-start":
+        case "unknown":
+            return value;
+        default:
+            return "unknown";
+    }
+}
 export const handleScriptMessage = async ({ ws, msg, sendToClient, }) => {
     switch (msg.type) {
         case "runScript": {
@@ -7,9 +19,7 @@ export const handleScriptMessage = async ({ ws, msg, sendToClient, }) => {
                 const script = typeof msg.data?.script === "string"
                     ? msg.data.script
                     : undefined;
-                const source = typeof msg.data?.source === "string"
-                    ? msg.data.source
-                    : "unknown";
+                const source = normalizeScriptRunSource(msg.data?.source);
                 const elementId = typeof msg.data?.elementId === "string"
                     ? msg.data.elementId
                     : null;

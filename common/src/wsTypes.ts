@@ -66,6 +66,11 @@ export type ClientWsPayloadMap = {
     closed: boolean;
   };
 
+  setSensor: {
+    address: number;
+    on: boolean;
+  };
+
   setBasicAccessory: {
     address: number;
     active: boolean;
@@ -153,6 +158,10 @@ export type TypedClientWsMessage<
   };
 }[TType];
 
+export type ClientWsMessageUnion = {
+  [K in ClientWsMessageType]: TypedClientWsMessage<K>;
+}[ClientWsMessageType];
+
 export type SetLocoMessage =
   TypedClientWsMessage<"setLoco">;
 
@@ -178,14 +187,8 @@ export type AccessoryChangedMessage = {
   };
 };
 
-export type SetSensorMessage = {
-  type: "setSensor";
-  data: {
-    address: number;
-    on: boolean;
-  };
-  uuid: string;
-};
+export type SetSensorMessage =
+  TypedClientWsMessage<"setSensor">;
 
 export type CommandCenterInfo = {
   type: "commandCenterInfo";

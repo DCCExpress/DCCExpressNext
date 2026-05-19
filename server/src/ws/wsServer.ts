@@ -8,7 +8,7 @@ import {
 } from "ws";
 
 import type {
-  WsMessage,
+  ClientWsMessageUnion,
 } from "../../../common/src/types.js";
 
 import {
@@ -166,7 +166,7 @@ export function setupWebSocketServer(
 
       try {
         const msg =
-          JSON.parse(text) as WsMessage;
+          JSON.parse(text) as ClientWsMessageUnion;
 
         if (msg.uuid) {
           clientUUID =

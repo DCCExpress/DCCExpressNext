@@ -5,8 +5,28 @@ import {
 } from "../../services/scriptRuntimeStore.js";
 
 import type {
+  ScriptRunSource,
+} from "../../services/scriptRuntimeStore.js";
+
+import type {
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
+
+function normalizeScriptRunSource(
+  value: unknown
+): ScriptRunSource {
+  switch (value) {
+    case "property-panel":
+    case "route-button":
+    case "control-panel":
+    case "auto-start":
+    case "unknown":
+      return value;
+
+    default:
+      return "unknown";
+  }
+}
 
 export const handleScriptMessage: WsMessageHandler = async ({
   ws,
@@ -22,9 +42,9 @@ export const handleScriptMessage: WsMessageHandler = async ({
             : undefined;
 
         const source =
-          typeof msg.data?.source === "string"
-            ? msg.data.source
-            : "unknown";
+          normalizeScriptRunSource(
+            msg.data?.source
+          );
 
         const elementId =
           typeof msg.data?.elementId === "string"

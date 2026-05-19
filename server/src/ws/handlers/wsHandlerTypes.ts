@@ -9,7 +9,7 @@ import type {
 } from "../../commandCenter/CommandCenter.js";
 
 import type {
-  WsMessage,
+  ClientWsMessageUnion,
 } from "../../../../common/src/types.js";
 
 export type SendToClient = (
@@ -24,7 +24,7 @@ export type BroadcastToClients = (
 
 export type WsHandlerContext = {
   ws: WebSocket;
-  msg: WsMessage;
+  msg: ClientWsMessageUnion;
   commandCenter: CommandCenter;
   sendToClient: SendToClient;
   broadcast: BroadcastToClients;
