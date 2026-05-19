@@ -34,13 +34,16 @@ import { routeGraphStore } from "../../services/routeGraphStore";
 import { taskManager } from "../../services/tasks/taskManagerSingleton";
 import type {
     TrainTask,
-    TrainTaskStatus,
 } from "../../services/tasks/TaskTypes";
 import {
     showErrorMessage,
     showOkMessage,
     showWarningMessage,
 } from "../../helpers";
+import {
+    getTaskStatusColor,
+    getTaskStatusLabel,
+} from "../tasks/taskUiHelpers";
 
 import type {
     BlockRouteSolution,
@@ -390,42 +393,6 @@ export default function TaskManagerDialog({
         setDeleteTask(null);
     };
 
-    function getStatusColor(status: TrainTaskStatus): string {
-        switch (status) {
-            case "queued":
-                return "gray";
-            case "running":
-                return "green";
-            case "paused":
-                return "yellow";
-            case "finishing":
-                return "orange";
-            case "aborted":
-                return "red";
-            case "completed":
-                return "blue";
-            case "error":
-                return "red";
-        }
-    }
-    function getStatusLabel(status: TrainTaskStatus): string {
-        switch (status) {
-            case "queued":
-                return "Queued";
-            case "running":
-                return "Running";
-            case "paused":
-                return "Paused";
-            case "finishing":
-                return "Finishing";
-            case "aborted":
-                return "Aborted";
-            case "completed":
-                return "Completed";
-            case "error":
-                return "Error";
-        }
-    }
     function renderTurnoutRequirementBadges(
         turnoutStates: { address: number; closed: boolean }[]
     ) {
@@ -1087,10 +1054,10 @@ export default function TaskManagerDialog({
 
             <Table.Td>
                 <Badge
-                    color={getStatusColor(task.status)}
+                    color={getTaskStatusColor(task.status)}
                     variant="light"
                 >
-                    {getStatusLabel(task.status)}
+                    {getTaskStatusLabel(task.status)}
                 </Badge>
             </Table.Td>
 
@@ -1569,10 +1536,10 @@ export default function TaskManagerDialog({
 
                                     {selectedTask && (
                                         <Badge
-                                            color={getStatusColor(selectedTask.status)}
+                                            color={getTaskStatusColor(selectedTask.status)}
                                             variant="light"
                                         >
-                                            {getStatusLabel(selectedTask.status)}
+                                            {getTaskStatusLabel(selectedTask.status)}
                                         </Badge>
                                     )}
                                 </Group>
