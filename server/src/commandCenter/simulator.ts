@@ -104,7 +104,7 @@ export class CommandCenterSimulator extends CommandCenter {
   }
 
   setBasicAccessory(address: number, active: boolean): Promise<boolean> {
-    log("Sim: setBasicAccessory", { address, active });
+    //log("Sim: setBasicAccessory", { address, active });
     const accessory = this.getOrCreateAccessory(address);
     accessory.active = active;
 

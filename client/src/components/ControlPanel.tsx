@@ -4,10 +4,12 @@ import {
 } from "react";
 
 import {
+  ActionIcon,
   Badge,
   Box,
   Button,
   Card,
+  Collapse,
   Divider,
   Group,
   ScrollArea,
@@ -15,12 +17,14 @@ import {
   Table,
   Tabs,
   Text,
-  TextInput
+  TextInput,
+  Tooltip
 } from "@mantine/core";
 import {
   IconAlertTriangle,
   IconBolt,
   IconCheck,
+  IconChevronDown,
   IconDeviceGamepad2,
   IconEye,
   IconPlayerPause,
@@ -70,6 +74,11 @@ type ControlPanelProps = {
 
 const CONTROL_PANEL_ACTIVE_TAB_KEY = "dcc-express.control-panel.active-tab";
 const DEFAULT_CONTROL_PANEL_TAB = "command-center";
+const ROUTE_TASK_CONTROL_COLLAPSED_KEY =
+  "dcc-express.controller.route-task-control.collapsed";
+
+const TASK_LIST_COLLAPSED_KEY =
+  "dcc-express.controller.task-list.collapsed";
 
 export default function ControlPanel(p: ControlPanelProps) {
   //const [activeTab, setActiveTab] = useState<string | null>("command-center");
@@ -447,6 +456,20 @@ function ControllerTab() {
   const [fromBlockName, setFromBlockName] = useState("A1");
   const [toBlockName, setToBlockName] = useState("C1");
 
+  const [routeTaskControlCollapsed, setRouteTaskControlCollapsed] =
+    useState<boolean>(() =>
+      window.localStorage.getItem(
+        ROUTE_TASK_CONTROL_COLLAPSED_KEY
+      ) === "true"
+    );
+
+  const [taskListCollapsed, setTaskListCollapsed] =
+    useState<boolean>(() =>
+      window.localStorage.getItem(
+        TASK_LIST_COLLAPSED_KEY
+      ) === "true"
+    );
+
   const runTaskAction = async (
     action: () => Promise<{ ok: true } | { ok: false; error: string }>
   ) => {
@@ -775,6 +798,32 @@ function ControllerTab() {
     wsApi.clearAllRouteReservations();
   };
 
+  const toggleRouteTaskControlCollapsed = () => {
+    setRouteTaskControlCollapsed(current => {
+      const next = !current;
+
+      window.localStorage.setItem(
+        ROUTE_TASK_CONTROL_COLLAPSED_KEY,
+        String(next)
+      );
+
+      return next;
+    });
+  };
+
+  const toggleTaskListCollapsed = () => {
+    setTaskListCollapsed(current => {
+      const next = !current;
+
+      window.localStorage.setItem(
+        TASK_LIST_COLLAPSED_KEY,
+        String(next)
+      );
+
+      return next;
+    });
+  };
+
   return (
     <>
       <TaskManagerDialog
@@ -794,17 +843,47 @@ function ControllerTab() {
           p="sm"
         >
           <Stack gap="sm">
-            <Group justify="space-between" align="center">
+            <Group justify="space-between" align="center" wrap="nowrap">
               <Text size="sm" fw={700}>
                 Route & Task control
               </Text>
 
-              <Badge variant="light">
-                {snapshot.tasks.length} task
-              </Badge>
+              <Group gap="xs" wrap="nowrap">
+                <Badge variant="light">
+                  {snapshot.tasks.length} task
+                </Badge>
+
+                <Tooltip
+                  label={
+                    routeTaskControlCollapsed
+                      ? "Expand route and task controls"
+                      : "Collapse route and task controls"
+                  }
+                >
+                  <ActionIcon
+                    size="sm"
+                    variant="light"
+                    color="gray"
+                    onClick={toggleRouteTaskControlCollapsed}
+                  >
+                    <IconChevronDown
+                      size={16}
+                      style={{
+                        transform: routeTaskControlCollapsed
+                          ? "rotate(-90deg)"
+                          : "rotate(0deg)",
+                        transition: "transform 150ms ease",
+                      }}
+                    />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
             </Group>
 
-            <Divider />
+            <Collapse expanded={!routeTaskControlCollapsed}>
+              <Stack gap="sm">
+
+                <Divider />
 
             <Group align="end" gap="xs">
               <TextInput
@@ -918,6 +997,8 @@ function ControllerTab() {
                 Abort all tasks
               </Button>
             </Group>
+              </Stack>
+            </Collapse>
           </Stack>
         </Card>
 
@@ -935,17 +1016,47 @@ function ControllerTab() {
             offsetScrollbars
           >
             <Stack gap="sm">
-              <Group justify="space-between" align="center">
+              <Group justify="space-between" align="center" wrap="nowrap">
                 <Text size="sm" fw={700}>
                   Task list
                 </Text>
 
-                <Badge variant="light">
-                  {snapshot.tasks.length} task
-                </Badge>
+                <Group gap="xs" wrap="nowrap">
+                  <Badge variant="light">
+                    {snapshot.tasks.length} task
+                  </Badge>
+
+                  <Tooltip
+                    label={
+                      taskListCollapsed
+                        ? "Expand task list"
+                        : "Collapse task list"
+                    }
+                  >
+                    <ActionIcon
+                      size="sm"
+                      variant="light"
+                      color="gray"
+                      onClick={toggleTaskListCollapsed}
+                    >
+                      <IconChevronDown
+                        size={16}
+                        style={{
+                          transform: taskListCollapsed
+                            ? "rotate(-90deg)"
+                            : "rotate(0deg)",
+                          transition: "transform 150ms ease",
+                        }}
+                      />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
               </Group>
 
-              <Divider />
+              <Collapse expanded={!taskListCollapsed}>
+                <Stack gap="sm">
+
+                  <Divider />
 
               {snapshot.tasks.length === 0 ? (
                 <Text size="sm" c="dimmed">
@@ -1021,6 +1132,8 @@ function ControllerTab() {
                   ))}
                 </Stack>
               )}
+                </Stack>
+              </Collapse>
             </Stack>
           </ScrollArea.Autosize>
         </Card>
