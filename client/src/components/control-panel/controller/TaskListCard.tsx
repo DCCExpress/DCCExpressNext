@@ -2,24 +2,13 @@
 
 import {
   Badge,
-  Button,
-  Card,
-  Group,
   ScrollArea,
   Stack,
   Text,
 } from "@mantine/core";
 
-import {
-  IconCheck,
-  IconPlayerPause,
-  IconPlayerPlay,
-  IconPlayerStop,
-} from "@tabler/icons-react";
-
 import type {
   TaskManagerSnapshot,
-  TrainTask,
 } from "../../../services/tasks/TaskTypes";
 
 import {
@@ -31,16 +20,14 @@ import {
 } from "../../../services/tasks/taskManagerSingleton";
 
 import CollapsiblePanelCard from "../../common/CollapsiblePanelCard";
-
-import {
-  getTaskProgressColor,
-  getTaskProgressLabel,
-  getTaskStatusColor,
-  getTaskStatusLabel,
-} from "../../tasks/taskUiHelpers";
+import TaskListItemCard from "./TaskListItemCard";
 
 const TASK_LIST_COLLAPSED_KEY =
   "dcc-express.controller.task-list.collapsed";
+
+type TaskActionResult =
+  | { ok: true }
+  | { ok: false; error: string };
 
 type TaskListCardProps = {
   snapshot: TaskManagerSnapshot;
@@ -50,10 +37,7 @@ export default function TaskListCard({
   snapshot,
 }: TaskListCardProps) {
   const runTaskAction = async (
-    action: () => Promise<
-      | { ok: true }
-      | { ok: false; error: string }
-    >
+    action: () => Promise<TaskActionResult>
   ): Promise<void> => {
     const result =
       await action();
@@ -63,185 +47,6 @@ export default function TaskListCard({
         "ERROR",
         result.error
       );
-    }
-  };
-
-  const renderTaskControls = (
-    task: TrainTask
-  ) => {
-    switch (task.status) {
-      case "queued":
-        return (
-          <Button
-            size="xs"
-            variant="light"
-            color="green"
-            leftSection={
-              <IconPlayerPlay size={14} />
-            }
-            onClick={() =>
-              void runTaskAction(
-                () => taskManager.startTask(task.id)
-              )
-            }
-          >
-            Start
-          </Button>
-        );
-
-      case "running":
-        return (
-          <Group
-            gap="xs"
-            grow
-          >
-            <Button
-              size="xs"
-              variant="light"
-              color="yellow"
-              leftSection={
-                <IconPlayerPause size={14} />
-              }
-              onClick={() =>
-                void runTaskAction(
-                  () => taskManager.pauseTask(task.id)
-                )
-              }
-            >
-              Pause
-            </Button>
-
-            <Button
-              size="xs"
-              variant="light"
-              color="orange"
-              leftSection={
-                <IconCheck size={14} />
-              }
-              onClick={() =>
-                void runTaskAction(
-                  () => taskManager.finishTask(task.id)
-                )
-              }
-            >
-              Finish
-            </Button>
-
-            <Button
-              size="xs"
-              variant="light"
-              color="red"
-              leftSection={
-                <IconPlayerStop size={14} />
-              }
-              onClick={() =>
-                void runTaskAction(
-                  () => taskManager.abortTask(task.id)
-                )
-              }
-            >
-              Abort
-            </Button>
-          </Group>
-        );
-
-      case "paused":
-        return (
-          <Group
-            gap="xs"
-            grow
-          >
-            <Button
-              size="xs"
-              variant="light"
-              color="green"
-              leftSection={
-                <IconPlayerPlay size={14} />
-              }
-              onClick={() =>
-                void runTaskAction(
-                  () => taskManager.resumeTask(task.id)
-                )
-              }
-            >
-              Resume
-            </Button>
-
-            <Button
-              size="xs"
-              variant="light"
-              color="orange"
-              leftSection={
-                <IconCheck size={14} />
-              }
-              onClick={() =>
-                void runTaskAction(
-                  () => taskManager.finishTask(task.id)
-                )
-              }
-            >
-              Finish
-            </Button>
-
-            <Button
-              size="xs"
-              variant="light"
-              color="red"
-              leftSection={
-                <IconPlayerStop size={14} />
-              }
-              onClick={() =>
-                void runTaskAction(
-                  () => taskManager.abortTask(task.id)
-                )
-              }
-            >
-              Abort
-            </Button>
-          </Group>
-        );
-
-      case "finishing":
-        return (
-          <Button
-            size="xs"
-            variant="light"
-            color="red"
-            leftSection={
-              <IconPlayerStop size={14} />
-            }
-            onClick={() =>
-              void runTaskAction(
-                () => taskManager.abortTask(task.id)
-              )
-            }
-          >
-            Abort
-          </Button>
-        );
-
-      case "aborted":
-      case "completed":
-        return (
-          <Button
-            size="xs"
-            variant="light"
-            color="green"
-            leftSection={
-              <IconPlayerPlay size={14} />
-            }
-            onClick={() =>
-              void runTaskAction(
-                () => taskManager.startTask(task.id)
-              )
-            }
-          >
-            Start again
-          </Button>
-        );
-
-      case "error":
-        return null;
     }
   };
 
@@ -274,99 +79,28 @@ export default function TaskListCard({
         ) : (
           <Stack gap="sm">
             {snapshot.tasks.map(task => (
-              <Card
+              <TaskListItemCard
                 key={task.id}
-                withBorder
-                radius="sm"
-                p="xs"
-              >
-                <Stack gap="xs">
-                  <Group
-                    justify="space-between"
-                    align="flex-start"
-                  >
-                    <Stack gap={2}>
-                      <Text
-                        size="sm"
-                        fw={700}
-                      >
-                        {task.name}
-                      </Text>
-
-                      <Group
-                        gap="xs"
-                        wrap="wrap"
-                      >
-                        {task.runtime.loco && (
-                          <>
-                            <Badge
-                              color="indigo"
-                              variant="light"
-                            >
-                              {task.runtime.loco.name}
-                            </Badge>
-
-                            <Badge
-                              color="gray"
-                              variant="light"
-                            >
-                              Address {task.runtime.loco.address}
-                            </Badge>
-                          </>
-                        )}
-
-                        <Badge
-                          color="cyan"
-                          variant="light"
-                        >
-                          Speed {task.targetSpeed}
-                        </Badge>
-                      </Group>
-                    </Stack>
-
-                    <Badge
-                      size="sm"
-                      color={getTaskStatusColor(task.status)}
-                      variant="light"
-                    >
-                      {getTaskStatusLabel(task.status)}
-                    </Badge>
-                  </Group>
-
-                  <Group
-                    gap="xs"
-                    wrap="wrap"
-                  >
-                    <Badge
-                      color="violet"
-                      variant="filled"
-                    >
-                      {task.transition.fromBlock.name}
-                    </Badge>
-
-                    <Text fw={700}>→</Text>
-
-                    <Badge
-                      color="violet"
-                      variant="filled"
-                    >
-                      {task.transition.toBlock.name}
-                    </Badge>
-                  </Group>
-
-                  <Badge
-                    color={getTaskProgressColor(task)}
-                    variant="light"
-                    style={{
-                      alignSelf: "flex-start",
-                    }}
-                  >
-                    {getTaskProgressLabel(task)}
-                  </Badge>
-
-                  {renderTaskControls(task)}
-                </Stack>
-              </Card>
+                task={task}
+                onStart={() =>
+                  taskManager.startTask(task.id)
+                }
+                onPause={() =>
+                  taskManager.pauseTask(task.id)
+                }
+                onResume={() =>
+                  taskManager.resumeTask(task.id)
+                }
+                onFinish={() =>
+                  taskManager.finishTask(task.id)
+                }
+                onAbort={() =>
+                  taskManager.abortTask(task.id)
+                }
+                onRunTaskAction={action => {
+                  void runTaskAction(action);
+                }}
+              />
             ))}
           </Stack>
         )}
