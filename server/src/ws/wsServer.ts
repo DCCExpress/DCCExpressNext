@@ -1,6 +1,6 @@
 import type http from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
-import { AccessoryChangedMessage, CommandCenterInfo, TurnoutChangedMessage, WsMessage } from "../../../common/src/types.js";
+import { WsMessage } from "../../../common/src/types.js";
 import { CommandCenterConfig, readCommandCenter, setCommandCenterConfigLoadedCallback } from "../routes/commandCenterRoutes.js";
 import { CommandCenter } from "../commandCenter/CommandCenter.js";
 import { CommandCenterSimulator } from "../commandCenter/simulator.js";
@@ -11,38 +11,11 @@ import { railwayTopologyStore } from "../services/railwayTopologyStore.js";
 import { scriptRuntimeStore } from "../services/scriptRuntimeStore.js";
 import { taskRuntimeStore } from "../services/taskRuntimeStore.js";
 import { fastClockRuntimeStore } from "../services/fastClockRuntimeStore.js";
+import { configureWebSocketRuntimes } from "./wsRuntimeConfiguration.js";
+import { sendInitialWebSocketSnapshots } from "./wsInitialSnapshots.js";
 
 
-// type SetTurnoutMessage = {
-//   type: "setTurnout";
-//   data: {
-//     address: number;
-//     closed: boolean;
-//   };
-// };
 
-// type SetSensorMessage = {
-//   type: "setSensor";
-//   data: {
-//     address: number;
-//     on: boolean;
-//   };
-// };
-
-// type CommandCenterInfo = {
-//   type: "commandCenterInfo";
-//   data: {
-//     type: string;
-//     alive: boolean;
-//   }
-// }
-// type WsMessage =
-//   | SetTurnoutMessage
-//   | SetSensorMessage
-//   | {
-//       type: string;
-//       data?: any;
-//     };
 
 function sendToClient(ws: WebSocket, message: unknown) {
   if (ws.readyState === WebSocket.OPEN) {
@@ -159,116 +132,6 @@ function getLogicalTurnoutState(
   );
 }
 
-function configureScriptRuntime() {
-  scriptRuntimeStore.configure({
-    broadcast: message => {
-      broadcastAll(message);
-    },
-
-    commands: {
-      setTrackPower: async (on: boolean) => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.setTrackPower(on);
-      },
-
-      emergencyStop: async () => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.emergencyStop();
-      },
-
-      setTurnout: async (
-        address: number,
-        closed: boolean
-      ) => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.setTurnout(
-          address,
-          closed
-        );
-      },
-
-      getTurnoutState: (
-        address: number
-      ) => {
-        return getLogicalTurnoutState(address);
-      },
-
-      setLocoFunction: async (
-        address: number,
-        fn: number,
-        active: boolean
-      ) => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.setLocoFunction(
-          address,
-          fn,
-          active
-        );
-      },
-
-      setBasicAccessory: async (
-        address: number,
-        active: boolean
-      ) => {
-        if (!commandCenter) {
-          return false;
-        }
-
-        return commandCenter.setBasicAccessory(
-          address,
-          active
-        );
-      },
-
-      isTurnoutBusy: (
-        address: number
-      ) => {
-        return routeGraphRuntimeStore.isTurnoutBusy(
-          address
-        );
-      },
-    },
-  });
-}
-
-function configureFastClockRuntime() {
-  fastClockRuntimeStore.configure({
-    broadcast: message => {
-      broadcastAll(message);
-    },
-  });
-}
-function configureTaskRuntime() {
-  taskRuntimeStore.configure({
-    broadcast: message => {
-      broadcastAll(message);
-    },
-
-    getBlockState: (
-      blockId: string
-    ) => {
-      return commandCenter?.getBlockState(blockId) ?? null;
-    },
-
-    getSimulatorCommandCenter: () => {
-      return commandCenter instanceof CommandCenterSimulator
-        ? commandCenter
-        : null;
-    },
-  });
-}
 setCommandCenterConfigLoadedCallback((conf: CommandCenterConfig | null) => {
   log("Command center config loaded:", conf);
   initCommandCenter(conf);
@@ -297,9 +160,14 @@ export function setupWebSocketServer(server: http.Server) {
     path: "/ws",
   });
 
-  configureScriptRuntime();
-  configureTaskRuntime();
-  configureFastClockRuntime();
+  configureWebSocketRuntimes({
+    broadcast: message => {
+      broadcastAll(message);
+    },
+
+    getCommandCenter: () => commandCenter,
+    getLogicalTurnoutState,
+  });
 
   readCommandCenter()
     .then(async conf => {
@@ -325,277 +193,48 @@ export function setupWebSocketServer(server: http.Server) {
   wss.on("connection", (ws, req) => {
     log("WebSocket client connected:", req.socket.remoteAddress);
     let clientUUID: string | null = null;
-    sendToClient(ws, {
-      type: "ws:welcome",
-      data: { message: "Connected" },
+    sendInitialWebSocketSnapshots({
+      ws,
+      commandCenter,
+      sendToClient,
     });
-
-    sendToClient(ws, {
-      type: "scriptDocumentChanged",
-      data: scriptRuntimeStore.getDocument(),
-    });
-
-    sendToClient(ws, {
-      type: "scriptStateChanged",
-      data: scriptRuntimeStore.getCurrentState(),
-    });
-    sendToClient(ws, {
-      type: "taskManagerSnapshotChanged",
-      data: taskRuntimeStore.getSnapshot(),
-    });
-
-    sendToClient(ws, {
-      type: "fastClockChanged",
-      data: fastClockRuntimeStore.getSnapshot(),
-    });
-
-    // sendToClient(ws, {
-    //   type: "commandCenterInfo",
-    //   data: { alive: false }
-    // } as CommandCenterInfo)
-
-    if (!commandCenter) {
-      sendToClient(ws, {
-        type: "commandCenterInfo",
-        data: { alive: false },
-      } as CommandCenterInfo);
-    }
-
-    if (commandCenter) {
-
-      commandCenter.clientConnected();
-
-      sendToClient(ws, {
-        type: "commandCenterLockChanged",
-        data: {
-          locked: commandCenter.locked,
-          lockOwner: commandCenter.lockOwnerUUID ?? null,
-          reason: commandCenter.locked ? "route" : null,
-        },
-      });
-
-      const locos = commandCenter.getLocos();
-      for (const loco of locos) {
-        sendToClient(ws, {
-          type: "locoState",
-          data: { loco },
-        });
-      }
-
-      const turnouts = commandCenter.getTurnouts();
-      log("Turnouts", turnouts)
-      for (const turnout of turnouts) {
-
-        const msg: TurnoutChangedMessage = {
-          type: "turnoutChanged",
-          data: {
-            address: turnout.address,
-            closed: turnout.closed,
-          },
-        };
-        sendToClient(ws, msg);
-      }
-
-      commandCenter.getBlocks();
-
-      const accessories = commandCenter.getAccessories();
-      for (const accessory of accessories) {
-
-        const msg: AccessoryChangedMessage = {
-          type: "accessoryChanged",
-          data: {
-            address: accessory.address,
-            active: accessory.active,
-          },
-        };
-        sendToClient(ws, msg);
-      }
-
-      // const data = { type: "blockStateChanged", data: Object.fromEntries(commandCenter.blocks), uuid: null };
-      // sendToClient(ws, data);
-
-    }
 
     ws.on("message", async (message) => {
+      ws.on("message", async (message) => {
 
-      const text = message.toString();
-      log("WS incoming:", text);
+        const text = message.toString();
+        log("WS incoming:", text);
 
-      if (commandCenter) {
-        //log("Current command center:", commandCenter.getName());
-        try {
+        if (commandCenter) {
+          //log("Current command center:", commandCenter.getName());
+          try {
 
-          const msg = JSON.parse(text) as WsMessage;
+            const msg = JSON.parse(text) as WsMessage;
 
-          if (msg.uuid) {
-            clientUUID = msg.uuid;
-          }
-
-
-          log("Received message of type:", msg.type);
-          switch (msg.type) {
-
-            //===============================
-            // LOCK & UNLOCK
-            //===============================
-            case "routeLock": {
-              if (commandCenter.locked && commandCenter.lockOwnerUUID !== msg.uuid) {
-                sendToClient(ws, {
-                  type: "commandRejected",
-                  uuid: msg.uuid,
-                  data: {
-                    reason: "Command center busy",
-                    lockOwner: commandCenter.lockOwnerUUID,
-                  },
-                });
-                return;
-              }
-
-              commandCenter.locked = true;
-              commandCenter.lockOwnerUUID = msg.uuid;
-
-              broadcast(wss, {
-                type: "commandCenterLockChanged",
-                data: {
-                  locked: true,
-                  lockOwner: commandCenter.lockOwnerUUID,
-
-                },
-              });
-
-              return;
-            }
-
-            case "routeUnlock": {
-              if (commandCenter.lockOwnerUUID === msg.uuid) {
-                commandCenter.locked = false;
-                commandCenter.lockOwnerUUID = null;
-
-                broadcast(wss, {
-                  type: "commandCenterLockChanged",
-                  data: {
-                    locked: false,
-                    lockOwner: null,
-                  },
-                });
-              }
-
-              return;
+            if (msg.uuid) {
+              clientUUID = msg.uuid;
             }
 
 
+            log("Received message of type:", msg.type);
+            switch (msg.type) {
 
+              //===============================
+              // LOCK & UNLOCK
+              //===============================
+              case "routeLock": {
+                if (commandCenter.locked && commandCenter.lockOwnerUUID !== msg.uuid) {
+                  sendToClient(ws, {
+                    type: "commandRejected",
+                    uuid: msg.uuid,
+                    data: {
+                      reason: "Command center busy",
+                      lockOwner: commandCenter.lockOwnerUUID,
+                    },
+                  });
+                  return;
+                }
 
-            // ================================
-            // GRAPH/ROUTES
-            // ================================
-
-            case "reserveRoute": {
-              const fromBlockName = msg.data?.fromBlockName;
-              const toBlockName = msg.data?.toBlockName;
-
-              if (
-                typeof fromBlockName !== "string" ||
-                typeof toBlockName !== "string"
-              ) {
-                sendToClient(ws, {
-                  type: "routeReservationRejected",
-                  data: {
-                    reason: "Invalid reserveRoute payload.",
-                  },
-                });
-
-                return;
-              }
-
-              const graph = routeGraphRuntimeStore.getGraph();
-
-              if (!graph) {
-                sendToClient(ws, {
-                  type: "routeReservationRejected",
-                  data: {
-                    reason: "Nincs aktív szerveroldali route graph.",
-                  },
-                });
-
-                return;
-              }
-
-              const solution =
-                graph.findRouteBetweenBlockNames(
-                  fromBlockName,
-                  toBlockName
-                );
-
-              if (!solution) {
-                sendToClient(ws, {
-                  type: "routeReservationRejected",
-                  data: {
-                    reason: `Nincs útvonal: ${fromBlockName} → ${toBlockName}`,
-                  },
-                });
-
-                return;
-              }
-
-              const topology =
-                railwayTopologyStore.getTopology();
-
-              if (!topology) {
-                sendToClient(ws, {
-                  type: "routeReservationRejected",
-                  data: {
-                    reason: "Nincs aktív szerveroldali topology.",
-                  },
-                });
-
-                return;
-              }
-
-              const reservation =
-                routeGraphRuntimeStore.tryReserveRoute(
-                  fromBlockName,
-                  toBlockName,
-                  solution
-                );
-
-              if (!reservation.ok) {
-                sendToClient(ws, {
-                  type: "routeReservationRejected",
-                  data: {
-                    reason: reservation.error,
-                  },
-                });
-
-                return;
-              }
-
-              /**
-               * A route foglalása már sikerült,
-               * ezt rögtön broadcastoljuk minden kliensnek.
-               */
-              broadcast(wss, {
-                type: "routeReservationChanged",
-                data: {
-                  busy: true,
-                  sectionNames:
-                    reservation.reservation.sectionNames,
-                  elementIds:
-                    routeGraphRuntimeStore.getElementIdsForSections(
-                      reservation.reservation.sectionNames
-                    ),
-                  turnoutAddresses:
-                    reservation.reservation.turnoutAddresses,
-                  fromBlockName,
-                  toBlockName,
-                },
-              });
-
-              /**
-               * A fizikai váltóállítás idejére lockoljuk a command centert.
-               * Ettől villog a StatusBar busy/lock jelzése.
-               */
-              if (commandCenter) {
                 commandCenter.locked = true;
                 commandCenter.lockOwnerUUID = msg.uuid;
 
@@ -604,58 +243,15 @@ export function setupWebSocketServer(server: http.Server) {
                   data: {
                     locked: true,
                     lockOwner: commandCenter.lockOwnerUUID,
-                    reason: "route",
+
                   },
                 });
+
+                return;
               }
 
-              try {
-                /**
-                 * A graph logikai closed értékét átfordítjuk
-                 * az adott váltó fizikai command-center boolean értékére.
-                 */
-                for (const turnoutState of solution.turnoutStates) {
-                  const turnout = topology
-                    .getTurnouts()
-                    .find(
-                      item =>
-                        item.turnoutAddress === turnoutState.address
-                    );
-
-                  if (!turnout) {
-                    logError(
-                      `[RouteReserve] Turnout not found in topology: ${turnoutState.address}`
-                    );
-
-                    continue;
-                  }
-
-                  const physicalClosed =
-                    turnoutState.closed === turnout.turnoutClosedValue;
-
-                  if (commandCenter) {
-                    await commandCenter.setTurnout(
-                      turnoutState.address,
-                      physicalClosed
-                    );
-
-                    commandCenter.saveRuntimeState();
-                  }
-
-                  await new Promise<void>(resolve =>
-                    setTimeout(resolve, 500)
-                  );
-                }
-              } finally {
-                /**
-                 * A műveleti lockot akkor is elengedjük,
-                 * ha váltóállítás közben történik valami gebasz.
-                 *
-                 * FONTOS:
-                 * Ez csak a command center lock,
-                 * maga a route reservation továbbra is megmarad.
-                 */
-                if (commandCenter) {
+              case "routeUnlock": {
+                if (commandCenter.lockOwnerUUID === msg.uuid) {
                   commandCenter.locked = false;
                   commandCenter.lockOwnerUUID = null;
 
@@ -664,673 +260,863 @@ export function setupWebSocketServer(server: http.Server) {
                     data: {
                       locked: false,
                       lockOwner: null,
-                      reason: null,
                     },
                   });
                 }
-              }
-
-              return;
-            }
-            case "releaseRouteReservation": {
-              const fromBlockName = msg.data?.fromBlockName;
-              const toBlockName = msg.data?.toBlockName;
-
-              if (
-                typeof fromBlockName !== "string" ||
-                typeof toBlockName !== "string"
-              ) {
-                sendToClient(ws, {
-                  type: "routeReservationReleaseRejected",
-                  data: {
-                    reason: "Invalid releaseRouteReservation payload.",
-                  },
-                });
 
                 return;
               }
 
-              const result =
-                routeGraphRuntimeStore.releaseRouteReservation(
-                  fromBlockName,
-                  toBlockName
-                );
 
-              if (!result.ok) {
-                sendToClient(ws, {
-                  type: "routeReservationReleaseRejected",
-                  data: {
-                    reason: result.error,
-                  },
-                });
 
-                return;
-              }
 
-              broadcast(wss, {
-                type: "routeReservationChanged",
-                data: {
-                  busy: false,
-                  sectionNames: result.releasedSectionNames,
-                  elementIds:
-                    routeGraphRuntimeStore.getElementIdsForSections(
-                      result.releasedSectionNames
-                    ),
-                  turnoutAddresses:
-                    result.releasedTurnoutAddresses,
-                  fromBlockName,
-                  toBlockName,
-                },
-              });
+              // ================================
+              // GRAPH/ROUTES
+              // ================================
 
-              sendToClient(ws, {
-                type: "routeReservationReleased",
-                data: {
-                  fromBlockName,
-                  toBlockName,
-                  releasedSectionNames: result.releasedSectionNames,
-                  retainedSectionNames: result.retainedSectionNames,
-                  releasedTurnoutAddresses:
-                    result.releasedTurnoutAddresses,
-                  retainedTurnoutAddresses:
-                    result.retainedTurnoutAddresses,
-                },
-              });
+              case "reserveRoute": {
+                const fromBlockName = msg.data?.fromBlockName;
+                const toBlockName = msg.data?.toBlockName;
 
-              return;
-            }
+                if (
+                  typeof fromBlockName !== "string" ||
+                  typeof toBlockName !== "string"
+                ) {
+                  sendToClient(ws, {
+                    type: "routeReservationRejected",
+                    data: {
+                      reason: "Invalid reserveRoute payload.",
+                    },
+                  });
 
-            case "clearAllRouteReservations": {
-              routeGraphRuntimeStore.clearAllBusy();
+                  return;
+                }
 
-              broadcast(wss, {
-                type: "allRouteReservationsCleared",
-                data: {},
-              });
+                const graph = routeGraphRuntimeStore.getGraph();
 
-              return;
-            }
+                if (!graph) {
+                  sendToClient(ws, {
+                    type: "routeReservationRejected",
+                    data: {
+                      reason: "Nincs aktív szerveroldali route graph.",
+                    },
+                  });
 
-            case "getRouteReservations": {
-              const reservations =
-                routeGraphRuntimeStore.getActiveReservations();
+                  return;
+                }
 
-              for (const reservation of reservations) {
-                sendToClient(ws, {
+                const solution =
+                  graph.findRouteBetweenBlockNames(
+                    fromBlockName,
+                    toBlockName
+                  );
+
+                if (!solution) {
+                  sendToClient(ws, {
+                    type: "routeReservationRejected",
+                    data: {
+                      reason: `Nincs útvonal: ${fromBlockName} → ${toBlockName}`,
+                    },
+                  });
+
+                  return;
+                }
+
+                const topology =
+                  railwayTopologyStore.getTopology();
+
+                if (!topology) {
+                  sendToClient(ws, {
+                    type: "routeReservationRejected",
+                    data: {
+                      reason: "Nincs aktív szerveroldali topology.",
+                    },
+                  });
+
+                  return;
+                }
+
+                const reservation =
+                  routeGraphRuntimeStore.tryReserveRoute(
+                    fromBlockName,
+                    toBlockName,
+                    solution
+                  );
+
+                if (!reservation.ok) {
+                  sendToClient(ws, {
+                    type: "routeReservationRejected",
+                    data: {
+                      reason: reservation.error,
+                    },
+                  });
+
+                  return;
+                }
+
+                /**
+                 * A route foglalása már sikerült,
+                 * ezt rögtön broadcastoljuk minden kliensnek.
+                 */
+                broadcast(wss, {
                   type: "routeReservationChanged",
                   data: {
                     busy: true,
-
                     sectionNames:
-                      reservation.sectionNames,
-
+                      reservation.reservation.sectionNames,
                     elementIds:
                       routeGraphRuntimeStore.getElementIdsForSections(
-                        reservation.sectionNames
+                        reservation.reservation.sectionNames
                       ),
-
                     turnoutAddresses:
-                      reservation.turnoutAddresses,
-
-                    fromBlockName:
-                      reservation.fromBlockName,
-
-                    toBlockName:
-                      reservation.toBlockName,
+                      reservation.reservation.turnoutAddresses,
+                    fromBlockName,
+                    toBlockName,
                   },
                 });
-              }
 
-              return;
-            }
-            //===============================
-            // setLoco
-            //===============================
-            case "setLoco": {
-              const address = msg.data?.locoAddress;
-              const speed = msg.data?.speed;
-              const direction = msg.data?.direction;
-              if (typeof address !== "number" || typeof speed !== "number" || (direction !== "forward" && direction !== "reverse")) {
-                logError("Invalid setLoco payload:", msg.data);
-                sendToClient(ws, {
-                  type: "error",
-                  data: { message: "Invalid setLoco payload" },
-                });
-                return;
-              }
-              commandCenter.setLoco(address, speed, direction).then(success => {
-                log("Set loco result:", success);
-                if (!success) {
+                /**
+                 * A fizikai váltóállítás idejére lockoljuk a command centert.
+                 * Ettől villog a StatusBar busy/lock jelzése.
+                 */
+                if (commandCenter) {
+                  commandCenter.locked = true;
+                  commandCenter.lockOwnerUUID = msg.uuid;
+
                   broadcast(wss, {
-                    type: "error",
-                    data: { message: "Failed to set loco" },
+                    type: "commandCenterLockChanged",
+                    data: {
+                      locked: true,
+                      lockOwner: commandCenter.lockOwnerUUID,
+                      reason: "route",
+                    },
                   });
-                } else {
-                  // Optionally, broadcast the new loco state to all clients
-                  // commandCenter!.getLoco(address).then(loco => {
-                  //   broadcast(wss, {
-                  //     type: "locoState",
-                  //     data: { loco },
-                  //   });
-                  // });
                 }
-              });
-              return;
-            }
-            //===============================
-            // setLocoFunction
-            //===============================
-            case "setLocoFunction": {
-              const address = msg.data?.locoAddress;
-              const fn = msg.data?.functionNumber;
-              const active = msg.data?.active;
-              if (typeof address !== "number" || typeof fn !== "number" || typeof active !== "boolean") {
-                logError("Invalid setLocoFunction payload:", msg.data);
-                sendToClient(ws, {
-                  type: "error",
-                  data: { message: "Invalid setLocoFunction payload" },
-                });
+
+                try {
+                  /**
+                   * A graph logikai closed értékét átfordítjuk
+                   * az adott váltó fizikai command-center boolean értékére.
+                   */
+                  for (const turnoutState of solution.turnoutStates) {
+                    const turnout = topology
+                      .getTurnouts()
+                      .find(
+                        item =>
+                          item.turnoutAddress === turnoutState.address
+                      );
+
+                    if (!turnout) {
+                      logError(
+                        `[RouteReserve] Turnout not found in topology: ${turnoutState.address}`
+                      );
+
+                      continue;
+                    }
+
+                    const physicalClosed =
+                      turnoutState.closed === turnout.turnoutClosedValue;
+
+                    if (commandCenter) {
+                      await commandCenter.setTurnout(
+                        turnoutState.address,
+                        physicalClosed
+                      );
+
+                      commandCenter.saveRuntimeState();
+                    }
+
+                    await new Promise<void>(resolve =>
+                      setTimeout(resolve, 500)
+                    );
+                  }
+                } finally {
+                  /**
+                   * A műveleti lockot akkor is elengedjük,
+                   * ha váltóállítás közben történik valami gebasz.
+                   *
+                   * FONTOS:
+                   * Ez csak a command center lock,
+                   * maga a route reservation továbbra is megmarad.
+                   */
+                  if (commandCenter) {
+                    commandCenter.locked = false;
+                    commandCenter.lockOwnerUUID = null;
+
+                    broadcast(wss, {
+                      type: "commandCenterLockChanged",
+                      data: {
+                        locked: false,
+                        lockOwner: null,
+                        reason: null,
+                      },
+                    });
+                  }
+                }
+
                 return;
               }
-              commandCenter.setLocoFunction(address, fn, active).then(success => {
-                log("Set loco function result:", success);
-                if (!success) {
-                  broadcast(wss, {
-                    type: "error",
-                    data: { message: "Failed to set loco function" },
+              case "releaseRouteReservation": {
+                const fromBlockName = msg.data?.fromBlockName;
+                const toBlockName = msg.data?.toBlockName;
+
+                if (
+                  typeof fromBlockName !== "string" ||
+                  typeof toBlockName !== "string"
+                ) {
+                  sendToClient(ws, {
+                    type: "routeReservationReleaseRejected",
+                    data: {
+                      reason: "Invalid releaseRouteReservation payload.",
+                    },
                   });
-                } else {
-                  // Optionally, broadcast the new loco state to all clients
-                  // commandCenter!.getLoco(address).then(loco => {
-                  //   log("Broadcasting loco state after function change:", loco);
-                  //   broadcast(wss, {
-                  //     type: "locoState",
-                  //     data: { loco },
-                  //   });
-                  // });
+
+                  return;
                 }
-              });
-              return;
-            }
 
-            //===============================
-            // getLoco
-            //===============================
-            case "getLoco": {
-              const address = msg.data?.locoAddress;
-              if (typeof address !== "number") {
-                sendToClient(ws, {
-                  type: "error",
-                  data: { message: "Invalid getLoco payload" },
-                });
-                return;
-              }
-              commandCenter.getLoco(address).then(loco => {
-                log("getLoco result:", loco);
-                // sendToClient(ws, {
-                //   type: "locoState",
-                //   data: { loco },
-                // });
-              }).catch(err => {
-                logError("Failed to get loco:", err);
-                sendToClient(ws, {
-                  type: "error",
-                  data: { message: "Failed to get loco" },
-                });
-              });
-              return;
-            }
+                const result =
+                  routeGraphRuntimeStore.releaseRouteReservation(
+                    fromBlockName,
+                    toBlockName
+                  );
 
-            //===============================
-            // setTurnout
-            //===============================
-            case "setTurnout": {
-              const address = msg.data?.address;
-              const closed = msg.data?.closed;
+                if (!result.ok) {
+                  sendToClient(ws, {
+                    type: "routeReservationReleaseRejected",
+                    data: {
+                      reason: result.error,
+                    },
+                  });
 
-              if (
-                typeof address !== "number" ||
-                typeof closed !== "boolean"
-              ) {
-                sendToClient(ws, {
-                  type: "error",
+                  return;
+                }
+
+                broadcast(wss, {
+                  type: "routeReservationChanged",
                   data: {
-                    message: "Invalid setTurnout payload",
+                    busy: false,
+                    sectionNames: result.releasedSectionNames,
+                    elementIds:
+                      routeGraphRuntimeStore.getElementIdsForSections(
+                        result.releasedSectionNames
+                      ),
+                    turnoutAddresses:
+                      result.releasedTurnoutAddresses,
+                    fromBlockName,
+                    toBlockName,
+                  },
+                });
+
+                sendToClient(ws, {
+                  type: "routeReservationReleased",
+                  data: {
+                    fromBlockName,
+                    toBlockName,
+                    releasedSectionNames: result.releasedSectionNames,
+                    retainedSectionNames: result.retainedSectionNames,
+                    releasedTurnoutAddresses:
+                      result.releasedTurnoutAddresses,
+                    retainedTurnoutAddresses:
+                      result.retainedTurnoutAddresses,
                   },
                 });
 
                 return;
               }
 
-              /**
-               * Ha a váltó aktív route foglalás része,
-               * kézzel nem engedjük átállítani.
-               */
-              if (routeGraphRuntimeStore.isTurnoutBusy(address)) {
-                sendToClient(ws, {
-                  type: "commandRejected",
-                  uuid: msg.uuid,
-                  data: {
-                    reason: `Turnout #${address} is reserved by an active route.`,
-                    lockOwner: null,
-                  },
+              case "clearAllRouteReservations": {
+                routeGraphRuntimeStore.clearAllBusy();
+
+                broadcast(wss, {
+                  type: "allRouteReservationsCleared",
+                  data: {},
                 });
 
                 return;
               }
 
-              /**
-               * A meglévő command center műveleti lock is marad:
-               * például route-beállítás közben se állítgatható kézzel.
-               */
-              if (
-                commandCenter.locked &&
-                commandCenter.lockOwnerUUID != msg.uuid
-              ) {
-                sendToClient(ws, {
-                  type: "commandRejected",
-                  uuid: msg.uuid,
-                  data: {
-                    reason: "Command center busy",
-                    lockOwner: commandCenter.lockOwnerUUID,
-                  },
+              case "getRouteReservations": {
+                const reservations =
+                  routeGraphRuntimeStore.getActiveReservations();
+
+                for (const reservation of reservations) {
+                  sendToClient(ws, {
+                    type: "routeReservationChanged",
+                    data: {
+                      busy: true,
+
+                      sectionNames:
+                        reservation.sectionNames,
+
+                      elementIds:
+                        routeGraphRuntimeStore.getElementIdsForSections(
+                          reservation.sectionNames
+                        ),
+
+                      turnoutAddresses:
+                        reservation.turnoutAddresses,
+
+                      fromBlockName:
+                        reservation.fromBlockName,
+
+                      toBlockName:
+                        reservation.toBlockName,
+                    },
+                  });
+                }
+
+                return;
+              }
+              //===============================
+              // setLoco
+              //===============================
+              case "setLoco": {
+                const address = msg.data?.locoAddress;
+                const speed = msg.data?.speed;
+                const direction = msg.data?.direction;
+                if (typeof address !== "number" || typeof speed !== "number" || (direction !== "forward" && direction !== "reverse")) {
+                  logError("Invalid setLoco payload:", msg.data);
+                  sendToClient(ws, {
+                    type: "error",
+                    data: { message: "Invalid setLoco payload" },
+                  });
+                  return;
+                }
+                commandCenter.setLoco(address, speed, direction).then(success => {
+                  log("Set loco result:", success);
+                  if (!success) {
+                    broadcast(wss, {
+                      type: "error",
+                      data: { message: "Failed to set loco" },
+                    });
+                  } else {
+                    // Optionally, broadcast the new loco state to all clients
+                    // commandCenter!.getLoco(address).then(loco => {
+                    //   broadcast(wss, {
+                    //     type: "locoState",
+                    //     data: { loco },
+                    //   });
+                    // });
+                  }
                 });
+                return;
+              }
+              //===============================
+              // setLocoFunction
+              //===============================
+              case "setLocoFunction": {
+                const address = msg.data?.locoAddress;
+                const fn = msg.data?.functionNumber;
+                const active = msg.data?.active;
+                if (typeof address !== "number" || typeof fn !== "number" || typeof active !== "boolean") {
+                  logError("Invalid setLocoFunction payload:", msg.data);
+                  sendToClient(ws, {
+                    type: "error",
+                    data: { message: "Invalid setLocoFunction payload" },
+                  });
+                  return;
+                }
+                commandCenter.setLocoFunction(address, fn, active).then(success => {
+                  log("Set loco function result:", success);
+                  if (!success) {
+                    broadcast(wss, {
+                      type: "error",
+                      data: { message: "Failed to set loco function" },
+                    });
+                  } else {
+                    // Optionally, broadcast the new loco state to all clients
+                    // commandCenter!.getLoco(address).then(loco => {
+                    //   log("Broadcasting loco state after function change:", loco);
+                    //   broadcast(wss, {
+                    //     type: "locoState",
+                    //     data: { loco },
+                    //   });
+                    // });
+                  }
+                });
+                return;
+              }
+
+              //===============================
+              // getLoco
+              //===============================
+              case "getLoco": {
+                const address = msg.data?.locoAddress;
+                if (typeof address !== "number") {
+                  sendToClient(ws, {
+                    type: "error",
+                    data: { message: "Invalid getLoco payload" },
+                  });
+                  return;
+                }
+                commandCenter.getLoco(address).then(loco => {
+                  log("getLoco result:", loco);
+                  // sendToClient(ws, {
+                  //   type: "locoState",
+                  //   data: { loco },
+                  // });
+                }).catch(err => {
+                  logError("Failed to get loco:", err);
+                  sendToClient(ws, {
+                    type: "error",
+                    data: { message: "Failed to get loco" },
+                  });
+                });
+                return;
+              }
+
+              //===============================
+              // setTurnout
+              //===============================
+              case "setTurnout": {
+                const address = msg.data?.address;
+                const closed = msg.data?.closed;
+
+                if (
+                  typeof address !== "number" ||
+                  typeof closed !== "boolean"
+                ) {
+                  sendToClient(ws, {
+                    type: "error",
+                    data: {
+                      message: "Invalid setTurnout payload",
+                    },
+                  });
+
+                  return;
+                }
+
+                /**
+                 * Ha a váltó aktív route foglalás része,
+                 * kézzel nem engedjük átállítani.
+                 */
+                if (routeGraphRuntimeStore.isTurnoutBusy(address)) {
+                  sendToClient(ws, {
+                    type: "commandRejected",
+                    uuid: msg.uuid,
+                    data: {
+                      reason: `Turnout #${address} is reserved by an active route.`,
+                      lockOwner: null,
+                    },
+                  });
+
+                  return;
+                }
+
+                /**
+                 * A meglévő command center műveleti lock is marad:
+                 * például route-beállítás közben se állítgatható kézzel.
+                 */
+                if (
+                  commandCenter.locked &&
+                  commandCenter.lockOwnerUUID != msg.uuid
+                ) {
+                  sendToClient(ws, {
+                    type: "commandRejected",
+                    uuid: msg.uuid,
+                    data: {
+                      reason: "Command center busy",
+                      lockOwner: commandCenter.lockOwnerUUID,
+                    },
+                  });
+
+                  return;
+                }
+
+                commandCenter
+                  .setTurnout(address, closed)
+                  .then(success => {
+                    log("Turnout set result:", success);
+
+                    if (!success) {
+                      broadcast(wss, {
+                        type: "error",
+                        data: {
+                          message: "Failed to set turnout",
+                        },
+                      });
+                    } else {
+                      commandCenter?.saveRuntimeState();
+                    }
+                  });
 
                 return;
               }
 
-              commandCenter
-                .setTurnout(address, closed)
-                .then(success => {
-                  log("Turnout set result:", success);
+              //===============================
+              // getSensor
+              //===============================
+              case "setSensor": {
+                const address = msg.data?.address;
+                const on = msg.data?.on;
+                if (typeof address !== "number" || typeof on !== "boolean") {
+                  sendToClient(ws, {
+                    type: "error",
+                    data: { message: "Invalid setSensor payload" },
+                  });
+                  return;
+                }
+                return;
+              }
+
+              //===============================
+              // setBasicAccessory
+              //===============================
+              case "setBasicAccessory": {
+                const address = msg.data?.address;
+                const active = msg.data?.active;
+
+                if (typeof address !== "number" || typeof active !== "boolean") {
+                  sendToClient(ws, {
+                    type: "error",
+                    data: { message: "Invalid setBasicAccessory payload" },
+                  });
+                  return;
+                }
+
+                commandCenter.setBasicAccessory(address, active).then(success => {
+                  log("Basic accessory set result:", success);
+                  if (!success) {
+                    broadcast(wss, {
+                      type: "error",
+                      data: { message: "Failed to set basic accessory" },
+                    });
+                  }
+                });
+                return;
+              }
+
+              //==================================
+              // POWER
+              //==================================
+              case "setTrackPower": {
+                const on = msg.data?.on;
+
+                if (typeof on !== "boolean") {
+                  sendToClient(ws, {
+                    type: "error",
+                    data: { message: "Invalid setTrackPower payload" },
+                  });
+                  return;
+                }
+
+                commandCenter.setTrackPower(on).then((success) => {
+                  log("Set track power result:", success);
 
                   if (!success) {
                     broadcast(wss, {
                       type: "error",
-                      data: {
-                        message: "Failed to set turnout",
-                      },
+                      data: { message: "Failed to set track power" },
                     });
-                  } else {
-                    commandCenter?.saveRuntimeState();
                   }
                 });
 
-              return;
-            }
-
-            //===============================
-            // getSensor
-            //===============================
-            case "setSensor": {
-              const address = msg.data?.address;
-              const on = msg.data?.on;
-              if (typeof address !== "number" || typeof on !== "boolean") {
-                sendToClient(ws, {
-                  type: "error",
-                  data: { message: "Invalid setSensor payload" },
-                });
-                return;
-              }
-              return;
-            }
-
-            //===============================
-            // setBasicAccessory
-            //===============================
-            case "setBasicAccessory": {
-              const address = msg.data?.address;
-              const active = msg.data?.active;
-
-              if (typeof address !== "number" || typeof active !== "boolean") {
-                sendToClient(ws, {
-                  type: "error",
-                  data: { message: "Invalid setBasicAccessory payload" },
-                });
                 return;
               }
 
-              commandCenter.setBasicAccessory(address, active).then(success => {
-                log("Basic accessory set result:", success);
-                if (!success) {
-                  broadcast(wss, {
-                    type: "error",
-                    data: { message: "Failed to set basic accessory" },
-                  });
-                }
-              });
-              return;
-            }
+              //==================================
+              // EMERGENCY STOP
+              //==================================
+              case "emergencyStop": {
+                commandCenter.emergencyStop().then((success) => {
+                  log("Emergency stop result:", success);
 
-            //==================================
-            // POWER
-            //==================================
-            case "setTrackPower": {
-              const on = msg.data?.on;
-
-              if (typeof on !== "boolean") {
-                sendToClient(ws, {
-                  type: "error",
-                  data: { message: "Invalid setTrackPower payload" },
-                });
-                return;
-              }
-
-              commandCenter.setTrackPower(on).then((success) => {
-                log("Set track power result:", success);
-
-                if (!success) {
-                  broadcast(wss, {
-                    type: "error",
-                    data: { message: "Failed to set track power" },
-                  });
-                }
-              });
-
-              return;
-            }
-
-            //==================================
-            // EMERGENCY STOP
-            //==================================
-            case "emergencyStop": {
-              commandCenter.emergencyStop().then((success) => {
-                log("Emergency stop result:", success);
-
-                if (!success) {
-                  broadcast(wss, {
-                    type: "error",
-                    data: { message: "Failed to emergency stop" },
-                  });
-                }
-              });
-
-              return;
-            }
-
-            //==================================
-            // SET BLOCK
-            //==================================
-            case "setBlock":
-              log("Setting block:", msg.data);
-              commandCenter.setBlock(msg.data);
-              break;
-
-            case "setBlockRemove":
-              log("Removing loco from block:", msg.data);
-              commandCenter.setBlockRemove(msg.data);
-              break;
-
-            case "setBlocksReset":
-              log("Resetting blocks");
-              commandCenter.setBlocksReset();
-              break;
-
-            case "getBlocks":
-              log("Getting blocks");
-              commandCenter.getBlocks();
-              break;
-
-            //==================================
-            // SCRIPT
-            //==================================
-            case "runScript": {
-              try {
-                const script =
-                  typeof msg.data?.script === "string"
-                    ? msg.data.script
-                    : undefined;
-
-                const source =
-                  typeof msg.data?.source === "string"
-                    ? msg.data.source
-                    : "unknown";
-
-                const elementId =
-                  typeof msg.data?.elementId === "string"
-                    ? msg.data.elementId
-                    : null;
-
-                await scriptRuntimeStore.run(
-                  script,
-                  {
-                    source,
-                    elementId,
+                  if (!success) {
+                    broadcast(wss, {
+                      type: "error",
+                      data: { message: "Failed to emergency stop" },
+                    });
                   }
-                );
-              } catch (error) {
-                sendToClient(ws, {
-                  type: "scriptRejected",
-                  data: {
-                    reason:
-                      error instanceof Error
-                        ? error.message
-                        : String(error),
-                  },
                 });
+
+                return;
               }
 
-              return;
-            }
+              //==================================
+              // SET BLOCK
+              //==================================
+              case "setBlock":
+                log("Setting block:", msg.data);
+                commandCenter.setBlock(msg.data);
+                break;
 
-            case "stopScript": {
-              scriptRuntimeStore.stopCurrent();
-              return;
-            }
+              case "setBlockRemove":
+                log("Removing loco from block:", msg.data);
+                commandCenter.setBlockRemove(msg.data);
+                break;
 
-            case "getScriptRuntimeState": {
-              sendToClient(ws, {
-                type: "scriptDocumentChanged",
-                data: scriptRuntimeStore.getDocument(),
-              });
+              case "setBlocksReset":
+                log("Resetting blocks");
+                commandCenter.setBlocksReset();
+                break;
 
-              sendToClient(ws, {
-                type: "scriptStateChanged",
-                data: scriptRuntimeStore.getCurrentState(),
-              });
+              case "getBlocks":
+                log("Getting blocks");
+                commandCenter.getBlocks();
+                break;
 
-              return;
-            }
+              //==================================
+              // SCRIPT
+              //==================================
+              case "runScript": {
+                try {
+                  const script =
+                    typeof msg.data?.script === "string"
+                      ? msg.data.script
+                      : undefined;
 
-            //==================================
-            // TASKS
-            //==================================
-            case "startTask": {
-              try {
+                  const source =
+                    typeof msg.data?.source === "string"
+                      ? msg.data.source
+                      : "unknown";
+
+                  const elementId =
+                    typeof msg.data?.elementId === "string"
+                      ? msg.data.elementId
+                      : null;
+
+                  await scriptRuntimeStore.run(
+                    script,
+                    {
+                      source,
+                      elementId,
+                    }
+                  );
+                } catch (error) {
+                  sendToClient(ws, {
+                    type: "scriptRejected",
+                    data: {
+                      reason:
+                        error instanceof Error
+                          ? error.message
+                          : String(error),
+                    },
+                  });
+                }
+
+                return;
+              }
+
+              case "stopScript": {
+                scriptRuntimeStore.stopCurrent();
+                return;
+              }
+
+              case "getScriptRuntimeState": {
+                sendToClient(ws, {
+                  type: "scriptDocumentChanged",
+                  data: scriptRuntimeStore.getDocument(),
+                });
+
+                sendToClient(ws, {
+                  type: "scriptStateChanged",
+                  data: scriptRuntimeStore.getCurrentState(),
+                });
+
+                return;
+              }
+
+              //==================================
+              // TASKS
+              //==================================
+              case "startTask": {
+                try {
+                  const taskIdOrName =
+                    typeof msg.data?.taskIdOrName === "string"
+                      ? msg.data.taskIdOrName
+                      : "";
+
+                  if (!taskIdOrName) {
+                    throw new Error("Missing taskIdOrName.");
+                  }
+
+                  const result =
+                    await taskRuntimeStore.startTask(
+                      taskIdOrName
+                    );
+
+                  if (!result.ok) {
+                    throw new Error(result.error);
+                  }
+                } catch (error) {
+                  sendToClient(ws, {
+                    type: "taskRejected",
+                    data: {
+                      reason:
+                        error instanceof Error
+                          ? error.message
+                          : String(error),
+                    },
+                  });
+                }
+
+                return;
+              }
+
+              case "finishTask": {
                 const taskIdOrName =
                   typeof msg.data?.taskIdOrName === "string"
                     ? msg.data.taskIdOrName
                     : "";
 
-                if (!taskIdOrName) {
-                  throw new Error("Missing taskIdOrName.");
+                if (taskIdOrName) {
+                  const result =
+                    await taskRuntimeStore.finishTask(taskIdOrName);
+
+                  if (!result.ok) {
+                    sendToClient(ws, {
+                      type: "taskRejected",
+                      data: {
+                        reason: result.error,
+                      },
+                    });
+                  }
                 }
 
-                const result =
-                  await taskRuntimeStore.startTask(
-                    taskIdOrName
-                  );
+                return;
+              }
 
-                if (!result.ok) {
-                  throw new Error(result.error);
+              case "abortTask": {
+                const taskIdOrName =
+                  typeof msg.data?.taskIdOrName === "string"
+                    ? msg.data.taskIdOrName
+                    : "";
+
+                if (taskIdOrName) {
+                  const result =
+                    await taskRuntimeStore.abortTask(taskIdOrName);
+
+                  if (!result.ok) {
+                    sendToClient(ws, {
+                      type: "taskRejected",
+                      data: {
+                        reason: result.error,
+                      },
+                    });
+                  }
                 }
-              } catch (error) {
+
+                return;
+              }
+              case "pauseTask": {
+                const taskIdOrName =
+                  typeof msg.data?.taskIdOrName === "string"
+                    ? msg.data.taskIdOrName
+                    : "";
+
+                if (taskIdOrName) {
+                  const result =
+                    await taskRuntimeStore.pauseTask(taskIdOrName);
+
+                  if (!result.ok) {
+                    sendToClient(ws, {
+                      type: "taskRejected",
+                      data: {
+                        reason: result.error,
+                      },
+                    });
+                  }
+                }
+
+                return;
+              }
+
+              case "resumeTask": {
+                const taskIdOrName =
+                  typeof msg.data?.taskIdOrName === "string"
+                    ? msg.data.taskIdOrName
+                    : "";
+
+                if (taskIdOrName) {
+                  const result =
+                    await taskRuntimeStore.resumeTask(taskIdOrName);
+
+                  if (!result.ok) {
+                    sendToClient(ws, {
+                      type: "taskRejected",
+                      data: {
+                        reason: result.error,
+                      },
+                    });
+                  }
+                }
+
+                return;
+              }
+
+              case "finishAllTasks": {
+                await taskRuntimeStore.finishAllTasks();
+                return;
+              }
+
+              case "abortAllTasks": {
+                await taskRuntimeStore.abortAllTasks();
+                return;
+              }
+
+              case "getTaskRuntimeState": {
                 sendToClient(ws, {
-                  type: "taskRejected",
-                  data: {
-                    reason:
-                      error instanceof Error
-                        ? error.message
-                        : String(error),
-                  },
+                  type: "taskManagerSnapshotChanged",
+                  data: taskRuntimeStore.getSnapshot(),
                 });
+
+                return;
               }
 
-              return;
-            }
-
-            case "finishTask": {
-              const taskIdOrName =
-                typeof msg.data?.taskIdOrName === "string"
-                  ? msg.data.taskIdOrName
-                  : "";
-
-              if (taskIdOrName) {
-                const result =
-                  await taskRuntimeStore.finishTask(taskIdOrName);
-
-                if (!result.ok) {
-                  sendToClient(ws, {
-                    type: "taskRejected",
-                    data: {
-                      reason: result.error,
-                    },
-                  });
-                }
+              //==================================
+              // DEFAULT
+              //==================================
+              default: {
+                logError("Unknown message type:", msg.type);
+                sendToClient(ws, {
+                  type: "error",
+                  data: { message: "Unknown message type" },
+                });
+                //broadcast(wss, msg, ws);
+                return;
               }
-
-              return;
             }
 
-            case "abortTask": {
-              const taskIdOrName =
-                typeof msg.data?.taskIdOrName === "string"
-                  ? msg.data.taskIdOrName
-                  : "";
-
-              if (taskIdOrName) {
-                const result =
-                  await taskRuntimeStore.abortTask(taskIdOrName);
-
-                if (!result.ok) {
-                  sendToClient(ws, {
-                    type: "taskRejected",
-                    data: {
-                      reason: result.error,
-                    },
-                  });
-                }
-              }
-
-              return;
-            }
-            case "pauseTask": {
-              const taskIdOrName =
-                typeof msg.data?.taskIdOrName === "string"
-                  ? msg.data.taskIdOrName
-                  : "";
-
-              if (taskIdOrName) {
-                const result =
-                  await taskRuntimeStore.pauseTask(taskIdOrName);
-
-                if (!result.ok) {
-                  sendToClient(ws, {
-                    type: "taskRejected",
-                    data: {
-                      reason: result.error,
-                    },
-                  });
-                }
-              }
-
-              return;
-            }
-
-            case "resumeTask": {
-              const taskIdOrName =
-                typeof msg.data?.taskIdOrName === "string"
-                  ? msg.data.taskIdOrName
-                  : "";
-
-              if (taskIdOrName) {
-                const result =
-                  await taskRuntimeStore.resumeTask(taskIdOrName);
-
-                if (!result.ok) {
-                  sendToClient(ws, {
-                    type: "taskRejected",
-                    data: {
-                      reason: result.error,
-                    },
-                  });
-                }
-              }
-
-              return;
-            }
-
-            case "finishAllTasks": {
-              await taskRuntimeStore.finishAllTasks();
-              return;
-            }
-
-            case "abortAllTasks": {
-              await taskRuntimeStore.abortAllTasks();
-              return;
-            }
-            
-            case "getTaskRuntimeState": {
-              sendToClient(ws, {
-                type: "taskManagerSnapshotChanged",
-                data: taskRuntimeStore.getSnapshot(),
-              });
-
-              return;
-            }
-
-            //==================================
-            // DEFAULT
-            //==================================
-            default: {
-              logError("Unknown message type:", msg.type);
-              sendToClient(ws, {
-                type: "error",
-                data: { message: "Unknown message type" },
-              });
-              //broadcast(wss, msg, ws);
-              return;
-            }
+          } catch (error) {
+            sendToClient(ws, {
+              type: "error",
+              data: { message: String(error) },
+            });
           }
-
-        } catch (error) {
+        } else {
           sendToClient(ws, {
             type: "error",
-            data: { message: String(error) },
+            data: { message: "No command center available" },
           });
         }
-      } else {
-        sendToClient(ws, {
-          type: "error",
-          data: { message: "No command center available" },
-        });
-      }
+      });
+
+      ws.on("close", () => {
+        log("WebSocket client disconnected");
+
+        if (
+          commandCenter &&
+          clientUUID &&
+          commandCenter.lockOwnerUUID === clientUUID
+        ) {
+          commandCenter.locked = false;
+          commandCenter.lockOwnerUUID = null;
+
+          broadcast(wss, {
+            type: "commandCenterLockChanged",
+            data: {
+              locked: false,
+              lockOwner: null,
+            },
+          });
+        }
+      });
+      ws.on("error", (error) => {
+        console.error("WebSocket client error:", error);
+      });
     });
 
-    ws.on("close", () => {
-      log("WebSocket client disconnected");
-
-      if (
-        commandCenter &&
-        clientUUID &&
-        commandCenter.lockOwnerUUID === clientUUID
-      ) {
-        commandCenter.locked = false;
-        commandCenter.lockOwnerUUID = null;
-
-        broadcast(wss, {
-          type: "commandCenterLockChanged",
-          data: {
-            locked: false,
-            lockOwner: null,
-          },
-        });
-      }
-    });
-    ws.on("error", (error) => {
-      console.error("WebSocket client error:", error);
-    });
-  });
-
-  return wss;
+    return wss;
+  }
+  )
 }
