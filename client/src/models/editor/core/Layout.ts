@@ -740,6 +740,49 @@ export class Layout {
             elem.travelDirection =
                 runtime.travelDirection;
         }
+
+        /**
+         * A blokk irányjelzője ne a blokk saját rotation értékéből
+         * próbáljon következtetni, hanem a blokk közepén fekvő
+         * valódi sín elem világkoordinátás forward irányából.
+         */
+        const physicalTrackElements =
+            this.track.elements.filter(
+                (elem): elem is TrackElement =>
+                    elem instanceof TrackElement
+            );
+
+        const normalizeRotation = (angle: number): number => {
+            const result = angle % 360;
+            return result < 0 ? result + 360 : result;
+        };
+
+        for (const elem of trackElements) {
+            if (!(elem instanceof BlockElement)) {
+                continue;
+            }
+
+            const centerTrack =
+                physicalTrackElements.find(track =>
+                    track.x === elem.x &&
+                    track.y === elem.y
+                );
+
+            if (
+                !centerTrack ||
+                centerTrack.travelDirection === "unknown"
+            ) {
+                elem.runtimeForwardRotation = null;
+                continue;
+            }
+
+            elem.runtimeForwardRotation =
+                normalizeRotation(
+                    centerTrack.travelDirection === "forward"
+                        ? centerTrack.rotation
+                        : centerTrack.rotation + 180
+                );
+        }
     }
 
     // ==================================================

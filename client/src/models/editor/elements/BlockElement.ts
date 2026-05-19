@@ -25,6 +25,16 @@ export class BlockElement extends TrackElement implements IBlockElement {
      */
     runtimeTransitLocoAddress: number = 0;
 
+    /**
+     * Csak runtime vizuális adat.
+     * A blokk alatt fekvő valódi sín elem abszolút forward irányszöge.
+     *
+     * Nem a blokk saját rotation értékéből következtetünk, mert
+     * a blokk 0°/180° vagy 90°/270° elforgatása vizuálisan ugyanaz,
+     * de a forward oldal pont megfordulhat.
+     */
+    runtimeForwardRotation: number | null = null;
+
     length: number = 1;
     sensorAddress: number = 0;
     blockType: BlockType = BLOCK_TYPES.NORMAL;
@@ -352,6 +362,16 @@ export class BlockElement extends TrackElement implements IBlockElement {
      *
      * Így forgatott blokknál is automatikusan a helyes forward irányba mutat.
      */
+    /**
+     * Kis lime háromszög a blokk rövid oldalán.
+     *
+     * A helper nem a blokk travelDirection + rotation párosából tippeli
+     * a nyíl oldalát, hanem a Layout által kiszámolt abszolút
+     * runtimeForwardRotation értéket használja.
+     *
+     * A draw() elején a canvas már this.rotation szerint el van forgatva,
+     * ezért az abszolút forward szöget visszatranszformáljuk lokális szöggé.
+     */
     private drawForwardDirectionTriangle(
         ctx: CanvasRenderingContext2D,
         blockX: number,
@@ -359,25 +379,49 @@ export class BlockElement extends TrackElement implements IBlockElement {
         blockW: number,
         blockH: number
     ): void {
-        if (this.travelDirection === "unknown") {
+        if (this.runtimeForwardRotation === null) {
             return;
         }
+
+        const normalizeRotation = (angle: number): number => {
+            const result = angle % 360;
+            return result < 0 ? result + 360 : result;
+        };
+
+        /**
+         * A canvas már a blokk rotation értékével el van forgatva.
+         * A lokális 0° a blokk jobb rövid oldala.
+         */
+        const localForwardRotation =
+            normalizeRotation(
+                this.runtimeForwardRotation - this.rotation
+            );
+
+        const localForwardRad =
+            localForwardRotation * Math.PI / 180;
+
+        /**
+         * A blokk hosszanti tengelye mentén várunk 0° vagy 180° körüli irányt.
+         * cos >= 0 -> jobb rövid oldal
+         * cos <  0 -> bal rövid oldal
+         */
+        const pointsRight =
+            Math.cos(localForwardRad) >= 0;
 
         const arrowLength = Math.min(8, Math.max(5, blockW * 0.12));
         const arrowHalfHeight = Math.min(5, Math.max(3, blockH * 0.28));
         const centerY = blockY + blockH / 2;
         const edgePadding = 2;
 
-        const points =
-            this.travelDirection === "forward"
-                ? {
-                    tipX: blockX + blockW - edgePadding,
-                    backX: blockX + blockW - edgePadding - arrowLength,
-                }
-                : {
-                    tipX: blockX + edgePadding,
-                    backX: blockX + edgePadding + arrowLength,
-                };
+        const points = pointsRight
+            ? {
+                tipX: blockX + blockW - edgePadding,
+                backX: blockX + blockW - edgePadding - arrowLength,
+            }
+            : {
+                tipX: blockX + edgePadding,
+                backX: blockX + edgePadding + arrowLength,
+            };
 
         ctx.save();
         ctx.beginPath();
