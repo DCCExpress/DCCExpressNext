@@ -1,4 +1,151 @@
-// client/src/services/wsClient.ts
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = process.cwd();
+
+const FILES = {
+  wsTypes: path.join(
+    ROOT,
+    "common/src/wsTypes.ts"
+  ),
+  wsClient: path.join(
+    ROOT,
+    "client/src/services/wsClient.ts"
+  ),
+};
+
+function fail(message) {
+  throw new Error(message);
+}
+
+function ensureExisting(file) {
+  if (!fs.existsSync(file)) {
+    fail(`Hiányzó fájl: ${path.relative(ROOT, file)}`);
+  }
+}
+
+function write(file, content) {
+  fs.writeFileSync(file, content, "utf8");
+  console.log(`✓ Frissítve: ${path.relative(ROOT, file)}`);
+}
+
+const WS_TYPES = `// common/src/wsTypes.ts
+
+import type {
+  Direction,
+} from "./domainTypes.js";
+
+/**
+ * Általános, szerveroldalon és bejövő kliensüzeneteknél is
+ * használható WebSocket message alap.
+ *
+ * A data szándékosan opcionális:
+ * pl. routeLock / routeUnlock / getBlocks jellegű üzeneteknél
+ * nincs értelmes payload.
+ */
+export type WsMessage<T = any> = {
+  type: string;
+  data?: T;
+  uuid: string | null;
+};
+
+/**
+ * Kliens -> szerver küldött üzenet.
+ * A kliens API minden parancshoz saját, stabil UUID-t ad.
+ */
+export type ClientWsMessage<T = any> = {
+  type: string;
+  data?: T;
+  uuid: string;
+};
+
+export type SetLocoMessage = ClientWsMessage<{
+  locoAddress: number;
+  speed: number;
+  direction: Direction;
+}> & {
+  type: "setLoco";
+};
+
+export type SetLocoFunctionMessage = ClientWsMessage<{
+  locoAddress: number;
+  functionNumber: number;
+  active: boolean;
+}> & {
+  type: "setLocoFunction";
+};
+
+export type SetTurnoutMessage = ClientWsMessage<{
+  address: number;
+  closed: boolean;
+}> & {
+  type: "setTurnout";
+};
+
+export type TurnoutChangedMessage = {
+  type: "turnoutChanged";
+  data: {
+    address: number;
+    closed: boolean;
+  };
+};
+
+export type AccessoryChangedMessage = {
+  type: "accessoryChanged";
+  data: {
+    address: number;
+    active: boolean;
+  };
+};
+
+export type SetSensorMessage = ClientWsMessage<{
+  address: number;
+  on: boolean;
+}> & {
+  type: "setSensor";
+};
+
+export type CommandCenterInfo = {
+  type: "commandCenterInfo";
+  data: {
+    type: string;
+    alive: boolean;
+    power: boolean;
+  };
+};
+
+export type ReserveRouteMessage = ClientWsMessage<{
+  fromBlockName: string;
+  toBlockName: string;
+}> & {
+  type: "reserveRoute";
+};
+
+export type ClearAllRouteReservationsMessage = ClientWsMessage<{}> & {
+  type: "clearAllRouteReservations";
+};
+
+export type RouteReservationChangedMessage = {
+  type: "routeReservationChanged";
+  data: {
+    busy: boolean;
+    sectionNames: string[];
+    turnoutAddresses: number[];
+    fromBlockName?: string;
+    toBlockName?: string;
+  };
+};
+
+export type RouteReservationRejectedMessage = {
+  type: "routeReservationRejected";
+  data: {
+    reason: string;
+  };
+};
+`;
+
+const WS_CLIENT = `// client/src/services/wsClient.ts
 
 import type {
     ClientWsMessage,
@@ -219,7 +366,7 @@ class WsClient {
             this.maxReconnectDelayMs
         );
 
-        console.log(`[WS] Reconnecting in ${delay} ms`);
+        console.log(\`[WS] Reconnecting in \${delay} ms\`);
 
         this.reconnectTimer = window.setTimeout(() => {
             this.connect();
@@ -243,3 +390,28 @@ class WsClient {
 }
 
 export const wsClient = new WsClient();
+`;
+
+try {
+  console.log("DCCExpressNext – Common WS message base Sprint 10 patch V1");
+  console.log("Repo gyökér:", ROOT);
+  console.log("");
+
+  ensureExisting(FILES.wsTypes);
+  ensureExisting(FILES.wsClient);
+
+  write(FILES.wsTypes, WS_TYPES);
+  write(FILES.wsClient, WS_CLIENT);
+
+  console.log("");
+  console.log("Kész.");
+  console.log("Nem készültek .bak fájlok.");
+  console.log("");
+  console.log("Javasolt ellenőrzés:");
+  console.log("  npm run build");
+} catch (error) {
+  console.error("");
+  console.error("PATCH HIBA:");
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+}
