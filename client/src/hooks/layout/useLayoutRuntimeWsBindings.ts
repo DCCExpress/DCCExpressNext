@@ -71,16 +71,12 @@ export type UseLayoutRuntimeWsBindingsParams = {
   layoutRef: MutableRefObject<Layout>;
   locosRef: MutableRefObject<Loco[]>;
   setInvalidateCounter: InvalidateSetter;
-  setCommandCenterAlive: Dispatch<SetStateAction<boolean>>;
-  setCommandCenterPower: Dispatch<SetStateAction<boolean>>;
 };
 
 export function useLayoutRuntimeWsBindings({
   layoutRef,
   locosRef,
   setInvalidateCounter,
-  setCommandCenterAlive,
-  setCommandCenterPower,
 }: UseLayoutRuntimeWsBindingsParams): void {
   useEffect(() => {
     const invalidateLayout = (): void => {
@@ -217,15 +213,6 @@ export function useLayoutRuntimeWsBindings({
             layoutRef.current.checkRoutes(existingGraph);
             invalidateLayout();
           }
-        }
-      );
-
-    const unsubscribeCommandCenter =
-      wsClient.on(
-        "commandCenterInfo",
-        data => {
-          setCommandCenterAlive(data.alive);
-          setCommandCenterPower(data.power ?? false);
         }
       );
 
@@ -409,7 +396,6 @@ export function useLayoutRuntimeWsBindings({
     return () => {
       unsubscribeSensor();
       unsubscribeTurnout();
-      unsubscribeCommandCenter();
       unsubscribeAccessory();
       unsubscribeCommandRejected();
       unsubscribeBlockStateChanged();
@@ -424,8 +410,6 @@ export function useLayoutRuntimeWsBindings({
   }, [
     layoutRef,
     locosRef,
-    setCommandCenterAlive,
-    setCommandCenterPower,
     setInvalidateCounter,
   ]);
 }

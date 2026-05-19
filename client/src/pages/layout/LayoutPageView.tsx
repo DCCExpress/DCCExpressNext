@@ -1,18 +1,6 @@
 // client/src/pages/layout/LayoutPageView.tsx
 
-import {
-  ActionIcon,
-  AppShell,
-  Box,
-  Card,
-  Group,
-  Stack,
-} from "@mantine/core";
-
-import {
-  IconChevronDown,
-  IconChevronUp,
-} from "@tabler/icons-react";
+import { AppShell } from "@mantine/core";
 
 import type {
   Dispatch,
@@ -39,22 +27,14 @@ import type {
   EditorTool,
 } from "../../models/editor/types/EditorTypes";
 
-import CommandCenterDialog from "../../components/CommandCenterDialog";
-import ElementPickerDialog from "../../components/editor/ElementPickerDialog";
-import FullscreenLoader from "../../components/FullscreenLoader";
-import LocoDialog from "../../components/LocoDialog";
-import PanelHandle from "../../components/PanelHandle";
-import SettingDialog from "../../components/SettingsDialog";
-import TrackCanvas from "../../components/TrackCanvas";
-import LocoPanel from "../../layout/LocoPanel";
-import RightPropertyPanel from "../../layout/PropertyPanel";
 import StatusBar from "../../layout/StatusBar";
-import TopMenuBar from "../../layout/TopMenuBar";
-
-const HEADER_HEIGHT = 50;
-const FOOTER_HEIGHT = 40;
-const LOCO_PANEL_WIDTH = 380;
-const PROPERTY_PANEL_WIDTH = 320;
+import LayoutPageDialogs from "./view/LayoutPageDialogs";
+import LayoutPageHeader from "./view/LayoutPageHeader";
+import LayoutPageWorkspace from "./view/LayoutPageWorkspace";
+import {
+  FOOTER_HEIGHT,
+  HEADER_HEIGHT,
+} from "./view/layoutPageViewConstants";
 
 type BooleanSetter =
   Dispatch<SetStateAction<boolean>>;
@@ -212,38 +192,21 @@ export function LayoutPageView({
 }: LayoutPageViewProps) {
   return (
     <>
-      <FullscreenLoader
-        visible={canvasBusy}
-        text={canvasBusyText}
-      />
-
-      <CommandCenterDialog
-        opened={commandCenterOpened}
-        onClose={() => setCommandCenterOpened(false)}
-        onSave={onCommandCenterSaved}
+      <LayoutPageDialogs
+        canvasBusy={canvasBusy}
+        canvasBusyText={canvasBusyText}
+        commandCenterOpened={commandCenterOpened}
+        setCommandCenterOpened={setCommandCenterOpened}
         commandCenter={commandCenter}
-      />
-
-      <LocoDialog
-        opened={locoDialogOpened}
-        onClose={() => setLocoDialogOpened(false)}
-        onSaved={onLocosSaved}
-      />
-
-      <ElementPickerDialog
-        opened={pickerOpened}
-        onClose={() => setPickerOpened(false)}
-        onPick={elementType => {
-          setTool({
-            mode: "draw",
-            elementType,
-          });
-        }}
-      />
-
-      <SettingDialog
-        opened={settingsDialogOpened}
-        onClose={() => setSettingsDialogOpened(false)}
+        onCommandCenterSaved={onCommandCenterSaved}
+        locoDialogOpened={locoDialogOpened}
+        setLocoDialogOpened={setLocoDialogOpened}
+        onLocosSaved={onLocosSaved}
+        pickerOpened={pickerOpened}
+        setPickerOpened={setPickerOpened}
+        settingsDialogOpened={settingsDialogOpened}
+        setSettingsDialogOpened={setSettingsDialogOpened}
+        setTool={setTool}
       />
 
       <AppShell
@@ -255,241 +218,55 @@ export function LayoutPageView({
         footer={{ height: FOOTER_HEIGHT }}
         padding="xs"
       >
-        <ActionIcon
-          variant="filled"
-          size="md"
-          radius="xl"
-          color="blue"
-          onClick={() => setToolbarOpened(value => !value)}
-          onMouseDown={event => event.preventDefault()}
-          aria-label={
-            toolbarOpened
-              ? "Hide toolbar"
-              : "Show toolbar"
-          }
-          style={{
-            position: "fixed",
-            top: 12,
-            left: 8,
-            zIndex: 5000,
-            boxShadow: "var(--mantine-shadow-md)",
-          }}
-        >
-          {toolbarOpened ? (
-            <IconChevronUp size={16} />
-          ) : (
-            <IconChevronDown size={16} />
-          )}
-        </ActionIcon>
+        <LayoutPageHeader
+          onGoHome={onGoHome}
+          toolbarOpened={toolbarOpened}
+          setToolbarOpened={setToolbarOpened}
+          editMode={editMode}
+          setEditMode={setEditMode}
+          locoPanelCollapsed={locoPanelCollapsed}
+          setLocoPanelCollapsed={setLocoPanelCollapsed}
+          propertyPanelCollapsed={propertyPanelCollapsed}
+          setPropertyPanelCollapsed={setPropertyPanelCollapsed}
+          tool={tool}
+          setTool={setTool}
+          setLocoDialogOpened={setLocoDialogOpened}
+          setPickerOpened={setPickerOpened}
+          saveLayoutToServer={saveLayoutToServer}
+          loadLayoutFromServer={loadLayoutFromServer}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          undo={undo}
+          redo={redo}
+          onSettingsClick={onSettingsClick}
+          onFitLayout={onFitLayout}
+          setCommandCenterOpened={setCommandCenterOpened}
+        />
 
-        <AppShell.Header>
-          <Box
-            pl={0}
-            h="100%"
-            style={{
-              opacity: toolbarOpened ? 1 : 0,
-              pointerEvents: toolbarOpened
-                ? "auto"
-                : "none",
-              overflow: "hidden",
-              transition: "opacity 120ms ease",
-            }}
-          >
-            <TopMenuBar
-              editMode={editMode}
-              onEditModeChange={setEditMode}
-              onGoHome={onGoHome}
-              onOpenLocos={() => setLocoDialogOpened(true)}
-              locoPanelCollapsed={locoPanelCollapsed}
-              onToggleLocoPanel={() =>
-                setLocoPanelCollapsed(value => !value)
-              }
-              propertyPanelCollapsed={propertyPanelCollapsed}
-              onTogglePropertyPanel={() =>
-                setPropertyPanelCollapsed(value => !value)
-              }
-              tool={tool}
-              onCursorToolClick={() =>
-                setTool({
-                  mode: "cursor",
-                  elementType: tool.elementType,
-                })
-              }
-              onOpenElementPicker={() => setPickerOpened(true)}
-              onSaveLayout={saveLayoutToServer}
-              onLoadLayout={loadLayoutFromServer}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              onUndo={undo}
-              onRedo={redo}
-              onSettingsClick={onSettingsClick}
-              onDeleteToolClick={() =>
-                setTool({
-                  mode: "delete",
-                  elementType: tool.elementType,
-                })
-              }
-              onFitLayout={onFitLayout}
-              onOpenCommandCenterDialog={() =>
-                setCommandCenterOpened(true)
-              }
-            />
-          </Box>
-        </AppShell.Header>
-
-        <AppShell.Main>
-          <Stack
-            gap="xs"
-            h={`calc(100vh - ${
-              toolbarOpened
-                ? HEADER_HEIGHT
-                : 0
-            }px - ${FOOTER_HEIGHT}px - 20px)`}
-          >
-            <Group
-              gap="xs"
-              wrap="nowrap"
-              align="stretch"
-              style={{
-                flex: 1,
-                minHeight: 0,
-              }}
-            >
-              <Box
-                style={{
-                  width: locoPanelCollapsed
-                    ? 0
-                    : LOCO_PANEL_WIDTH,
-                  transition: "width 0.2s ease",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                }}
-              >
-                <LocoPanel locos={locos} />
-              </Box>
-
-              <Box
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  position: "relative",
-                }}
-                h="100%"
-              >
-                <PanelHandle
-                  side="left"
-                  collapsed={locoPanelCollapsed}
-                  onToggle={() =>
-                    setLocoPanelCollapsed(value => !value)
-                  }
-                  style={{ left: 1 }}
-                />
-
-                <PanelHandle
-                  side="right"
-                  collapsed={propertyPanelCollapsed}
-                  onToggle={() =>
-                    setPropertyPanelCollapsed(value => !value)
-                  }
-                  style={{ right: 1 }}
-                />
-
-                <Card
-                  withBorder
-                  radius="sm"
-                  p="xs"
-                  h="100%"
-                >
-                  <Box
-                    h="100%"
-                    style={{
-                      borderRadius: 2,
-                      overflow: "hidden",
-                      border:
-                        "1px solid var(--mantine-color-dark-4)",
-                    }}
-                  >
-                    <TrackCanvas
-                      editMode={editMode}
-                      tool={tool}
-                      layout={layout}
-                      onLayoutChange={onLayoutChange}
-                      onBeforeLayoutChange={
-                        onBeforeLayoutChange
-                      }
-                      selectedElement={selectedElement}
-                      onSelectedElementChange={
-                        onSelectedElementChange
-                      }
-                      invalidateCounter={invalidateCounter}
-                      onInvalidate={() =>
-                        setInvalidateCounter(value => value + 1)
-                      }
-                      fitCounter={fitCounter}
-                      turnoutSelectionMode={
-                        turnoutSelection
-                      }
-                      setBusy={(busy, text) => {
-                        setCanvasBusy(busy);
-
-                        if (text) {
-                          setCanvasBusyText(text);
-                        }
-                      }}
-                      locos={locos}
-                    />
-                  </Box>
-                </Card>
-              </Box>
-
-              <Box
-                style={{
-                  width: propertyPanelCollapsed
-                    ? 0
-                    : PROPERTY_PANEL_WIDTH,
-                  transition: "width 0.2s ease",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                }}
-              >
-                {!propertyPanelCollapsed && (
-                  <Card
-                    withBorder
-                    radius="xs"
-                    p="xs"
-                    h="100%"
-                  >
-                    <RightPropertyPanel
-                      selectedElement={selectedElement}
-                      invalidate={invalidateCounter}
-                      onUpdateSelectedElement={
-                        onUpdateSelectedElement
-                      }
-                      editMode={editMode}
-                      opened={!propertyPanelCollapsed}
-                      turnoutSelectionMode={
-                        turnoutSelection
-                      }
-                      setTurnoutSelectionMode={
-                        setTurnoutSelection
-                      }
-                      layout={layout}
-                      onLayoutChange={onLayoutChange}
-                      routes={routesString}
-                      setBusy={(busy, text) => {
-                        setCanvasBusy(busy);
-
-                        if (text) {
-                          setCanvasBusyText(text);
-                        }
-                      }}
-                    />
-                  </Card>
-                )}
-              </Box>
-            </Group>
-          </Stack>
-        </AppShell.Main>
+        <LayoutPageWorkspace
+          toolbarOpened={toolbarOpened}
+          locoPanelCollapsed={locoPanelCollapsed}
+          setLocoPanelCollapsed={setLocoPanelCollapsed}
+          propertyPanelCollapsed={propertyPanelCollapsed}
+          setPropertyPanelCollapsed={setPropertyPanelCollapsed}
+          locos={locos}
+          editMode={editMode}
+          tool={tool}
+          layout={layout}
+          onLayoutChange={onLayoutChange}
+          onBeforeLayoutChange={onBeforeLayoutChange}
+          selectedElement={selectedElement}
+          onSelectedElementChange={onSelectedElementChange}
+          invalidateCounter={invalidateCounter}
+          setInvalidateCounter={setInvalidateCounter}
+          fitCounter={fitCounter}
+          turnoutSelection={turnoutSelection}
+          setTurnoutSelection={setTurnoutSelection}
+          onUpdateSelectedElement={onUpdateSelectedElement}
+          routesString={routesString}
+          setCanvasBusy={setCanvasBusy}
+          setCanvasBusyText={setCanvasBusyText}
+        />
 
         <AppShell.Footer>
           <StatusBar />

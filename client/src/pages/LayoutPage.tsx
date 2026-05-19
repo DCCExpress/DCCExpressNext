@@ -57,7 +57,10 @@ export default function LayoutPage({
   ] =
     useState(0);
 
-  const [fitCounter] =
+  const [
+    fitCounter,
+    setFitCounter,
+  ] =
     useState(0);
 
   const [
@@ -73,18 +76,6 @@ export default function LayoutPage({
     useState<CommandCenter>(
       new CommandCenter()
     );
-
-  const [
-    commandCenterAlive,
-    setCommandCenterAlive,
-  ] =
-    useState(false);
-
-  const [
-    commandCenterPower,
-    setCommandCenterPower,
-  ] =
-    useState(false);
 
   const [routesString] =
     useState<string>("");
@@ -208,15 +199,7 @@ export default function LayoutPage({
     layoutRef,
     locosRef,
     setInvalidateCounter,
-    setCommandCenterAlive,
-    setCommandCenterPower,
   });
-
-  const selectedElementChanged = (
-    element: BaseElement | null
-  ): void => {
-    setSelectedElement(element);
-  };
 
   const handleUpdateSelectedElement = (
     updated: BaseElement | null
@@ -237,32 +220,8 @@ export default function LayoutPage({
     );
   };
 
-  const handleSettingClick = (): void => {
-    setSettingsDialogOpened(true);
-  };
-
   const onFitLayout = (): void => {
-    const canvas =
-      document.querySelector(
-        ".track-canvas"
-      ) as HTMLCanvasElement | null;
-
-    if (!canvas) {
-      return;
-    }
-
-    canvas.focus();
-
-    const event =
-      new KeyboardEvent(
-        "keydown",
-        {
-          key: "f",
-          bubbles: true,
-        }
-      );
-
-    window.dispatchEvent(event);
+    setFitCounter(previous => previous + 1);
   };
 
   const handleCommandCenterSaved = (
@@ -281,14 +240,6 @@ export default function LayoutPage({
       routeGraphStore.clear();
       setLayout(value);
     };
-
-  /**
-   * A két state értéket jelenleg a runtime WS hook frissíti.
-   * A LayoutPage view még nem használja őket közvetlenül,
-   * de a state megtartása szükséges a meglévő runtime bekötéshez.
-   */
-  void commandCenterAlive;
-  void commandCenterPower;
 
   return (
     <LayoutPageView
@@ -346,8 +297,8 @@ export default function LayoutPage({
       canRedo={canRedo}
       undo={undo}
       redo={redo}
-      onSettingsClick={
-        handleSettingClick
+      onSettingsClick={() =>
+        setSettingsDialogOpened(true)
       }
       onFitLayout={onFitLayout}
       locos={locos}
@@ -362,7 +313,7 @@ export default function LayoutPage({
         selectedElement
       }
       onSelectedElementChange={
-        selectedElementChanged
+        setSelectedElement
       }
       invalidateCounter={
         invalidateCounter
