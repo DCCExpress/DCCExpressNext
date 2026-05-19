@@ -8,18 +8,6 @@ import type {
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
 
-function getTaskIdOrName(
-  data: unknown
-): string {
-  const value =
-    (data as { taskIdOrName?: unknown } | undefined)
-      ?.taskIdOrName;
-
-  return typeof value === "string"
-    ? value
-    : "";
-}
-
 export const handleTaskMessage: WsMessageHandler = async ({
   ws,
   msg,
@@ -28,8 +16,9 @@ export const handleTaskMessage: WsMessageHandler = async ({
   switch (msg.type) {
     case "startTask": {
       try {
-        const taskIdOrName =
-          getTaskIdOrName(msg.data);
+        const {
+          taskIdOrName,
+        } = msg.data;
 
         if (!taskIdOrName) {
           throw new Error("Missing taskIdOrName.");
@@ -59,8 +48,9 @@ export const handleTaskMessage: WsMessageHandler = async ({
     }
 
     case "finishTask": {
-      const taskIdOrName =
-        getTaskIdOrName(msg.data);
+      const {
+        taskIdOrName,
+      } = msg.data;
 
       if (taskIdOrName) {
         const result =
@@ -82,8 +72,9 @@ export const handleTaskMessage: WsMessageHandler = async ({
     }
 
     case "abortTask": {
-      const taskIdOrName =
-        getTaskIdOrName(msg.data);
+      const {
+        taskIdOrName,
+      } = msg.data;
 
       if (taskIdOrName) {
         const result =
@@ -105,8 +96,9 @@ export const handleTaskMessage: WsMessageHandler = async ({
     }
 
     case "pauseTask": {
-      const taskIdOrName =
-        getTaskIdOrName(msg.data);
+      const {
+        taskIdOrName,
+      } = msg.data;
 
       if (taskIdOrName) {
         const result =
@@ -128,8 +120,9 @@ export const handleTaskMessage: WsMessageHandler = async ({
     }
 
     case "resumeTask": {
-      const taskIdOrName =
-        getTaskIdOrName(msg.data);
+      const {
+        taskIdOrName,
+      } = msg.data;
 
       if (taskIdOrName) {
         const result =

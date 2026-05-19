@@ -1,17 +1,10 @@
 // server/src/ws/handlers/wsTaskMessageHandlers.ts
 import { taskRuntimeStore, } from "../../services/taskRuntimeStore.js";
-function getTaskIdOrName(data) {
-    const value = data
-        ?.taskIdOrName;
-    return typeof value === "string"
-        ? value
-        : "";
-}
 export const handleTaskMessage = async ({ ws, msg, sendToClient, }) => {
     switch (msg.type) {
         case "startTask": {
             try {
-                const taskIdOrName = getTaskIdOrName(msg.data);
+                const { taskIdOrName, } = msg.data;
                 if (!taskIdOrName) {
                     throw new Error("Missing taskIdOrName.");
                 }
@@ -33,7 +26,7 @@ export const handleTaskMessage = async ({ ws, msg, sendToClient, }) => {
             return true;
         }
         case "finishTask": {
-            const taskIdOrName = getTaskIdOrName(msg.data);
+            const { taskIdOrName, } = msg.data;
             if (taskIdOrName) {
                 const result = await taskRuntimeStore.finishTask(taskIdOrName);
                 if (!result.ok) {
@@ -48,7 +41,7 @@ export const handleTaskMessage = async ({ ws, msg, sendToClient, }) => {
             return true;
         }
         case "abortTask": {
-            const taskIdOrName = getTaskIdOrName(msg.data);
+            const { taskIdOrName, } = msg.data;
             if (taskIdOrName) {
                 const result = await taskRuntimeStore.abortTask(taskIdOrName);
                 if (!result.ok) {
@@ -63,7 +56,7 @@ export const handleTaskMessage = async ({ ws, msg, sendToClient, }) => {
             return true;
         }
         case "pauseTask": {
-            const taskIdOrName = getTaskIdOrName(msg.data);
+            const { taskIdOrName, } = msg.data;
             if (taskIdOrName) {
                 const result = await taskRuntimeStore.pauseTask(taskIdOrName);
                 if (!result.ok) {
@@ -78,7 +71,7 @@ export const handleTaskMessage = async ({ ws, msg, sendToClient, }) => {
             return true;
         }
         case "resumeTask": {
-            const taskIdOrName = getTaskIdOrName(msg.data);
+            const { taskIdOrName, } = msg.data;
             if (taskIdOrName) {
                 const result = await taskRuntimeStore.resumeTask(taskIdOrName);
                 if (!result.ok) {

@@ -22,37 +22,14 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
 }) => {
   switch (msg.type) {
     case "setLoco": {
-      const address =
-        msg.data?.locoAddress;
-
-      const speed =
-        msg.data?.speed;
-
-      const direction =
-        msg.data?.direction;
-
-      if (
-        typeof address !== "number" ||
-        typeof speed !== "number" ||
-        (
-          direction !== "forward" &&
-          direction !== "reverse"
-        )
-      ) {
-        logError("Invalid setLoco payload:", msg.data);
-
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "Invalid setLoco payload",
-          },
-        });
-
-        return true;
-      }
+      const {
+        locoAddress,
+        speed,
+        direction,
+      } = msg.data;
 
       commandCenter
-        .setLoco(address, speed, direction)
+        .setLoco(locoAddress, speed, direction)
         .then(success => {
           log("Set loco result:", success);
 
@@ -70,34 +47,18 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
     }
 
     case "setLocoFunction": {
-      const address =
-        msg.data?.locoAddress;
-
-      const fn =
-        msg.data?.functionNumber;
-
-      const active =
-        msg.data?.active;
-
-      if (
-        typeof address !== "number" ||
-        typeof fn !== "number" ||
-        typeof active !== "boolean"
-      ) {
-        logError("Invalid setLocoFunction payload:", msg.data);
-
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "Invalid setLocoFunction payload",
-          },
-        });
-
-        return true;
-      }
+      const {
+        locoAddress,
+        functionNumber,
+        active,
+      } = msg.data;
 
       commandCenter
-        .setLocoFunction(address, fn, active)
+        .setLocoFunction(
+          locoAddress,
+          functionNumber,
+          active
+        )
         .then(success => {
           log("Set loco function result:", success);
 
@@ -115,22 +76,12 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
     }
 
     case "getLoco": {
-      const address =
-        msg.data?.locoAddress;
-
-      if (typeof address !== "number") {
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "Invalid getLoco payload",
-          },
-        });
-
-        return true;
-      }
+      const {
+        locoAddress,
+      } = msg.data;
 
       commandCenter
-        .getLoco(address)
+        .getLoco(locoAddress)
         .then(loco => {
           log("getLoco result:", loco);
         })
@@ -149,25 +100,10 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
     }
 
     case "setTurnout": {
-      const address =
-        msg.data?.address;
-
-      const closed =
-        msg.data?.closed;
-
-      if (
-        typeof address !== "number" ||
-        typeof closed !== "boolean"
-      ) {
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "Invalid setTurnout payload",
-          },
-        });
-
-        return true;
-      }
+      const {
+        address,
+        closed,
+      } = msg.data;
 
       /**
        * Ha a váltó aktív route foglalás része,
@@ -227,48 +163,21 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
       return true;
     }
 
-    case "setSensor": {
-      const address =
-        msg.data?.address;
-
-      const on =
-        msg.data?.on;
-
-      if (
-        typeof address !== "number" ||
-        typeof on !== "boolean"
-      ) {
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "Invalid setSensor payload",
-          },
-        });
-      }
-
+    case "setSensor":
+      /**
+       * A payload validálását már a WS parser elvégzi.
+       *
+       * Ez az ág a korábbi működést tartja meg:
+       * a kliensoldali setSensor parancs jelenleg nem
+       * avatkozik be a CommandCenter rétegbe.
+       */
       return true;
-    }
 
     case "setBasicAccessory": {
-      const address =
-        msg.data?.address;
-
-      const active =
-        msg.data?.active;
-
-      if (
-        typeof address !== "number" ||
-        typeof active !== "boolean"
-      ) {
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "Invalid setBasicAccessory payload",
-          },
-        });
-
-        return true;
-      }
+      const {
+        address,
+        active,
+      } = msg.data;
 
       commandCenter
         .setBasicAccessory(address, active)
@@ -289,19 +198,9 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
     }
 
     case "setTrackPower": {
-      const on =
-        msg.data?.on;
-
-      if (typeof on !== "boolean") {
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "Invalid setTrackPower payload",
-          },
-        });
-
-        return true;
-      }
+      const {
+        on,
+      } = msg.data;
 
       commandCenter
         .setTrackPower(on)

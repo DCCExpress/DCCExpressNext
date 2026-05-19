@@ -25,25 +25,10 @@ export const handleRouteMessage: WsMessageHandler = async ({
 }) => {
   switch (msg.type) {
     case "reserveRoute": {
-      const fromBlockName =
-        msg.data?.fromBlockName;
-
-      const toBlockName =
-        msg.data?.toBlockName;
-
-      if (
-        typeof fromBlockName !== "string" ||
-        typeof toBlockName !== "string"
-      ) {
-        sendToClient(ws, {
-          type: "routeReservationRejected",
-          data: {
-            reason: "Invalid reserveRoute payload.",
-          },
-        });
-
-        return true;
-      }
+      const {
+        fromBlockName,
+        toBlockName,
+      } = msg.data;
 
       const graph =
         routeGraphRuntimeStore.getGraph();
@@ -108,10 +93,6 @@ export const handleRouteMessage: WsMessageHandler = async ({
         return true;
       }
 
-      /**
-       * A route foglalása már sikerült,
-       * ezt rögtön broadcastoljuk minden kliensnek.
-       */
       broadcast({
         type: "routeReservationChanged",
         data: {
@@ -129,10 +110,6 @@ export const handleRouteMessage: WsMessageHandler = async ({
         },
       });
 
-      /**
-       * A fizikai váltóállítás idejére lockoljuk a command centert.
-       * Ettől villog a StatusBar busy/lock jelzése.
-       */
       commandCenter.locked = true;
       commandCenter.lockOwnerUUID = msg.uuid;
 
@@ -146,10 +123,6 @@ export const handleRouteMessage: WsMessageHandler = async ({
       });
 
       try {
-        /**
-         * A graph logikai closed értékét átfordítjuk
-         * az adott váltó fizikai command-center boolean értékére.
-         */
         for (const turnoutState of solution.turnoutStates) {
           const turnout =
             topology
@@ -182,14 +155,6 @@ export const handleRouteMessage: WsMessageHandler = async ({
           );
         }
       } finally {
-        /**
-         * A műveleti lockot akkor is elengedjük,
-         * ha váltóállítás közben történik valami gebasz.
-         *
-         * FONTOS:
-         * Ez csak a command center lock,
-         * maga a route reservation továbbra is megmarad.
-         */
         commandCenter.locked = false;
         commandCenter.lockOwnerUUID = null;
 
@@ -207,25 +172,10 @@ export const handleRouteMessage: WsMessageHandler = async ({
     }
 
     case "releaseRouteReservation": {
-      const fromBlockName =
-        msg.data?.fromBlockName;
-
-      const toBlockName =
-        msg.data?.toBlockName;
-
-      if (
-        typeof fromBlockName !== "string" ||
-        typeof toBlockName !== "string"
-      ) {
-        sendToClient(ws, {
-          type: "routeReservationReleaseRejected",
-          data: {
-            reason: "Invalid releaseRouteReservation payload.",
-          },
-        });
-
-        return true;
-      }
+      const {
+        fromBlockName,
+        toBlockName,
+      } = msg.data;
 
       const result =
         routeGraphRuntimeStore.releaseRouteReservation(

@@ -5,18 +5,7 @@ import { logError, } from "../../utility.js";
 export const handleRouteMessage = async ({ ws, msg, commandCenter, sendToClient, broadcast, }) => {
     switch (msg.type) {
         case "reserveRoute": {
-            const fromBlockName = msg.data?.fromBlockName;
-            const toBlockName = msg.data?.toBlockName;
-            if (typeof fromBlockName !== "string" ||
-                typeof toBlockName !== "string") {
-                sendToClient(ws, {
-                    type: "routeReservationRejected",
-                    data: {
-                        reason: "Invalid reserveRoute payload.",
-                    },
-                });
-                return true;
-            }
+            const { fromBlockName, toBlockName, } = msg.data;
             const graph = routeGraphRuntimeStore.getGraph();
             if (!graph) {
                 sendToClient(ws, {
@@ -57,10 +46,6 @@ export const handleRouteMessage = async ({ ws, msg, commandCenter, sendToClient,
                 });
                 return true;
             }
-            /**
-             * A route foglalása már sikerült,
-             * ezt rögtön broadcastoljuk minden kliensnek.
-             */
             broadcast({
                 type: "routeReservationChanged",
                 data: {
@@ -72,10 +57,6 @@ export const handleRouteMessage = async ({ ws, msg, commandCenter, sendToClient,
                     toBlockName,
                 },
             });
-            /**
-             * A fizikai váltóállítás idejére lockoljuk a command centert.
-             * Ettől villog a StatusBar busy/lock jelzése.
-             */
             commandCenter.locked = true;
             commandCenter.lockOwnerUUID = msg.uuid;
             broadcast({
@@ -87,10 +68,6 @@ export const handleRouteMessage = async ({ ws, msg, commandCenter, sendToClient,
                 },
             });
             try {
-                /**
-                 * A graph logikai closed értékét átfordítjuk
-                 * az adott váltó fizikai command-center boolean értékére.
-                 */
                 for (const turnoutState of solution.turnoutStates) {
                     const turnout = topology
                         .getTurnouts()
@@ -106,14 +83,6 @@ export const handleRouteMessage = async ({ ws, msg, commandCenter, sendToClient,
                 }
             }
             finally {
-                /**
-                 * A műveleti lockot akkor is elengedjük,
-                 * ha váltóállítás közben történik valami gebasz.
-                 *
-                 * FONTOS:
-                 * Ez csak a command center lock,
-                 * maga a route reservation továbbra is megmarad.
-                 */
                 commandCenter.locked = false;
                 commandCenter.lockOwnerUUID = null;
                 broadcast({
@@ -128,18 +97,7 @@ export const handleRouteMessage = async ({ ws, msg, commandCenter, sendToClient,
             return true;
         }
         case "releaseRouteReservation": {
-            const fromBlockName = msg.data?.fromBlockName;
-            const toBlockName = msg.data?.toBlockName;
-            if (typeof fromBlockName !== "string" ||
-                typeof toBlockName !== "string") {
-                sendToClient(ws, {
-                    type: "routeReservationReleaseRejected",
-                    data: {
-                        reason: "Invalid releaseRouteReservation payload.",
-                    },
-                });
-                return true;
-            }
+            const { fromBlockName, toBlockName, } = msg.data;
             const result = routeGraphRuntimeStore.releaseRouteReservation(fromBlockName, toBlockName);
             if (!result.ok) {
                 sendToClient(ws, {

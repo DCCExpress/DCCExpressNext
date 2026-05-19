@@ -16,15 +16,9 @@ export const handleScriptMessage = async ({ ws, msg, sendToClient, }) => {
     switch (msg.type) {
         case "runScript": {
             try {
-                const script = typeof msg.data?.script === "string"
-                    ? msg.data.script
-                    : undefined;
-                const source = normalizeScriptRunSource(msg.data?.source);
-                const elementId = typeof msg.data?.elementId === "string"
-                    ? msg.data.elementId
-                    : null;
+                const { script, source, elementId, } = msg.data;
                 await scriptRuntimeStore.run(script, {
-                    source,
+                    source: normalizeScriptRunSource(source),
                     elementId,
                 });
             }
