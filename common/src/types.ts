@@ -18,3 +18,4 @@ export * from "./wsTypes.js";
 export * from "./commandCenterTelemetry.js";
 export * from "./routeReservation.js";
 export * from "./railwayRuntimeEvents.js";
+export * from "./clientWsCommands.js";

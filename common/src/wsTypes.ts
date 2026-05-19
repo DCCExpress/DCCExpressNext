@@ -1,12 +1,11 @@
 // common/src/wsTypes.ts
 
 import type {
-  Direction,
-} from "./domainTypes.js";
+  ClientWsPayloadMap,
+} from "./clientWsCommands.js";
 
 import type {
   ScriptDocumentDto,
-  ScriptRunSource,
   ScriptStateDto,
 } from "./scriptTypes.js";
 
@@ -22,19 +21,19 @@ import type {
 } from "./fastClock.js";
 
 import type {
+  RouteReservationChangedPayload,
+  RouteReservationRejectedPayload,
+  RouteReservationReleasedPayload,
+  RouteReservationReleaseRejectedPayload,
+} from "./routeReservation.js";
+
+import type {
   AccessoryChangedPayload,
   BlockStateChangedPayload,
   LocoStateChangedPayload,
   SensorChangedPayload,
   TurnoutChangedPayload,
 } from "./railwayRuntimeEvents.js";
-
-import type {
-  RouteReservationChangedPayload,
-  RouteReservationRejectedPayload,
-  RouteReservationReleasedPayload,
-  RouteReservationReleaseRejectedPayload,
-} from "./routeReservation.js";
 
 import type {
   CommandCenterInfoPayload,
@@ -69,110 +68,13 @@ export type ClientWsMessage<T = any> = {
   uuid: string;
 };
 
-/**
- * Kliens -> szerver WebSocket parancsok payload térképe.
- */
-export type ClientWsPayloadMap = {
-  setTrackPower: {
-    on: boolean;
-  };
-
-  emergencyStop: {};
-
-  setLoco: {
-    locoAddress: number;
-    speed: number;
-    direction: Direction;
-  };
-
-  getLoco: {
-    locoAddress: number;
-  };
-
-  setLocoFunction: {
-    locoAddress: number;
-    functionNumber: number;
-    active: boolean;
-  };
-
-  setTurnout: {
-    address: number;
-    closed: boolean;
-  };
-
-  setSensor: {
-    address: number;
-    on: boolean;
-  };
-
-  setBasicAccessory: {
-    address: number;
-    active: boolean;
-  };
-
-  setBlock: {
-    blockId: string;
-    locoId: string | null;
-  };
-
-  setBlockRemove: {
-    blockId: string;
-    locoId: string | null;
-  };
-
-  setBlocksReset: {};
-  getBlocks: {};
-
-  routeLock: {};
-  routeUnlock: {};
-
-  reserveRoute: {
-    fromBlockName: string;
-    toBlockName: string;
-  };
-
-  releaseRouteReservation: {
-    fromBlockName: string;
-    toBlockName: string;
-  };
-
-  clearAllRouteReservations: {};
-  getRouteReservations: {};
-
-  runScript: {
-    script?: string;
-    source: ScriptRunSource;
-    elementId: string | null;
-  };
-
-  stopScript: {};
-  getScriptRuntimeState: {};
-
-  startTask: {
-    taskIdOrName: string;
-  };
-
-  finishTask: {
-    taskIdOrName: string;
-  };
-
-  abortTask: {
-    taskIdOrName: string;
-  };
-
-  pauseTask: {
-    taskIdOrName: string;
-  };
-
-  resumeTask: {
-    taskIdOrName: string;
-  };
-
-  finishAllTasks: {};
-  abortAllTasks: {};
-  getTaskRuntimeState: {};
+export type {
+  ClientWsPayloadMap,
 };
 
+/**
+ * Kliens -> szerver parancs message type.
+ */
 export type ClientWsMessageType =
   keyof ClientWsPayloadMap;
 
@@ -309,7 +211,8 @@ export type ServerWsPayloadMap = {
 
   routeReservationRejected: RouteReservationRejectedPayload;
 
-  routeReservationReleaseRejected: RouteReservationReleaseRejectedPayload;
+  routeReservationReleaseRejected:
+    RouteReservationReleaseRejectedPayload;
 
   routeReservationReleased: RouteReservationReleasedPayload;
 
