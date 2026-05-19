@@ -90,7 +90,7 @@ export class CommandCenterSimulator extends CommandCenter {
         return Promise.resolve(this.getOrCreateLoco(address) ?? null);
     }
     setBasicAccessory(address, active) {
-        log("Sim: setBasicAccessory", { address, active });
+        //log("Sim: setBasicAccessory", { address, active });
         const accessory = this.getOrCreateAccessory(address);
         accessory.active = active;
         const msg = {
