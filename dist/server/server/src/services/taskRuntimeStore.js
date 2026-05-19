@@ -4,6 +4,7 @@ import { railwayTopologyStore } from "./railwayTopologyStore.js";
 import { trainSimulatorRuntimeStore } from "./trainSimulatorRuntimeStore.js";
 import { cloneTrainTask, createEmptyTrainTaskRuntimeState, createTaskManagerOverlayState, createTrainTaskId, } from "./tasks/taskRuntimeHelpers.js";
 import { ensureTaskStorage, normalizeSavedTrainTask, readSavedTrainTaskEntries, writeSavedTrainTasks, } from "./tasks/taskPersistence.js";
+import { TaskRouteRuntimeCoordinator, } from "./tasks/taskRouteRuntimeCoordinator.js";
 class TaskRuntimeStore {
     initialized = false;
     broadcast = null;
@@ -11,12 +12,22 @@ class TaskRuntimeStore {
     getSimulatorCommandCenter = null;
     tasks = [];
     savedTasks = [];
+    routeCoordinator = null;
     reservedRoutesByTaskId = new Map();
     configure(params) {
         this.broadcast = params.broadcast;
         this.getBlockState = params.getBlockState;
         this.getSimulatorCommandCenter =
             params.getSimulatorCommandCenter;
+        this.routeCoordinator =
+            new TaskRouteRuntimeCoordinator({
+                broadcast: params.broadcast,
+                getBlockState: params.getBlockState,
+                getSimulatorCommandCenter: params.getSimulatorCommandCenter,
+                updateTaskSimulationProgress: (taskId, progress) => {
+                    return this.updateTaskSimulationProgress(taskId, progress);
+                },
+            });
         trainSimulatorRuntimeStore.configure({
             getTasks: () => this.tasks.map(cloneTrainTask),
             getBlockState: (blockId) => params.getBlockState(blockId),
@@ -163,7 +174,7 @@ class TaskRuntimeStore {
             task.status === "finishing") {
             return this.actionError("Futó, szüneteltetett vagy befejezés alatt álló feladatot előbb abortálj vagy várd meg a végét.");
         }
-        this.releaseTaskRoute(task.id);
+        this.routeCoordinator?.releaseTaskRoute(task.id);
         this.tasks.splice(taskIndex, 1);
         const savedIndex = this.savedTasks.findIndex(item => item.id === taskId);
         if (savedIndex >= 0) {
@@ -283,154 +294,8 @@ class TaskRuntimeStore {
         if (!task) {
             return false;
         }
-        if (task.status !== "running" &&
-            task.status !== "paused" &&
-            task.status !== "finishing") {
-            return false;
-        }
-        if (!task.runtime.loco) {
-            return false;
-        }
-        /**
-         * Ha ennek a tasknak már van lefoglalt route-ja,
-         * nem foglaljuk újra.
-         */
-        if (this.reservedRoutesByTaskId.has(task.id)) {
-            return true;
-        }
-        const commandCenter = this.getSimulatorCommandCenter?.() ?? null;
-        /**
-         * Nincs elérhető command center.
-         * Nem hibázunk el, csak várunk.
-         */
-        if (!commandCenter) {
-            await this.markTaskWaitingForRoute(task);
-            return false;
-        }
-        /**
-         * Ha épp foglalt a command center,
-         * akkor nem állítunk váltót, hanem később újrapróbáljuk.
-         */
-        if (commandCenter.locked) {
-            await this.markTaskWaitingForRoute(task);
-            return false;
-        }
-        const topology = railwayTopologyStore.getTopology();
-        if (!topology) {
-            await this.markTaskWaitingForRoute(task);
-            return false;
-        }
-        /**
-         * Indítás előtti teljes blokkellenőrzés.
-         *
-         * A task csak akkor foglalhat le útvonalat,
-         * ha a saját induló blokkján kívül
-         * a teljes blokk-lánc üres.
-         *
-         * Így nem foglal le félpályát úgy,
-         * hogy előre láthatóan úgysem tudna végigmenni.
-         */
-        const blockedRouteBlock = this.findFirstOccupiedRouteBlock(task);
-        if (blockedRouteBlock) {
-            await this.markTaskWaitingForRouteBlockSensor(task, blockedRouteBlock);
-            return false;
-        }
-        const fromBlockName = task.transition.fromBlock.name;
-        const toBlockName = task.transition.toBlock.name;
-        /**
-         * Route reservation.
-         * Ha nem sikerül, várakozás és retry.
-         */
-        const reservation = routeGraphRuntimeStore.tryReserveRoute(fromBlockName, toBlockName, task.transition.solution);
-        if (!reservation.ok) {
-            await this.markTaskWaitingForRoute(task);
-            return false;
-        }
-        this.reservedRoutesByTaskId.set(task.id, {
-            fromBlockName,
-            toBlockName,
-        });
-        /**
-         * Ettől színeződik át a pálya a kliensen.
-         */
-        this.broadcast?.({
-            type: "routeReservationChanged",
-            data: {
-                busy: true,
-                sectionNames: reservation.reservation.sectionNames,
-                elementIds: routeGraphRuntimeStore.getElementIdsForSections(reservation.reservation.sectionNames),
-                turnoutAddresses: reservation.reservation.turnoutAddresses,
-                fromBlockName,
-                toBlockName,
-            },
-        });
-        let turnoutsPrepared = false;
-        /**
-         * A váltóállítás idejére foglaljuk le a command centert.
-         */
-        commandCenter.locked = true;
-        commandCenter.lockOwnerUUID =
-            `task:${task.id}`;
-        this.broadcast?.({
-            type: "commandCenterLockChanged",
-            data: {
-                locked: true,
-                lockOwner: commandCenter.lockOwnerUUID,
-                reason: "task-route",
-            },
-        });
-        try {
-            for (const turnoutState of task.transition.solution.turnoutStates) {
-                const turnout = topology
-                    .getTurnouts()
-                    .find(item => item.turnoutAddress === turnoutState.address);
-                if (!turnout) {
-                    console.error(`[TaskRuntimeStore] Turnout not found in topology: ${turnoutState.address}`);
-                    return false;
-                }
-                /**
-                 * A gráf logikai closed állapotából
-                 * command center fizikai boolean értéket képzünk.
-                 */
-                const physicalClosed = turnoutState.closed === turnout.turnoutClosedValue;
-                const success = await commandCenter.setTurnout(turnoutState.address, physicalClosed);
-                if (!success) {
-                    console.error(`[TaskRuntimeStore] Failed to set turnout #${turnoutState.address}.`);
-                    return false;
-                }
-                await commandCenter.saveRuntimeState();
-                /**
-                 * Ugyanaz a kis késleltetés, mint a kézi route foglalásnál.
-                 */
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-            turnoutsPrepared = true;
-            return true;
-        }
-        finally {
-            /**
-             * A command center lockot mindenképp elengedjük.
-             */
-            commandCenter.locked = false;
-            commandCenter.lockOwnerUUID = null;
-            this.broadcast?.({
-                type: "commandCenterLockChanged",
-                data: {
-                    locked: false,
-                    lockOwner: null,
-                    reason: null,
-                },
-            });
-            /**
-             * Ha a váltóállítás bármelyik ponton elhasalt,
-             * a route reservationt visszavonjuk,
-             * a task pedig vár és újrapróbálkozik.
-             */
-            if (!turnoutsPrepared) {
-                this.releaseTaskRoute(task.id);
-                await this.markTaskWaitingForRoute(task);
-            }
-        }
+        return (await this.routeCoordinator
+            ?.tryPrepareTaskRoute(task)) ?? false;
     }
     async updateTaskSimulationProgress(taskId, progress) {
         await this.initialize();
@@ -498,7 +363,7 @@ class TaskRuntimeStore {
          * az induló blokkot, akkor nincs aktív ciklus, amit kulturáltan
          * végig kellene futtatni. Ilyenkor azonnal completed lesz.
          */
-        const hasActiveCycle = this.reservedRoutesByTaskId.has(task.id) ||
+        const hasActiveCycle = (this.routeCoordinator?.hasReservedRoute(task.id) ?? false) ||
             task.runtime.hasLeftFromBlock ||
             task.runtime.inTransit ||
             task.runtime.simulation.phase === "departing" ||
@@ -518,7 +383,7 @@ class TaskRuntimeStore {
                 toBlockName: null,
                 waitingSensorAddress: null,
             };
-            this.releaseTaskRoute(task.id);
+            this.routeCoordinator?.releaseTaskRoute(task.id);
             this.broadcast?.({
                 type: "taskCompleted",
                 data: {
@@ -567,7 +432,7 @@ class TaskRuntimeStore {
             toBlockName: null,
             waitingSensorAddress: null,
         };
-        this.releaseTaskRoute(task.id);
+        this.routeCoordinator?.releaseTaskRoute(task.id);
         this.broadcastSnapshot();
         return this.actionOk();
     }
@@ -618,7 +483,7 @@ class TaskRuntimeStore {
          * A célblokk elérésével a foglalás megszűnik,
          * és a kliensről is eltűnik a lefoglalt route színezés.
          */
-        this.releaseTaskRoute(task.id);
+        this.routeCoordinator?.releaseTaskRoute(task.id);
         /**
          * Finish módban a task nem indul új ciklusba,
          * hanem valódi completed végállapotot kap.
