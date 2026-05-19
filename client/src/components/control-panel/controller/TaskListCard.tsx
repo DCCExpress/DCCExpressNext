@@ -4,8 +4,6 @@ import {
   Badge,
   Button,
   Card,
-  Collapse,
-  Divider,
   Group,
   ScrollArea,
   Stack,
@@ -32,11 +30,7 @@ import {
   taskManager,
 } from "../../../services/tasks/taskManagerSingleton";
 
-import {
-  usePersistentCollapsedState,
-} from "../../../hooks/usePersistentCollapsedState";
-
-import CollapsibleCardHeader from "../../common/CollapsibleCardHeader";
+import CollapsiblePanelCard from "../../common/CollapsiblePanelCard";
 
 import {
   getTaskProgressColor,
@@ -55,21 +49,20 @@ type TaskListCardProps = {
 export default function TaskListCard({
   snapshot,
 }: TaskListCardProps) {
-  const {
-    collapsed,
-    toggleCollapsed,
-  } = usePersistentCollapsedState(
-    TASK_LIST_COLLAPSED_KEY
-  );
-
   const runTaskAction = async (
-    action: () => Promise<{ ok: true } | { ok: false; error: string }>
-  ) => {
+    action: () => Promise<
+      | { ok: true }
+      | { ok: false; error: string }
+    >
+  ): Promise<void> => {
     const result =
       await action();
 
     if (!result.ok) {
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(
+        "ERROR",
+        result.error
+      );
     }
   };
 
@@ -83,9 +76,13 @@ export default function TaskListCard({
             size="xs"
             variant="light"
             color="green"
-            leftSection={<IconPlayerPlay size={14} />}
+            leftSection={
+              <IconPlayerPlay size={14} />
+            }
             onClick={() =>
-              void runTaskAction(() => taskManager.startTask(task.id))
+              void runTaskAction(
+                () => taskManager.startTask(task.id)
+              )
             }
           >
             Start
@@ -102,9 +99,13 @@ export default function TaskListCard({
               size="xs"
               variant="light"
               color="yellow"
-              leftSection={<IconPlayerPause size={14} />}
+              leftSection={
+                <IconPlayerPause size={14} />
+              }
               onClick={() =>
-                void runTaskAction(() => taskManager.pauseTask(task.id))
+                void runTaskAction(
+                  () => taskManager.pauseTask(task.id)
+                )
               }
             >
               Pause
@@ -114,9 +115,13 @@ export default function TaskListCard({
               size="xs"
               variant="light"
               color="orange"
-              leftSection={<IconCheck size={14} />}
+              leftSection={
+                <IconCheck size={14} />
+              }
               onClick={() =>
-                void runTaskAction(() => taskManager.finishTask(task.id))
+                void runTaskAction(
+                  () => taskManager.finishTask(task.id)
+                )
               }
             >
               Finish
@@ -126,9 +131,13 @@ export default function TaskListCard({
               size="xs"
               variant="light"
               color="red"
-              leftSection={<IconPlayerStop size={14} />}
+              leftSection={
+                <IconPlayerStop size={14} />
+              }
               onClick={() =>
-                void runTaskAction(() => taskManager.abortTask(task.id))
+                void runTaskAction(
+                  () => taskManager.abortTask(task.id)
+                )
               }
             >
               Abort
@@ -146,9 +155,13 @@ export default function TaskListCard({
               size="xs"
               variant="light"
               color="green"
-              leftSection={<IconPlayerPlay size={14} />}
+              leftSection={
+                <IconPlayerPlay size={14} />
+              }
               onClick={() =>
-                void runTaskAction(() => taskManager.resumeTask(task.id))
+                void runTaskAction(
+                  () => taskManager.resumeTask(task.id)
+                )
               }
             >
               Resume
@@ -158,9 +171,13 @@ export default function TaskListCard({
               size="xs"
               variant="light"
               color="orange"
-              leftSection={<IconCheck size={14} />}
+              leftSection={
+                <IconCheck size={14} />
+              }
               onClick={() =>
-                void runTaskAction(() => taskManager.finishTask(task.id))
+                void runTaskAction(
+                  () => taskManager.finishTask(task.id)
+                )
               }
             >
               Finish
@@ -170,9 +187,13 @@ export default function TaskListCard({
               size="xs"
               variant="light"
               color="red"
-              leftSection={<IconPlayerStop size={14} />}
+              leftSection={
+                <IconPlayerStop size={14} />
+              }
               onClick={() =>
-                void runTaskAction(() => taskManager.abortTask(task.id))
+                void runTaskAction(
+                  () => taskManager.abortTask(task.id)
+                )
               }
             >
               Abort
@@ -186,9 +207,13 @@ export default function TaskListCard({
             size="xs"
             variant="light"
             color="red"
-            leftSection={<IconPlayerStop size={14} />}
+            leftSection={
+              <IconPlayerStop size={14} />
+            }
             onClick={() =>
-              void runTaskAction(() => taskManager.abortTask(task.id))
+              void runTaskAction(
+                () => taskManager.abortTask(task.id)
+              )
             }
           >
             Abort
@@ -202,9 +227,13 @@ export default function TaskListCard({
             size="xs"
             variant="light"
             color="green"
-            leftSection={<IconPlayerPlay size={14} />}
+            leftSection={
+              <IconPlayerPlay size={14} />
+            }
             onClick={() =>
-              void runTaskAction(() => taskManager.startTask(task.id))
+              void runTaskAction(
+                () => taskManager.startTask(task.id)
+              )
             }
           >
             Start again
@@ -217,142 +246,131 @@ export default function TaskListCard({
   };
 
   return (
-    <Card
-      withBorder
-      radius="md"
-      p="sm"
+    <CollapsiblePanelCard
+      title="Task list"
+      collapsedStorageKey={
+        TASK_LIST_COLLAPSED_KEY
+      }
+      expandTooltip="Expand task list"
+      collapseTooltip="Collapse task list"
+      rightSection={
+        <Badge variant="light">
+          {snapshot.tasks.length} task
+        </Badge>
+      }
     >
       <ScrollArea.Autosize
         mah="calc(100vh - 420px)"
         type="auto"
         offsetScrollbars
       >
-        <Stack gap="sm">
-          <CollapsibleCardHeader
-            title="Task list"
-            collapsed={collapsed}
-            onToggle={toggleCollapsed}
-            expandTooltip="Expand task list"
-            collapseTooltip="Collapse task list"
-            rightSection={
-              <Badge variant="light">
-                {snapshot.tasks.length} task
-              </Badge>
-            }
-          />
+        {snapshot.tasks.length === 0 ? (
+          <Text
+            size="sm"
+            c="dimmed"
+          >
+            Nincs aktív vagy felvett feladat.
+          </Text>
+        ) : (
+          <Stack gap="sm">
+            {snapshot.tasks.map(task => (
+              <Card
+                key={task.id}
+                withBorder
+                radius="sm"
+                p="xs"
+              >
+                <Stack gap="xs">
+                  <Group
+                    justify="space-between"
+                    align="flex-start"
+                  >
+                    <Stack gap={2}>
+                      <Text
+                        size="sm"
+                        fw={700}
+                      >
+                        {task.name}
+                      </Text>
 
-          <Collapse expanded={!collapsed}>
-            <Stack gap="sm">
-              <Divider />
-
-              {snapshot.tasks.length === 0 ? (
-                <Text
-                  size="sm"
-                  c="dimmed"
-                >
-                  Nincs aktív vagy felvett feladat.
-                </Text>
-              ) : (
-                <Stack gap="sm">
-                  {snapshot.tasks.map(task => (
-                    <Card
-                      key={task.id}
-                      withBorder
-                      radius="sm"
-                      p="xs"
-                    >
-                      <Stack gap="xs">
-                        <Group
-                          justify="space-between"
-                          align="flex-start"
-                        >
-                          <Stack gap={2}>
-                            <Text
-                              size="sm"
-                              fw={700}
+                      <Group
+                        gap="xs"
+                        wrap="wrap"
+                      >
+                        {task.runtime.loco && (
+                          <>
+                            <Badge
+                              color="indigo"
+                              variant="light"
                             >
-                              {task.name}
-                            </Text>
+                              {task.runtime.loco.name}
+                            </Badge>
 
-                            <Group
-                              gap="xs"
-                              wrap="wrap"
+                            <Badge
+                              color="gray"
+                              variant="light"
                             >
-                              {task.runtime.loco && (
-                                <>
-                                  <Badge
-                                    color="indigo"
-                                    variant="light"
-                                  >
-                                    {task.runtime.loco.name}
-                                  </Badge>
-
-                                  <Badge
-                                    color="gray"
-                                    variant="light"
-                                  >
-                                    Address {task.runtime.loco.address}
-                                  </Badge>
-                                </>
-                              )}
-
-                              <Badge
-                                color="cyan"
-                                variant="light"
-                              >
-                                Speed {task.targetSpeed}
-                              </Badge>
-                            </Group>
-                          </Stack>
-
-                          <Badge
-                            size="sm"
-                            color={getTaskStatusColor(task.status)}
-                            variant="light"
-                          >
-                            {getTaskStatusLabel(task.status)}
-                          </Badge>
-                        </Group>
-
-                        <Group
-                          gap="xs"
-                          wrap="wrap"
-                        >
-                          <Badge
-                            color="violet"
-                            variant="filled"
-                          >
-                            {task.transition.fromBlock.name}
-                          </Badge>
-
-                          <Text fw={700}>→</Text>
-
-                          <Badge
-                            color="violet"
-                            variant="filled"
-                          >
-                            {task.transition.toBlock.name}
-                          </Badge>
-                        </Group>
+                              Address {task.runtime.loco.address}
+                            </Badge>
+                          </>
+                        )}
 
                         <Badge
-                          color={getTaskProgressColor(task)}
+                          color="cyan"
                           variant="light"
-                          style={{ alignSelf: "flex-start" }}
                         >
-                          {getTaskProgressLabel(task)}
+                          Speed {task.targetSpeed}
                         </Badge>
+                      </Group>
+                    </Stack>
 
-                        {renderTaskControls(task)}
-                      </Stack>
-                    </Card>
-                  ))}
+                    <Badge
+                      size="sm"
+                      color={getTaskStatusColor(task.status)}
+                      variant="light"
+                    >
+                      {getTaskStatusLabel(task.status)}
+                    </Badge>
+                  </Group>
+
+                  <Group
+                    gap="xs"
+                    wrap="wrap"
+                  >
+                    <Badge
+                      color="violet"
+                      variant="filled"
+                    >
+                      {task.transition.fromBlock.name}
+                    </Badge>
+
+                    <Text fw={700}>→</Text>
+
+                    <Badge
+                      color="violet"
+                      variant="filled"
+                    >
+                      {task.transition.toBlock.name}
+                    </Badge>
+                  </Group>
+
+                  <Badge
+                    color={getTaskProgressColor(task)}
+                    variant="light"
+                    style={{
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    {getTaskProgressLabel(task)}
+                  </Badge>
+
+                  {renderTaskControls(task)}
                 </Stack>
-              )}
-            </Stack>
-          </Collapse>
-        </Stack>
+              </Card>
+            ))}
+          </Stack>
+        )}
       </ScrollArea.Autosize>
-    </Card>
+    </CollapsiblePanelCard>
   );
 }

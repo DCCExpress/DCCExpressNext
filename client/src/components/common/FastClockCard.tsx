@@ -8,9 +8,6 @@ import {
 import {
   Badge,
   Button,
-  Card,
-  Collapse,
-  Divider,
   Group,
   NumberInput,
   Stack,
@@ -38,16 +35,14 @@ import {
   useFastClock,
 } from "../../hooks/useFastClock";
 
-import {
-  usePersistentCollapsedState,
-} from "../../hooks/usePersistentCollapsedState";
-
-import CollapsibleCardHeader from "./CollapsibleCardHeader";
+import CollapsiblePanelCard from "./CollapsiblePanelCard";
 
 const FAST_CLOCK_CARD_COLLAPSED_KEY =
   "dcc-express.fast-clock-card.collapsed";
 
-function formatFastClock(timeMs: number): string {
+function formatFastClock(
+  timeMs: number
+): string {
   const totalSeconds =
     Math.floor(timeMs / 1000);
 
@@ -65,7 +60,11 @@ function formatFastClock(timeMs: number): string {
     minutes,
     seconds,
   ]
-    .map(value => value.toString().padStart(2, "0"))
+    .map(value =>
+      value
+        .toString()
+        .padStart(2, "0")
+    )
     .join(":");
 }
 
@@ -73,7 +72,8 @@ export default function FastClockCard() {
   const {
     snapshot,
     connected,
-  } = useFastClock();
+  } =
+    useFastClock();
 
   const [speedInput, setSpeedInput] =
     useState<string | number>(1);
@@ -83,13 +83,6 @@ export default function FastClockCard() {
 
   const [error, setError] =
     useState<string | null>(null);
-
-  const {
-    collapsed,
-    toggleCollapsed,
-  } = usePersistentCollapsedState(
-    FAST_CLOCK_CARD_COLLAPSED_KEY
-  );
 
   useEffect(() => {
     if (!snapshot) {
@@ -101,7 +94,7 @@ export default function FastClockCard() {
 
   const runAction = async (
     action: () => Promise<NonNullable<typeof snapshot>>
-  ) => {
+  ): Promise<void> => {
     setBusy(true);
 
     try {
@@ -121,7 +114,7 @@ export default function FastClockCard() {
     }
   };
 
-  const toggleClock = () => {
+  const toggleClock = (): void => {
     if (snapshot?.running) {
       void runAction(pauseFastClock);
       return;
@@ -130,7 +123,7 @@ export default function FastClockCard() {
     void runAction(runFastClock);
   };
 
-  const applySpeed = () => {
+  const applySpeed = (): void => {
     const speed =
       typeof speedInput === "number"
         ? speedInput
@@ -153,144 +146,153 @@ export default function FastClockCard() {
   };
 
   return (
-    <Card
-      withBorder
-      radius="md"
-      p="sm"
-    >
-      <Stack gap="sm">
-        <CollapsibleCardHeader
-          title="Fast Clock"
-          collapsed={collapsed}
-          onToggle={toggleCollapsed}
-          expandTooltip="Expand fast clock"
-          collapseTooltip="Collapse fast clock"
-          rightSection={
-            <>
-              <Badge
-                color={
-                  !connected
-                    ? "red"
-                    : snapshot?.running
-                      ? "green"
-                      : "yellow"
-                }
-                variant="light"
-              >
-                {!connected
-                  ? "OFFLINE"
-                  : snapshot?.running
-                    ? "RUNNING"
-                    : "PAUSED"}
-              </Badge>
+    <CollapsiblePanelCard
+      title="Fast Clock"
+      collapsedStorageKey={
+        FAST_CLOCK_CARD_COLLAPSED_KEY
+      }
+      expandTooltip="Expand fast clock"
+      collapseTooltip="Collapse fast clock"
+      rightSection={
+        <>
+          <Badge
+            color={
+              !connected
+                ? "red"
+                : snapshot?.running
+                  ? "green"
+                  : "yellow"
+            }
+            variant="light"
+          >
+            {!connected
+              ? "OFFLINE"
+              : snapshot?.running
+                ? "RUNNING"
+                : "PAUSED"}
+          </Badge>
 
-              <Badge
-                color="cyan"
-                variant="light"
-              >
-                {snapshot ? `${snapshot.speed}×` : "-"}
-              </Badge>
-            </>
+          <Badge
+            color="cyan"
+            variant="light"
+          >
+            {snapshot
+              ? `${snapshot.speed}×`
+              : "-"}
+          </Badge>
+        </>
+      }
+    >
+      <Text
+        fw={800}
+        ta="center"
+        style={{
+          fontSize: 38,
+          lineHeight: 1.1,
+          fontVariantNumeric: "tabular-nums",
+          letterSpacing: "0.08em",
+        }}
+      >
+        {snapshot
+          ? formatFastClock(snapshot.timeMs)
+          : "--:--:--"}
+      </Text>
+
+      <Group grow>
+        <Button
+          size="xs"
+          variant="light"
+          color={
+            snapshot?.running
+              ? "yellow"
+              : "green"
           }
+          leftSection={
+            snapshot?.running ? (
+              <IconPlayerPause size={16} />
+            ) : (
+              <IconPlayerPlay size={16} />
+            )
+          }
+          disabled={
+            busy ||
+            !snapshot ||
+            !connected
+          }
+          onClick={toggleClock}
+        >
+          {snapshot?.running
+            ? "Pause"
+            : "Run"}
+        </Button>
+
+        <Button
+          size="xs"
+          variant="light"
+          color="gray"
+          leftSection={
+            <IconRefresh size={16} />
+          }
+          disabled={
+            busy ||
+            !snapshot ||
+            !connected
+          }
+          onClick={() => {
+            void runAction(resetFastClock);
+          }}
+        >
+          Reset
+        </Button>
+      </Group>
+
+      <Group
+        align="end"
+        gap="xs"
+      >
+        <NumberInput
+          label="Speed multiplier"
+          description="Minimum 1×"
+          value={speedInput}
+          min={1}
+          step={1}
+          allowDecimal={false}
+          onChange={setSpeedInput}
+          style={{ flex: 1 }}
         />
 
-        <Collapse expanded={!collapsed}>
-          <Stack gap="sm">
-            <Divider />
+        <Button
+          size="xs"
+          variant="light"
+          color="blue"
+          disabled={
+            busy ||
+            !snapshot ||
+            !connected
+          }
+          onClick={applySpeed}
+        >
+          Set speed
+        </Button>
+      </Group>
 
-            <Text
-              fw={800}
-              ta="center"
-              style={{
-                fontSize: 38,
-                lineHeight: 1.1,
-                fontVariantNumeric: "tabular-nums",
-                letterSpacing: "0.08em",
-              }}
-            >
-              {snapshot
-                ? formatFastClock(snapshot.timeMs)
-                : "--:--:--"}
-            </Text>
+      <Text
+        size="xs"
+        c={!connected ? "red" : "dimmed"}
+      >
+        {!connected
+          ? "Server disconnected. The fast clock display is frozen."
+          : "Server-synced over WebSocket, rendered smoothly in the client."}
+      </Text>
 
-            <Group grow>
-              <Button
-                size="xs"
-                variant="light"
-                color={snapshot?.running ? "yellow" : "green"}
-                leftSection={
-                  snapshot?.running ? (
-                    <IconPlayerPause size={16} />
-                  ) : (
-                    <IconPlayerPlay size={16} />
-                  )
-                }
-                disabled={busy || !snapshot || !connected}
-                onClick={toggleClock}
-              >
-                {snapshot?.running ? "Pause" : "Run"}
-              </Button>
-
-              <Button
-                size="xs"
-                variant="light"
-                color="gray"
-                leftSection={<IconRefresh size={16} />}
-                disabled={busy || !snapshot || !connected}
-                onClick={() => {
-                  void runAction(resetFastClock);
-                }}
-              >
-                Reset
-              </Button>
-            </Group>
-
-            <Group
-              align="end"
-              gap="xs"
-            >
-              <NumberInput
-                label="Speed multiplier"
-                description="Minimum 1×"
-                value={speedInput}
-                min={1}
-                step={1}
-                allowDecimal={false}
-                onChange={setSpeedInput}
-                style={{ flex: 1 }}
-              />
-
-              <Button
-                size="xs"
-                variant="light"
-                color="blue"
-                disabled={busy || !snapshot || !connected}
-                onClick={applySpeed}
-              >
-                Set speed
-              </Button>
-            </Group>
-
-            <Text
-              size="xs"
-              c={!connected ? "red" : "dimmed"}
-            >
-              {!connected
-                ? "Server disconnected. The fast clock display is frozen."
-                : "Server-synced over WebSocket, rendered smoothly in the client."}
-            </Text>
-
-            {error && (
-              <Text
-                size="xs"
-                c="red"
-              >
-                {error}
-              </Text>
-            )}
-          </Stack>
-        </Collapse>
-      </Stack>
-    </Card>
+      {error && (
+        <Text
+          size="xs"
+          c="red"
+        >
+          {error}
+        </Text>
+      )}
+    </CollapsiblePanelCard>
   );
 }

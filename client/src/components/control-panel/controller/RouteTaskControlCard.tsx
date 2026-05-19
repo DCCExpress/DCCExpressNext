@@ -7,11 +7,7 @@ import {
 import {
   Badge,
   Button,
-  Card,
-  Collapse,
-  Divider,
   Group,
-  Stack,
   TextInput,
 } from "@mantine/core";
 
@@ -39,11 +35,7 @@ import {
   taskManager,
 } from "../../../services/tasks/taskManagerSingleton";
 
-import {
-  usePersistentCollapsedState,
-} from "../../../hooks/usePersistentCollapsedState";
-
-import CollapsibleCardHeader from "../../common/CollapsibleCardHeader";
+import CollapsiblePanelCard from "../../common/CollapsiblePanelCard";
 
 const ROUTE_TASK_CONTROL_COLLAPSED_KEY =
   "dcc-express.controller.route-task-control.collapsed";
@@ -63,14 +55,7 @@ export default function RouteTaskControlCard({
   const [toBlockName, setToBlockName] =
     useState("C1");
 
-  const {
-    collapsed,
-    toggleCollapsed,
-  } = usePersistentCollapsedState(
-    ROUTE_TASK_CONTROL_COLLAPSED_KEY
-  );
-
-  const handleStartAllTasks = async () => {
+  const handleStartAllTasks = async (): Promise<void> => {
     const result =
       await taskManager.startAllTasks();
 
@@ -79,10 +64,13 @@ export default function RouteTaskControlCard({
       return;
     }
 
-    showOkMessage("SUCCESSFUL", "All tasks started.");
+    showOkMessage(
+      "SUCCESSFUL",
+      "All tasks started."
+    );
   };
 
-  const handleFinishAllTasks = async () => {
+  const handleFinishAllTasks = async (): Promise<void> => {
     const result =
       await taskManager.finishAllTasks();
 
@@ -91,10 +79,13 @@ export default function RouteTaskControlCard({
       return;
     }
 
-    showOkMessage("SUCCESSFUL", "All tasks marked for finish.");
+    showOkMessage(
+      "SUCCESSFUL",
+      "All tasks marked for finish."
+    );
   };
 
-  const handleAbortAllTasks = async () => {
+  const handleAbortAllTasks = async (): Promise<void> => {
     const result =
       await taskManager.abortAllTasks();
 
@@ -103,10 +94,13 @@ export default function RouteTaskControlCard({
       return;
     }
 
-    showOkMessage("SUCCESSFUL", "All active tasks aborted.");
+    showOkMessage(
+      "SUCCESSFUL",
+      "All active tasks aborted."
+    );
   };
 
-  const handleReserveRoute = () => {
+  const handleReserveRoute = (): void => {
     const from =
       fromBlockName.trim();
 
@@ -120,7 +114,7 @@ export default function RouteTaskControlCard({
     wsApi.reserveRoute(from, to);
   };
 
-  const handleReleaseRoute = () => {
+  const handleReleaseRoute = (): void => {
     const from =
       fromBlockName.trim();
 
@@ -134,147 +128,142 @@ export default function RouteTaskControlCard({
     wsApi.releaseRouteReservation(from, to);
   };
 
-  const handleClearAllBusy = () => {
+  const handleClearAllBusy = (): void => {
     wsApi.clearAllRouteReservations();
   };
 
   return (
-    <Card
-      withBorder
-      radius="md"
-      p="sm"
+    <CollapsiblePanelCard
+      title="Route & Task control"
+      collapsedStorageKey={
+        ROUTE_TASK_CONTROL_COLLAPSED_KEY
+      }
+      expandTooltip="Expand route and task controls"
+      collapseTooltip="Collapse route and task controls"
+      rightSection={
+        <Badge variant="light">
+          {snapshot.tasks.length} task
+        </Badge>
+      }
     >
-      <Stack gap="sm">
-        <CollapsibleCardHeader
-          title="Route & Task control"
-          collapsed={collapsed}
-          onToggle={toggleCollapsed}
-          expandTooltip="Expand route and task controls"
-          collapseTooltip="Collapse route and task controls"
-          rightSection={
-            <Badge variant="light">
-              {snapshot.tasks.length} task
-            </Badge>
+      <Group
+        align="end"
+        gap="xs"
+      >
+        <TextInput
+          label="From block"
+          value={fromBlockName}
+          onChange={event =>
+            setFromBlockName(
+              event.currentTarget.value
+            )
           }
+          placeholder="A1"
+          w={120}
         />
 
-        <Collapse expanded={!collapsed}>
-          <Stack gap="sm">
-            <Divider />
+        <TextInput
+          label="To block"
+          value={toBlockName}
+          onChange={event =>
+            setToBlockName(
+              event.currentTarget.value
+            )
+          }
+          placeholder="C1"
+          w={120}
+        />
 
-            <Group
-              align="end"
-              gap="xs"
-            >
-              <TextInput
-                label="From block"
-                value={fromBlockName}
-                onChange={(event) =>
-                  setFromBlockName(event.currentTarget.value)
-                }
-                placeholder="A1"
-                w={120}
-              />
+        <Button
+          color="orange"
+          variant="light"
+          onClick={handleReserveRoute}
+        >
+          Set route
+        </Button>
 
-              <TextInput
-                label="To block"
-                value={toBlockName}
-                onChange={(event) =>
-                  setToBlockName(event.currentTarget.value)
-                }
-                placeholder="C1"
-                w={120}
-              />
+        <Button
+          color="gray"
+          variant="light"
+          onClick={handleReleaseRoute}
+        >
+          Release route
+        </Button>
 
-              <Button
-                color="orange"
-                variant="light"
-                onClick={handleReserveRoute}
-              >
-                Set route
-              </Button>
+        <Button
+          color="gray"
+          variant="light"
+          onClick={handleClearAllBusy}
+        >
+          Clear all busy
+        </Button>
+      </Group>
 
-              <Button
-                color="gray"
-                variant="light"
-                onClick={handleReleaseRoute}
-              >
-                Release route
-              </Button>
+      <Group grow>
+        <Button
+          size="xs"
+          variant="light"
+          color="violet"
+          leftSection={<IconRoute size={16} />}
+          onClick={onOpenTaskManager}
+        >
+          Task Manager...
+        </Button>
 
-              <Button
-                color="gray"
-                variant="light"
-                onClick={handleClearAllBusy}
-              >
-                Clear all busy
-              </Button>
-            </Group>
+        <Button
+          size="xs"
+          variant="light"
+          color="green"
+          leftSection={
+            <IconPlayerPlay size={16} />
+          }
+          onClick={() => {
+            void handleStartAllTasks();
+          }}
+          disabled={snapshot.tasks.length === 0}
+        >
+          Start all tasks
+        </Button>
 
-            <Group grow>
-              <Button
-                size="xs"
-                variant="light"
-                color="violet"
-                leftSection={<IconRoute size={16} />}
-                onClick={onOpenTaskManager}
-              >
-                Task Manager...
-              </Button>
+        <Button
+          size="xs"
+          variant="light"
+          color="orange"
+          leftSection={<IconCheck size={16} />}
+          onClick={() => {
+            void handleFinishAllTasks();
+          }}
+          disabled={
+            !snapshot.tasks.some(task =>
+              task.status === "running" ||
+              task.status === "paused"
+            )
+          }
+        >
+          Finish all tasks
+        </Button>
 
-              <Button
-                size="xs"
-                variant="light"
-                color="green"
-                leftSection={<IconPlayerPlay size={16} />}
-                onClick={() => {
-                  void handleStartAllTasks();
-                }}
-                disabled={snapshot.tasks.length === 0}
-              >
-                Start all tasks
-              </Button>
-
-              <Button
-                size="xs"
-                variant="light"
-                color="orange"
-                leftSection={<IconCheck size={16} />}
-                onClick={() => {
-                  void handleFinishAllTasks();
-                }}
-                disabled={
-                  !snapshot.tasks.some(task =>
-                    task.status === "running" ||
-                    task.status === "paused"
-                  )
-                }
-              >
-                Finish all tasks
-              </Button>
-
-              <Button
-                size="xs"
-                variant="light"
-                color="red"
-                leftSection={<IconPlayerStop size={16} />}
-                onClick={() => {
-                  void handleAbortAllTasks();
-                }}
-                disabled={
-                  !snapshot.tasks.some(task =>
-                    task.status === "running" ||
-                    task.status === "paused" ||
-                    task.status === "finishing"
-                  )
-                }
-              >
-                Abort all tasks
-              </Button>
-            </Group>
-          </Stack>
-        </Collapse>
-      </Stack>
-    </Card>
+        <Button
+          size="xs"
+          variant="light"
+          color="red"
+          leftSection={
+            <IconPlayerStop size={16} />
+          }
+          onClick={() => {
+            void handleAbortAllTasks();
+          }}
+          disabled={
+            !snapshot.tasks.some(task =>
+              task.status === "running" ||
+              task.status === "paused" ||
+              task.status === "finishing"
+            )
+          }
+        >
+          Abort all tasks
+        </Button>
+      </Group>
+    </CollapsiblePanelCard>
   );
 }
