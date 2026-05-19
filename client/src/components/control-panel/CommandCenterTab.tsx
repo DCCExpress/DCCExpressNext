@@ -1,7 +1,4 @@
-import type { ReactNode } from "react";
-
 import {
-  Badge,
   Box,
   Button,
   Divider,
@@ -16,8 +13,22 @@ import {
   IconPower,
 } from "@tabler/icons-react";
 
-import { useCommandCenter } from "../../context/CommandCenterContext";
-import { wsApi } from "../../services/wsApi";
+import StatusBadge from "../common/StatusBadge";
+
+import {
+  InfoFlagRow,
+  InfoSection,
+  InfoValueRow,
+} from "../common/InfoRows";
+
+import {
+  useCommandCenter,
+} from "../../context/CommandCenterContext";
+
+import {
+  wsApi,
+} from "../../services/wsApi";
+
 type CommandCenterTabProps = {
   onConnect: (() => void) | undefined;
   onDisconnect: (() => void) | undefined;
@@ -27,7 +38,9 @@ type CommandCenterTabProps = {
   onEmergencyStop: (() => void) | undefined;
 };
 
-export default function CommandCenterTab(p: CommandCenterTabProps) {
+export default function CommandCenterTab(
+  p: CommandCenterTabProps
+) {
   const {
     alive,
     type,
@@ -40,23 +53,37 @@ export default function CommandCenterTab(p: CommandCenterTabProps) {
 
     powerInfo,
     z21SystemState,
-  } = useCommandCenter();
+  } =
+    useCommandCenter();
 
   return (
-    <ScrollArea.Autosize mah="calc(100vh - 220px)" type="auto" offsetScrollbars>
+    <ScrollArea.Autosize
+      mah="calc(100vh - 220px)"
+      type="auto"
+      offsetScrollbars
+    >
       <Stack gap="xs">
-        <Text size="sm" fw={700}>
+        <Text
+          size="sm"
+          fw={700}
+        >
           Command Center
         </Text>
 
-        <Group grow mt="xs">
+        <Group
+          grow
+          mt="xs"
+        >
           <Button
             size="xs"
             variant="light"
             color="green"
             leftSection={<IconPower size={16} />}
             onClick={p.onPowerOn}
-            disabled={!alive || powerInfo?.trackVoltageOn === true}
+            disabled={
+              !alive ||
+              powerInfo?.trackVoltageOn === true
+            }
           >
             Power ON
           </Button>
@@ -67,7 +94,10 @@ export default function CommandCenterTab(p: CommandCenterTabProps) {
             color="orange"
             leftSection={<IconPower size={16} />}
             onClick={p.onPowerOff}
-            disabled={!alive || powerInfo?.trackVoltageOff === true}
+            disabled={
+              !alive ||
+              powerInfo?.trackVoltageOff === true
+            }
           >
             Power OFF
           </Button>
@@ -75,10 +105,20 @@ export default function CommandCenterTab(p: CommandCenterTabProps) {
 
         <Button
           size="xs"
-          color={powerInfo?.emergencyStop ? "red" : "gray"}
-          className={powerInfo?.emergencyStop ? "blinkBadge" : ""}
+          color={
+            powerInfo?.emergencyStop
+              ? "red"
+              : "gray"
+          }
+          className={
+            powerInfo?.emergencyStop
+              ? "blinkBadge"
+              : ""
+          }
           variant="filled"
-          leftSection={<IconAlertTriangle size={16} />}
+          leftSection={
+            <IconAlertTriangle size={16} />
+          }
           onClick={() => {
             if (powerInfo?.emergencyStop) {
               p.onPowerOn?.();
@@ -91,49 +131,88 @@ export default function CommandCenterTab(p: CommandCenterTabProps) {
           EMERGENCY STOP
         </Button>
 
-        <Group justify="space-between" align="center">
+        <Group
+          justify="space-between"
+          align="center"
+        >
           <Box>
-            <Text size="sm" fw={700}>
+            <Text
+              size="sm"
+              fw={700}
+            >
               Command Center
             </Text>
           </Box>
 
-          <Badge color={alive ? "green" : "red"} variant="light">
+          <StatusBadge
+            color={alive ? "green" : "red"}
+            variant="light"
+          >
             {alive ? "ONLINE" : "OFFLINE"}
-          </Badge>
+          </StatusBadge>
         </Group>
 
         <Divider />
 
         <InfoSection title="Connection">
-          <InfoRow label="Type" value={type ?? "-"} />
+          <InfoValueRow
+            label="Type"
+            value={type ?? "-"}
+          />
+
           {type === "z21" && (
             <>
-              <InfoRow label="IP" value={ip ?? "-"} />
-              <InfoRow label="Port" value={port ?? "-"} />
+              <InfoValueRow
+                label="IP"
+                value={ip ?? "-"}
+              />
+
+              <InfoValueRow
+                label="Port"
+                value={port ?? "-"}
+              />
             </>
           )}
         </InfoSection>
 
         <InfoSection title="Lock">
-          <InfoRow
+          <InfoValueRow
             label="State"
             value={locked ? "LOCKED" : "FREE"}
             valueColor={locked ? "orange" : "green"}
           />
-          <InfoRow label="Owner" value={lockOwner ?? "-"} />
-          <InfoRow
+
+          <InfoValueRow
+            label="Owner"
+            value={lockOwner ?? "-"}
+          />
+
+          <InfoValueRow
             label="This client"
             value={wsApi.clientUuid}
-            valueColor={lockOwner === wsApi.clientUuid ? "lime" : undefined}
+            valueColor={
+              lockOwner === wsApi.clientUuid
+                ? "lime"
+                : undefined
+            }
           />
-          <InfoRow label="Reason" value={reason ?? "-"} />
+
+          <InfoValueRow
+            label="Reason"
+            value={reason ?? "-"}
+          />
         </InfoSection>
 
         <InfoSection title="Power">
-          <InfoRow
+          <InfoValueRow
             label="Track power"
-            value={powerInfo ? (powerInfo.trackVoltageOn ? "ON" : "OFF") : "-"}
+            value={
+              powerInfo
+                ? powerInfo.trackVoltageOn
+                  ? "ON"
+                  : "OFF"
+                : "-"
+            }
             valueColor={
               powerInfo
                 ? powerInfo.trackVoltageOn
@@ -143,43 +222,73 @@ export default function CommandCenterTab(p: CommandCenterTabProps) {
             }
           />
 
-          <InfoRow
+          <InfoValueRow
             label="Emergency stop"
-            value={powerInfo ? yesNo(powerInfo.emergencyStop) : "-"}
-            valueColor={powerInfo?.emergencyStop ? "red" : undefined}
+            value={
+              powerInfo
+                ? yesNo(powerInfo.emergencyStop)
+                : "-"
+            }
+            valueColor={
+              powerInfo?.emergencyStop
+                ? "red"
+                : undefined
+            }
           />
 
-          <InfoRow
+          <InfoValueRow
             label="Short circuit"
-            value={powerInfo ? yesNo(powerInfo.shortCircuit) : "-"}
-            valueColor={powerInfo?.shortCircuit ? "red" : undefined}
+            value={
+              powerInfo
+                ? yesNo(powerInfo.shortCircuit)
+                : "-"
+            }
+            valueColor={
+              powerInfo?.shortCircuit
+                ? "red"
+                : undefined
+            }
           />
 
-          <InfoRow
+          <InfoValueRow
             label="Programming"
-            value={powerInfo ? yesNo(powerInfo.programmingModeActive) : "-"}
-            valueColor={powerInfo?.programmingModeActive ? "orange" : undefined}
+            value={
+              powerInfo
+                ? yesNo(
+                    powerInfo.programmingModeActive
+                  )
+                : "-"
+            }
+            valueColor={
+              powerInfo?.programmingModeActive
+                ? "orange"
+                : undefined
+            }
           />
         </InfoSection>
 
         {type === "z21" && (
           <>
             <InfoSection title="Z21 System">
-              <InfoRow
+              <InfoValueRow
                 label="Main current"
                 value={
-                  z21SystemState ? `${z21SystemState.mainCurrentMa} mA` : "-"
+                  z21SystemState
+                    ? `${z21SystemState.mainCurrentMa} mA`
+                    : "-"
                 }
               />
 
-              <InfoRow
+              <InfoValueRow
                 label="Prog current"
                 value={
-                  z21SystemState ? `${z21SystemState.progCurrentMa} mA` : "-"
+                  z21SystemState
+                    ? `${z21SystemState.progCurrentMa} mA`
+                    : "-"
                 }
               />
 
-              <InfoRow
+              <InfoValueRow
                 label="Filtered current"
                 value={
                   z21SystemState
@@ -188,17 +297,21 @@ export default function CommandCenterTab(p: CommandCenterTabProps) {
                 }
               />
 
-              <InfoRow
+              <InfoValueRow
                 label="Temperature"
                 value={
-                  z21SystemState ? `${z21SystemState.temperatureC} °C` : "-"
+                  z21SystemState
+                    ? `${z21SystemState.temperatureC} °C`
+                    : "-"
                 }
                 valueColor={
-                  z21SystemState?.flags.highTemperature ? "red" : undefined
+                  z21SystemState?.flags.highTemperature
+                    ? "red"
+                    : undefined
                 }
               />
 
-              <InfoRow
+              <InfoValueRow
                 label="Supply voltage"
                 value={
                   z21SystemState
@@ -207,83 +320,128 @@ export default function CommandCenterTab(p: CommandCenterTabProps) {
                 }
               />
 
-              <InfoRow
+              <InfoValueRow
                 label="VCC voltage"
                 value={
-                  z21SystemState ? `${z21SystemState.vccVoltageMv} mV` : "-"
+                  z21SystemState
+                    ? `${z21SystemState.vccVoltageMv} mV`
+                    : "-"
                 }
               />
 
-              <InfoRow
+              <InfoValueRow
                 label="Central state"
                 value={
                   z21SystemState
-                    ? toHex8(z21SystemState.centralState)
+                    ? toHex8(
+                        z21SystemState.centralState
+                      )
                     : "-"
                 }
               />
 
-              <InfoRow
+              <InfoValueRow
                 label="Central state EX"
                 value={
                   z21SystemState
-                    ? toHex8(z21SystemState.centralStateEx)
+                    ? toHex8(
+                        z21SystemState.centralStateEx
+                      )
                     : "-"
                 }
               />
 
-              <InfoRow
+              <InfoValueRow
                 label="Capabilities"
                 value={
                   z21SystemState
-                    ? toHex8(z21SystemState.capabilities)
+                    ? toHex8(
+                        z21SystemState.capabilities
+                      )
                     : "-"
                 }
               />
             </InfoSection>
 
             <InfoSection title="Z21 Flags">
-              <FlagRow
+              <InfoFlagRow
                 label="High temp"
-                value={z21SystemState?.flags.highTemperature}
+                value={
+                  z21SystemState?.flags.highTemperature
+                }
               />
-              <FlagRow
+
+              <InfoFlagRow
                 label="Power lost"
-                value={z21SystemState?.flags.powerLost}
+                value={
+                  z21SystemState?.flags.powerLost
+                }
               />
-              <FlagRow
+
+              <InfoFlagRow
                 label="Short external"
-                value={z21SystemState?.flags.shortCircuitExternal}
+                value={
+                  z21SystemState?.flags.shortCircuitExternal
+                }
               />
-              <FlagRow
+
+              <InfoFlagRow
                 label="Short internal"
-                value={z21SystemState?.flags.shortCircuitInternal}
+                value={
+                  z21SystemState?.flags.shortCircuitInternal
+                }
               />
-              <FlagRow label="RCN-213" value={z21SystemState?.flags.rcn213} />
+
+              <InfoFlagRow
+                label="RCN-213"
+                value={z21SystemState?.flags.rcn213}
+              />
             </InfoSection>
 
             <InfoSection title="Capabilities">
-              <FlagRow label="DCC" value={z21SystemState?.flags.capDcc} />
-              <FlagRow label="MM" value={z21SystemState?.flags.capMm} />
-              <FlagRow
+              <InfoFlagRow
+                label="DCC"
+                value={z21SystemState?.flags.capDcc}
+              />
+
+              <InfoFlagRow
+                label="MM"
+                value={z21SystemState?.flags.capMm}
+              />
+
+              <InfoFlagRow
                 label="RailCom"
-                value={z21SystemState?.flags.capRailCom}
+                value={
+                  z21SystemState?.flags.capRailCom
+                }
               />
-              <FlagRow
+
+              <InfoFlagRow
                 label="Loco cmds"
-                value={z21SystemState?.flags.capLocoCmds}
+                value={
+                  z21SystemState?.flags.capLocoCmds
+                }
               />
-              <FlagRow
+
+              <InfoFlagRow
                 label="Accessory cmds"
-                value={z21SystemState?.flags.capAccessoryCmds}
+                value={
+                  z21SystemState?.flags.capAccessoryCmds
+                }
               />
-              <FlagRow
+
+              <InfoFlagRow
                 label="Detector cmds"
-                value={z21SystemState?.flags.capDetectorCmds}
+                value={
+                  z21SystemState?.flags.capDetectorCmds
+                }
               />
-              <FlagRow
+
+              <InfoFlagRow
                 label="Needs unlock"
-                value={z21SystemState?.flags.capNeedsUnlockCode}
+                value={
+                  z21SystemState?.flags.capNeedsUnlockCode
+                }
               />
             </InfoSection>
           </>
@@ -293,75 +451,16 @@ export default function CommandCenterTab(p: CommandCenterTabProps) {
   );
 }
 
-function InfoSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <Stack gap={4}>
-      <Text size="xs" fw={700} c="dimmed">
-        {title}
-      </Text>
-
-      <Stack gap={2}>{children}</Stack>
-    </Stack>
-  );
-}
-
-function InfoRow({
-  label,
-  value,
-  valueColor,
-}: {
-  label: string;
-  value: string | number;
-  valueColor?: string | undefined;
-}) {
-  return (
-    <Group justify="space-between" gap="xs" wrap="nowrap">
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-
-      <Text
-        size="xs"
-        fw={600}
-        ta="right"
-        {...(valueColor !== undefined ? { c: valueColor } : {})}
-      >
-        {value}
-      </Text>
-    </Group>
-  );
-}
-
-function FlagRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: boolean | undefined;
-}) {
-  return (
-    <Group justify="space-between" gap="xs" wrap="nowrap">
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-
-      <Badge size="xs" variant="light" color={value ? "green" : "gray"}>
-        {value === undefined ? "-" : value ? "YES" : "NO"}
-      </Badge>
-    </Group>
-  );
-}
-
-function yesNo(value: boolean): string {
+function yesNo(
+  value: boolean
+): string {
   return value ? "YES" : "NO";
 }
 
-function toHex8(value: number): string {
-  return `0x${value.toString(16).padStart(2, "0")}`;
+function toHex8(
+  value: number
+): string {
+  return `0x${value
+    .toString(16)
+    .padStart(2, "0")}`;
 }
