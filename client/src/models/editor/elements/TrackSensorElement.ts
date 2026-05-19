@@ -11,7 +11,7 @@ export class TrackSensorElement extends TrackElement implements ITrackSensorElem
     //override type: ElementType = ELEMENT_TYPES.TRACK_SENSOR;
     override type: typeof ELEMENT_TYPES.TRACK_SENSOR = ELEMENT_TYPES.TRACK_SENSOR;
     address: number = 0;
-    on: boolean = true;
+    on: boolean = false;
     kind: SensorTypes = SensorTypes.rect;
     colorOn: string = "lime";
     colorOff: string = "green";

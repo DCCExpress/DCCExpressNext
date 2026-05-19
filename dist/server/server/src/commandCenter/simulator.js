@@ -81,7 +81,8 @@ export class CommandCenterSimulator extends CommandCenter {
     setLocoFunction(address, fn, active) {
         const loco = this.getOrCreateLoco(address);
         loco.functions[fn] = active;
-        broadcastAll({ type: "locoState", data: { loco },
+        broadcastAll({
+            type: "locoState", data: { loco },
         });
         return Promise.resolve(true);
     }
@@ -123,8 +124,23 @@ export class CommandCenterSimulator extends CommandCenter {
     emergencyStop() {
         throw new Error("Method not implemented.");
     }
+    setSensor(address, on) {
+        log("Sim: setSensor", { address, on });
+        this.sensors.set(address, {
+            address,
+            active: on,
+        });
+        broadcastAll({
+            type: "sensorChanged",
+            data: {
+                address,
+                on,
+            },
+        });
+        return Promise.resolve(true);
+    }
     getSensor(address) {
-        throw new Error("Method not implemented.");
+        return Promise.resolve(this.sensors.get(address) ?? null);
     }
     power = false;
     sensorTimer = null;

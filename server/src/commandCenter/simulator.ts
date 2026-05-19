@@ -93,9 +93,10 @@ export class CommandCenterSimulator extends CommandCenter {
   setLocoFunction(address: number, fn: number, active: boolean): Promise<boolean> {
     const loco = this.getOrCreateLoco(address);
     loco.functions[fn] = active;
-     broadcastAll({type: "locoState", data: 
-            {loco},
-        });
+    broadcastAll({
+      type: "locoState", data:
+      { loco },
+    });
     return Promise.resolve(true);
   }
   getLoco(address: number): Promise<LocoState | null> {
@@ -129,21 +130,42 @@ export class CommandCenterSimulator extends CommandCenter {
       powerInfo: {
 
         emergencyStop: false,
-            trackVoltageOff: !on,
-            trackVoltageOn: on,
-            shortCircuit: false,
-            programmingModeActive: false },
+        trackVoltageOff: !on,
+        trackVoltageOn: on,
+        shortCircuit: false,
+        programmingModeActive: false
+      },
     };
-    broadcastAll({"type": "z21SystemState", "data": state} );
-    broadcastAll({"type": "powerInfo", "data": state.powerInfo});
+    broadcastAll({ "type": "z21SystemState", "data": state });
+    broadcastAll({ "type": "powerInfo", "data": state.powerInfo });
     return Promise.resolve(true);
   }
   emergencyStop(): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
-  getSensor(address: number): Promise<SensorInfo | null> {
-    throw new Error("Method not implemented.");
+
+  setSensor(address: number, on: boolean): Promise<boolean> {
+    log("Sim: setSensor", { address, on });
+
+    this.sensors.set(address, {
+      address,
+      active: on,
+    });
+
+    broadcastAll({
+      type: "sensorChanged",
+      data: {
+        address,
+        on,
+      },
+    });
+
+    return Promise.resolve(true);
   }
+  getSensor(address: number): Promise<SensorInfo | null> {
+    return Promise.resolve(this.sensors.get(address) ?? null);
+  }
+  
   private power: boolean = false;
   private sensorTimer: NodeJS.Timeout | null = null;
 

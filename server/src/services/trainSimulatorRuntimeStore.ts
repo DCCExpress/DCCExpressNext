@@ -10,6 +10,7 @@ import type {
 } from "../../../common/src/task.js";
 
 import { log, logError } from "../utility.js";
+import { railwayTopologyStore } from "./railwayTopologyStore.js";
 
 type SimulatorCommandCenterPort = {
   setLoco: (
@@ -25,6 +26,11 @@ type SimulatorCommandCenterPort = {
   setBlockRemove: (
     block: BlockState
   ) => void;
+
+  setSensor?: (
+    address: number,
+    on: boolean
+  ) => Promise<boolean>;
 };
 
 type TrainSimulatorConfigureParams = {
@@ -245,6 +251,12 @@ class TrainSimulatorRuntimeStore {
           const firstLeg =
             legs[0]!;
 
+          await this.setBlockSensor(
+            simulator,
+            firstLeg.fromBlockId,
+            true
+          );
+
           await this.params.updateTaskSimulationProgress(
             task.id,
             {
@@ -388,6 +400,12 @@ class TrainSimulatorRuntimeStore {
       session.phase === "departing" &&
       elapsed >= DEPARTURE_DELAY_MS
     ) {
+
+      await this.setBlockSensor(
+        simulator,
+        currentLeg.fromBlockId,
+        false
+      );
       simulator.setBlockRemove({
         blockId: currentLeg.fromBlockId,
         locoId: task.runtime.loco!.id,
@@ -432,6 +450,12 @@ class TrainSimulatorRuntimeStore {
       session.phase === "transit" &&
       elapsed >= this.getLegTransitDurationMs(currentLeg)
     ) {
+
+      await this.setBlockSensor(
+        simulator,
+        currentLeg.toBlockId,
+        true
+      );
       simulator.setBlock({
         blockId: currentLeg.toBlockId,
         locoId: task.runtime.loco!.id,
@@ -522,6 +546,55 @@ class TrainSimulatorRuntimeStore {
     );
   }
 
+  private async setBlockSensor(
+    simulator: SimulatorCommandCenterPort,
+    blockId: string,
+    on: boolean
+  ): Promise<void> {
+    if (!simulator.setSensor) {
+      return;
+    }
+
+    const sensorAddress =
+      this.getBlockSensorAddress(blockId);
+
+    if (sensorAddress <= 0) {
+      return;
+    }
+
+    const success =
+      await simulator.setSensor(sensorAddress, on);
+
+    if (!success) {
+      logError(
+        `[TrainSimulator] Failed to set sensor #${sensorAddress} to ${on ? "ON" : "OFF"}.`
+      );
+    }
+  }
+
+  private getBlockSensorAddress(
+    blockId: string
+  ): number {
+    const topology =
+      railwayTopologyStore.getTopology();
+
+    if (!topology) {
+      return 0;
+    }
+
+    const block =
+      topology
+        .getBlocks()
+        .find(item => item.id === blockId);
+
+    if (!block) {
+      return 0;
+    }
+
+    return Number.isFinite(block.sensorAddress)
+      ? block.sensorAddress
+      : 0;
+  }
   /**
    * A teljes route path-ból dinamikusan blokk-lépéseket gyártunk.
    *

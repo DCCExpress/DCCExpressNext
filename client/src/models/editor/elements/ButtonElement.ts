@@ -8,7 +8,7 @@ import { IEditableProperty } from "./PropertyDescriptor";
 export class ButtonElement extends BaseElement implements IButtonElement {
     override type = ELEMENT_TYPES.BUTTON;
     address: number = 0;
-    on: boolean = true;
+    on: boolean = false;
     colorOn: string = "lime";
     colorOff: string = "green";
     textOn: string = "ON";
