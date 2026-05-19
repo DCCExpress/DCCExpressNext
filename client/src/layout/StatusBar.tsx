@@ -16,6 +16,7 @@ import { scriptEngine } from "../services/scriptEngine";
 import "../styles/global.css";
 import { useState } from "react";
 import ScriptEditorDialog from "../components/ScriptEditorDialog";
+import FastClockStatus from "../components/common/FastClockStatus";
 
 export default function StatusBar() {
   const wsStatus = useWsStatus();
@@ -145,6 +146,10 @@ export default function StatusBar() {
           </ActionIcon>
         </Tooltip>
         
+        <Divider orientation="vertical" />
+
+        <FastClockStatus />
+
         <Divider orientation="vertical" />
 
         <Badge color={getMemoryColor(browserStats.memoryUsedMb)} variant="filled">

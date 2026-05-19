@@ -9,6 +9,7 @@ import { clientDir, dataDir } from "./paths.js";
 import { createScriptRouter } from "./routes/scriptRoute.js";
 import { createTaskRouter } from "./routes/taskRoutes.js";
 import { fileRoutes } from "./routes/fileRoutes.js";
+import { fastClockRoutes } from "./routes/fastClockRoutes.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 export const app = express();
@@ -21,6 +22,7 @@ app.use("/api/command-centers", commandCenterRoutes);
 app.use("/api/script", createScriptRouter(dataDir));
 app.use("/api/tasks", createTaskRouter());
 app.use("/api/files", fileRoutes);
+app.use("/api/fast-clock", fastClockRoutes);
 app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
 });

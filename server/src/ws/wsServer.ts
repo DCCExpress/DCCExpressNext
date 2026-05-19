@@ -10,6 +10,7 @@ import { routeGraphRuntimeStore } from "../services/routeGraphRuntimeStore.js";
 import { railwayTopologyStore } from "../services/railwayTopologyStore.js";
 import { scriptRuntimeStore } from "../services/scriptRuntimeStore.js";
 import { taskRuntimeStore } from "../services/taskRuntimeStore.js";
+import { fastClockRuntimeStore } from "../services/fastClockRuntimeStore.js";
 
 
 // type SetTurnoutMessage = {
@@ -242,6 +243,13 @@ function configureScriptRuntime() {
   });
 }
 
+function configureFastClockRuntime() {
+  fastClockRuntimeStore.configure({
+    broadcast: message => {
+      broadcastAll(message);
+    },
+  });
+}
 function configureTaskRuntime() {
   taskRuntimeStore.configure({
     broadcast: message => {
@@ -291,6 +299,7 @@ export function setupWebSocketServer(server: http.Server) {
 
   configureScriptRuntime();
   configureTaskRuntime();
+  configureFastClockRuntime();
 
   readCommandCenter()
     .then(async conf => {
@@ -333,6 +342,11 @@ export function setupWebSocketServer(server: http.Server) {
     sendToClient(ws, {
       type: "taskManagerSnapshotChanged",
       data: taskRuntimeStore.getSnapshot(),
+    });
+
+    sendToClient(ws, {
+      type: "fastClockChanged",
+      data: fastClockRuntimeStore.getSnapshot(),
     });
 
     // sendToClient(ws, {

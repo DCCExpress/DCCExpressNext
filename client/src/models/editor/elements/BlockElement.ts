@@ -408,8 +408,11 @@ export class BlockElement extends TrackElement implements IBlockElement {
         const pointsRight =
             Math.cos(localForwardRad) >= 0;
 
-        const arrowLength = Math.min(8, Math.max(5, blockW * 0.12));
-        const arrowHalfHeight = Math.min(5, Math.max(3, blockH * 0.28));
+        // const arrowLength = Math.min(8, Math.max(5, blockW * 0.12));
+        // const arrowHalfHeight = Math.min(5, Math.max(3, blockH * 0.28));
+
+        const arrowLength = 4;
+        const arrowHalfHeight = 3;
         const centerY = blockY + blockH / 2;
         const edgePadding = 2;
 
@@ -430,7 +433,7 @@ export class BlockElement extends TrackElement implements IBlockElement {
         ctx.lineTo(points.backX, centerY + arrowHalfHeight);
         ctx.closePath();
 
-        ctx.fillStyle = "lime";
+        ctx.fillStyle = "gainsboro";
         ctx.fill();
 
         ctx.strokeStyle = "black";

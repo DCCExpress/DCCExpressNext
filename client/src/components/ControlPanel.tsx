@@ -49,6 +49,7 @@ import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { TrainTask, TrainTaskStatus } from "../services/tasks/TaskTypes";
 import { useTaskManager } from "../services/tasks/useTaskManager";
 import TaskManagerDialog from "./common/TaskManagerDialog";
+import FastClockCard from "./common/FastClockCard";
 import VisibilitySettings from "./VisibilitySettings";
 import { NotificationLogEntry, NotificationLogLevel, notificationLogStore } from "../services/notificationLogStore";
 
@@ -782,6 +783,8 @@ function ControllerTab() {
       />
 
       <Stack gap="sm">
+        <FastClockCard />
+
         {/* =========================
           ROUTE / TASK CONTROL CARD
          ========================= */}

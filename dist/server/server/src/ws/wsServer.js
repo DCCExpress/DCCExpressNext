@@ -7,6 +7,7 @@ import { routeGraphRuntimeStore } from "../services/routeGraphRuntimeStore.js";
 import { railwayTopologyStore } from "../services/railwayTopologyStore.js";
 import { scriptRuntimeStore } from "../services/scriptRuntimeStore.js";
 import { taskRuntimeStore } from "../services/taskRuntimeStore.js";
+import { fastClockRuntimeStore } from "../services/fastClockRuntimeStore.js";
 // type SetTurnoutMessage = {
 //   type: "setTurnout";
 //   data: {
@@ -162,6 +163,13 @@ function configureScriptRuntime() {
         },
     });
 }
+function configureFastClockRuntime() {
+    fastClockRuntimeStore.configure({
+        broadcast: message => {
+            broadcastAll(message);
+        },
+    });
+}
 function configureTaskRuntime() {
     taskRuntimeStore.configure({
         broadcast: message => {
@@ -198,6 +206,7 @@ export function setupWebSocketServer(server) {
     });
     configureScriptRuntime();
     configureTaskRuntime();
+    configureFastClockRuntime();
     readCommandCenter()
         .then(async (conf) => {
         log("Initial command center config:", conf);
@@ -227,6 +236,10 @@ export function setupWebSocketServer(server) {
         sendToClient(ws, {
             type: "taskManagerSnapshotChanged",
             data: taskRuntimeStore.getSnapshot(),
+        });
+        sendToClient(ws, {
+            type: "fastClockChanged",
+            data: fastClockRuntimeStore.getSnapshot(),
         });
         // sendToClient(ws, {
         //   type: "commandCenterInfo",
