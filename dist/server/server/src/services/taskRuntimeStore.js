@@ -146,7 +146,7 @@ class TaskRuntimeStore {
             task.status = "queued";
             task.runtime = this.createRuntimeState();
             delete task.startedAt;
-            delete task.stoppedAt;
+            delete task.abortedAt;
             delete task.completedAt;
             delete task.error;
         }
@@ -162,8 +162,9 @@ class TaskRuntimeStore {
         }
         const task = this.tasks[taskIndex];
         if (task.status === "running" ||
-            task.status === "paused") {
-            return this.actionError("Futó vagy szüneteltetett feladatot előbb állíts le.");
+            task.status === "paused" ||
+            task.status === "finishing") {
+            return this.actionError("Futó, szüneteltetett vagy befejezés alatt álló feladatot előbb abortálj vagy várd meg a végét.");
         }
         this.releaseTaskRoute(task.id);
         this.tasks.splice(taskIndex, 1);
@@ -184,6 +185,9 @@ class TaskRuntimeStore {
         if (task.status === "running") {
             return this.actionError("A feladat már fut.");
         }
+        if (task.status === "finishing") {
+            return this.actionError("A feladat már befejezés alatt áll.");
+        }
         if (task.status === "paused") {
             return this.actionError("A feladat szüneteltetett állapotban van. Resume kell, nem Start.");
         }
@@ -191,10 +195,10 @@ class TaskRuntimeStore {
          * Régi completed / stopped állapotból
          * újra elindítható a folyamatos task.
          */
-        if (task.status === "stopped" ||
+        if (task.status === "aborted" ||
             task.status === "completed") {
             task.runtime = this.createRuntimeState();
-            delete task.stoppedAt;
+            delete task.abortedAt;
             delete task.completedAt;
         }
         task.status = "running";
@@ -283,7 +287,8 @@ class TaskRuntimeStore {
             return false;
         }
         if (task.status !== "running" &&
-            task.status !== "paused") {
+            task.status !== "paused" &&
+            task.status !== "finishing") {
             return false;
         }
         if (!task.runtime.loco) {
@@ -316,6 +321,21 @@ class TaskRuntimeStore {
         const topology = railwayTopologyStore.getTopology();
         if (!topology) {
             await this.markTaskWaitingForRoute(task);
+            return false;
+        }
+        /**
+         * Indítás előtti teljes blokkellenőrzés.
+         *
+         * A task csak akkor foglalhat le útvonalat,
+         * ha a saját induló blokkján kívül
+         * a teljes blokk-lánc üres.
+         *
+         * Így nem foglal le félpályát úgy,
+         * hogy előre láthatóan úgysem tudna végigmenni.
+         */
+        const blockedRouteBlock = this.findFirstOccupiedRouteBlock(task);
+        if (blockedRouteBlock) {
+            await this.markTaskWaitingForRouteBlockSensor(task, blockedRouteBlock);
             return false;
         }
         const fromBlockName = task.transition.fromBlock.name;
@@ -445,7 +465,7 @@ class TaskRuntimeStore {
         await this.initialize();
         for (const task of this.tasks) {
             if (task.status === "queued" ||
-                task.status === "stopped" ||
+                task.status === "aborted" ||
                 task.status === "completed") {
                 await this.startTask(task.id);
                 continue;
@@ -457,34 +477,121 @@ class TaskRuntimeStore {
         this.broadcastSnapshot();
         return this.actionOk();
     }
-    async stopTask(taskIdOrName) {
+    async finishTask(taskIdOrName) {
         await this.initialize();
         const task = this.findTask(taskIdOrName);
         if (!task) {
             return this.actionError("A feladat nem található.");
         }
-        if (task.status === "stopped") {
-            return this.actionError("A feladat már le van állítva.");
+        if (task.status === "completed") {
+            return this.actionError("A feladat már befejeződött.");
+        }
+        if (task.status === "aborted") {
+            return this.actionError("A megszakított feladatot Starttal tudod újraindítani.");
+        }
+        if (task.status === "finishing") {
+            return this.actionError("A feladat már befejezés alatt áll.");
+        }
+        if (task.status !== "running" &&
+            task.status !== "paused") {
+            return this.actionError("Csak futó vagy szüneteltetett feladat kérhető befejezésre.");
+        }
+        /**
+         * Ha a task még nem foglalt útvonalat és a mozdony sem hagyta el
+         * az induló blokkot, akkor nincs aktív ciklus, amit kulturáltan
+         * végig kellene futtatni. Ilyenkor azonnal completed lesz.
+         */
+        const hasActiveCycle = this.reservedRoutesByTaskId.has(task.id) ||
+            task.runtime.hasLeftFromBlock ||
+            task.runtime.inTransit ||
+            task.runtime.simulation.phase === "departing" ||
+            task.runtime.simulation.phase === "transit" ||
+            task.runtime.simulation.phase === "waitingForBlockSensor";
+        if (!hasActiveCycle) {
+            task.status = "completed";
+            task.completedAt = Date.now();
+            task.runtime.inTransit = false;
+            task.runtime.simulation = {
+                phase: "idle",
+                legIndex: 0,
+                legCount: 0,
+                fromBlockId: null,
+                fromBlockName: null,
+                toBlockId: null,
+                toBlockName: null,
+                waitingSensorAddress: null,
+            };
+            this.releaseTaskRoute(task.id);
+            this.broadcast?.({
+                type: "taskCompleted",
+                data: {
+                    taskId: task.id,
+                    taskName: task.name,
+                    fromBlockId: task.fromBlockId,
+                    toBlockId: task.toBlockId,
+                    completedAt: task.completedAt,
+                    message: "A task aktív menet nélkül befejezve.",
+                },
+            });
+            this.broadcastSnapshot();
+            return this.actionOk();
+        }
+        /**
+         * Aktív ciklus van: a simulator még végigviszi a mozdonyt
+         * a célblokkig, ott a markTaskReachedToBlock completed állapotba teszi.
+         */
+        task.status = "finishing";
+        delete task.error;
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async abortTask(taskIdOrName) {
+        await this.initialize();
+        const task = this.findTask(taskIdOrName);
+        if (!task) {
+            return this.actionError("A feladat nem található.");
+        }
+        if (task.status === "aborted") {
+            return this.actionError("A feladat már meg van szakítva.");
         }
         if (task.status === "completed") {
-            return this.actionError("A befejezett feladatot már nem kell leállítani.");
+            return this.actionError("A befejezett feladatot már nem kell abortálni.");
         }
-        task.status = "stopped";
-        task.stoppedAt = Date.now();
+        task.status = "aborted";
+        task.abortedAt = Date.now();
         task.runtime.inTransit = false;
+        task.runtime.simulation = {
+            phase: "idle",
+            legIndex: 0,
+            legCount: 0,
+            fromBlockId: null,
+            fromBlockName: null,
+            toBlockId: null,
+            toBlockName: null,
+            waitingSensorAddress: null,
+        };
         this.releaseTaskRoute(task.id);
         this.broadcastSnapshot();
         return this.actionOk();
     }
-    async stopAllTasks() {
+    async finishAllTasks() {
         await this.initialize();
         for (const task of this.tasks) {
             if (task.status === "running" ||
                 task.status === "paused") {
-                task.status = "stopped";
-                task.stoppedAt = Date.now();
-                task.runtime.inTransit = false;
-                this.releaseTaskRoute(task.id);
+                await this.finishTask(task.id);
+            }
+        }
+        this.broadcastSnapshot();
+        return this.actionOk();
+    }
+    async abortAllTasks() {
+        await this.initialize();
+        for (const task of this.tasks) {
+            if (task.status === "running" ||
+                task.status === "paused" ||
+                task.status === "finishing") {
+                await this.abortTask(task.id);
             }
         }
         this.broadcastSnapshot();
@@ -516,7 +623,28 @@ class TaskRuntimeStore {
          */
         this.releaseTaskRoute(task.id);
         /**
-         * Kliensoldali jó kis completed üzenethez.
+         * Finish módban a task nem indul új ciklusba,
+         * hanem valódi completed végállapotot kap.
+         */
+        if (task.status === "finishing") {
+            task.status = "completed";
+            this.broadcast?.({
+                type: "taskCompleted",
+                data: {
+                    taskId: task.id,
+                    taskName: task.name,
+                    fromBlockId: task.fromBlockId,
+                    toBlockId: task.toBlockId,
+                    completedAt: task.completedAt,
+                    message: "A task a célblokkban befejeződött.",
+                },
+            });
+            this.broadcastSnapshot();
+            return this.actionOk();
+        }
+        /**
+         * Normál running tasknál a ciklus lefutott,
+         * de maga a task továbbra is él és újra várakozik.
          */
         this.broadcast?.({
             type: "taskCycleCompleted",
@@ -529,12 +657,6 @@ class TaskRuntimeStore {
                 message: "A task ciklusa lefutott, újra várakozik az induló blokk mozdonyára.",
             },
         });
-        /**
-         * FONTOS:
-         * Nem tesszük completed végállapotba.
-         * A task továbbra is running marad,
-         * csak a ciklus runtime állapotát nullázzuk.
-         */
         task.runtime = this.createRuntimeState();
         this.broadcastSnapshot();
         return this.actionOk();
@@ -696,6 +818,52 @@ class TaskRuntimeStore {
         }
         task.runtime.loco = loco;
         return true;
+    }
+    findFirstOccupiedRouteBlock(task) {
+        const ownLocoId = task.runtime.loco?.id ?? null;
+        for (const item of task.transition.solution.path) {
+            if (item.type !== "block") {
+                continue;
+            }
+            /**
+             * Az induló blokkban a saját mozdony áll.
+             * Ez nem akadály, ettől még a route indulhat.
+             */
+            if (item.block.id === task.fromBlockId) {
+                continue;
+            }
+            const blockState = this.getBlockState?.(item.block.id) ?? null;
+            const occupyingLocoId = blockState?.locoId ?? null;
+            if (occupyingLocoId !== null &&
+                occupyingLocoId !== ownLocoId) {
+                const block = railwayTopologyStore
+                    .getTopology()
+                    ?.getBlocks()
+                    .find(topologyBlock => topologyBlock.id === item.block.id);
+                const rawSensorAddress = block?.sensorAddress ?? 0;
+                return {
+                    blockId: item.block.id,
+                    blockName: item.block.name,
+                    sensorAddress: Number.isFinite(rawSensorAddress) &&
+                        rawSensorAddress > 0
+                        ? rawSensorAddress
+                        : null,
+                };
+            }
+        }
+        return null;
+    }
+    async markTaskWaitingForRouteBlockSensor(task, blockedBlock) {
+        await this.updateTaskSimulationProgress(task.id, {
+            phase: "waitingForBlockSensor",
+            legIndex: 0,
+            legCount: 0,
+            fromBlockId: task.fromBlockId,
+            fromBlockName: task.transition.fromBlock.name,
+            toBlockId: blockedBlock.blockId,
+            toBlockName: blockedBlock.blockName,
+            waitingSensorAddress: blockedBlock.sensorAddress,
+        });
     }
     async markTaskWaitingForRoute(task) {
         await this.updateTaskSimulationProgress(task.id, {

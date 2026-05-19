@@ -60,7 +60,8 @@ class TrainSimulatorRuntimeStore {
             for (const [taskId, session] of this.sessions.entries()) {
                 const task = tasks.find(item => item.id === taskId);
                 if (!task ||
-                    task.status === "stopped" ||
+                    task.status === "aborted" ||
+                    task.status === "completed" ||
                     task.status === "error" ||
                     task.status === "queued") {
                     await this.stopLocoIfKnown(simulator, task);
@@ -72,7 +73,8 @@ class TrainSimulatorRuntimeStore {
              */
             for (const task of tasks) {
                 if (task.status !== "running" &&
-                    task.status !== "paused") {
+                    task.status !== "paused" &&
+                    task.status !== "finishing") {
                     continue;
                 }
                 /**

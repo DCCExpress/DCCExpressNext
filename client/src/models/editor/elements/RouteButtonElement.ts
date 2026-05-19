@@ -1,14 +1,12 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
+import type { RouteTurnoutItemDto } from "../../../../../common/src/layout/layoutDto";
 import { drawPolarLine, getPolarXy } from "../../../graphics";
 import { generateId } from "../../../helpers";
 import { ClickableBaseElement } from "../core/ClickableBaseElement";
 import { DrawOptions, IRouteButtonElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
-export type RouteTurnoutItem = {
-  turnoutId: string;
-  closed: boolean;
-};
+export type RouteTurnoutItem = RouteTurnoutItemDto;
 
 export class RouteButtonElement extends ClickableBaseElement implements IRouteButtonElement {
     override type: typeof ELEMENT_TYPES.BUTTON_ROUTE = ELEMENT_TYPES.BUTTON_ROUTE;

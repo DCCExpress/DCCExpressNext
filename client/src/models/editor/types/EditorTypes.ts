@@ -1,16 +1,43 @@
-import { BlockType, ELEMENT_TYPES, ElementType } from "../../../../../common/src/layout/elementTypes";
-import { Loco } from "../../../../../common/src/types";
-import { RouteTurnoutItem } from "../elements/RouteButtonElement";
-import { SensorTypes } from "../elements/TrackSensorElement";
-
-
+import type {
+  BlockType,
+  ElementType,
+} from "../../../../../common/src/layout/elementTypes";
+import type { Loco } from "../../../../../common/src/types";
+import type {
+  AudioButtonElementDto,
+  BaseElementDto,
+  BlockElementDto,
+  ButtonElementDto,
+  ButtonScriptElementDto,
+  ClockElementDto,
+  ExtendedRouteButtonElementDto,
+  LabelElementDto,
+  LayoutElementDto,
+  RouteButtonElementDto,
+  RotationStepDto,
+  TrackCornerElementDto,
+  TrackCrossingElementDto,
+  TrackCurveElementDto,
+  TrackDirectionElementDto,
+  TrackElementDto,
+  TrackEndElementDto,
+  TrackSensorElementDto,
+  TrackSignalElementDto,
+  TrackStraightElementDto,
+  TrackTurnoutDoubleElementDto,
+  TrackTurnoutLeftElementDto,
+  TrackTurnoutRightElementDto,
+  TrackTurnoutThreeWayElementDto,
+  TrackTurnoutTwoWayElementDto,
+  TreeElementDto,
+} from "../../../../../common/src/layout/layoutDto";
 
 export type EditorTool =
-  | { mode: "cursor", elementType: ElementType }
-  | { mode: "draw", elementType: ElementType }
-  | { mode: "delete", elementType: ElementType };
+  | { mode: "cursor"; elementType: ElementType }
+  | { mode: "draw"; elementType: ElementType }
+  | { mode: "delete"; elementType: ElementType };
 
-export type RotationStep = 0 | 45 | 90;
+export type RotationStep = RotationStepDto;
 
 export interface DrawOptions {
   showOccupancySensorAddress: boolean;
@@ -33,205 +60,48 @@ export interface DrawOptions {
   locos: Loco[];
 }
 
-export interface IBaseElement {
-  id: string;
-  type: ElementType;
-  name: string;
-  layerName: string;
-  x: number;
-  y: number;
-  rotation: number;
-  rotationStep: RotationStep;
-  bg: string;
-  fg: string;
-}
+/**
+ * Kompatibilitási aliasok.
+ *
+ * A kliensoldali editorban sok elem még ITrack... neveken importál.
+ * Ezek a nevek most már NEM külön DTO definíciók,
+ * hanem a közös common/src/layout/layoutDto.ts típusaira mutatnak.
+ *
+ * Később, ha akarjuk, szépen át lehet nevezni a használatokat
+ * BaseElementDto / TrackSensorElementDto stb. nevekre,
+ * de ehhez most nem kellett végigverni az egész editort.
+ */
+export type IBaseElement = BaseElementDto;
+export type ITrackElement = TrackElementDto;
 
-// export interface ITrackBaseElement extends IBaseElement   {
-//   //length: number;
-// }
+export type ITrackStraightElement = TrackStraightElementDto;
+export type ITrackDirectionElement = TrackDirectionElementDto;
+export type ITrackEndElement = TrackEndElementDto;
+export type ITrackCornerElement = TrackCornerElementDto;
+export type ITrackCurveElement = TrackCurveElementDto;
+export type ITrackCrossingElement = TrackCrossingElementDto;
 
-export interface ITrackElement extends IBaseElement { 
-  address: number,
-  length: number,
-}
+export type ITrackTurnoutLeftElement = TrackTurnoutLeftElementDto;
+export type ITrackTurnoutRightElement = TrackTurnoutRightElementDto;
+export type ITrackTurnoutTwoWayElement = TrackTurnoutTwoWayElementDto;
+export type ITrackTurnoutDoubleElement = TrackTurnoutDoubleElementDto;
+export type ITrackTurnoutThreeWayElement = TrackTurnoutThreeWayElementDto;
 
+export type ITrackSensorElement = TrackSensorElementDto;
 
-export interface ITrackStraightElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_STRAIGHT;
-}
+export type IButtonElement = ButtonElementDto;
+export type IButtonScriptElement = ButtonScriptElementDto;
+export type IAudioButtonElement = AudioButtonElementDto;
+export type IRouteButtonElement = RouteButtonElementDto;
+export type IExtendedRouteButtonElement = ExtendedRouteButtonElementDto;
+export type IClockElement = ClockElementDto;
+export type IBlockElement = BlockElementDto;
+export type ITreeElement = TreeElementDto;
+export type ILabelElement = LabelElementDto;
+export type ITrackSignalElement = TrackSignalElementDto;
 
-export interface ITrackDirectionElement extends ITrackElement {
-    type: typeof ELEMENT_TYPES.TRACK_DIRECTION;
-}
+export type EditorElementData = LayoutElementDto;
 
-export interface ITrackEndElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_END;
-}
-
-export interface ITrackCornerElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_CORNER;
-}
-
-export interface ITrackCurveElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_CURVE;
-}
-
-export interface ITrackCrossingElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_CROSSING;
-}
-
-export interface ITrackTurnoutLeftElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_TURNOUT_LEFT;
-  turnoutAddress: number;
-  turnoutClosedValue: boolean;
-}
-
-export interface ITrackTurnoutRightElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_TURNOUT_RIGHT;
-  turnoutAddress: number;
-  turnoutClosedValue: boolean;
-}
-
-export interface ITrackTurnoutTwoWayElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY;
-}
-
-export interface ITrackTurnoutDoubleElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE;
-  turnout1Address: number;
-  turnout2Address: number;
-}
-
-export interface ITrackTurnoutThreeWayElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_TURNOUT_THREE_WAY;
-  turnout1Address: number;
-  turnout2Address: number;
-}
-
-export interface ITrackSensorElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_SENSOR;
-  kind: SensorTypes;
-  colorOn: string;
-  colorOff: string;
-  address: number;
-  radius: number;
-  // textOn: string;
-  // textOff: string;
-}
-
-export interface IButtonElement extends IBaseElement {
-  type: typeof ELEMENT_TYPES.BUTTON;
-  colorOn: string;
-  colorOff: string;
-  textOn: string;
-  textOff: string;
-  address: number;
-}
-
-export interface IButtonScriptElement extends IBaseElement {
-  type: typeof ELEMENT_TYPES.BUTTON_SCRIPT;
-  colorOn: string;
-  colorOff: string;
-  textOn: string;
-  textOff: string;
-  script: string;
-}
-
-
-export interface IAudioButtonElement extends IBaseElement {
-  type: typeof ELEMENT_TYPES.BUTTON_AUDIO;
-  fileName: string;
-  label: string;
-}
-
-export interface IRouteButtonElement extends IBaseElement {
-  type: typeof ELEMENT_TYPES.BUTTON_ROUTE;
-  colorOn: string;
-  label: string;
-  routeTurnouts: RouteTurnoutItem[] 
-}
-
-export interface IExtendedRouteButtonElement extends IBaseElement {
-  type: typeof ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED;
-  label: string;
-  fromBlockId: string;
-  toBlockId: string;
-}
-
-export interface IClockElement extends IBaseElement {
-  type: typeof ELEMENT_TYPES.CLOCK;
-}
-
-export interface IBlockElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_BLOCK;
-  //text: string;
-  length: number;
-  // textColor: string;
-  locoAddress: number;
-  sensorAddress: number;
-  blockType: BlockType;
-}
-
-export interface ITreeElement extends IBaseElement {
-  type: typeof ELEMENT_TYPES.TREE;
-}
-
-export interface ILabelElement extends IBaseElement {
-  type: typeof ELEMENT_TYPES.LABEL;
-  text: string;
-  fontSize: number;
-  color: string;
-  alignment: "left" | "center" | "right";
-  offsetY: number;
-  offsetX: number;
-  
-}
-
-export interface ITrackSignalElement extends ITrackElement {
-  type: typeof ELEMENT_TYPES.TRACK_SIGNAL2;
-  aspect: number;
-  address: number;
-  addressLength: number;
-  dispalyAsSingleLamp: boolean;
-  valueGreen: number;
-  valueRed: number;
-  valueYellow: number;
-  valueWhite: number;
-}
-// export interface ITrackSignal3Element extends IBaseElement {
-//   type: typeof ELEMENT_TYPES.TRACK_SIGNAL2;
-//   aspect: number;
-// }
-
-export type EditorElementData =
-  | ITrackStraightElement
-  | ITrackDirectionElement
-  | ITrackEndElement
-  | ITrackCornerElement
-  | ITrackCurveElement
-  | ITrackCrossingElement
-  | ITrackTurnoutLeftElement
-  | ITrackTurnoutRightElement
-  | ITrackTurnoutTwoWayElement
-  | ITrackTurnoutDoubleElement
-  | ITrackTurnoutThreeWayElement
-  | ITrackSensorElement
-  | IButtonElement
-  | IButtonScriptElement
-  | IAudioButtonElement
-  | IRouteButtonElement
-  | IExtendedRouteButtonElement
-  | IClockElement
-  | IBlockElement
-  | ITreeElement
-  | ITrackSignalElement
-  | ILabelElement
-  
-  ;
-  // | ITrackSignal3Element
-  // | ITrackSignal4Element
-  // ;
-//
 export interface IEditorSettings {
   gridSize: number;
   snapToGrid: boolean;
@@ -240,21 +110,25 @@ export interface IEditorSettings {
   defaultRotationStep: RotationStep;
 }
 
-
-
 export interface ILayer {
   name: string;
   elements: EditorElementData[];
 }
+
 export interface IEditorLayers {
   track: ILayer;
   buildings: ILayer;
 }
+
+/**
+ * Régi layout-file helper típus.
+ * Jelenleg a futó Layout.fromJSON() már a réteges, tömbös layout formát használja,
+ * ezért ezt direkt nem piszkáljuk tovább ebben a patchben.
+ */
 export interface ITrackLayoutFile {
   version: number;
   name: string;
   description?: string;
   settings: IEditorSettings;
-  //elements: any[];
-  layers: IEditorLayers
+  layers: IEditorLayers;
 }

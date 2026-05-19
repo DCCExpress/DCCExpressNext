@@ -10,7 +10,8 @@ export type TrainTaskStatus =
   | "queued"
   | "running"
   | "paused"
-  | "stopped"
+  | "finishing"
+  | "aborted"
   | "completed"
   | "error";
 
@@ -74,7 +75,7 @@ export type TrainTask = {
   status: TrainTaskStatus;
   createdAt: number;
   startedAt?: number | undefined;
-  stoppedAt?: number | undefined;
+  abortedAt?: number | undefined;
   completedAt?: number | undefined;
   runtime: TrainTaskRuntimeState;
   error?: string | undefined;

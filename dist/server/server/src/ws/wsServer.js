@@ -871,12 +871,29 @@ export function setupWebSocketServer(server) {
                             }
                             return;
                         }
-                        case "stopTask": {
+                        case "finishTask": {
                             const taskIdOrName = typeof msg.data?.taskIdOrName === "string"
                                 ? msg.data.taskIdOrName
                                 : "";
                             if (taskIdOrName) {
-                                const result = await taskRuntimeStore.stopTask(taskIdOrName);
+                                const result = await taskRuntimeStore.finishTask(taskIdOrName);
+                                if (!result.ok) {
+                                    sendToClient(ws, {
+                                        type: "taskRejected",
+                                        data: {
+                                            reason: result.error,
+                                        },
+                                    });
+                                }
+                            }
+                            return;
+                        }
+                        case "abortTask": {
+                            const taskIdOrName = typeof msg.data?.taskIdOrName === "string"
+                                ? msg.data.taskIdOrName
+                                : "";
+                            if (taskIdOrName) {
+                                const result = await taskRuntimeStore.abortTask(taskIdOrName);
                                 if (!result.ok) {
                                     sendToClient(ws, {
                                         type: "taskRejected",
@@ -922,8 +939,12 @@ export function setupWebSocketServer(server) {
                             }
                             return;
                         }
-                        case "stopAllTasks": {
-                            await taskRuntimeStore.stopAllTasks();
+                        case "finishAllTasks": {
+                            await taskRuntimeStore.finishAllTasks();
+                            return;
+                        }
+                        case "abortAllTasks": {
+                            await taskRuntimeStore.abortAllTasks();
                             return;
                         }
                         case "getTaskRuntimeState": {

@@ -101,16 +101,24 @@ export function createTaskRouter() {
         const result = await taskRuntimeStore.resumeTask(req.params.taskId ?? "");
         res.status(result.ok ? 200 : 400).json(result);
     });
-    router.post("/:taskId/stop", async (req, res) => {
-        const result = await taskRuntimeStore.stopTask(req.params.taskId ?? "");
+    router.post("/:taskId/finish", async (req, res) => {
+        const result = await taskRuntimeStore.finishTask(req.params.taskId ?? "");
+        res.status(result.ok ? 200 : 400).json(result);
+    });
+    router.post("/:taskId/abort", async (req, res) => {
+        const result = await taskRuntimeStore.abortTask(req.params.taskId ?? "");
         res.status(result.ok ? 200 : 400).json(result);
     });
     router.post("/start-all", async (_req, res) => {
         const result = await taskRuntimeStore.startAllTasks();
         res.status(result.ok ? 200 : 400).json(result);
     });
-    router.post("/stop-all", async (_req, res) => {
-        const result = await taskRuntimeStore.stopAllTasks();
+    router.post("/finish-all", async (_req, res) => {
+        const result = await taskRuntimeStore.finishAllTasks();
+        res.status(result.ok ? 200 : 400).json(result);
+    });
+    router.post("/abort-all", async (_req, res) => {
+        const result = await taskRuntimeStore.abortAllTasks();
         res.status(result.ok ? 200 : 400).json(result);
     });
     return router;

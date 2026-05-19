@@ -1,6 +1,16 @@
 // common/src/railway/topology.ts
 
 import { ELEMENT_TYPES } from "../layout/elementTypes.js"
+import type {
+  SerializedLayoutDto,
+  SerializedLayoutElementDto,
+} from "../layout/layoutDto.js";
+
+export type {
+  SerializedLayoutDto,
+  SerializedLayoutElementDto,
+  SerializedLayoutLayerDto,
+} from "../layout/layoutDto.js";
 export type TravelDirection =
   | "unknown"
   | "forward"
@@ -55,53 +65,6 @@ export function getDirectionPoint(
     point.y + d.y
   );
 }
-
-export type SerializedLayoutElementDto = {
-  id?: string;
-  type?: string;
-  name?: string;
-  layerName?: string;
-
-  x?: number;
-  y?: number;
-  rotation?: number;
-
-  trackName?: string;
-
-  address?: number;
-
-  turnoutAddress?: number;
-  turnoutClosedValue?: boolean;
-
-  length?: number;
-  sensorAddress?: number;
-  blockType?: string;
-
-  aspect?: number;
-  addressLength?: number;
-  valueGreen?: number;
-  valueRed?: number;
-  valueYellow?: number;
-  valueWhite?: number;
-
-  [key: string]: unknown;
-};
-
-export type SerializedLayoutLayerDto = {
-  id?: string;
-  name?: string;
-  visible?: boolean;
-  locked?: boolean;
-  elements?: SerializedLayoutElementDto[];
-};
-
-export type SerializedLayoutDto = {
-  gridSize?: number;
-  _activeLayerId?: string;
-  layers?: SerializedLayoutLayerDto[];
-  [key: string]: unknown;
-};
-
 
 export abstract class TopologyBaseElement {
   readonly id: string;

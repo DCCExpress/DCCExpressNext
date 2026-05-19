@@ -8,8 +8,10 @@ import {
   saveTrainTasks,
   startAllTrainTasks,
   startTrainTask,
-  stopAllTrainTasks,
-  stopTrainTask,
+  finishAllTrainTasks,
+  finishTrainTask,
+  abortAllTrainTasks,
+  abortTrainTask,
   updateTrainTask,
 } from "../../api/http";
 
@@ -145,11 +147,24 @@ export class TaskManager {
     return result;
   }
 
-  async stopTask(
+  async finishTask(
     taskId: string
   ): Promise<TaskManagerActionResult> {
     const result =
-      await stopTrainTask(taskId);
+      await finishTrainTask(taskId);
+
+    if (result.snapshot) {
+      this.setSnapshot(result.snapshot);
+    }
+
+    return result;
+  }
+
+  async abortTask(
+    taskId: string
+  ): Promise<TaskManagerActionResult> {
+    const result =
+      await abortTrainTask(taskId);
 
     if (result.snapshot) {
       this.setSnapshot(result.snapshot);
@@ -169,9 +184,9 @@ export class TaskManager {
     return result;
   }
 
-  async stopAllTasks(): Promise<TaskManagerActionResult> {
+  async finishAllTasks(): Promise<TaskManagerActionResult> {
     const result =
-      await stopAllTrainTasks();
+      await finishAllTrainTasks();
 
     if (result.snapshot) {
       this.setSnapshot(result.snapshot);
@@ -179,6 +194,18 @@ export class TaskManager {
 
     return result;
   }
+
+  async abortAllTasks(): Promise<TaskManagerActionResult> {
+    const result =
+      await abortAllTrainTasks();
+
+    if (result.snapshot) {
+      this.setSnapshot(result.snapshot);
+    }
+
+    return result;
+  }
+
   async saveTasks(): Promise<TaskManagerActionResult> {
     const result =
       await saveTrainTasks();
@@ -267,7 +294,8 @@ export class TaskManager {
     for (const task of snapshot.tasks) {
       if (
         task.status !== "running" &&
-        task.status !== "paused"
+        task.status !== "paused" &&
+        task.status !== "finishing"
       ) {
         continue;
       }

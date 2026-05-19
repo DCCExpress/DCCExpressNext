@@ -20,6 +20,7 @@ import {
 import {
   IconAlertTriangle,
   IconBolt,
+  IconCheck,
   IconDeviceGamepad2,
   IconEye,
   IconPlayerPause,
@@ -467,16 +468,28 @@ function ControllerTab() {
     showOkMessage("SUCCESSFUL", "All tasks started.");
   };
 
-  const handleStopAllTasks = async () => {
+  const handleFinishAllTasks = async () => {
     const result =
-      await taskManager.stopAllTasks();
+      await taskManager.finishAllTasks();
 
     if (!result.ok) {
       showErrorMessage("ERROR", result.error);
       return;
     }
 
-    showOkMessage("SUCCESSFUL", "All tasks stopped.");
+    showOkMessage("SUCCESSFUL", "All tasks marked for finish.");
+  };
+
+  const handleAbortAllTasks = async () => {
+    const result =
+      await taskManager.abortAllTasks();
+
+    if (!result.ok) {
+      showErrorMessage("ERROR", result.error);
+      return;
+    }
+
+    showOkMessage("SUCCESSFUL", "All active tasks aborted.");
   };
   function getStatusColor(status: TrainTaskStatus): string {
     switch (status) {
@@ -486,7 +499,9 @@ function ControllerTab() {
         return "green";
       case "paused":
         return "yellow";
-      case "stopped":
+      case "finishing":
+        return "orange";
+      case "aborted":
         return "red";
       case "completed":
         return "blue";
@@ -494,7 +509,6 @@ function ControllerTab() {
         return "red";
     }
   }
-
   function getStatusLabel(status: TrainTaskStatus): string {
     switch (status) {
       case "queued":
@@ -503,18 +517,23 @@ function ControllerTab() {
         return "Running";
       case "paused":
         return "Paused";
-      case "stopped":
-        return "Stopped";
+      case "finishing":
+        return "Finishing";
+      case "aborted":
+        return "Aborted";
       case "completed":
         return "Completed";
       case "error":
         return "Error";
     }
   }
-
   function getTaskProgressLabel(task: TrainTask): string {
     if (task.status === "completed") {
       return "Megérkezett";
+    }
+
+    if (task.status === "aborted") {
+      return "Megszakítva";
     }
 
     switch (task.runtime.simulation.phase) {
@@ -551,8 +570,10 @@ function ControllerTab() {
         return "Futás alatt";
       case "paused":
         return "Szüneteltetve";
-      case "stopped":
-        return "Leállítva";
+      case "finishing":
+        return "Befejezés alatt";
+      // case "aborted":
+      //   return "Megszakítva";
       case "error":
         return "Hiba";
     }
@@ -564,6 +585,10 @@ function ControllerTab() {
 
     if (task.status === "completed") {
       return "blue";
+    }
+
+    if (task.status === "aborted") {
+      return "red";
     }
 
     if (task.runtime.inTransit) {
@@ -579,15 +604,16 @@ function ControllerTab() {
         return "green";
       case "paused":
         return "yellow";
-      case "stopped":
-        return "red";
+      case "finishing":
+        return "orange";
+      // case "aborted":
+      //   return "red";
       case "error":
         return "red";
       default:
         return "gray";
     }
   }
-
   function renderTaskControls(task: TrainTask) {
     switch (task.status) {
       case "queued":
@@ -623,13 +649,25 @@ function ControllerTab() {
             <Button
               size="xs"
               variant="light"
+              color="orange"
+              leftSection={<IconCheck size={14} />}
+              onClick={() =>
+                void runTaskAction(() => taskManager.finishTask(task.id))
+              }
+            >
+              Finish
+            </Button>
+
+            <Button
+              size="xs"
+              variant="light"
               color="red"
               leftSection={<IconPlayerStop size={14} />}
               onClick={() =>
-                void runTaskAction(() => taskManager.stopTask(task.id))
+                void runTaskAction(() => taskManager.abortTask(task.id))
               }
             >
-              Stop
+              Abort
             </Button>
           </Group>
         );
@@ -652,18 +690,46 @@ function ControllerTab() {
             <Button
               size="xs"
               variant="light"
+              color="orange"
+              leftSection={<IconCheck size={14} />}
+              onClick={() =>
+                void runTaskAction(() => taskManager.finishTask(task.id))
+              }
+            >
+              Finish
+            </Button>
+
+            <Button
+              size="xs"
+              variant="light"
               color="red"
               leftSection={<IconPlayerStop size={14} />}
               onClick={() =>
-                void runTaskAction(() => taskManager.stopTask(task.id))
+                void runTaskAction(() => taskManager.abortTask(task.id))
               }
             >
-              Stop
+              Abort
             </Button>
           </Group>
         );
 
-      case "stopped":
+      case "finishing":
+        return (
+          <Button
+            size="xs"
+            variant="light"
+            color="red"
+            leftSection={<IconPlayerStop size={14} />}
+            onClick={() =>
+              void runTaskAction(() => taskManager.abortTask(task.id))
+            }
+          >
+            Abort
+          </Button>
+        );
+
+      case "aborted":
+      case "completed":
         return (
           <Button
             size="xs"
@@ -678,12 +744,10 @@ function ControllerTab() {
           </Button>
         );
 
-      case "completed":
       case "error":
         return null;
     }
   }
-
   const handleReserveRoute = () => {
     const from = fromBlockName.trim();
     const to = toBlockName.trim();
@@ -817,10 +881,10 @@ function ControllerTab() {
               <Button
                 size="xs"
                 variant="light"
-                color="red"
-                leftSection={<IconPlayerStop size={16} />}
+                color="orange"
+                leftSection={<IconCheck size={16} />}
                 onClick={() => {
-                  void handleStopAllTasks();
+                  void handleFinishAllTasks();
                 }}
                 disabled={
                   !snapshot.tasks.some(task =>
@@ -829,7 +893,26 @@ function ControllerTab() {
                   )
                 }
               >
-                Stop all tasks
+                Finish all tasks
+              </Button>
+
+              <Button
+                size="xs"
+                variant="light"
+                color="red"
+                leftSection={<IconPlayerStop size={16} />}
+                onClick={() => {
+                  void handleAbortAllTasks();
+                }}
+                disabled={
+                  !snapshot.tasks.some(task =>
+                    task.status === "running" ||
+                    task.status === "paused" ||
+                    task.status === "finishing"
+                  )
+                }
+              >
+                Abort all tasks
               </Button>
             </Group>
           </Stack>

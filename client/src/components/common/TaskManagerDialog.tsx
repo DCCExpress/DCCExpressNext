@@ -20,6 +20,7 @@ import {
     IconPlayerPause,
     IconPlayerPlay,
     IconPlayerStop,
+    IconCheck,
     IconPlus,
     IconPencil,
     IconTrash,
@@ -306,11 +307,11 @@ export default function TaskManagerDialog({
         showOkMessage("SUCCESSFUL", "All tasks started.");
     };
 
-    const handleStopAllTasks = async () => {
+    const handleFinishAllTasks = async () => {
         setActionError(null);
 
         const result =
-            await taskManager.stopAllTasks();
+            await taskManager.finishAllTasks();
 
         if (!result.ok) {
             setActionError(result.error);
@@ -318,7 +319,22 @@ export default function TaskManagerDialog({
             return;
         }
 
-        showOkMessage("SUCCESSFUL", "All tasks stopped.");
+        showOkMessage("SUCCESSFUL", "All tasks marked for finish.");
+    };
+
+    const handleAbortAllTasks = async () => {
+        setActionError(null);
+
+        const result =
+            await taskManager.abortAllTasks();
+
+        if (!result.ok) {
+            setActionError(result.error);
+            showErrorMessage("ERROR", result.error);
+            return;
+        }
+
+        showOkMessage("SUCCESSFUL", "All active tasks aborted.");
     };
     const handleSaveTasks = async () => {
         setActionError(null);
@@ -382,7 +398,9 @@ export default function TaskManagerDialog({
                 return "green";
             case "paused":
                 return "yellow";
-            case "stopped":
+            case "finishing":
+                return "orange";
+            case "aborted":
                 return "red";
             case "completed":
                 return "blue";
@@ -390,7 +408,6 @@ export default function TaskManagerDialog({
                 return "red";
         }
     }
-
     function getStatusLabel(status: TrainTaskStatus): string {
         switch (status) {
             case "queued":
@@ -399,15 +416,16 @@ export default function TaskManagerDialog({
                 return "Running";
             case "paused":
                 return "Paused";
-            case "stopped":
-                return "Stopped";
+            case "finishing":
+                return "Finishing";
+            case "aborted":
+                return "Aborted";
             case "completed":
                 return "Completed";
             case "error":
                 return "Error";
         }
     }
-
     function renderTurnoutRequirementBadges(
         turnoutStates: { address: number; closed: boolean }[]
     ) {
@@ -518,6 +536,14 @@ export default function TaskManagerDialog({
             );
         }
 
+        if (task.status === "aborted") {
+            return (
+                <Badge color="red" variant="light">
+                    Aborted
+                </Badge>
+            );
+        }
+
         if (task.runtime.simulation.phase === "waitingForRoute") {
             return (
                 <Badge color="yellow" variant="light">
@@ -565,13 +591,14 @@ export default function TaskManagerDialog({
     function renderEditButton(task: TrainTask) {
         const disabled =
             task.status === "running" ||
-            task.status === "paused";
+            task.status === "paused" ||
+            task.status === "finishing";
 
         return (
             <Tooltip
                 label={
                     disabled
-                        ? "Futó vagy szüneteltetett task nem módosítható"
+                        ? "Futó, szüneteltetett vagy befejezés alatt álló task nem módosítható"
                         : "Edit"
                 }
             >
@@ -642,13 +669,27 @@ export default function TaskManagerDialog({
                             </ActionIcon>
                         </Tooltip>
 
-                        <Tooltip label="Stop">
+                        <Tooltip label="Finish">
+                            <ActionIcon
+                                color="orange"
+                                variant="light"
+                                onClick={() =>
+                                    void runTaskAction(() =>
+                                        taskManager.finishTask(task.id)
+                                    )
+                                }
+                            >
+                                <IconCheck size={18} />
+                            </ActionIcon>
+                        </Tooltip>
+
+                        <Tooltip label="Abort">
                             <ActionIcon
                                 color="red"
                                 variant="light"
                                 onClick={() =>
                                     void runTaskAction(() =>
-                                        taskManager.stopTask(task.id)
+                                        taskManager.abortTask(task.id)
                                     )
                                 }
                             >
@@ -675,13 +716,27 @@ export default function TaskManagerDialog({
                             </ActionIcon>
                         </Tooltip>
 
-                        <Tooltip label="Stop">
+                        <Tooltip label="Finish">
+                            <ActionIcon
+                                color="orange"
+                                variant="light"
+                                onClick={() =>
+                                    void runTaskAction(() =>
+                                        taskManager.finishTask(task.id)
+                                    )
+                                }
+                            >
+                                <IconCheck size={18} />
+                            </ActionIcon>
+                        </Tooltip>
+
+                        <Tooltip label="Abort">
                             <ActionIcon
                                 color="red"
                                 variant="light"
                                 onClick={() =>
                                     void runTaskAction(() =>
-                                        taskManager.stopTask(task.id)
+                                        taskManager.abortTask(task.id)
                                     )
                                 }
                             >
@@ -691,7 +746,27 @@ export default function TaskManagerDialog({
                     </Group>
                 );
 
-            case "stopped":
+            case "finishing":
+                return (
+                    <Group gap="xs" wrap="nowrap">
+                        <Tooltip label="Abort">
+                            <ActionIcon
+                                color="red"
+                                variant="light"
+                                onClick={() =>
+                                    void runTaskAction(() =>
+                                        taskManager.abortTask(task.id)
+                                    )
+                                }
+                            >
+                                <IconPlayerStop size={18} />
+                            </ActionIcon>
+                        </Tooltip>
+                    </Group>
+                );
+
+            case "aborted":
+            case "completed":
                 return (
                     <Group gap="xs" wrap="nowrap">
                         <Tooltip label="Start again">
@@ -713,12 +788,10 @@ export default function TaskManagerDialog({
                     </Group>
                 );
 
-            case "completed":
             case "error":
                 return renderDeleteButton(task);
         }
     }
-
     function renderTaskSteps(task: TrainTask) {
         type StepState =
             | "done"
@@ -1354,14 +1427,34 @@ export default function TaskManagerDialog({
                                 <Button
                                     size="xs"
                                     variant="light"
+                                    color="orange"
+                                    leftSection={<IconCheck size={16} />}
+                                    onClick={() => {
+                                        void handleFinishAllTasks();
+                                    }}
+                                    disabled={!snapshot.tasks.some(task =>
+                                        task.status === "running" ||
+                                        task.status === "paused"
+                                    )}
+                                >
+                                    Finish all
+                                </Button>
+
+                                <Button
+                                    size="xs"
+                                    variant="light"
                                     color="red"
                                     leftSection={<IconPlayerStop size={16} />}
                                     onClick={() => {
-                                        void handleStopAllTasks();
+                                        void handleAbortAllTasks();
                                     }}
-                                    disabled={snapshot.tasks.length === 0}
+                                    disabled={!snapshot.tasks.some(task =>
+                                        task.status === "running" ||
+                                        task.status === "paused" ||
+                                        task.status === "finishing"
+                                    )}
                                 >
-                                    Stop all
+                                    Abort all
                                 </Button>
 
 <Button

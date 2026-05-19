@@ -167,7 +167,8 @@ class TrainSimulatorRuntimeStore {
 
         if (
           !task ||
-          task.status === "stopped" ||
+          task.status === "aborted" ||
+          task.status === "completed" ||
           task.status === "error" ||
           task.status === "queued"
         ) {
@@ -182,7 +183,8 @@ class TrainSimulatorRuntimeStore {
       for (const task of tasks) {
         if (
           task.status !== "running" &&
-          task.status !== "paused"
+          task.status !== "paused" &&
+          task.status !== "finishing"
         ) {
           continue;
         }

@@ -231,7 +231,8 @@ async function runTaskAction(
     | "start"
     | "pause"
     | "resume"
-    | "stop"
+    | "finish"
+    | "abort"
 ): Promise<TaskManagerActionResult> {
   const res = await fetch(
     `/api/tasks/${encodeURIComponent(taskId)}/${action}`,
@@ -264,12 +265,17 @@ export async function resumeTrainTask(
   return runTaskAction(taskId, "resume");
 }
 
-export async function stopTrainTask(
+export async function finishTrainTask(
   taskId: string
 ): Promise<TaskManagerActionResult> {
-  return runTaskAction(taskId, "stop");
+  return runTaskAction(taskId, "finish");
 }
 
+export async function abortTrainTask(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return runTaskAction(taskId, "abort");
+}
 export async function startAllTrainTasks(): Promise<TaskManagerActionResult> {
   const res = await fetch("/api/tasks/start-all", {
     method: "POST",
@@ -280,17 +286,27 @@ export async function startAllTrainTasks(): Promise<TaskManagerActionResult> {
     "Failed to start all tasks"
   );
 }
-export async function stopAllTrainTasks(): Promise<TaskManagerActionResult> {
-  const res = await fetch("/api/tasks/stop-all", {
+export async function finishAllTrainTasks(): Promise<TaskManagerActionResult> {
+  const res = await fetch("/api/tasks/finish-all", {
     method: "POST",
   });
 
   return readTaskResponse<TaskManagerActionResult>(
     res,
-    "Failed to stop all tasks"
+    "Failed to finish all tasks"
   );
 }
 
+export async function abortAllTrainTasks(): Promise<TaskManagerActionResult> {
+  const res = await fetch("/api/tasks/abort-all", {
+    method: "POST",
+  });
+
+  return readTaskResponse<TaskManagerActionResult>(
+    res,
+    "Failed to abort all tasks"
+  );
+}
 export async function getRouteGraph(): Promise<RouteGraphResponseDto> {
   const response = await fetch("/api/layout/route-graph");
 

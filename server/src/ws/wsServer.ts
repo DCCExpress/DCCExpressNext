@@ -305,7 +305,7 @@ export function setupWebSocketServer(server: http.Server) {
       await scriptRuntimeStore.autoStartIfEnabled();
 
       await taskRuntimeStore.initialize();
-})
+    })
     .catch(err => {
       logError(
         "Failed to read initial command center config:",
@@ -1155,7 +1155,7 @@ export function setupWebSocketServer(server: http.Server) {
               return;
             }
 
-            case "stopTask": {
+            case "finishTask": {
               const taskIdOrName =
                 typeof msg.data?.taskIdOrName === "string"
                   ? msg.data.taskIdOrName
@@ -1163,7 +1163,7 @@ export function setupWebSocketServer(server: http.Server) {
 
               if (taskIdOrName) {
                 const result =
-                  await taskRuntimeStore.stopTask(taskIdOrName);
+                  await taskRuntimeStore.finishTask(taskIdOrName);
 
                 if (!result.ok) {
                   sendToClient(ws, {
@@ -1178,6 +1178,28 @@ export function setupWebSocketServer(server: http.Server) {
               return;
             }
 
+            case "abortTask": {
+              const taskIdOrName =
+                typeof msg.data?.taskIdOrName === "string"
+                  ? msg.data.taskIdOrName
+                  : "";
+
+              if (taskIdOrName) {
+                const result =
+                  await taskRuntimeStore.abortTask(taskIdOrName);
+
+                if (!result.ok) {
+                  sendToClient(ws, {
+                    type: "taskRejected",
+                    data: {
+                      reason: result.error,
+                    },
+                  });
+                }
+              }
+
+              return;
+            }
             case "pauseTask": {
               const taskIdOrName =
                 typeof msg.data?.taskIdOrName === "string"
@@ -1224,11 +1246,16 @@ export function setupWebSocketServer(server: http.Server) {
               return;
             }
 
-            case "stopAllTasks": {
-              await taskRuntimeStore.stopAllTasks();
+            case "finishAllTasks": {
+              await taskRuntimeStore.finishAllTasks();
               return;
             }
 
+            case "abortAllTasks": {
+              await taskRuntimeStore.abortAllTasks();
+              return;
+            }
+            
             case "getTaskRuntimeState": {
               sendToClient(ws, {
                 type: "taskManagerSnapshotChanged",
