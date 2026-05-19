@@ -1,5 +1,5 @@
 import { ActionIcon, AppShell, Box, Card, Group, Stack } from "@mantine/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LocoDialog from "../components/LocoDialog";
 import PanelHandle from "../components/PanelHandle";
 import TrackCanvas from "../components/TrackCanvas";
@@ -18,6 +18,7 @@ import SettingDialog from "../components/SettingsDialog";
 import { isTouchDevice, showErrorMessage, showOkMessage } from "../helpers";
 import { useLayoutRuntimeWsBindings } from "../hooks/layout/useLayoutRuntimeWsBindings";
 import { useLayoutPageBootstrap } from "../hooks/layout/useLayoutPageBootstrap";
+import { useLayoutHistory } from "../hooks/layout/useLayoutHistory";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Layout } from "../models/editor/core/Layout";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
@@ -39,8 +40,6 @@ const PROPERTY_PANEL_WIDTH = 320;
 const EDIT_MODE_KEY = "dcc-express.editor.editMode";
 const LOCOPANEL_COLLAPSED = "dcc-express.editor.locoPanelCollapsed";
 const PROPERTYPANEL_COLLAPSED = "dcc-express.editor.propertyPanelCollapsed";
-const MAX_HISTORY = 100;
-
 export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [toolbarOpened, setToolbarOpened] = useState(true);
   const [locoDialogOpened, setLocoDialogOpened] = useState(false);
@@ -58,9 +57,6 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [commandCenterPower, setCommandCenterPower] = useState(false);
 
   const [routesString, setRoutesString] = useState<string>("");
-
-  const [undoStack, setUndoStack] = useState<string[]>([]);
-  const [redoStack, setRedoStack] = useState<string[]>([]);
 
   const layoutRef = useRef(layout);
   const locosRef = useRef(locos);
@@ -188,6 +184,21 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const previousEditModeRef = useRef(editMode);
 
   const {
+    undoStack,
+    redoStack,
+    setUndoStack,
+    setRedoStack,
+    canUndo,
+    canRedo,
+    pushHistorySnapshot,
+    undo,
+    redo,
+  } = useLayoutHistory({
+    layoutRef,
+    setLayout,
+  });
+
+  const {
     loadLocos,
     loadLayoutFromServer,
     saveLayoutToServer,
@@ -202,135 +213,6 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     setRedoStack,
     setInvalidateCounter,
   });
-
-  const createLayoutSnapshot = useCallback((source: Layout): string => {
-    return JSON.stringify(source);
-  }, []);
-
-  const pushHistorySnapshot = useCallback(() => {
-    const snapshot = createLayoutSnapshot(layoutRef.current);
-
-    setUndoStack((prev) => {
-      const last = prev[prev.length - 1];
-      if (last === snapshot) {
-        return prev;
-      }
-
-      const next = [...prev, snapshot];
-      return next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next;
-    });
-
-    setRedoStack([]);
-  }, [createLayoutSnapshot]);
-
-  const undo = useCallback(() => {
-    setUndoStack((prevUndo) => {
-      if (prevUndo.length === 0) {
-        return prevUndo;
-      }
-
-      const currentSnapshot = createLayoutSnapshot(layoutRef.current);
-      const previousSnapshot = prevUndo[prevUndo.length - 1];
-      const restoredLayout = Layout.fromJSON(JSON.parse(previousSnapshot!));
-
-      setRedoStack((prevRedo) => {
-        const next = [...prevRedo, currentSnapshot];
-        return next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next;
-      });
-
-      setLayout(restoredLayout);
-      routeGraphStore.clear();
-
-      return prevUndo.slice(0, -1);
-    });
-  }, [createLayoutSnapshot]);
-
-  const redo = useCallback(() => {
-    setRedoStack((prevRedo) => {
-      if (prevRedo.length === 0) {
-        return prevRedo;
-      }
-
-      const currentSnapshot = createLayoutSnapshot(layoutRef.current);
-      const nextSnapshot = prevRedo[prevRedo.length - 1];
-      const restoredLayout = Layout.fromJSON(JSON.parse(nextSnapshot!));
-
-      setUndoStack((prevUndo) => {
-        const next = [...prevUndo, currentSnapshot];
-        return next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next;
-      });
-
-      setLayout(restoredLayout);
-      routeGraphStore.clear();
-      return prevRedo.slice(0, -1);
-    });
-  }, [createLayoutSnapshot]);
-
-  const canUndo = undoStack.length > 0;
-  const canRedo = redoStack.length > 0;
-
-  useEffect(() => {
-    const onKeyDown = (ev: KeyboardEvent) => {
-
-      const isCtrl = ev.ctrlKey || ev.metaKey;
-      if (isCtrl && ev.key.toLowerCase() === "s") {
-        ev.preventDefault();
-        saveLayoutToServer();
-        //void saveCommandCentersToServer();
-      }
-      const target = ev.target as HTMLElement | null;
-      const tagName = target?.tagName;
-
-      const isTypingField =
-        tagName === "INPUT" ||
-        tagName === "TEXTAREA" ||
-        tagName === "SELECT" ||
-        target?.isContentEditable === true;
-
-      if (isTypingField) {
-        return;
-      }
-
-      if (ev.key === "Escape") {
-        setTool({ mode: "cursor", elementType: "general" });
-        return;
-      }
-
-      if (ev.key.toLowerCase() === "e" && !ev.ctrlKey && !ev.altKey && !ev.metaKey) {
-        ev.preventDefault();
-        setEditMode((prev) => !prev);
-        return;
-      }
-
-
-
-
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [commandCenter]);
-
-  useEffect(() => {
-    const onHistoryKeys = (ev: KeyboardEvent) => {
-      const key = ev.key.toLowerCase();
-
-      if (ev.ctrlKey && !ev.shiftKey && key === "z") {
-        ev.preventDefault();
-        undo();
-        return;
-      }
-
-      if ((ev.ctrlKey && key === "y") || (ev.ctrlKey && ev.shiftKey && key === "z")) {
-        ev.preventDefault();
-        redo();
-      }
-    };
-
-    window.addEventListener("keydown", onHistoryKeys);
-    return () => window.removeEventListener("keydown", onHistoryKeys);
-  }, [undo, redo]);
-
 
   useEffect(() => {
     const unsubscribe = routeGraphStore.subscribe(() => {
