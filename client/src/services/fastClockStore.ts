@@ -142,7 +142,7 @@ class FastClockStore {
     this.initialized = true;
 
     this.unsubscribeWs =
-      wsClient.on<FastClockSnapshot>(
+      wsClient.on(
         "fastClockChanged",
         data => {
           this.connected = true;

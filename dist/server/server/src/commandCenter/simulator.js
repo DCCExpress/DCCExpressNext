@@ -124,17 +124,6 @@ export class CommandCenterSimulator extends CommandCenter {
             shortCircuit: false,
             programmingModeActive: false,
         };
-        const state = {
-            alive: this.alive,
-            power: this.power,
-            type: "simulator",
-            trackPower: on,
-            powerInfo,
-        };
-        broadcastAll({
-            type: "z21SystemState",
-            data: state,
-        });
         broadcastAll({
             type: "powerInfo",
             data: powerInfo,

@@ -1,22 +1,14 @@
 import type { BaseElement } from "../models/editor/core/BaseElement";
+
+import type {
+  ScriptDocumentDto,
+  ScriptRunSource,
+  ScriptStateDto,
+  ScriptStatus,
+} from "../../../common/src/types";
 import { getScript, saveScript } from "../api/http";
 import { wsApi } from "./wsApi";
 import { wsClient } from "./wsClient";
-
-export type ScriptRunSource =
-  | "property-panel"
-  | "route-button"
-  | "control-panel"
-  | "auto-start"
-  | "unknown";
-
-export type ScriptStatus =
-  | "idle"
-  | "running"
-  | "stopping"
-  | "stopped"
-  | "finished"
-  | "error";
 
 export type ScriptContext = {
   source?: ScriptRunSource;
@@ -39,11 +31,8 @@ export type ScriptState = {
   logs: ScriptLogEntry[];
 };
 
-export type ScriptDocument = {
-  content: string;
-  autoStart: boolean;
-  updatedAt?: string;
-};
+export type ScriptDocument =
+  ScriptDocumentDto;
 
 type ScriptStateListener = (
   state: ScriptState
@@ -56,20 +45,6 @@ type CurrentSessionListener = (
 type ScriptDocumentListener = (
   script: ScriptDocument
 ) => void;
-
-type ScriptStateDto = {
-  id: string;
-  status: ScriptStatus;
-  source: ScriptRunSource;
-  startedAt?: string;
-  finishedAt?: string;
-  error?: string;
-  logs: {
-    time: string;
-    source: ScriptRunSource;
-    message: string;
-  }[];
-};
 
 export class ScriptSession {
   private state: ScriptState;
@@ -132,7 +107,7 @@ class ScriptEngine {
   };
 
   constructor() {
-    wsClient.on<ScriptDocument>(
+    wsClient.on(
       "scriptDocumentChanged",
       data => {
         this.script =
@@ -146,7 +121,7 @@ class ScriptEngine {
       }
     );
 
-    wsClient.on<ScriptStateDto | null>(
+    wsClient.on(
       "scriptStateChanged",
       data => {
         if (!data) {
@@ -171,7 +146,7 @@ class ScriptEngine {
       }
     );
 
-    wsClient.on<{ reason: string }>(
+    wsClient.on(
       "scriptRejected",
       data => {
         const previous =

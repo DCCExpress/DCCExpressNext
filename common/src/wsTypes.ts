@@ -279,6 +279,45 @@ type TaskLifecycleEventPayload = {
   message: string;
 };
 
+export type WsPowerInfoPayload = {
+  emergencyStop: boolean;
+  trackVoltageOn: boolean;
+  trackVoltageOff: boolean;
+  shortCircuit: boolean;
+  programmingModeActive: boolean;
+};
+
+export type Z21SystemStatePayload = {
+  mainCurrentMa: number;
+  progCurrentMa: number;
+  filteredMainCurrentMa: number;
+  temperatureC: number;
+  supplyVoltageMv: number;
+  vccVoltageMv: number;
+  centralState: number;
+  centralStateEx: number;
+  reserved: number;
+  capabilities: number;
+
+  powerInfo: WsPowerInfoPayload;
+
+  flags: {
+    highTemperature: boolean;
+    powerLost: boolean;
+    shortCircuitExternal: boolean;
+    shortCircuitInternal: boolean;
+    rcn213: boolean;
+
+    capDcc: boolean;
+    capMm: boolean;
+    capRailCom: boolean;
+    capLocoCmds: boolean;
+    capAccessoryCmds: boolean;
+    capDetectorCmds: boolean;
+    capNeedsUnlockCode: boolean;
+  };
+};
+
 /**
  * Szerver -> kliens WebSocket események payload térképe.
  */
@@ -393,8 +432,8 @@ export type ServerWsPayloadMap = {
 
   fastClockChanged: FastClockSnapshot;
 
-  z21SystemState: unknown;
-  powerInfo: unknown;
+  z21SystemState: Z21SystemStatePayload;
+  powerInfo: WsPowerInfoPayload;
 
   rbusInfo: {
     group: number;

@@ -3,14 +3,24 @@
 import { useEffect } from "react";
 import { wsClient } from "../services/wsClient";
 
-export function useWsMessage<T = any>(
-  type: string,
-  handler: (data: T) => void
-) {
+import type {
+  ServerWsMessageType,
+  ServerWsPayloadMap,
+} from "../../../common/src/types";
+
+export function useWsMessage<
+  TType extends ServerWsMessageType
+>(
+  type: TType,
+  handler: (data: ServerWsPayloadMap[TType]) => void
+): void {
   useEffect(() => {
-    const unsubscribe = wsClient.on<T>(type, (data) => {
-      handler(data);
-    });
+    const unsubscribe = wsClient.on(
+      type,
+      data => {
+        handler(data);
+      }
+    );
 
     return unsubscribe;
   }, [type, handler]);

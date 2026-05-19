@@ -2,7 +2,9 @@
 
 import type {
     ClientWsMessage,
-    WsMessage,
+    ServerWsMessageType,
+    ServerWsPayloadMap,
+    TypedServerWsMessage,
 } from "../../../common/src/types";
 
 export type WsConnectionStatus =
@@ -12,9 +14,24 @@ export type WsConnectionStatus =
     | "reconnecting"
     | "error";
 
-type StatusListener = (status: WsConnectionStatus) => void;
-type MessageListener = (message: WsMessage) => void;
-type TypedMessageListener<T = any> = (data: T, raw: WsMessage<T>) => void;
+type StatusListener =
+    (status: WsConnectionStatus) => void;
+
+type MessageListener =
+    (message: TypedServerWsMessage) => void;
+
+type TypedMessageListener<
+    TType extends ServerWsMessageType
+> = (
+    data: ServerWsPayloadMap[TType],
+    raw: TypedServerWsMessage<TType>
+) => void;
+
+type AnyTypedMessageListener =
+    (
+        data: ServerWsPayloadMap[ServerWsMessageType],
+        raw: TypedServerWsMessage
+    ) => void;
 
 const WS_DEBUG = false;
 
@@ -22,9 +39,14 @@ class WsClient {
     private socket: WebSocket | null = null;
     private status: WsConnectionStatus = "disconnected";
 
-    private statusListeners = new Set<StatusListener>();
-    private messageListeners = new Set<MessageListener>();
-    private typedListeners = new Map<string, Set<TypedMessageListener>>();
+    private statusListeners =
+        new Set<StatusListener>();
+
+    private messageListeners =
+        new Set<MessageListener>();
+
+    private typedListeners =
+        new Map<string, Set<AnyTypedMessageListener>>();
 
     private reconnectTimer: number | null = null;
     private manuallyClosed = false;
@@ -119,9 +141,18 @@ class WsClient {
         this.setStatus("disconnected");
     }
 
-    public send<T = any>(message: ClientWsMessage<T>) {
-        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-            console.warn("[WS] Cannot send, socket is not open:", message);
+    public send<T = any>(
+        message: ClientWsMessage<T>
+    ): boolean {
+        if (
+            !this.socket ||
+            this.socket.readyState !== WebSocket.OPEN
+        ) {
+            console.warn(
+                "[WS] Cannot send, socket is not open:",
+                message
+            );
+
             return false;
         }
 
@@ -129,15 +160,17 @@ class WsClient {
         return true;
     }
 
-    public isConnected() {
+    public isConnected(): boolean {
         return this.socket?.readyState === WebSocket.OPEN;
     }
 
-    public getStatus() {
+    public getStatus(): WsConnectionStatus {
         return this.status;
     }
 
-    public subscribeStatus(listener: StatusListener) {
+    public subscribeStatus(
+        listener: StatusListener
+    ): () => void {
         this.statusListeners.add(listener);
         listener(this.status);
 
@@ -146,7 +179,9 @@ class WsClient {
         };
     }
 
-    public subscribeMessages(listener: MessageListener) {
+    public subscribeMessages(
+        listener: MessageListener
+    ): () => void {
         this.messageListeners.add(listener);
 
         return () => {
@@ -154,23 +189,28 @@ class WsClient {
         };
     }
 
-    public on<T = any>(type: string, listener: TypedMessageListener<T>) {
+    public on<TType extends ServerWsMessageType>(
+        type: TType,
+        listener: TypedMessageListener<TType>
+    ): () => void {
         if (!this.typedListeners.has(type)) {
             this.typedListeners.set(type, new Set());
         }
 
-        this.typedListeners.get(type)!.add(
-            listener as TypedMessageListener
-        );
+        const storedListener =
+            listener as unknown as AnyTypedMessageListener;
+
+        this.typedListeners.get(type)!.add(storedListener);
 
         return () => {
-            const listeners = this.typedListeners.get(type);
+            const listeners =
+                this.typedListeners.get(type);
 
             if (!listeners) {
                 return;
             }
 
-            listeners.delete(listener as TypedMessageListener);
+            listeners.delete(storedListener);
 
             if (listeners.size === 0) {
                 this.typedListeners.delete(type);
@@ -178,13 +218,20 @@ class WsClient {
         };
     }
 
-    private handleIncoming(rawData: any) {
+    private handleIncoming(rawData: unknown): void {
         try {
             const message =
-                JSON.parse(rawData) as WsMessage;
+                JSON.parse(String(rawData)) as TypedServerWsMessage;
 
-            if (!message || typeof message.type !== "string") {
-                console.warn("[WS] Invalid message format:", rawData);
+            if (
+                !message ||
+                typeof message.type !== "string"
+            ) {
+                console.warn(
+                    "[WS] Invalid message format:",
+                    rawData
+                );
+
                 return;
             }
 
@@ -197,7 +244,10 @@ class WsClient {
 
             if (listeners) {
                 for (const listener of listeners) {
-                    listener(message.data, message);
+                    listener(
+                        message.data as ServerWsPayloadMap[ServerWsMessageType],
+                        message
+                    );
                 }
             }
         } catch (error) {
@@ -209,7 +259,7 @@ class WsClient {
         }
     }
 
-    private scheduleReconnect() {
+    private scheduleReconnect(): void {
         this.clearReconnectTimer();
 
         this.reconnectAttempts++;
@@ -226,14 +276,16 @@ class WsClient {
         }, delay);
     }
 
-    private clearReconnectTimer() {
+    private clearReconnectTimer(): void {
         if (this.reconnectTimer !== null) {
             window.clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
         }
     }
 
-    private setStatus(status: WsConnectionStatus) {
+    private setStatus(
+        status: WsConnectionStatus
+    ): void {
         this.status = status;
 
         for (const listener of this.statusListeners) {
@@ -242,4 +294,5 @@ class WsClient {
     }
 }
 
-export const wsClient = new WsClient();
+export const wsClient =
+    new WsClient();

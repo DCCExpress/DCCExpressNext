@@ -142,7 +142,7 @@ export function CommandCenterProvider({
       }
     });
 
-    const unsubscribeLockChanged = wsClient.on<CommandCenterLockState>(
+    const unsubscribeLockChanged = wsClient.on(
       "commandCenterLockChanged",
       (data) => {
         setLockState({
@@ -153,7 +153,7 @@ export function CommandCenterProvider({
       }
     );
 
-    const unsubscribeCommandCenterInfo = wsClient.on<CommandCenterInfoState>(
+    const unsubscribeCommandCenterInfo = wsClient.on(
       "commandCenterInfo",
       (data) => {
         setCommandCenterInfo((prev) => ({
@@ -166,14 +166,14 @@ export function CommandCenterProvider({
       }
     );
 
-    const unsubscribePowerInfo = wsClient.on<PowerInfo>(
+    const unsubscribePowerInfo = wsClient.on(
       "powerInfo",
       (data) => {
         setPowerInfo(data);
       }
     );
 
-    const unsubscribeZ21SystemState = wsClient.on<Z21SystemState>(
+    const unsubscribeZ21SystemState = wsClient.on(
       "z21SystemState",
       (data) => {
         setZ21SystemState(data);

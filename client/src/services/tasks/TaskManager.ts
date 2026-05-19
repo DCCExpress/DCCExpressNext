@@ -37,7 +37,7 @@ export class TaskManager {
   private initialLoadStarted = false;
 
   constructor() {
-    wsClient.on<TaskManagerSnapshot>(
+    wsClient.on(
       "taskManagerSnapshotChanged",
       snapshot => {
         this.setSnapshot(snapshot);

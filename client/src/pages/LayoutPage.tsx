@@ -22,7 +22,7 @@ import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutL
 import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
 import CommandCenterDialog from "../components/CommandCenterDialog";
 import { CommandCenter, loadCommandCenters, saveCommandCenters } from "../api/commandCentersApi";
-import { BlockState, ICommandCenter, Loco } from "../../../common/src/types";
+import { ICommandCenter, Loco } from "../../../common/src/types";
 import { WsEvents } from "../../../common/src/wsEvents";
 import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
 import FullscreenLoader from "../components/FullscreenLoader";
@@ -588,7 +588,8 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
             const sensor = e as TrackSensorElement;
 
             if (sensor.address === data.address) {
-              sensor.on = data.on;
+              sensor.on =
+              data.on ?? data.active ?? false;
               changed = true;
             }
           }
@@ -650,7 +651,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       "commandCenterInfo",
       data => {
         setCommandCenterAlive(data.alive);
-        setCommandCenterPower(data.power);
+        setCommandCenterPower(data.power ?? false);
       }
     );
 
@@ -686,7 +687,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
     const unsubscribeBlockStateChanged = wsClient.on(
       "blockStateChanged",
-      (data: Record<string, BlockState>, raw: any) => {
+      (data) => {
         console.log("blockStateChanged:", data);
 
         for (const [blockId, blockState] of Object.entries(data)) {
@@ -705,7 +706,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     );
     const unsubscribeCommandRejected = wsClient.on(
       "commandRejected",
-      (data: any, raw: any) => {
+      (data) => {
         if (data.lockOwner != wsApi.clientUuid) {
           showWarningMessage("Warning", data.reason);
         }
@@ -714,7 +715,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
 
     const unsubscribeRouteReservationRejected =
-      wsClient.on<{ reason: string }>(
+      wsClient.on(
         "routeReservationRejected",
         data => {
           showWarningMessage(
@@ -725,14 +726,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       );
 
     const unsubscribeRouteReservationChanged =
-      wsClient.on<{
-        busy: boolean;
-        sectionNames: string[];
-        elementIds: string[];
-        turnoutAddresses: number[];
-        fromBlockName?: string;
-        toBlockName?: string;
-      }>(
+      wsClient.on(
         "routeReservationChanged",
         data => {
           const routeButtonChanged =
@@ -767,14 +761,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       );
 
     const unsubscribeRouteReleased =
-      wsClient.on<{
-        fromBlockName: string;
-        toBlockName: string;
-        releasedSectionNames: string[];
-        retainedSectionNames: string[];
-        releasedTurnoutAddresses: number[];
-        retainedTurnoutAddresses: number[];
-      }>(
+      wsClient.on(
         "routeReservationReleased",
         data => {
           const partiallyRetained =
@@ -813,9 +800,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     //   );
 
     const unsubscribeRouteReleaseRejected =
-      wsClient.on<{
-        reason: string;
-      }>(
+      wsClient.on(
         "routeReservationReleaseRejected",
         data => {
           showWarningMessage(
@@ -826,12 +811,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       );
 
     const unsubscribeTaskWaitingForLoco =
-      wsClient.on<{
-        taskId: string;
-        taskName: string;
-        blockId: string;
-        message: string;
-      }>(
+      wsClient.on(
         "taskWaitingForLoco",
         data => {
           showWarningMessage(
@@ -842,14 +822,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
       );
 
     const unsubscribeTaskCycleCompleted =
-      wsClient.on<{
-        taskId: string;
-        taskName: string;
-        fromBlockId: string;
-        toBlockId: string;
-        completedAt: number;
-        message: string;
-      }>(
+      wsClient.on(
         "taskCycleCompleted",
         data => {
           showOkMessage(

@@ -22,7 +22,7 @@ import {
 
 import LocoImage from "../components/loco/LocoImage";
 import LocoPicker from "../components/loco/LocoPicker";
-import { Loco, LocoState } from "../../../common/src/types";
+import { Loco } from "../../../common/src/types";
 import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
 import { useCommandCenter } from "../context/CommandCenterContext";
@@ -166,7 +166,7 @@ export default function LocoPanel({ locos = [] }: LocoPanelProps) {
 
   useEffect(() => {
     const unsubscribe = wsClient.on("locoState", (data) => {
-      const loco = data.loco as LocoState;
+      const loco = data.loco;
       if (loco) {
         if (loco.address === currentAddressRef.current) {
           setSpeed(loco.speed);
