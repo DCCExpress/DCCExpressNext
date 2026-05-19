@@ -7,6 +7,10 @@ import {
   WebSocket,
 } from "ws";
 
+import type {
+  TypedServerWsMessage,
+} from "../../../common/src/types.js";
+
 
 
 import {
@@ -52,7 +56,7 @@ import {
 
 function sendToClient(
   ws: WebSocket,
-  message: unknown
+  message: TypedServerWsMessage
 ): void {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(message));
@@ -62,7 +66,7 @@ function sendToClient(
 let wss: WebSocketServer;
 
 function broadcast(
-  message: unknown,
+  message: TypedServerWsMessage,
   exclude?: WebSocket
 ): void {
   const text =
@@ -79,7 +83,7 @@ function broadcast(
 }
 
 export function broadcastAll(
-  message: unknown,
+  message: TypedServerWsMessage,
   exclude?: WebSocket
 ): void {
   broadcast(message, exclude);

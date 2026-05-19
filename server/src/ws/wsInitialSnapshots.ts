@@ -5,9 +5,7 @@ import type {
 } from "ws";
 
 import type {
-  AccessoryChangedMessage,
-  CommandCenterInfo,
-  TurnoutChangedMessage,
+  TypedServerWsMessage,
 } from "../../../common/src/types.js";
 
 import type {
@@ -32,7 +30,7 @@ import {
 
 type SendToClient = (
   ws: WebSocket,
-  message: unknown
+  message: TypedServerWsMessage
 ) => void;
 
 type InitialSnapshotParams = {
@@ -79,7 +77,7 @@ export function sendInitialWebSocketSnapshots({
       data: {
         alive: false,
       },
-    } as CommandCenterInfo);
+    });
 
     return;
   }
@@ -115,15 +113,13 @@ export function sendInitialWebSocketSnapshots({
   log("Turnouts", turnouts);
 
   for (const turnout of turnouts) {
-    const msg: TurnoutChangedMessage = {
+    sendToClient(ws, {
       type: "turnoutChanged",
       data: {
         address: turnout.address,
         closed: turnout.closed,
       },
-    };
-
-    sendToClient(ws, msg);
+    });
   }
 
   commandCenter.getBlocks();
@@ -132,14 +128,12 @@ export function sendInitialWebSocketSnapshots({
     commandCenter.getAccessories();
 
   for (const accessory of accessories) {
-    const msg: AccessoryChangedMessage = {
+    sendToClient(ws, {
       type: "accessoryChanged",
       data: {
         address: accessory.address,
         active: accessory.active,
       },
-    };
-
-    sendToClient(ws, msg);
+    });
   }
 }

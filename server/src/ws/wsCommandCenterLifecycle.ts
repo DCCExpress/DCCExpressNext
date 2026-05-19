@@ -28,8 +28,12 @@ import {
   log,
 } from "../utility.js";
 
+import type {
+  TypedServerWsMessage,
+} from "../../../common/src/types.js";
+
 type BroadcastMessage = (
-  message: unknown
+  message: TypedServerWsMessage
 ) => void;
 
 let commandCenter: CommandCenter | null = null;

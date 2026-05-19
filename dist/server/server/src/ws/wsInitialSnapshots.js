@@ -58,25 +58,23 @@ export function sendInitialWebSocketSnapshots({ ws, commandCenter, sendToClient,
     const turnouts = commandCenter.getTurnouts();
     log("Turnouts", turnouts);
     for (const turnout of turnouts) {
-        const msg = {
+        sendToClient(ws, {
             type: "turnoutChanged",
             data: {
                 address: turnout.address,
                 closed: turnout.closed,
             },
-        };
-        sendToClient(ws, msg);
+        });
     }
     commandCenter.getBlocks();
     const accessories = commandCenter.getAccessories();
     for (const accessory of accessories) {
-        const msg = {
+        sendToClient(ws, {
             type: "accessoryChanged",
             data: {
                 address: accessory.address,
                 active: accessory.active,
             },
-        };
-        sendToClient(ws, msg);
+        });
     }
 }

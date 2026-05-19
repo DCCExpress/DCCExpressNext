@@ -4,11 +4,15 @@ import type {
   FastClockSnapshot,
 } from "../../../common/src/fastClock.js";
 
+import type {
+  TypedServerWsMessage,
+} from "../../../common/src/types.js";
+
 const DAY_MS =
   24 * 60 * 60 * 1000;
 
 type FastClockBroadcast =
-  (message: unknown) => void;
+  (message: TypedServerWsMessage<"fastClockChanged">) => void;
 
 type FastClockRuntimeStoreParams = {
   broadcast?: FastClockBroadcast;

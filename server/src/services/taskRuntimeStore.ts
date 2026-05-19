@@ -23,11 +23,12 @@ import type {
 
 import type {
   BlockState,
+  TypedServerWsMessage,
 } from "../../../common/src/types.js";
 import { trainSimulatorRuntimeStore } from "./trainSimulatorRuntimeStore.js";
 
 type BroadcastFn = (
-  message: unknown
+  message: TypedServerWsMessage
 ) => void;
 
 type ConfigureParams = {

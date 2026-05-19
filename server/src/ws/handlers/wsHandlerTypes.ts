@@ -10,15 +10,16 @@ import type {
 
 import type {
   ClientWsMessageUnion,
+  TypedServerWsMessage,
 } from "../../../../common/src/types.js";
 
 export type SendToClient = (
   ws: WebSocket,
-  message: unknown
+  message: TypedServerWsMessage
 ) => void;
 
 export type BroadcastToClients = (
-  message: unknown,
+  message: TypedServerWsMessage,
   exclude?: WebSocket
 ) => void;
 

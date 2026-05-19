@@ -6,7 +6,15 @@ import {
 
 import { log, logError } from "../utility.js";
 import { UdpClient, bufferToHex, type UdpMessage } from "./udpClient.js";
-import { AccessoryInfo, LocoState, SensorInfo, TurnoutInfo } from "../../../common/src/types.js";
+import type {
+    AccessoryInfo,
+    LocoState,
+    SensorInfo,
+    ServerWsMessageType,
+    ServerWsPayloadMap,
+    TurnoutInfo,
+    TypedServerWsMessage,
+} from "../../../common/src/types.js";
 
 const LAN_X_HEADER = 0x0040;
 
@@ -40,7 +48,9 @@ const LAN_RMBUS_DATACHANGED = 0x0080;
 const LAN_RMBUS_GETDATA = 0x0081;
 const LAN_RMBUS_PROGRAMMODULE = 0x0082;
 
-type WsBroadcaster = (message: unknown) => void;
+type WsBroadcaster = (
+    message: TypedServerWsMessage
+) => void;
 
 export type Z21SystemState = {
     mainCurrentMa: number;
@@ -1259,11 +1269,16 @@ export class Z21CommandCenter extends CommandCenter {
         });
     }
 
-    private broadcastWs(type: string, data: unknown): void {
+    private broadcastWs<
+        TType extends ServerWsMessageType
+    >(
+        type: TType,
+        data: ServerWsPayloadMap[TType]
+    ): void {
         this.wsBroadcast({
             type,
             data,
-        });
+        } as TypedServerWsMessage<TType>);
     }
 
     private parseTurnoutInfo(data: Buffer):
