@@ -5,10 +5,7 @@ import {
 } from "react";
 
 import {
-  ActionIcon,
-  Badge,
   Group,
-  Tooltip,
 } from "@mantine/core";
 
 import {
@@ -25,14 +22,19 @@ import {
 } from "../../api/fastClockApi";
 
 import {
-  fastClockStore,
-} from "../../services/fastClockStore";
-
-import {
   useFastClock,
 } from "../../hooks/useFastClock";
 
-function formatFastClock(timeMs: number): string {
+import {
+  fastClockStore,
+} from "../../services/fastClockStore";
+
+import StatusActionIcon from "./StatusActionIcon";
+import StatusBadge from "./StatusBadge";
+
+function formatFastClock(
+  timeMs: number
+): string {
   const totalSeconds =
     Math.floor(timeMs / 1000);
 
@@ -50,7 +52,11 @@ function formatFastClock(timeMs: number): string {
     minutes,
     seconds,
   ]
-    .map(value => value.toString().padStart(2, "0"))
+    .map(value =>
+      value
+        .toString()
+        .padStart(2, "0")
+    )
     .join(":");
 }
 
@@ -58,14 +64,15 @@ export default function FastClockStatus() {
   const {
     snapshot,
     connected,
-  } = useFastClock();
+  } =
+    useFastClock();
 
   const [busy, setBusy] =
     useState(false);
 
   const runAction = async (
     action: () => Promise<NonNullable<typeof snapshot>>
-  ) => {
+  ): Promise<void> => {
     if (busy) {
       return;
     }
@@ -82,7 +89,7 @@ export default function FastClockStatus() {
     }
   };
 
-  const toggleClock = () => {
+  const toggleClock = (): void => {
     if (!snapshot) {
       return;
     }
@@ -104,72 +111,72 @@ export default function FastClockStatus() {
         ? "--:--:--"
         : "OFFLINE";
 
-  return (
-    <Group gap="xs" wrap="nowrap">
-      <Tooltip
-        label={
-          !connected
-            ? "Fast Clock server disconnected"
-            : snapshot
-              ? `Fast Clock · ${snapshot.running ? "running" : "paused"} · ${snapshot.speed}×`
-              : "Fast Clock"
-        }
-      >
-        <Badge
-          color={
-            !connected
-              ? "red"
-              : snapshot?.running
-                ? "green"
-                : "yellow"
-          }
-          variant="filled"
-          style={{
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          <Group gap={4} wrap="nowrap">
-            <IconClock size={12} />
-            <span>{badgeLabel}</span>
-          </Group>
-        </Badge>
-      </Tooltip>
+  const statusTooltip =
+    !connected
+      ? "Fast Clock server disconnected"
+      : snapshot
+        ? `Fast Clock · ${snapshot.running ? "running" : "paused"} · ${snapshot.speed}×`
+        : "Fast Clock";
 
-      <Tooltip
-        label={
+  return (
+    <Group
+      gap="xs"
+      wrap="nowrap"
+    >
+      <StatusBadge
+        tooltip={statusTooltip}
+        color={
+          !connected
+            ? "red"
+            : snapshot?.running
+              ? "green"
+              : "yellow"
+        }
+        numeric
+        icon={<IconClock size={12} />}
+      >
+        {badgeLabel}
+      </StatusBadge>
+
+      <StatusActionIcon
+        tooltip={
           snapshot?.running
             ? "Pause fast clock"
             : "Run fast clock"
         }
+        color={
+          snapshot?.running
+            ? "yellow"
+            : "green"
+        }
+        disabled={
+          !snapshot ||
+          busy ||
+          !connected
+        }
+        onClick={toggleClock}
       >
-        <ActionIcon
-          size="sm"
-          color={snapshot?.running ? "yellow" : "green"}
-          variant="filled"
-          disabled={!snapshot || busy || !connected}
-          onClick={toggleClock}
-        >
-          {snapshot?.running ? (
-            <IconPlayerPauseFilled size={14} />
-          ) : (
-            <IconPlayerPlayFilled size={14} />
-          )}
-        </ActionIcon>
-      </Tooltip>
+        {snapshot?.running ? (
+          <IconPlayerPauseFilled size={14} />
+        ) : (
+          <IconPlayerPlayFilled size={14} />
+        )}
+      </StatusActionIcon>
 
-      <Tooltip label="Reset fast clock">
-        <ActionIcon
-          size="sm"
-          color="gray"
-          variant="filled"
-          disabled={!snapshot || busy || !connected}
-          onClick={() => {
-            void runAction(resetFastClock);
-          }}
-        >
-          <IconRefresh size={14} />
-        </ActionIcon>
-      </Tooltip>
+      <StatusActionIcon
+        tooltip="Reset fast clock"
+        color="gray"
+        disabled={
+          !snapshot ||
+          busy ||
+          !connected
+        }
+        onClick={() => {
+          void runAction(resetFastClock);
+        }}
+      >
+        <IconRefresh size={14} />
+      </StatusActionIcon>
     </Group>
   );
 }

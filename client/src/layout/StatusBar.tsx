@@ -1,26 +1,38 @@
-import { ActionIcon, Badge, Divider, Group, Tooltip } from "@mantine/core";
 import {
-    IconEdit,
+  Divider,
+  Group,
+} from "@mantine/core";
+
+import {
+  IconEdit,
   IconPlayerPlayFilled,
   IconPlayerStopFilled,
 } from "@tabler/icons-react";
 
-import { useWsStatus } from "../hooks/useWsStatus";
-import { getWsColor } from "./TopMenuBar";
+import {
+  useState,
+} from "react";
+
+import StatusActionIcon from "../components/common/StatusActionIcon";
+import StatusBadge from "../components/common/StatusBadge";
+import FastClockStatus from "../components/common/FastClockStatus";
+import ScriptEditorDialog from "../components/ScriptEditorDialog";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { useBrowserStats } from "../hooks/useBrowserStats";
-import { wsApi } from "../services/wsApi";
 import { useScriptStatus } from "../hooks/useScriptStatus";
+import { useWsStatus } from "../hooks/useWsStatus";
 import { scriptEngine } from "../services/scriptEngine";
+import { wsApi } from "../services/wsApi";
+import { getWsColor } from "./TopMenuBar";
 
 import "../styles/global.css";
-import { useState } from "react";
-import ScriptEditorDialog from "../components/ScriptEditorDialog";
-import FastClockStatus from "../components/common/FastClockStatus";
 
 export default function StatusBar() {
-  const wsStatus = useWsStatus();
-  const browserStats = useBrowserStats(1000);
+  const wsStatus =
+    useWsStatus();
+
+  const browserStats =
+    useBrowserStats(1000);
 
   const {
     alive,
@@ -28,19 +40,37 @@ export default function StatusBar() {
     name,
     powerInfo,
     locked,
-  } = useCommandCenter();
+  } =
+    useCommandCenter();
 
-  const [scriptEditorOpened, setScriptEditorOpened] = useState(false);
-  const wsConnected = wsStatus === "connected";
-  const commandCenterOnline = alive && wsConnected;
-  const trackPowerOn = powerInfo?.trackVoltageOn === true && wsConnected;
+  const [
+    scriptEditorOpened,
+    setScriptEditorOpened,
+  ] =
+    useState(false);
 
-  const { scriptState, stopScript } = useScriptStatus();
+  const wsConnected =
+    wsStatus === "connected";
 
-  const scriptStatus = scriptState?.status ?? "idle";
+  const commandCenterOnline =
+    alive && wsConnected;
+
+  const trackPowerOn =
+    powerInfo?.trackVoltageOn === true &&
+    wsConnected;
+
+  const {
+    scriptState,
+    stopScript,
+  } =
+    useScriptStatus();
+
+  const scriptStatus =
+    scriptState?.status ?? "idle";
 
   const scriptIsRunning =
-    scriptStatus === "running" || scriptStatus === "stopping";
+    scriptStatus === "running" ||
+    scriptStatus === "stopping";
 
   const scriptBadgeColor =
     scriptStatus === "running"
@@ -51,17 +81,15 @@ export default function StatusBar() {
           ? "red"
           : scriptStatus === "finished"
             ? "blue"
-            : scriptStatus === "stopped"
-              ? "gray"
-              : "gray";
+            : "gray";
 
-  const handleStartScript = () => {
+  const handleStartScript = (): void => {
     scriptEngine.runCurrent({
       source: "control-panel",
     });
   };
 
-  const handleToggleScript = () => {
+  const handleToggleScript = (): void => {
     if (scriptIsRunning) {
       stopScript();
       return;
@@ -72,58 +100,89 @@ export default function StatusBar() {
 
   return (
     <>
-    <Group h="100%" px="md" justify="space-between">
-      <Group gap="md">
-        <Badge color={getWsColor(wsStatus)} variant="filled">
-          WS
-        </Badge>
+      <Group
+        h="100%"
+        px="md"
+        justify="space-between"
+      >
+        <Group gap="md">
+          <StatusBadge
+            color={getWsColor(wsStatus)}
+          >
+            WS
+          </StatusBadge>
 
-        <Badge color={commandCenterOnline ? "green" : "red"} variant="filled">
-          {type ?? name ?? "CC"}
-        </Badge>
-
-        <Badge color={trackPowerOn ? "green" : "red"} variant="filled">
-          PWR
-        </Badge>
-
-        <Badge
-          style={{ cursor: "pointer" }}
-          color={powerInfo?.emergencyStop ? "red" : "gray"}
-          className={powerInfo?.emergencyStop ? "blinkBadge" : ""}
-          onClick={() => {
-            if (!powerInfo) return;
-
-            if (powerInfo.emergencyStop) {
-              wsApi.powerOn();
-            } else {
-              wsApi.emergencyStop();
+          <StatusBadge
+            color={
+              commandCenterOnline
+                ? "green"
+                : "red"
             }
-          }}
-          variant="filled"
-        >
-          ESTOP
-        </Badge>
+          >
+            {type ?? name ?? "CC"}
+          </StatusBadge>
 
-        <Badge
-          color={locked ? "orange" : "gray"}
-          variant="filled"
-          {...(locked ? { className: "blinkBadge" } : {})}
-        >
-          {locked ? "LOCK" : "FREE"}
-        </Badge>
+          <StatusBadge
+            color={
+              trackPowerOn
+                ? "green"
+                : "red"
+            }
+          >
+            PWR
+          </StatusBadge>
 
-        <Divider orientation="vertical" />
+          <StatusBadge
+            color={
+              powerInfo?.emergencyStop
+                ? "red"
+                : "gray"
+            }
+            blink={
+              powerInfo?.emergencyStop === true
+            }
+            onClick={() => {
+              if (!powerInfo) {
+                return;
+              }
 
-        <Badge color={scriptBadgeColor} variant="filled">
-          SCRIPT {scriptStatus.toUpperCase()}
-        </Badge>
+              if (powerInfo.emergencyStop) {
+                wsApi.powerOn();
+              } else {
+                wsApi.emergencyStop();
+              }
+            }}
+          >
+            ESTOP
+          </StatusBadge>
 
-        <Tooltip label={scriptIsRunning ? "Stop running script" : "Start script"}>
-          <ActionIcon
-            size="sm"
-            color={scriptIsRunning ? "red" : "green"}
-            variant="filled"
-            disabled={scriptStatus === "stopping"}
+          <StatusBadge
+            color={locked ? "orange" : "gray"}
+            blink={locked}
+          >
+            {locked ? "LOCK" : "FREE"}
+          </StatusBadge>
+
+          <Divider orientation="vertical" />
+
+          <StatusBadge color={scriptBadgeColor}>
+            SCRIPT {scriptStatus.toUpperCase()}
+          </StatusBadge>
+
+          <StatusActionIcon
+            tooltip={
+              scriptIsRunning
+                ? "Stop running script"
+                : "Start script"
+            }
+            color={
+              scriptIsRunning
+                ? "red"
+                : "green"
+            }
+            disabled={
+              scriptStatus === "stopping"
+            }
             onClick={handleToggleScript}
           >
             {scriptIsRunning ? (
@@ -131,59 +190,87 @@ export default function StatusBar() {
             ) : (
               <IconPlayerPlayFilled size={14} />
             )}
-          </ActionIcon>
-        </Tooltip>
+          </StatusActionIcon>
 
-
-        <Tooltip label="Edit script">
-          <ActionIcon
-            size="sm"
+          <StatusActionIcon
+            tooltip="Edit script"
             color="blue"
-            variant="filled"
-            onClick={() => setScriptEditorOpened(true)}
+            onClick={() => {
+              setScriptEditorOpened(true);
+            }}
           >
             <IconEdit size={14} />
-          </ActionIcon>
-        </Tooltip>
-        
-        <Divider orientation="vertical" />
+          </StatusActionIcon>
 
-        <FastClockStatus />
+          <Divider orientation="vertical" />
 
-        <Divider orientation="vertical" />
+          <FastClockStatus />
 
-        <Badge color={getMemoryColor(browserStats.memoryUsedMb)} variant="filled">
-          JS {browserStats.memoryUsedMb ?? "-"} MB
-        </Badge>
+          <Divider orientation="vertical" />
 
-        <Badge color={getFpsColor(browserStats.fps)} variant="filled">
-          FPS {browserStats.fps ?? "-"}
-        </Badge>
+          <StatusBadge
+            color={getMemoryColor(
+              browserStats.memoryUsedMb
+            )}
+          >
+            JS {browserStats.memoryUsedMb ?? "-"} MB
+          </StatusBadge>
 
-        <Badge color="blue" variant="filled">
-          CPU {browserStats.cpuThreads ?? "-"}
-        </Badge>
+          <StatusBadge
+            color={getFpsColor(browserStats.fps)}
+          >
+            FPS {browserStats.fps ?? "-"}
+          </StatusBadge>
+
+          <StatusBadge color="blue">
+            CPU {browserStats.cpuThreads ?? "-"}
+          </StatusBadge>
+        </Group>
       </Group>
-    </Group>
-     <ScriptEditorDialog
-      opened={scriptEditorOpened}
-      onClose={() => setScriptEditorOpened(false)}
-      title="Script editor"
-    />
+
+      <ScriptEditorDialog
+        opened={scriptEditorOpened}
+        onClose={() => {
+          setScriptEditorOpened(false);
+        }}
+        title="Script editor"
+      />
     </>
   );
 }
 
-function getMemoryColor(memoryUsedMb: number | null): string {
-  if (memoryUsedMb === null) return "gray";
-  if (memoryUsedMb > 1000) return "red";
-  if (memoryUsedMb > 600) return "orange";
+function getMemoryColor(
+  memoryUsedMb: number | null
+): string {
+  if (memoryUsedMb === null) {
+    return "gray";
+  }
+
+  if (memoryUsedMb > 1000) {
+    return "red";
+  }
+
+  if (memoryUsedMb > 600) {
+    return "orange";
+  }
+
   return "green";
 }
 
-function getFpsColor(fps: number | null): string {
-  if (fps === null) return "gray";
-  if (fps < 30) return "red";
-  if (fps < 50) return "orange";
+function getFpsColor(
+  fps: number | null
+): string {
+  if (fps === null) {
+    return "gray";
+  }
+
+  if (fps < 30) {
+    return "red";
+  }
+
+  if (fps < 50) {
+    return "orange";
+  }
+
   return "green";
 }
