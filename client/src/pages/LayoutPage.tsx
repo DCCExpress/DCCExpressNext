@@ -10,23 +10,25 @@ import TopMenuBar from "../layout/TopMenuBar";
 
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { Loco } from "../../../common/src/types";
-import { CommandCenter, loadCommandCenters } from "../api/commandCentersApi";
+import { CommandCenter } from "../api/commandCentersApi";
 import CommandCenterDialog from "../components/CommandCenterDialog";
 import ElementPickerDialog from "../components/editor/ElementPickerDialog";
 import FullscreenLoader from "../components/FullscreenLoader";
 import SettingDialog from "../components/SettingsDialog";
-import { isTouchDevice, showErrorMessage, showOkMessage } from "../helpers";
-import { useLayoutRuntimeWsBindings } from "../hooks/layout/useLayoutRuntimeWsBindings";
-import { useLayoutPageBootstrap } from "../hooks/layout/useLayoutPageBootstrap";
+import { isTouchDevice } from "../helpers";
 import { useLayoutHistory } from "../hooks/layout/useLayoutHistory";
+import { useLayoutPageUiState } from "../hooks/layout/useLayoutPageUiState";
+import { useLayoutEditModeRuntime } from "../hooks/layout/useLayoutEditModeRuntime";
+import { useLayoutPageShortcuts } from "../hooks/layout/useLayoutPageShortcuts";
+import { useLayoutRouteGraphBinding } from "../hooks/layout/useLayoutRouteGraphBinding";
+import { useLayoutPageBootstrap } from "../hooks/layout/useLayoutPageBootstrap";
+import { useLayoutRuntimeWsBindings } from "../hooks/layout/useLayoutRuntimeWsBindings";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Layout } from "../models/editor/core/Layout";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 import { type EditorTool } from "../models/editor/types/EditorTypes";
 import { layoutStore } from "../services/layoutStore";
 import { routeGraphStore } from "../services/routeGraphStore";
-import { wsApi } from "../services/wsApi";
-import { wsClient } from "../services/wsClient";
 
 
 type LayoutPageProps = {
@@ -37,9 +39,6 @@ const HEADER_HEIGHT = 50;
 const FOOTER_HEIGHT = 40;
 const LOCO_PANEL_WIDTH = 380;
 const PROPERTY_PANEL_WIDTH = 320;
-const EDIT_MODE_KEY = "dcc-express.editor.editMode";
-const LOCOPANEL_COLLAPSED = "dcc-express.editor.locoPanelCollapsed";
-const PROPERTYPANEL_COLLAPSED = "dcc-express.editor.propertyPanelCollapsed";
 export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [toolbarOpened, setToolbarOpened] = useState(true);
   const [locoDialogOpened, setLocoDialogOpened] = useState(false);
@@ -65,34 +64,14 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   const [turnoutSelection, setTurnoutSelection] = useState<boolean>(false);
   const [canvasBusy, setCanvasBusy] = useState(false);
   const [canvasBusyText, setCanvasBusyText] = useState("Loading...");
-
-  const [editMode, setEditMode] = useState<boolean>(() => {
-    try {
-      if (isTouchDevice()) return false;
-      const raw = localStorage.getItem(EDIT_MODE_KEY);
-      return raw === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  const [locoPanelCollapsed, setLocoPanelCollapsed] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(LOCOPANEL_COLLAPSED);
-      return raw === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(PROPERTYPANEL_COLLAPSED);
-      return raw === "true";
-    } catch {
-      return false;
-    }
-  });
+  const {
+    editMode,
+    setEditMode,
+    locoPanelCollapsed,
+    setLocoPanelCollapsed,
+    propertyPanelCollapsed,
+    setPropertyPanelCollapsed,
+  } = useLayoutPageUiState();
 
   const [settingsDialogOpened, setSettingsDialogOpened] = useState(false);
 
@@ -114,75 +93,6 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
   useEffect(() => {
     locosRef.current = locos;
   }, [locos]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(EDIT_MODE_KEY, String(editMode));
-    } catch {
-      // ignore
-    }
-  }, [editMode]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCOPANEL_COLLAPSED, String(locoPanelCollapsed));
-    } catch {
-      // ignore
-    }
-  }, [locoPanelCollapsed]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(PROPERTYPANEL_COLLAPSED, String(propertyPanelCollapsed));
-    } catch {
-      // ignore
-    }
-  }, [propertyPanelCollapsed]);
-
-  useEffect(() => {
-    const previousEditMode = previousEditModeRef.current;
-
-    previousEditModeRef.current = editMode;
-
-    if (!editMode) {
-      setTool({ mode: "cursor", elementType: "general" });
-      setPickerOpened(false);
-      setTurnoutSelection(false);
-
-      /**
-       * Csak valódi editMode true -> false váltáskor frissítünk.
-       * Első rendernél / layout betöltés előtt NEM.
-       */
-      if (
-        previousEditMode === true &&
-        layoutLoadedRef.current
-      ) {
-        void refreshServerRuntimeLayout();
-      }
-
-      return;
-    }
-
-    // Szerkesztő módba lépve a korábbi gráf/debug állapot már elavulhat
-    routeGraphStore.clear();
-    layoutRef.current.resetRoutes();
-    setInvalidateCounter((prev) => prev + 1);
-  }, [editMode]);
-
-  // useEffect(() => {
-  //   if (editMode) {
-  //     return;
-  //   }
-
-  //   const existingGraph = routeGraphStore.getGraph();
-
-  //   layoutRef.current.checkRoutes(existingGraph);
-
-  //   setInvalidateCounter((prev) => prev + 1);
-  // }, [editMode]);
-
-  const previousEditModeRef = useRef(editMode);
-
   const {
     undoStack,
     redoStack,
@@ -214,20 +124,27 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     setInvalidateCounter,
   });
 
-  useEffect(() => {
-    const unsubscribe = routeGraphStore.subscribe(() => {
-      layoutRef.current.applyRouteGraphRuntime(
-        routeGraphStore.getTrackRuntime()
-      );
+  useLayoutEditModeRuntime({
+    editMode,
+    layoutRef,
+    layoutLoadedRef,
+    refreshServerRuntimeLayout,
+    setTool,
+    setPickerOpened,
+    setTurnoutSelection,
+    setInvalidateCounter,
+  });
 
-      setInvalidateCounter((prev) => prev + 1);
-    });
+  useLayoutPageShortcuts({
+    saveLayoutToServer,
+    setTool,
+    setEditMode,
+  });
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
+  useLayoutRouteGraphBinding({
+    layoutRef,
+    setInvalidateCounter,
+  });
   useLayoutRuntimeWsBindings({
     layoutRef,
     locosRef,
