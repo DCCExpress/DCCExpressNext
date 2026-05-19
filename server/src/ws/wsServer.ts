@@ -12,31 +12,13 @@ import type {
 } from "../../../common/src/types.js";
 
 import {
-  CommandCenterConfig,
   readCommandCenter,
-  setCommandCenterConfigLoadedCallback,
 } from "../routes/commandCenterRoutes.js";
-
-import {
-  CommandCenter,
-} from "../commandCenter/CommandCenter.js";
-
-import {
-  CommandCenterSimulator,
-} from "../commandCenter/simulator.js";
-
-import {
-  Z21CommandCenter,
-} from "../commandCenter/z21CommandCenter.js";
 
 import {
   log,
   logError,
 } from "../utility.js";
-
-import {
-  railwayTopologyStore,
-} from "../services/railwayTopologyStore.js";
 
 import {
   scriptRuntimeStore,
@@ -57,6 +39,14 @@ import {
 import {
   routeIncomingWebSocketMessage,
 } from "./wsMessageRouter.js";
+
+import {
+  configureCommandCenterLifecycle,
+  getCurrentCommandCenter,
+  getLogicalTurnoutState,
+  initializeCommandCenter,
+  registerCommandCenterConfigLoadedCallback,
+} from "./wsCommandCenterLifecycle.js";
 
 function sendToClient(
   ws: WebSocket,
@@ -93,129 +83,6 @@ export function broadcastAll(
   broadcast(message, exclude);
 }
 
-let commandCenter: CommandCenter | null = null;
-
-function initCommandCenter(
-  conf: CommandCenterConfig | null
-): void {
-  if (commandCenter) {
-    commandCenter
-      .stop()
-      .then(() => {
-        log("Previous command center stopped");
-      });
-  }
-
-  switch (conf?.type) {
-    case "simulator":
-      log("Starting command center:", conf.type);
-
-      commandCenter =
-        new CommandCenterSimulator("Simulator");
-
-      commandCenter
-        .start()
-        .then(() => {
-          log("Command center started:", conf.type);
-        })
-        .catch(err => {
-          console.error("Failed to start command center:", err);
-        });
-
-      break;
-
-    case "z21":
-      log("Starting command center:", "Z21");
-
-      commandCenter =
-        new Z21CommandCenter(
-          "Z21",
-          conf.z21.host!,
-          conf.z21.port!,
-          broadcastAll
-        );
-
-      commandCenter
-        .start()
-        .then(() => {
-          log("Command center started:", conf?.type);
-        })
-        .catch(err => {
-          console.error("Failed to start command center:", err);
-        });
-
-      break;
-
-    default:
-      commandCenter =
-        new CommandCenterSimulator("Simulator");
-
-      break;
-  }
-
-  commandCenter.onRuntimeStateLoaded((blocks, turnouts) => {
-    console.log("[Server] Restored runtime state, rebroadcasting...");
-
-    broadcastAll({
-      type: "blockStateChanged",
-      data: Object.fromEntries(blocks),
-    });
-
-    for (const [, turnout] of turnouts) {
-      broadcastAll({
-        type: "turnoutChanged",
-        data: turnout,
-      });
-    }
-  });
-}
-
-function getLogicalTurnoutState(
-  address: number
-): boolean | null {
-  const physicalClosed =
-    commandCenter
-      ?.getTurnoutInfo(address)
-      ?.closed;
-
-  if (typeof physicalClosed !== "boolean") {
-    return null;
-  }
-
-  const topology =
-    railwayTopologyStore.getTopology();
-
-  if (!topology) {
-    return null;
-  }
-
-  const turnout =
-    topology
-      .getTurnouts()
-      .find(
-        item => item.turnoutAddress === address
-      );
-
-  if (!turnout) {
-    return null;
-  }
-
-  /**
-   * Fizikai command-center állapotból
-   * vissza logikai C/T állapot.
-   */
-  return (
-    physicalClosed === turnout.turnoutClosedValue
-  );
-}
-
-setCommandCenterConfigLoadedCallback(
-  (conf: CommandCenterConfig | null) => {
-    log("Command center config loaded:", conf);
-    initCommandCenter(conf);
-  }
-);
-
 export function setupWebSocketServer(
   server: http.Server
 ): WebSocketServer {
@@ -225,12 +92,20 @@ export function setupWebSocketServer(
       path: "/ws",
     });
 
+  configureCommandCenterLifecycle({
+    broadcast: message => {
+      broadcastAll(message);
+    },
+  });
+
+  registerCommandCenterConfigLoadedCallback();
+
   configureWebSocketRuntimes({
     broadcast: message => {
       broadcastAll(message);
     },
 
-    getCommandCenter: () => commandCenter,
+    getCommandCenter: getCurrentCommandCenter,
     getLogicalTurnoutState,
   });
 
@@ -241,7 +116,7 @@ export function setupWebSocketServer(
         conf
       );
 
-      initCommandCenter(conf);
+      initializeCommandCenter(conf);
 
       await scriptRuntimeStore.initialize();
       await scriptRuntimeStore.autoStartIfEnabled();
@@ -265,7 +140,7 @@ export function setupWebSocketServer(
 
     sendInitialWebSocketSnapshots({
       ws,
-      commandCenter,
+      commandCenter: getCurrentCommandCenter(),
       sendToClient,
     });
 
@@ -276,7 +151,7 @@ export function setupWebSocketServer(
       log("WS incoming:", text);
 
       const currentCommandCenter =
-        commandCenter;
+        getCurrentCommandCenter();
 
       if (!currentCommandCenter) {
         sendToClient(ws, {
@@ -320,13 +195,16 @@ export function setupWebSocketServer(
     ws.on("close", () => {
       log("WebSocket client disconnected");
 
+      const currentCommandCenter =
+        getCurrentCommandCenter();
+
       if (
-        commandCenter &&
+        currentCommandCenter &&
         clientUUID &&
-        commandCenter.lockOwnerUUID === clientUUID
+        currentCommandCenter.lockOwnerUUID === clientUUID
       ) {
-        commandCenter.locked = false;
-        commandCenter.lockOwnerUUID = null;
+        currentCommandCenter.locked = false;
+        currentCommandCenter.lockOwnerUUID = null;
 
         broadcastAll({
           type: "commandCenterLockChanged",
