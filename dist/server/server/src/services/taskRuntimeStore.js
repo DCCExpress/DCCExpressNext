@@ -1,11 +1,9 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import { randomUUID } from "node:crypto";
-import { dataDir } from "../paths.js";
 import { readLocos } from "../routes/locoRoutes.js";
 import { routeGraphRuntimeStore } from "./routeGraphRuntimeStore.js";
 import { railwayTopologyStore } from "./railwayTopologyStore.js";
 import { trainSimulatorRuntimeStore } from "./trainSimulatorRuntimeStore.js";
+import { cloneTrainTask, createEmptyTrainTaskRuntimeState, createTaskManagerOverlayState, createTrainTaskId, } from "./tasks/taskRuntimeHelpers.js";
+import { ensureTaskStorage, normalizeSavedTrainTask, readSavedTrainTaskEntries, writeSavedTrainTasks, } from "./tasks/taskPersistence.js";
 class TaskRuntimeStore {
     initialized = false;
     broadcast = null;
@@ -14,14 +12,13 @@ class TaskRuntimeStore {
     tasks = [];
     savedTasks = [];
     reservedRoutesByTaskId = new Map();
-    tasksFilePath = path.resolve(dataDir, "tasks.json");
     configure(params) {
         this.broadcast = params.broadcast;
         this.getBlockState = params.getBlockState;
         this.getSimulatorCommandCenter =
             params.getSimulatorCommandCenter;
         trainSimulatorRuntimeStore.configure({
-            getTasks: () => this.tasks.map(cloneTask),
+            getTasks: () => this.tasks.map(cloneTrainTask),
             getBlockState: (blockId) => params.getBlockState(blockId),
             tryResolveTaskLoco: (taskId) => {
                 return this.tryResolveTaskLoco(taskId);
@@ -45,15 +42,15 @@ class TaskRuntimeStore {
         if (this.initialized) {
             return;
         }
-        await fs.mkdir(path.dirname(this.tasksFilePath), { recursive: true });
+        await ensureTaskStorage();
         await this.loadTasksFromDiskInternal();
         this.initialized = true;
         trainSimulatorRuntimeStore.start();
     }
     getSnapshot() {
         return {
-            tasks: this.tasks.map(cloneTask),
-            overlay: this.createOverlayState(),
+            tasks: this.tasks.map(cloneTrainTask),
+            overlay: createTaskManagerOverlayState(this.tasks),
             hasGraph: routeGraphRuntimeStore.hasGraph(),
             hasLayout: railwayTopologyStore.getTopology() !== null,
         };
@@ -75,7 +72,7 @@ class TaskRuntimeStore {
         if (!transition) {
             return this.addError("A kiválasztott blokkok között nincs automatizálható útvonal.");
         }
-        const id = this.createTaskId();
+        const id = createTrainTaskId();
         const name = input.name?.trim() ||
             `${transition.fromBlock.name} → ${transition.toBlock.name}`;
         const saved = {
@@ -93,7 +90,7 @@ class TaskRuntimeStore {
         this.broadcastSnapshot();
         return {
             ok: true,
-            task: cloneTask(task),
+            task: cloneTrainTask(task),
             snapshot: this.getSnapshot(),
         };
     }
@@ -144,7 +141,7 @@ class TaskRuntimeStore {
         task.transition = transition;
         if (routeChanged || speedChanged) {
             task.status = "queued";
-            task.runtime = this.createRuntimeState();
+            task.runtime = createEmptyTrainTaskRuntimeState();
             delete task.startedAt;
             delete task.abortedAt;
             delete task.completedAt;
@@ -197,7 +194,7 @@ class TaskRuntimeStore {
          */
         if (task.status === "aborted" ||
             task.status === "completed") {
-            task.runtime = this.createRuntimeState();
+            task.runtime = createEmptyTrainTaskRuntimeState();
             delete task.abortedAt;
             delete task.completedAt;
         }
@@ -657,7 +654,7 @@ class TaskRuntimeStore {
                 message: "A task ciklusa lefutott, újra várakozik az induló blokk mozdonyára.",
             },
         });
-        task.runtime = this.createRuntimeState();
+        task.runtime = createEmptyTrainTaskRuntimeState();
         this.broadcastSnapshot();
         return this.actionOk();
     }
@@ -683,36 +680,13 @@ class TaskRuntimeStore {
                 snapshot: this.getSnapshot(),
             };
         }
-        let rawSavedTasks = [];
-        try {
-            const raw = await fs.readFile(this.tasksFilePath, "utf8");
-            const parsed = JSON.parse(raw);
-            rawSavedTasks =
-                Array.isArray(parsed)
-                    ? parsed
-                    : (parsed &&
-                        typeof parsed === "object" &&
-                        Array.isArray(parsed.tasks))
-                        ? parsed.tasks
-                        : [];
-        }
-        catch (error) {
-            const code = typeof error === "object" &&
-                error !== null &&
-                "code" in error
-                ? String(error.code)
-                : "";
-            if (code !== "ENOENT") {
-                console.error("[TaskRuntimeStore] Failed to read tasks.json:", error);
-            }
-            rawSavedTasks = [];
-        }
+        const rawSavedTasks = await readSavedTrainTaskEntries();
         const loadedTasks = [];
         const normalizedSavedTasks = [];
         const warnings = [];
         const transitions = graph.getRunnableBlockRoutes();
         for (const rawItem of Array.isArray(rawSavedTasks) ? rawSavedTasks : []) {
-            const saved = normalizeSavedTask(rawItem);
+            const saved = normalizeSavedTrainTask(rawItem);
             if (!saved) {
                 warnings.push("Kihagyva: hibás tasks.json bejegyzés.");
                 continue;
@@ -746,61 +720,7 @@ class TaskRuntimeStore {
             transition,
             status: "queued",
             createdAt: saved.createdAt,
-            runtime: this.createRuntimeState(),
-        };
-    }
-    createRuntimeState() {
-        return {
-            loco: null,
-            hasLeftFromBlock: false,
-            hasReachedToBlock: false,
-            inTransit: false,
-            simulation: {
-                phase: "idle",
-                legIndex: 0,
-                legCount: 0,
-                fromBlockId: null,
-                fromBlockName: null,
-                toBlockId: null,
-                toBlockName: null,
-                waitingSensorAddress: null,
-            },
-        };
-    }
-    createOverlayState() {
-        const activeTasks = this.tasks.filter(task => task.status === "running" ||
-            task.status === "paused");
-        const reservedSectionNames = new Set();
-        const transitSectionNames = new Set();
-        const activeBlockIds = new Set();
-        const activeTurnoutAddresses = new Set();
-        for (const task of activeTasks) {
-            const solution = task.transition.solution;
-            for (const node of solution.nodes) {
-                reservedSectionNames.add(node.name);
-                if (task.runtime.inTransit) {
-                    transitSectionNames.add(node.name);
-                }
-            }
-            activeBlockIds.add(task.fromBlockId);
-            activeBlockIds.add(task.toBlockId);
-            for (const turnoutState of solution.turnoutStates) {
-                activeTurnoutAddresses.add(turnoutState.address);
-            }
-        }
-        return {
-            reservedSectionNames: [
-                ...reservedSectionNames,
-            ],
-            transitSectionNames: [
-                ...transitSectionNames,
-            ],
-            activeBlockIds: [
-                ...activeBlockIds,
-            ],
-            activeTurnoutAddresses: [
-                ...activeTurnoutAddresses,
-            ],
+            runtime: createEmptyTrainTaskRuntimeState(),
         };
     }
     findTask(taskIdOrName) {
@@ -903,12 +823,8 @@ class TaskRuntimeStore {
             },
         });
     }
-    createTaskId() {
-        return `task-${Date.now()}-${randomUUID().slice(0, 8)}`;
-    }
     async persistTasks() {
-        await fs.mkdir(path.dirname(this.tasksFilePath), { recursive: true });
-        await fs.writeFile(this.tasksFilePath, JSON.stringify(this.savedTasks, null, 2), "utf8");
+        await writeSavedTrainTasks(this.savedTasks);
     }
     broadcastSnapshot() {
         this.broadcast?.({
@@ -936,61 +852,5 @@ class TaskRuntimeStore {
             snapshot: this.getSnapshot(),
         };
     }
-}
-function cloneTask(task) {
-    return {
-        ...task,
-        transition: task.transition,
-        runtime: {
-            ...task.runtime,
-            simulation: {
-                ...task.runtime.simulation,
-            },
-            ...(task.runtime.loco
-                ? { loco: { ...task.runtime.loco } }
-                : { loco: null }),
-        },
-    };
-}
-function normalizeSavedTask(raw) {
-    if (!raw ||
-        typeof raw !== "object") {
-        return null;
-    }
-    const item = raw;
-    const id = typeof item.id === "string"
-        ? item.id
-        : "";
-    const name = typeof item.name === "string"
-        ? item.name
-        : "";
-    const targetSpeed = typeof item.targetSpeed === "number"
-        ? item.targetSpeed
-        : Number.NaN;
-    const fromBlockId = typeof item.fromBlockId === "string"
-        ? item.fromBlockId
-        : "";
-    const toBlockId = typeof item.toBlockId === "string"
-        ? item.toBlockId
-        : "";
-    const createdAt = typeof item.createdAt === "number"
-        ? item.createdAt
-        : Date.now();
-    if (!id ||
-        !name ||
-        !Number.isFinite(targetSpeed) ||
-        targetSpeed < 0 ||
-        !fromBlockId ||
-        !toBlockId) {
-        return null;
-    }
-    return {
-        id,
-        name,
-        targetSpeed,
-        fromBlockId,
-        toBlockId,
-        createdAt,
-    };
 }
 export const taskRuntimeStore = new TaskRuntimeStore();
