@@ -4,6 +4,7 @@ import type {
   ClientWsMessageType,
   ClientWsPayloadMap,
   Direction,
+  ScriptRunSource,
   TypedClientWsMessage,
 } from "../../../common/src/types";
 
@@ -185,7 +186,7 @@ class WebSocketApi {
   runScript(
     script?: string,
     context?: {
-      source?: string;
+      source?: ScriptRunSource;
       elementId?: string | null;
     }
   ): boolean {

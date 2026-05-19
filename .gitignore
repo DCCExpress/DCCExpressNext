@@ -131,4 +131,4 @@ dist
 
 doc/
 
-.mjs
+*.mjs

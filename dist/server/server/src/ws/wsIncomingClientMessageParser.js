@@ -9,6 +9,13 @@ function isDirection(value) {
     return (value === "forward" ||
         value === "reverse");
 }
+function isScriptRunSource(value) {
+    return (value === "property-panel" ||
+        value === "route-button" ||
+        value === "control-panel" ||
+        value === "auto-start" ||
+        value === "unknown");
+}
 function invalidPayload(type, detail) {
     return {
         ok: false,
@@ -213,8 +220,8 @@ function parsePayload(type, data) {
                 typeof data.script !== "string") {
                 return invalidPayload(type, "script must be string when present.");
             }
-            if (typeof data.source !== "string") {
-                return invalidPayload(type, "source must be string.");
+            if (!isScriptRunSource(data.source)) {
+                return invalidPayload(type, "source must be a supported ScriptRunSource.");
             }
             if (data.elementId !== null &&
                 typeof data.elementId !== "string") {

@@ -5,6 +5,7 @@ import type {
   ClientWsMessageUnion,
   ClientWsPayloadMap,
   Direction,
+  ScriptRunSource,
 } from "../../../common/src/types.js";
 
 import {
@@ -50,6 +51,18 @@ function isDirection(
   return (
     value === "forward" ||
     value === "reverse"
+  );
+}
+
+function isScriptRunSource(
+  value: unknown
+): value is ScriptRunSource {
+  return (
+    value === "property-panel" ||
+    value === "route-button" ||
+    value === "control-panel" ||
+    value === "auto-start" ||
+    value === "unknown"
   );
 }
 
@@ -330,8 +343,11 @@ function parsePayload<
         return invalidPayload(type, "script must be string when present.");
       }
 
-      if (typeof data.source !== "string") {
-        return invalidPayload(type, "source must be string.");
+      if (!isScriptRunSource(data.source)) {
+        return invalidPayload(
+          type,
+          "source must be a supported ScriptRunSource."
+        );
       }
 
       if (

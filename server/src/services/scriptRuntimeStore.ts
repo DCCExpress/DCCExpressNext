@@ -12,15 +12,9 @@ import type {
 } from "../../../common/src/railway/topology.js";
 
 import type {
+    ScriptRunSource,
     SingleScriptFile,
 } from "../../../common/src/types.js";
-
-export type ScriptRunSource =
-    | "property-panel"
-    | "route-button"
-    | "control-panel"
-    | "auto-start"
-    | "unknown";
 
 export type ScriptStatus =
     | "idle"

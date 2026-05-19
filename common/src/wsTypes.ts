@@ -4,6 +4,10 @@ import type {
   Direction,
 } from "./domainTypes.js";
 
+import type {
+  ScriptRunSource,
+} from "./scriptTypes.js";
+
 /**
  * Általános, szerveroldalon és bejövő kliensüzeneteknél is
  * használható WebSocket message alap.
@@ -110,7 +114,7 @@ export type ClientWsPayloadMap = {
 
   runScript: {
     script?: string;
-    source: string;
+    source: ScriptRunSource;
     elementId: string | null;
   };
 
