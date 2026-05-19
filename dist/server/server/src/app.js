@@ -15,7 +15,6 @@ const __dirname = path.dirname(__filename);
 export const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
-//app.use("/images", express.static(path.join(publicDir, "images")));
 app.use("/api/locos", locoRoutes);
 app.use("/api/layout", layoutRoutes);
 app.use("/api/command-centers", commandCenterRoutes);
@@ -33,7 +32,6 @@ app.get(/.*/, (_req, res) => {
 });
 async function shutdown(signal) {
     console.log(`[Server] ${signal} received, shutting down...`);
-    // await commandCenter.saveRuntimeState();
     process.exit(0);
 }
 process.once("SIGINT", () => shutdown("SIGINT"));

@@ -18,7 +18,6 @@ import { AudioButtonElement } from "../elements/AudioButtonElement";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackCrossingElement } from "../elements/TrackCrossingElement";
 import { ButtonScriptElement } from "../elements/ButtonScriptElement";
-import ca from "zod/v4/locales/ca.cjs";
 import { LabelElement } from "../elements/LabelElement";
 import { TrackDirectionElement } from "../elements/TrackDirectionElement";
 import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
@@ -106,7 +105,7 @@ export class ElementFactory {
       case ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED: {
         return ExtendedRouteButtonElement.fromJSON(data);
       }
-      
+
       case ELEMENT_TYPES.CLOCK: {
         return ClockElement.fromJSON(data);
       }

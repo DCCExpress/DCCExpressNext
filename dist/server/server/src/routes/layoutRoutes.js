@@ -78,29 +78,6 @@ layoutRoutes.get("/route-graph-summary", (_req, res) => {
         runnableBlockTransitions: graph.getRunnableBlockTransitions().length,
     });
 });
-// layoutRoutes.get("/route-graph-summary", (_req, res) => {
-//   const graph = routeGraphRuntimeStore.getGraph();
-//   if (!graph) {
-//     res.json({
-//       ready: false,
-//     });
-//     return;
-//   }
-//   const blocks = graph.nodes.flatMap(
-//     node => node.blocks
-//   );
-//   res.json({
-//     ready: true,
-//     nodes: graph.nodes.length,
-//     edges: graph.edges.length,
-//     blocks: blocks.length,
-//     blockNames: blocks.map(block => block.name),
-//     runnableBlockRoutes:
-//       graph.getRunnableBlockRoutes().length,
-//     runnableBlockTransitions:
-//       graph.getRunnableBlockTransitions().length,
-//   });
-// });
 layoutRoutes.get("/route-test", (req, res) => {
     const graph = routeGraphRuntimeStore.getGraph();
     if (!graph) {

@@ -1,4 +1,3 @@
-import { ElementType } from "react";
 import { Loco, SingleScriptFile } from "../../../common/src/types";
 
 import type {
@@ -37,16 +36,6 @@ export async function saveLocos(locos: Loco[]): Promise<void> {
     throw new Error("Nem sikerült elmenteni a mozdonyokat.");
   }
 }
-
-export type LayoutElementDto = {
-  id: string;
-  type: ElementType;
-  x: number;
-  y: number;
-  rotation?: number;
-  width?: number;
-  height?: number;
-};
 
 export async function getLayout(): Promise<Layout> {
   const response = await fetch("/api/layout");

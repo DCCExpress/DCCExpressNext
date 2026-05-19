@@ -4,8 +4,6 @@ import path from "node:path";
 import { CommandCenterType } from "../../../common/src/types.js";
 import { dataDir } from "../paths.js";
 
-//export type CommandCenterType = "z21" | "dcc-ex-tcp" | "dcc-ex-serial" | "simulator";
-
 export interface CommandCenterConfig {
   name: string;
   type: CommandCenterType;
@@ -40,9 +38,6 @@ export async function readCommandCenter(): Promise<CommandCenterConfig | null> {
   catch {
       CurrentCommandCenterConfig = null;
       console.log("READCOMMANDCENTER:", "Nem sikerült beolvasni a parancsközpontot.", candidate1);}
-  // if (cbCommandCenterConfigLoaded) {
-  //   cbCommandCenterConfigLoaded(CurrentCommandCenterConfig);
-  // }
   return CurrentCommandCenterConfig;
 }
 

@@ -1,7 +1,6 @@
 import { Loco } from "../../../../../common/src/types";
 import { showWarningMessage } from "../../../helpers";
 import { BlockElement } from "../elements/BlockElement";
-import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackStraightElement } from "../elements/TrackStraightElement";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
@@ -12,7 +11,6 @@ import { BaseElement } from "./BaseElement";
 import { ElementFactory } from "./ElementFactory";
 import type {
     Graph,
-    RouteSolution,
 } from "../../../../../common/src/railway/graph";
 
 import type {
@@ -37,8 +35,6 @@ export type CheckRoutesResult = {
     graph: Graph | null;
     error: string | null;
 };
-
-type TurnoutSide = "entry" | "straight" | "div";
 
 export class Layout {
     private layers: Layer[] = [];
@@ -139,12 +135,9 @@ export class Layout {
         const elems = this.getAllElements();
         for (const el of elems) {
             if (el instanceof RouteButtonElement) {
-                console.log("CHECKING ROUTE BUTTON: ", el, element);
                 const rb = el as RouteButtonElement;
                 for (const t of rb.routeTurnouts) {
-                    console.log("CHECKING TURNOUT: ", t, element);
                     if (t.turnoutId === element.id) {
-                        console.log("REMOVING ROUTE BUTTON: ", el);
                         rb.removeTurnout(element.id);
                         showWarningMessage(rb.name, " A váltó törlésre került, ezért a hozzá tartozó útvonal gombból is eltávolításra került.");
                         break
@@ -247,26 +240,7 @@ export class Layout {
     public checkElementCollision(e1: BaseElement, e2: BaseElement) {
         const l1 = this.findLayerOfElement(e1);
         const l2 = this.findLayerOfElement(e2);
-        console.log("COLLISION: ", l1, l2)
         return l1?.name == l2?.name;
-    }
-
-    public getElement22(x: number, y: number): BaseElement | null {
-        const layers = [this.track, this.blocks, this.buildings];
-
-        for (let i = layers.length - 1; i >= 0; i--) {
-            const layer = layers[i]!;
-
-            for (let j = layer.elements.length - 1; j >= 0; j--) {
-                const el = layer.elements[j]!;
-
-                if (el.x === x && el.y === y) {
-                    return el;
-                }
-            }
-        }
-
-        return null;
     }
 
     getElements(x: number, y: number): BaseElement[] {
@@ -415,109 +389,7 @@ export class Layout {
             elem.section = 0;
         })
     }
-    checkRoutes2() {
-        const elems = this.getTrackElements();
-        elems.forEach((elem: TrackElement) => {
-            elem.isVisited = false;
-            elem.isRoute = false;
-        })
-        //this.resetRoutes();
-
-        const routeButtons = this.getAllElements().filter((elem: BaseElement) => elem instanceof RouteButtonElement) as RouteButtonElement[];
-        routeButtons.forEach(rb => {
-            let active = true;
-            rb.routeTurnouts.forEach(t => {
-                const turnout = this.getElementById(t.turnoutId) as TrackTurnoutElement;
-                if (turnout && turnout.turnoutClosed === t.closed) {
-
-                } else {
-                    active = false;
-                }
-            });
-            rb.active = active;
-            if (active && rb.routeTurnouts.length > 0) {
-                const turnout = this.getElementById(rb.routeTurnouts[0]!.turnoutId) as TrackTurnoutElement;
-                this.startWalk(turnout);
-            }
-        });
-
-    }
-
-    private isExtendedRouteSolutionActive22(solution: RouteSolution): boolean {
-        const elems = this.getAllElements();
-
-        for (const turnoutState of solution.turnoutStates) {
-            const turnout = elems.find(
-                (elem): elem is TrackTurnoutElement =>
-                    isTurnoutElement(elem) &&
-                    elem.turnoutAddress === turnoutState.address
-            );
-
-            if (!turnout) {
-                return false;
-            }
-
-            /**
-             * turnoutState.closed:
-             *   logikai gráfállapot
-             *   true  = C
-             *   false = T
-             *
-             * turnout.isClosed:
-             *   szintén logikai állapot,
-             *   már figyelembe veszi a turnoutClosedValue-t.
-             */
-            if (turnout.isClosed !== turnoutState.closed) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private markExtendedRouteSolution22(solution: RouteSolution): void {
-        const elems = this.getTrackElements();
-
-        /**
-         * A graph node nevek most S1, S2, S3...
-         * A pályaelemek section mezője pedig 1, 2, 3...
-         */
-        const routeSections = new Set<number>(
-            solution.nodes
-                .map(node => {
-                    const match = /^S(\d+)$/.exec(node.name);
-                    return match ? Number(match[1]) : NaN;
-                })
-                .filter(section => Number.isFinite(section))
-        );
-
-        /**
-         * Az útvonalon szereplő váltók címei.
-         */
-        const routeTurnoutAddresses = new Set<number>(
-            solution.turnoutStates.map(state => state.address)
-        );
-
-        for (const elem of elems) {
-            // A route-hoz tartozó fizikai szakaszok kiszínezése
-            if (routeSections.has(elem.section)) {
-                elem.isRoute = true;
-            }
-
-            // A route-hoz tartozó váltók kiszínezése
-            if (
-                isTurnoutElement(elem) &&
-                routeTurnoutAddresses.has(elem.turnoutAddress)
-            ) {
-                elem.isRoute = true;
-            }
-        }
-    }
-
-
     checkRoutes(existingGraph?: Graph | null): CheckRoutesResult {
-
-        const checkRoutesStart = performance.now();
 
         const elems = this.getTrackElements();
 
@@ -597,10 +469,7 @@ export class Layout {
         // Emiatt itt szándékosan nem állítunk:
         //   - rb.active értéket
         //   - elem.isRoute értéket
-        // 
-        const extendedRouteButtons = belems.filter(
-            (elem: BaseElement) => elem instanceof ExtendedRouteButtonElement
-        ) as ExtendedRouteButtonElement[];
+        //
 
         // extendedRouteButtons.forEach(rb => {
         //     rb.active = false;
@@ -629,9 +498,6 @@ export class Layout {
         //         this.markExtendedRouteSolution(solution);
         //     }
         // });
-        console.log(
-            `⏱️ checkRoutes total: ${(performance.now() - checkRoutesStart).toFixed(2)} ms`
-        );
         return {
             graph,
             error: routeGraphError,
@@ -692,19 +558,6 @@ export class Layout {
                 this.walkTrack(prev, section)
             }
         }
-    }
-
-    test() {
-        let section = 1;
-        this.resetRoutes();
-        let t1 = this.getElementByName("T21") as TrackTurnoutElement;
-        t1.isVisited = true;
-        t1.isRoute = true;
-        const entry = this.getObjectXy(t1.getConnections().div) as TrackElement;
-        if (entry) {
-            this.walkTrack(entry, section)
-        }
-
     }
 
     applyRouteGraphRuntime(
@@ -784,444 +637,5 @@ export class Layout {
                 );
         }
     }
-
-    // ==================================================
-    // GRAPH
-    // ==================================================
-    // createRouteGraph(): Graph {
-    //     //return new RouteGraphBuilder(this).build();
-    //     return measure("Route graph build", () => {
-    //         return new RouteGraphBuilder(this).build();
-    //     });
-    // }
-
-    // processRoutes(): Graph {
-    //     return this.createRouteGraph();
-    // }
-    //     private addRouteEdgeIfMissing(
-    //         graph: Graph,
-    //         createdEdgeKeys: Set<string>,
-    //         from: GraphNode,
-    //         to: GraphNode,
-    //         turnoutStates: TurnoutStateRequirement[]
-    //     ) {
-    //         const turnoutKey = turnoutStates
-    //             .map(state => `${state.address}:${state.closed ? "C" : "T"}`)
-    //             .join("|");
-
-    //         const key = `${from.name}->${to.name}:${turnoutKey}`;
-
-    //         if (createdEdgeKeys.has(key)) {
-    //             return;
-    //         }
-
-    //         createdEdgeKeys.add(key);
-
-    //         graph.addEdge(
-    //             new Edge(from, to, turnoutStates)
-    //         );
-    //     }
-
-    //     /**
-    //      * Megmondja, hogy a turnout melyik csatlakozási oldala néz
-    //      * a másik elemre.
-    //      *
-    //      * Itt most turnout -> turnout kapcsolatra használjuk.
-    //      */
-    //     private getTurnoutSideConnectedToElement(
-    //         turnout: TrackTurnoutElement,
-    //         other: BaseElement
-    //     ): TurnoutSide | undefined {
-    //         const connections = turnout.getConnections();
-
-    //         if (connections.entry.isEqual(other.pos)) {
-    //             return "entry";
-    //         }
-
-    //         if (connections.straight.isEqual(other.pos)) {
-    //             return "straight";
-    //         }
-
-    //         if (connections.div.isEqual(other.pos)) {
-    //             return "div";
-    //         }
-
-    //         return undefined;
-    //     }
-
-
-    //     /**
-    //  * Megmondja, hogy egy váltó adott oldaláról belépve
-    //  * mely oldalakra lehet kijutni, és milyen váltóállás kell hozzá.
-    //  */
-    //     private getAllowedTurnoutExits(
-    //         turnout: TrackTurnoutElement,
-    //         enteredSide: TurnoutSide
-    //     ): {
-    //         exitSide: TurnoutSide;
-    //         turnoutState: TurnoutStateRequirement;
-    //     }[] {
-    //         const straightState: TurnoutStateRequirement = {
-    //             address: turnout.turnoutAddress,
-    //             closed: turnout.turnoutClosedValue,
-    //         };
-
-    //         const divState: TurnoutStateRequirement = {
-    //             address: turnout.turnoutAddress,
-    //             closed: !turnout.turnoutClosedValue,
-    //         };
-
-    //         switch (enteredSide) {
-    //             case "entry":
-    //                 return [
-    //                     {
-    //                         exitSide: "straight",
-    //                         turnoutState: straightState,
-    //                     },
-    //                     {
-    //                         exitSide: "div",
-    //                         turnoutState: divState,
-    //                     },
-    //                 ];
-
-    //             case "straight":
-    //                 return [
-    //                     {
-    //                         exitSide: "entry",
-    //                         turnoutState: straightState,
-    //                     },
-    //                 ];
-
-    //             case "div":
-    //                 return [
-    //                     {
-    //                         exitSide: "entry",
-    //                         turnoutState: divState,
-    //                     },
-    //                 ];
-    //         }
-    //     }
-
-    //     /**
-    //      * Egy váltó egyik oldaláról belépve megkeresi,
-    //      * mely valódi szakaszok érhetők el a váltón / váltóláncon keresztül.
-    //      *
-    //      * Példák:
-    //      *
-    //      * S1 -- T12 -- S2
-    //      *   => S1 -> S2 [T12]
-    //      *
-    //      * S1 -- T12 -- T13 -- S2
-    //      *   => S1 -> S2 [T12, T13]
-    //      */
-    //     private walkTurnoutChainToSections(
-    //         graph: Graph,
-    //         sectionNodes: Map<number, GraphNode>,
-    //         createdEdgeKeys: Set<string>,
-
-    //         fromNode: GraphNode,
-
-    //         turnout: TrackTurnoutElement,
-    //         enteredSide: TurnoutSide,
-
-    //         turnoutStates: TurnoutStateRequirement[],
-    //         visitedTurnoutSides: Set<string>
-    //     ) {
-    //         const visitKey = `${turnout.id}:${enteredSide}`;
-
-    //         // Védelem végtelen váltó-lánc / kör ellen
-    //         if (visitedTurnoutSides.has(visitKey)) {
-    //             return;
-    //         }
-
-    //         const nextVisited = new Set(visitedTurnoutSides);
-    //         nextVisited.add(visitKey);
-
-    //         const exits = this.getAllowedTurnoutExits(turnout, enteredSide);
-
-    //         for (const exit of exits) {
-    //             const nextStates = [
-    //                 ...turnoutStates,
-    //                 exit.turnoutState,
-    //             ];
-
-    //             const connections = turnout.getConnections();
-    //             const exitPos = connections[exit.exitSide];
-
-    //             const nextElem = this.getObjectXy(exitPos);
-
-    //             if (!nextElem) {
-    //                 continue;
-    //             }
-
-    //             // ============================================================
-    //             // 1. Valódi szakaszhoz értünk
-    //             // ============================================================
-    //             if (!(nextElem instanceof TrackTurnoutElement)) {
-    //                 if (!nextElem.section) {
-    //                     continue;
-    //                 }
-
-    //                 const toNode = sectionNodes.get(nextElem.section);
-
-    //                 if (!toNode) {
-    //                     continue;
-    //                 }
-
-    //                 if (toNode === fromNode) {
-    //                     continue;
-    //                 }
-
-    //                 this.addRouteEdgeIfMissing(
-    //                     graph,
-    //                     createdEdgeKeys,
-    //                     fromNode,
-    //                     toNode,
-    //                     nextStates
-    //                 );
-
-    //                 continue;
-    //             }
-
-    //             // ============================================================
-    //             // 2. Közvetlenül másik váltóhoz értünk
-    //             //    -> megkeressük, annak melyik oldalán léptünk be
-    //             //    -> rekurzívan megyünk tovább
-    //             // ============================================================
-    //             const nextTurnout = nextElem;
-
-    //             const nextEnteredSide = this.getTurnoutSideConnectedToElement(
-    //                 nextTurnout,
-    //                 turnout
-    //             );
-
-    //             if (!nextEnteredSide) {
-    //                 continue;
-    //             }
-
-    //             this.walkTurnoutChainToSections(
-    //                 graph,
-    //                 sectionNodes,
-    //                 createdEdgeKeys,
-    //                 fromNode,
-    //                 nextTurnout,
-    //                 nextEnteredSide,
-    //                 nextStates,
-    //                 nextVisited
-    //             );
-    //         }
-    //     }
-
-    //     processRoutes22(): Graph {
-    //         const graph = new Graph();
-
-    //         // section szám -> GraphNode
-    //         const sectionNodes = new Map<number, GraphNode>();
-
-    //         // Duplikált edge-ek ellen
-    //         const createdEdgeKeys = new Set<string>();
-
-    //         this.resetRoutes();
-
-    //         let section = 1;
-
-    //         const elems = this.getAllElements();
-
-    //         const turnouts = elems.filter(
-    //             (elem: BaseElement) => isTurnoutElement(elem)
-    //         ) as TrackTurnoutElement[];
-
-    //         // ============================================================
-    //         // 1. LÉPÉS:
-    //         // Valódi fizikai szakaszok feltárása.
-    //         //
-    //         // Ezek lesznek a gráf node-jai:
-    //         // S1, S2, S3...
-    //         // ============================================================
-    //         for (const turnout of turnouts) {
-    //             turnout.isVisited = true;
-    //             turnout.isRoute = true;
-
-    //             const connections = turnout.getConnections();
-
-    //             const connectionPositions = [
-    //                 connections.entry,
-    //                 connections.straight,
-    //                 connections.div,
-    //             ];
-
-    //             for (const pos of connectionPositions) {
-    //                 const firstElem = this.getObjectXy(pos);
-
-    //                 if (!firstElem) {
-    //                     continue;
-    //                 }
-
-    //                 // Ha közvetlenül másik váltó van ott,
-    //                 // abból NEM készítünk szakaszt.
-    //                 // Majd edge-generáláskor átmegyünk rajta.
-    //                 if (firstElem instanceof TrackTurnoutElement) {
-    //                     continue;
-    //                 }
-
-    //                 // Ezt a szakaszt már feltártuk
-    //                 if (firstElem.isVisited) {
-    //                     continue;
-    //                 }
-
-    //                 const sectionElements: BaseElement[] = [];
-
-    //                 this.walkTrackSection(
-    //                     firstElem,
-    //                     section,
-    //                     sectionElements
-    //                 );
-
-    //                 const node = this.createSectionGraphNode(
-    //                     section,
-    //                     sectionElements
-    //                 );
-
-    //                 graph.addNode(node);
-    //                 sectionNodes.set(section, node);
-
-    //                 section++;
-    //             }
-    //         }
-
-    //         // ============================================================
-    //         // 2. LÉPÉS:
-    //         // Minden valódi szakasztól elindulunk a mellette lévő váltóba,
-    //         // majd a váltókon keresztül addig megyünk,
-    //         // amíg egy másik valódi szakaszhoz nem érünk.
-    //         //
-    //         // Így:
-    //         //
-    //         // S1 -- T12 -- S2
-    //         //   => S1 -> S2 [T12]
-    //         //
-    //         // S1 -- T12 -- T13 -- S2
-    //         //   => S1 -> S2 [T12, T13]
-    //         // ============================================================
-    //         for (const turnout of turnouts) {
-    //             const connections = turnout.getConnections();
-
-    //             const turnoutSides: TurnoutSide[] = [
-    //                 "entry",
-    //                 "straight",
-    //                 "div",
-    //             ];
-
-    //             for (const side of turnoutSides) {
-    //                 const pos = connections[side];
-    //                 const elem = this.getObjectXy(pos);
-
-    //                 // Edge-et csak VALÓDI szakaszból indítunk
-    //                 if (!elem || elem instanceof TrackTurnoutElement) {
-    //                     continue;
-    //                 }
-
-    //                 if (!elem.section) {
-    //                     continue;
-    //                 }
-
-    //                 const fromNode = sectionNodes.get(elem.section);
-
-    //                 if (!fromNode) {
-    //                     continue;
-    //                 }
-
-    //                 // Innen elindulunk a turnout belsején át
-    //                 // és megkeressük, milyen szakaszok érhetők el.
-    //                 this.walkTurnoutChainToSections(
-    //                     graph,
-    //                     sectionNodes,
-    //                     createdEdgeKeys,
-    //                     fromNode,
-    //                     turnout,
-    //                     side,
-    //                     [],
-    //                     new Set<string>()
-    //                 );
-    //             }
-    //         }
-
-    //         console.log("GENERATED SECTION GRAPH:", graph);
-
-    //         return graph;
-    //     }
-
-
-    //     /**
-    //      * Egy valódi fizikai pályaszakaszt jár be.
-    //      *
-    //      * Addig megy, amíg:
-    //      * - nincs tovább sín
-    //      * - vagy váltóhoz ér
-    //      *
-    //      * Az összes bejárt elem ugyanazt a section számot kapja.
-    //      */
-    //     private walkTrackSection(
-    //         obj: BaseElement,
-    //         section: number,
-    //         sectionElements: BaseElement[]
-    //     ) {
-    //         obj.isVisited = true;
-    //         obj.isRoute = true;
-    //         obj.section = section;
-
-    //         sectionElements.push(obj);
-
-    //         const p1 = obj.getNextItemXy();
-    //         const p2 = obj.getPrevItemXy();
-
-    //         const next = this.getObjectXy(p1);
-
-    //         if (next && !(next instanceof TrackTurnoutElement)) {
-    //             const isConnectedBack =
-    //                 obj.pos.isEqual(next.getNextItemXy()) ||
-    //                 obj.pos.isEqual(next.getPrevItemXy());
-
-    //             if (!next.isVisited && isConnectedBack) {
-    //                 this.walkTrackSection(next, section, sectionElements);
-    //             }
-    //         }
-
-    //         const prev = this.getObjectXy(p2);
-
-    //         if (prev && !(prev instanceof TrackTurnoutElement)) {
-    //             const isConnectedBack =
-    //                 obj.pos.isEqual(prev.getNextItemXy()) ||
-    //                 obj.pos.isEqual(prev.getPrevItemXy());
-
-    //             if (!prev.isVisited && isConnectedBack) {
-    //                 this.walkTrackSection(prev, section, sectionElements);
-    //             }
-    //         }
-    //     }
-
-
-    //     /**
-    //      * Egy valódi szakaszból készít gráf node-ot.
-    //      */
-    //     private createSectionGraphNode(
-    //         section: number,
-    //         sectionElements: BaseElement[]
-    //     ): GraphNode {
-    //         let x = 0;
-    //         let y = 0;
-
-    //         for (const elem of sectionElements) {
-    //             x += elem.pos.x;
-    //             y += elem.pos.y;
-    //         }
-
-    //         if (sectionElements.length > 0) {
-    //             x /= sectionElements.length;
-    //             y /= sectionElements.length;
-    //         }
-
-    //         return new GraphNode(`S${section}`, x, y);
-    //     }
 
 }

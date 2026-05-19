@@ -1,11 +1,11 @@
 // src/services/wsApi.ts
 
-import { Direction, SetTurnoutMessage } from "../../../common/src/types";
+import { Direction } from "../../../common/src/types";
 import { generateId } from "../helpers";
 import { wsClient } from "./wsClient";
 
 
-class WebscoketApi {
+class WebSocketApi {
 
 
   uuid = generateId();
@@ -26,17 +26,6 @@ class WebscoketApi {
     return wsClient.send({ type, data, uuid: this.uuid });
   };
 
-  // powerOn() {
-  //   return wsClient.send({ type: "powerOn", uuid: this.uuid });
-  // };
-
-  // powerOff() {
-  //   return wsClient.send({ type: "powerOff", uuid: this.uuid });
-  // };
-
-  // emergencyStop() {
-  //   return wsClient.send({ type: "emergencyStop", uuid: this.uuid });
-  // };
 
   setTrackPower(on: boolean) {
     this.send("setTrackPower", { on });
@@ -171,13 +160,6 @@ class WebscoketApi {
     );
   }
 
-  stopTask(taskIdOrName: string) {
-    return this.send(
-      "stopTask",
-      { taskIdOrName }
-    );
-  }
-
   pauseTask(taskIdOrName: string) {
     return this.send(
       "pauseTask",
@@ -189,13 +171,6 @@ class WebscoketApi {
     return this.send(
       "resumeTask",
       { taskIdOrName }
-    );
-  }
-
-  stopAllTasks() {
-    return this.send(
-      "stopAllTasks",
-      {}
     );
   }
 
@@ -216,4 +191,4 @@ export function getDefaultWsUrl(): string {
   return `${protocol}://${host}:${port}/ws`;
 }
 
-export const wsApi = new WebscoketApi();
+export const wsApi = new WebSocketApi();

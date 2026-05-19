@@ -22,9 +22,6 @@ export async function readCommandCenter() {
         CurrentCommandCenterConfig = null;
         console.log("READCOMMANDCENTER:", "Nem sikerült beolvasni a parancsközpontot.", candidate1);
     }
-    // if (cbCommandCenterConfigLoaded) {
-    //   cbCommandCenterConfigLoaded(CurrentCommandCenterConfig);
-    // }
     return CurrentCommandCenterConfig;
 }
 async function writeCommandCenter(item) {
