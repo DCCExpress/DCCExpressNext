@@ -1,12 +1,12 @@
 // server/src/commandCenter/simulator.ts
 
-import {
+import type {
   AccessoryChangedMessage,
   LocoState,
   SensorInfo,
   TurnoutChangedMessage,
   TurnoutInfo,
-  WsMessage,
+  TypedServerWsMessage,
 } from "../../../common/src/types.js";
 
 import {
@@ -39,7 +39,7 @@ export class CommandCenterSimulator extends CommandCenter {
     }
 
     this.aliveTask = setInterval(() => {
-      const msg: WsMessage = {
+      const msg: TypedServerWsMessage<"commandCenterInfo"> = {
         type: "commandCenterInfo",
         data: {
           alive: this.alive,
@@ -66,7 +66,7 @@ export class CommandCenterSimulator extends CommandCenter {
       this.aliveTask = null;
     }
 
-    const msg: WsMessage = {
+    const msg: TypedServerWsMessage<"commandCenterInfo"> = {
       type: "commandCenterInfo",
       data: {
         alive: this.alive,
@@ -228,7 +228,7 @@ export class CommandCenterSimulator extends CommandCenter {
       data: powerInfo,
     });
 
-    broadcastAll({
+    const commandCenterInfoMessage: TypedServerWsMessage<"commandCenterInfo"> = {
       type: "commandCenterInfo",
       data: {
         alive: this.alive,
@@ -236,7 +236,9 @@ export class CommandCenterSimulator extends CommandCenter {
         type: "simulator",
       },
       uuid: this.lockOwnerUUID,
-    } as WsMessage);
+    };
+
+    broadcastAll(commandCenterInfoMessage);
 
     return Promise.resolve(true);
   }

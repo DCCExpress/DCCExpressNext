@@ -414,6 +414,21 @@ export type ServerWsPayloadMap = {
     rawState?: number;
     functionAddress?: number;
   };
+
+  z21AccessoryInfo: {
+    address: number;
+    active: boolean;
+  };
+
+  rbusSensorChanged: {
+    address: number;
+    moduleAddress: number;
+    input: number;
+    on: boolean;
+    group: number;
+    byteIndex: number;
+    bitIndex: number;
+  };
 };
 
 export type ServerWsMessageType =

@@ -139,7 +139,7 @@ export class CommandCenterSimulator extends CommandCenter {
             type: "powerInfo",
             data: powerInfo,
         });
-        broadcastAll({
+        const commandCenterInfoMessage = {
             type: "commandCenterInfo",
             data: {
                 alive: this.alive,
@@ -147,7 +147,8 @@ export class CommandCenterSimulator extends CommandCenter {
                 type: "simulator",
             },
             uuid: this.lockOwnerUUID,
-        });
+        };
+        broadcastAll(commandCenterInfoMessage);
         return Promise.resolve(true);
     }
     emergencyStop() {

@@ -1278,7 +1278,7 @@ export class Z21CommandCenter extends CommandCenter {
         this.wsBroadcast({
             type,
             data,
-        } as TypedServerWsMessage<TType>);
+        } as unknown as TypedServerWsMessage);
     }
 
     private parseTurnoutInfo(data: Buffer):
