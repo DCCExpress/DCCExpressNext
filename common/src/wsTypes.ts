@@ -9,8 +9,8 @@ import type {
  * használható WebSocket message alap.
  *
  * A data szándékosan opcionális:
- * pl. routeLock / routeUnlock / getBlocks jellegű üzeneteknél
- * nincs értelmes payload.
+ * régebbi és szerverről érkező üzenetek között is van olyan,
+ * ahol nincs értelmes payload.
  */
 export type WsMessage<T = any> = {
   type: string;
@@ -19,8 +19,11 @@ export type WsMessage<T = any> = {
 };
 
 /**
- * Kliens -> szerver küldött üzenet.
- * A kliens API minden parancshoz saját, stabil UUID-t ad.
+ * Lazább kliensüzenet-alap.
+ *
+ * Ezt megtartjuk kompatibilitási célból, de az új wsApi.send()
+ * már a ClientWsPayloadMap alapján típusosított
+ * TypedClientWsMessage formát állítja elő.
  */
 export type ClientWsMessage<T = any> = {
   type: string;
@@ -28,28 +31,136 @@ export type ClientWsMessage<T = any> = {
   uuid: string;
 };
 
-export type SetLocoMessage = ClientWsMessage<{
-  locoAddress: number;
-  speed: number;
-  direction: Direction;
-}> & {
-  type: "setLoco";
+/**
+ * Kliens -> szerver WebSocket parancsok payload térképe.
+ *
+ * Ez a wsApi.send() típusalapja:
+ * ha itt el van írva egy mezőnév, a kliensoldali fordítás
+ * rögtön szólni fog.
+ */
+export type ClientWsPayloadMap = {
+  setTrackPower: {
+    on: boolean;
+  };
+
+  emergencyStop: {};
+
+  setLoco: {
+    locoAddress: number;
+    speed: number;
+    direction: Direction;
+  };
+
+  getLoco: {
+    locoAddress: number;
+  };
+
+  setLocoFunction: {
+    locoAddress: number;
+    functionNumber: number;
+    active: boolean;
+  };
+
+  setTurnout: {
+    address: number;
+    closed: boolean;
+  };
+
+  setBasicAccessory: {
+    address: number;
+    active: boolean;
+  };
+
+  setBlock: {
+    blockId: string;
+    locoId: string | null;
+  };
+
+  setBlockRemove: {
+    blockId: string;
+    locoId: string | null;
+  };
+
+  setBlocksReset: {};
+
+  getBlocks: {};
+
+  routeLock: {};
+
+  routeUnlock: {};
+
+  reserveRoute: {
+    fromBlockName: string;
+    toBlockName: string;
+  };
+
+  releaseRouteReservation: {
+    fromBlockName: string;
+    toBlockName: string;
+  };
+
+  clearAllRouteReservations: {};
+
+  getRouteReservations: {};
+
+  runScript: {
+    script?: string;
+    source: string;
+    elementId: string | null;
+  };
+
+  stopScript: {};
+
+  getScriptRuntimeState: {};
+
+  startTask: {
+    taskIdOrName: string;
+  };
+
+  finishTask: {
+    taskIdOrName: string;
+  };
+
+  abortTask: {
+    taskIdOrName: string;
+  };
+
+  pauseTask: {
+    taskIdOrName: string;
+  };
+
+  resumeTask: {
+    taskIdOrName: string;
+  };
+
+  finishAllTasks: {};
+
+  abortAllTasks: {};
+
+  getTaskRuntimeState: {};
 };
 
-export type SetLocoFunctionMessage = ClientWsMessage<{
-  locoAddress: number;
-  functionNumber: number;
-  active: boolean;
-}> & {
-  type: "setLocoFunction";
-};
+export type ClientWsMessageType =
+  keyof ClientWsPayloadMap;
 
-export type SetTurnoutMessage = ClientWsMessage<{
-  address: number;
-  closed: boolean;
-}> & {
-  type: "setTurnout";
-};
+export type TypedClientWsMessage<
+  TType extends ClientWsMessageType = ClientWsMessageType
+> = {
+  [K in TType]: {
+    type: K;
+    data: ClientWsPayloadMap[K];
+    uuid: string;
+  };
+}[TType];
+
+export type SetLocoMessage =
+  TypedClientWsMessage<"setLoco">;
+
+export type SetLocoFunctionMessage =
+  TypedClientWsMessage<"setLocoFunction">;
+
+export type SetTurnoutMessage =
+  TypedClientWsMessage<"setTurnout">;
 
 export type TurnoutChangedMessage = {
   type: "turnoutChanged";
@@ -67,11 +178,13 @@ export type AccessoryChangedMessage = {
   };
 };
 
-export type SetSensorMessage = ClientWsMessage<{
-  address: number;
-  on: boolean;
-}> & {
+export type SetSensorMessage = {
   type: "setSensor";
+  data: {
+    address: number;
+    on: boolean;
+  };
+  uuid: string;
 };
 
 export type CommandCenterInfo = {
@@ -83,16 +196,11 @@ export type CommandCenterInfo = {
   };
 };
 
-export type ReserveRouteMessage = ClientWsMessage<{
-  fromBlockName: string;
-  toBlockName: string;
-}> & {
-  type: "reserveRoute";
-};
+export type ReserveRouteMessage =
+  TypedClientWsMessage<"reserveRoute">;
 
-export type ClearAllRouteReservationsMessage = ClientWsMessage<{}> & {
-  type: "clearAllRouteReservations";
-};
+export type ClearAllRouteReservationsMessage =
+  TypedClientWsMessage<"clearAllRouteReservations">;
 
 export type RouteReservationChangedMessage = {
   type: "routeReservationChanged";

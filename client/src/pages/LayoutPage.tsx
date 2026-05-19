@@ -706,7 +706,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
     const unsubscribeCommandRejected = wsClient.on(
       "commandRejected",
       (data: any, raw: any) => {
-        if (data.lockOwner != wsApi.uuid) {
+        if (data.lockOwner != wsApi.clientUuid) {
           showWarningMessage("Warning", data.reason);
         }
       }
