@@ -1,0 +1,15 @@
+TrackCanvas cursor factory extraction — scripted apply
+
+Copy the zip contents into the repository root, then run:
+
+  node apply-trackcanvas-cursor-refactor.mjs
+
+This:
+- Adds the import for createCursorElement
+- Removes the cursor singleton block from TrackCanvas.tsx
+- Removes the old local createCursorElement() function
+- Leaves behavior unchanged
+- Does not create .bak files
+
+Then build:
+  npm --workspace client run build

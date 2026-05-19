@@ -41,6 +41,7 @@ import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
 import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
 import { getRouteGraph } from "../api/http";
 import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
+import { createCursorElement } from "./track-canvas/createCursorElement";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -124,44 +125,6 @@ type SelectionState = {
   endGridX: number;
   endGridY: number;
 };
-
-const CursorTrackElement = new TrackStraightElement(0, 0);
-const CursorTrackDirectionElement = new TrackDirectionElement(0, 0);
-const CursorTrackEndElement = new TrackEndElement(0, 0);
-const CursorTrackCornerElement = new TrackCornerElement(0, 0);
-const CursorTrackCurveElement = new TrackCurveElement(0, 0);
-const CursorTrackTurnoutLeftElement = new TrackTurnoutLeftElement(0, 0);
-const CursorTrackTurnoutRightElement = new TrackTurnoutRightElement(0, 0);
-const CursorTrackTurnoutTwoWayElement = new TrackTurnoutTwoWayElement(0, 0);
-const CursorTrackTurnoutDoubleElement = new TrackTurnoutDoubleElement(0, 0);
-const CursorTrackSensorElement = new TrackSensorElement(0, 0);
-const CursorTrackSignal2Element = new TrackSignalElement(0, 0);
-CursorTrackSignal2Element.aspect = 2;
-const CursorTrackSignal3Element = new TrackSignalElement(0, 0);
-CursorTrackSignal3Element.aspect = 3;
-const CursorTrackSignal4Element = new TrackSignalElement(0, 0);
-CursorTrackSignal4Element.aspect = 4;
-const CursorTrackCrossingElement = new TrackCrossingElement(0, 0);
-const CursorButtonElement = new ButtonElement(0, 0);
-const CursorButtonScriptElement = new ButtonScriptElement(0, 0);
-const CursorRouteButtonElement = new RouteButtonElement(0, 0);
-const CursorExtendedRouteButtonElement = new ExtendedRouteButtonElement(0, 0);
-const CursorAudioButtonElement = new AudioButtonElement(0, 0);
-const CursorClockElement = new ClockElement(0, 0);
-const CursorTreeElement = new TreeElement(0, 0);
-const CursorBlockElement = new BlockElement(0, 0);
-const CursorLabelElement = new LabelElement(0, 0);
-
-// const PreviewSignal1 = new TrackSignalElement(0, 0);
-// PreviewSignal1.setGreen();
-// const PreviewSignal2 = new TrackSignalElement(0, 0);
-// PreviewSignal2.setRed();
-// const PreviewSignal3 = new TrackSignalElement(0, 0);
-// PreviewSignal3.setYellow();
-// const PreviewSignal4 = new TrackSignalElement(0, 0);
-// PreviewSignal4.setWhite();
-
-
 
 const VIEW_STORAGE_KEY = "dcc-express.editor.trackCanvas.view";
 
@@ -1874,82 +1837,6 @@ export default function TrackCanvas({
       />
     </>
   );
-}
-
-function createCursorElement(tool: EditorTool): BaseElement | null {
-  switch (tool.elementType) {
-    case ELEMENT_TYPES.TRACK_STRAIGHT:
-      return CursorTrackElement;
-
-    case ELEMENT_TYPES.TRACK_DIRECTION:
-      return CursorTrackDirectionElement;
-
-    case ELEMENT_TYPES.TRACK_END:
-      return CursorTrackEndElement;
-
-    case ELEMENT_TYPES.TRACK_CORNER:
-      return CursorTrackCornerElement;
-
-    case ELEMENT_TYPES.TRACK_CURVE:
-      return CursorTrackCurveElement;
-
-    case ELEMENT_TYPES.TRACK_CROSSING:
-      return CursorTrackCrossingElement;
-
-    case ELEMENT_TYPES.TRACK_TURNOUT_LEFT:
-      return CursorTrackTurnoutLeftElement;
-
-    case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT:
-      return CursorTrackTurnoutRightElement;
-
-    case ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY:
-      return CursorTrackTurnoutTwoWayElement;
-
-    case ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE:
-      return CursorTrackTurnoutDoubleElement;
-
-    case ELEMENT_TYPES.TRACK_SENSOR:
-      return CursorTrackSensorElement;
-
-    case ELEMENT_TYPES.BUTTON:
-      return CursorButtonElement;
-
-    case ELEMENT_TYPES.BUTTON_SCRIPT:
-      return CursorButtonScriptElement;
-
-    case ELEMENT_TYPES.BUTTON_AUDIO:
-      return CursorAudioButtonElement;
-
-    case ELEMENT_TYPES.BUTTON_ROUTE:
-      return CursorRouteButtonElement;
-
-    case ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED:
-      return CursorExtendedRouteButtonElement;
-
-    case ELEMENT_TYPES.CLOCK:
-      return CursorClockElement;
-
-    case ELEMENT_TYPES.TREE:
-      return CursorTreeElement;
-
-    case ELEMENT_TYPES.TRACK_BLOCK:
-      return CursorBlockElement;
-
-    case ELEMENT_TYPES.TRACK_SIGNAL2:
-      return CursorTrackSignal2Element;
-
-    case ELEMENT_TYPES.TRACK_SIGNAL3:
-      return CursorTrackSignal3Element;
-
-    case ELEMENT_TYPES.TRACK_SIGNAL4:
-      return CursorTrackSignal4Element;
-
-    case ELEMENT_TYPES.LABEL:
-      return CursorLabelElement;
-
-    default:
-      return null;
-  }
 }
 
 function drawScene(
