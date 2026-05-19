@@ -1,4 +1,30 @@
-// server/src/ws/wsIncomingClientMessageParser.ts
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = process.cwd();
+
+const FILE = path.join(
+  ROOT,
+  "server/src/ws/wsIncomingClientMessageParser.ts"
+);
+
+function fail(message) {
+  throw new Error(message);
+}
+
+function ensureExisting(file) {
+  if (!fs.existsSync(file)) {
+    fail(`Hiányzó fájl: ${path.relative(ROOT, file)}`);
+  }
+}
+
+function write(file, content) {
+  fs.writeFileSync(file, content, "utf8");
+  console.log(`✓ Frissítve: ${path.relative(ROOT, file)}`);
+}
+
+const PARSER = `// server/src/ws/wsIncomingClientMessageParser.ts
 
 import type {
   ClientWsMessageType,
@@ -62,7 +88,7 @@ function invalidPayload(
 } {
   return {
     ok: false,
-    reason: `Invalid ${type} payload: ${detail}`,
+    reason: \`Invalid \${type} payload: \${detail}\`,
   };
 }
 
@@ -444,4 +470,26 @@ export function parseIncomingClientWsMessage(
       uuid: parsed.uuid,
     } as ClientWsMessageUnion,
   };
+}
+`;
+
+try {
+  console.log("DCCExpressNext – WS payload validation Sprint 15 patch V1");
+  console.log("Repo gyökér:", ROOT);
+  console.log("");
+
+  ensureExisting(FILE);
+  write(FILE, PARSER);
+
+  console.log("");
+  console.log("Kész.");
+  console.log("Nem készültek .bak fájlok.");
+  console.log("");
+  console.log("Javasolt ellenőrzés:");
+  console.log("  npm run build");
+} catch (error) {
+  console.error("");
+  console.error("PATCH HIBA:");
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
 }
