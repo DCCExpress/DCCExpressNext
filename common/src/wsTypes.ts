@@ -1,9 +1,7 @@
 // common/src/wsTypes.ts
 
 import type {
-  BlockState,
   Direction,
-  LocoState,
 } from "./domainTypes.js";
 
 import type {
@@ -22,6 +20,14 @@ import type {
 import type {
   FastClockSnapshot,
 } from "./fastClock.js";
+
+import type {
+  AccessoryChangedPayload,
+  BlockStateChangedPayload,
+  LocoStateChangedPayload,
+  SensorChangedPayload,
+  TurnoutChangedPayload,
+} from "./railwayRuntimeEvents.js";
 
 import type {
   RouteReservationChangedPayload,
@@ -248,18 +254,12 @@ export type ClearAllRouteReservationsMessage =
  */
 export type TurnoutChangedMessage = {
   type: "turnoutChanged";
-  data: {
-    address: number;
-    closed: boolean;
-  };
+  data: TurnoutChangedPayload;
 };
 
 export type AccessoryChangedMessage = {
   type: "accessoryChanged";
-  data: {
-    address: number;
-    active: boolean;
-  };
+  data: AccessoryChangedPayload;
 };
 
 export type CommandCenterInfo = {
@@ -295,30 +295,15 @@ export type ServerWsPayloadMap = {
 
   commandCenterLockChanged: CommandCenterLockChangedPayload;
 
-  locoState: {
-    loco: LocoState;
-  };
+  locoState: LocoStateChangedPayload;
 
-  turnoutChanged: {
-    address: number;
-    closed: boolean;
-  };
+  turnoutChanged: TurnoutChangedPayload;
 
-  accessoryChanged: {
-    address: number;
-    active: boolean;
-  };
+  accessoryChanged: AccessoryChangedPayload;
 
-  /**
-   * Egységes szerver -> kliens szenzor esemény.
-   * A külső WS contractban minden command center `on` mezőt használ.
-   */
-  sensorChanged: {
-    address: number;
-    on: boolean;
-  };
+  sensorChanged: SensorChangedPayload;
 
-  blockStateChanged: Record<string, BlockState>;
+  blockStateChanged: BlockStateChangedPayload;
 
   routeReservationChanged: RouteReservationChangedPayload;
 

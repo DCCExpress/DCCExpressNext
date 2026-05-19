@@ -1,10 +1,8 @@
 // server/src/commandCenter/simulator.ts
 
 import type {
-  AccessoryChangedMessage,
   LocoState,
   SensorInfo,
-  TurnoutChangedMessage,
   TurnoutInfo,
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
@@ -103,7 +101,7 @@ export class CommandCenterSimulator extends CommandCenter {
 
     turnout.closed = closed;
 
-    const msg: TurnoutChangedMessage = {
+    const msg: TypedServerWsMessage<"turnoutChanged"> = {
       type: "turnoutChanged",
       data: {
         address,
@@ -182,7 +180,7 @@ export class CommandCenterSimulator extends CommandCenter {
 
     accessory.active = active;
 
-    const msg: AccessoryChangedMessage = {
+    const msg: TypedServerWsMessage<"accessoryChanged"> = {
       type: "accessoryChanged",
       data: {
         address,
