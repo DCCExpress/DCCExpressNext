@@ -1,44 +1,31 @@
+import { ActionIcon, AppShell, Box, Card, Group, Stack } from "@mantine/core";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActionIcon, AppShell, Box, Card, Group, Stack, Tooltip } from "@mantine/core";
-import TrackCanvas from "../components/TrackCanvas";
-import PanelHandle from "../components/PanelHandle";
 import LocoDialog from "../components/LocoDialog";
-import TopMenuBar from "../layout/TopMenuBar";
+import PanelHandle from "../components/PanelHandle";
+import TrackCanvas from "../components/TrackCanvas";
+import LocoPanel from "../layout/LocoPanel";
 import RightPropertyPanel from "../layout/PropertyPanel";
 import StatusBar from "../layout/StatusBar";
-import LocoPanel from "../layout/LocoPanel";
-import { getLayout, getLocos, refreshLayoutRuntime, saveLayout } from "../api/http";
+import TopMenuBar from "../layout/TopMenuBar";
 
-import { type EditorTool } from "../models/editor/types/EditorTypes";
+import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import { Loco } from "../../../common/src/types";
+import { CommandCenter, loadCommandCenters } from "../api/commandCentersApi";
+import CommandCenterDialog from "../components/CommandCenterDialog";
 import ElementPickerDialog from "../components/editor/ElementPickerDialog";
-import { isTouchDevice, showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
-import { Layout } from "../models/editor/core/Layout";
-import { BaseElement } from "../models/editor/core/BaseElement";
+import FullscreenLoader from "../components/FullscreenLoader";
 import SettingDialog from "../components/SettingsDialog";
+import { isTouchDevice, showErrorMessage, showOkMessage } from "../helpers";
+import { useLayoutRuntimeWsBindings } from "../hooks/layout/useLayoutRuntimeWsBindings";
+import { useLayoutPageBootstrap } from "../hooks/layout/useLayoutPageBootstrap";
+import { BaseElement } from "../models/editor/core/BaseElement";
+import { Layout } from "../models/editor/core/Layout";
+import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
+import { type EditorTool } from "../models/editor/types/EditorTypes";
+import { layoutStore } from "../services/layoutStore";
+import { routeGraphStore } from "../services/routeGraphStore";
 import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
-import { TrackSensorElement } from "../models/editor/elements/TrackSensorElement";
-import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
-import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
-import CommandCenterDialog from "../components/CommandCenterDialog";
-import { CommandCenter, loadCommandCenters, saveCommandCenters } from "../api/commandCentersApi";
-import { ICommandCenter, Loco } from "../../../common/src/types";
-import { WsEvents } from "../../../common/src/wsEvents";
-import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
-import FullscreenLoader from "../components/FullscreenLoader";
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
-import { layoutStore } from "../services/layoutStore";
-import { scriptEngine } from "../services/scriptEngine";
-import { loadJsonFile } from "../api/fileApi";
-import { BlockElement } from "../models/editor/elements/BlockElement";
-import { routeGraphStore } from "../services/routeGraphStore";
-import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
-import { taskManager } from "../services/tasks/taskManagerSingleton";
-import { locoStore } from "../services/locoStore";
-import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
-import { getRouteGraph } from "../api/http";
-import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
-import { useLayoutRuntimeWsBindings } from "../hooks/layout/useLayoutRuntimeWsBindings";
 
 
 type LayoutPageProps = {
@@ -200,175 +187,21 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
   const previousEditModeRef = useRef(editMode);
 
-  const loadLocos = async () => {
-    try {
-      const data = await getLocos();
-      setLocos(data);
-      locoStore.setLocos(data);
-      //showOkMessage("", "Locomotives loaded!");
-    } catch (error) {
-      console.error("Nem sikerült betölteni a mozdonyokat:", error);
-      showErrorMessage("Error", "Failed to load locomotives: " + error);
-      setLocos([]);
-    }
-  };
-
-  const requestInitialRuntimeSync = useCallback(() => {
-    if (!layoutLoadedRef.current) {
-      return;
-    }
-
-    if (!wsClient.isConnected()) {
-      return;
-    }
-
-    wsApi.getBlocks();
-    wsApi.getRouteReservations();
-  }, []);
-
-  const loadLayoutFromServer = async () => {
-    try {
-      const loaded = await getLayout();
-      const nextLayout = Layout.fromJSON(loaded);
-
-      setLayout(nextLayout);
-      layoutStore.setLayout(nextLayout);
-      routeGraphStore.clear();
-
-      try {
-        const graph =
-          await routeGraphStore.ensureLoaded();
-
-        nextLayout.applyRouteGraphRuntime(
-          routeGraphStore.getTrackRuntime()
-        );
-
-        nextLayout.checkRoutes(graph);
-
-        setInvalidateCounter(prev => prev + 1);
-      } catch (error) {
-        console.warn(
-          "[RouteGraph] Could not preload graph after layout load:",
-          error
-        );
-      }
-
-      setUndoStack([]);
-      setRedoStack([]);
-
-      layoutLoadedRef.current = true;
-      requestInitialRuntimeSync();
-    } catch (error) {
-      console.error(error);
-      showErrorMessage("Error", "Failed to load layout: " + error);
-    }
-  };
-
-  useEffect(() => {
-    const unsubscribe = wsClient.subscribeStatus(status => {
-      if (status === "connected") {
-        requestInitialRuntimeSync();
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [requestInitialRuntimeSync]);
-
-
-  const saveLayoutToServer = async () => {
-    await saveLayout(layoutRef.current);
-
-    /**
-     * A szerver PUT /layout után újraépíti
-     * a topology + route graph runtime-ot.
-     * A kliens cache innentől elavult.
-     */
-    routeGraphStore.invalidate();
-
-    showOkMessage("", "Layout saved!");
-  };
-
-  const refreshServerRuntimeLayout = async () => {
-    try {
-      await refreshLayoutRuntime(layoutRef.current);
-
-      /**
-       * A szerver új topology + route graph runtime-ot épített.
-       * A kliens route graph cache innentől biztosan elavult.
-       */
-      routeGraphStore.invalidate();
-
-      const graph =
-        await routeGraphStore.ensureLoaded();
-
-      layoutRef.current.applyRouteGraphRuntime(
-        routeGraphStore.getTrackRuntime()
-      );
-
-      layoutRef.current.checkRoutes(graph);
-
-      setInvalidateCounter((prev) => prev + 1);
-
-      showOkMessage(
-        "Runtime layout",
-        "Server runtime layout refreshed."
-      );
-    } catch (error) {
-      showErrorMessage(
-        "Runtime layout",
-        error instanceof Error
-          ? error.message
-          : "Could not refresh server runtime layout."
-      );
-    }
-  };
-
-  const loadCommandCentersFromServer = async () => {
-    try {
-      const data = await loadCommandCenters();
-
-      if (!data) {
-        setCommandCenter(new CommandCenter());
-        return;
-      }
-
-      setCommandCenter(new CommandCenter(data));
-      //showOkMessage("", "Command center loaded!");
-    } catch (error) {
-      console.error("Nem sikerült betölteni a parancsközpontot:", error);
-      showErrorMessage("Error", "Failed to load command center: " + error);
-    }
-  };
-
-  const loadScriptFromServer = () => {
-    scriptEngine.loadScript();
-  }
-
-  const saveCommandCentersToServer = async (items?: ICommandCenter) => {
-    try {
-      // const list = items ?? commandCenterConfig;
-      // await saveCommandCenters(list);
-      showOkMessage("", "Command centers saved!");
-    } catch (error) {
-      console.error("Nem sikerült elmenteni a parancsközpontokat:", error);
-      alert("Nem sikerült elmenteni a parancsközpontokat.");
-    }
-  };
-
-  const loadPartsFromServer = async () => {
-    await loadLocos();
-    await loadLayoutFromServer();
-    await loadCommandCentersFromServer();
-    await loadScriptFromServer();
-    setInvalidateCounter((v) => v + 1);
-  }
-
-  useEffect(() => {
-    loadPartsFromServer();
-
-  }, []);
+  const {
+    loadLocos,
+    loadLayoutFromServer,
+    saveLayoutToServer,
+    refreshServerRuntimeLayout,
+  } = useLayoutPageBootstrap({
+    layoutRef,
+    layoutLoadedRef,
+    setLayout,
+    setLocos,
+    setCommandCenter,
+    setUndoStack,
+    setRedoStack,
+    setInvalidateCounter,
+  });
 
   const createLayoutSnapshot = useCallback((source: Layout): string => {
     return JSON.stringify(source);
