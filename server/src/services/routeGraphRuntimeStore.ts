@@ -13,13 +13,12 @@ import type {
   RailwayTopologyLayout,
 } from "../../../common/src/railway/topology.js";
 
-type RouteReservation = {
-  key: string;
-  fromBlockName: string;
-  toBlockName: string;
-  sectionNames: string[];
-  turnoutAddresses: number[];
-};
+import type {
+  ActiveRouteReservation,
+  RouteReservation,
+  RouteReservationCreateResult,
+  RouteReservationReleaseResult,
+} from "../../../common/src/types.js";
 
 class RouteGraphRuntimeStore {
   private graph: Graph | null = null;
@@ -81,15 +80,7 @@ class RouteGraphRuntimeStore {
     fromBlockName: string,
     toBlockName: string,
     solution: BlockRouteSolution
-  ):
-    | {
-      ok: true;
-      reservation: RouteReservation;
-    }
-    | {
-      ok: false;
-      error: string;
-    } {
+  ): RouteReservationCreateResult {
     const key = this.createReservationKey(
       fromBlockName,
       toBlockName
@@ -168,18 +159,7 @@ class RouteGraphRuntimeStore {
   releaseRouteReservation(
     fromBlockName: string,
     toBlockName: string
-  ):
-    | {
-      ok: true;
-      releasedSectionNames: string[];
-      retainedSectionNames: string[];
-      releasedTurnoutAddresses: number[];
-      retainedTurnoutAddresses: number[];
-    }
-    | {
-      ok: false;
-      error: string;
-    } {
+  ): RouteReservationReleaseResult {
     const key = this.createReservationKey(
       fromBlockName,
       toBlockName
@@ -291,12 +271,7 @@ class RouteGraphRuntimeStore {
     return this.busyTurnoutAddresses.has(address);
   }
 
-  getActiveReservations(): {
-    fromBlockName: string;
-    toBlockName: string;
-    sectionNames: string[];
-    turnoutAddresses: number[];
-  }[] {
+  getActiveReservations(): ActiveRouteReservation[] {
     return [...this.reservations.values()].map(reservation => ({
       fromBlockName: reservation.fromBlockName,
       toBlockName: reservation.toBlockName,

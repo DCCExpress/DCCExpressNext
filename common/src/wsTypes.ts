@@ -13,12 +13,22 @@ import type {
 } from "./scriptTypes.js";
 
 import type {
+  TaskLifecycleEventPayload,
   TaskManagerSnapshot,
+  TaskRejectedPayload,
+  TaskWaitingForLocoPayload,
 } from "./task.js";
 
 import type {
   FastClockSnapshot,
 } from "./fastClock.js";
+
+import type {
+  RouteReservationChangedPayload,
+  RouteReservationRejectedPayload,
+  RouteReservationReleasedPayload,
+  RouteReservationReleaseRejectedPayload,
+} from "./routeReservation.js";
 
 import type {
   CommandCenterInfoPayload,
@@ -259,30 +269,12 @@ export type CommandCenterInfo = {
 
 export type RouteReservationChangedMessage = {
   type: "routeReservationChanged";
-  data: {
-    busy: boolean;
-    sectionNames: string[];
-    elementIds: string[];
-    turnoutAddresses: number[];
-    fromBlockName?: string;
-    toBlockName?: string;
-  };
+  data: RouteReservationChangedPayload;
 };
 
 export type RouteReservationRejectedMessage = {
   type: "routeReservationRejected";
-  data: {
-    reason: string;
-  };
-};
-
-type TaskLifecycleEventPayload = {
-  taskId: string;
-  taskName: string;
-  fromBlockId: string;
-  toBlockId: string;
-  completedAt: number;
-  message: string;
+  data: RouteReservationRejectedPayload;
 };
 
 /**
@@ -328,31 +320,13 @@ export type ServerWsPayloadMap = {
 
   blockStateChanged: Record<string, BlockState>;
 
-  routeReservationChanged: {
-    busy: boolean;
-    sectionNames: string[];
-    elementIds: string[];
-    turnoutAddresses: number[];
-    fromBlockName?: string;
-    toBlockName?: string;
-  };
+  routeReservationChanged: RouteReservationChangedPayload;
 
-  routeReservationRejected: {
-    reason: string;
-  };
+  routeReservationRejected: RouteReservationRejectedPayload;
 
-  routeReservationReleaseRejected: {
-    reason: string;
-  };
+  routeReservationReleaseRejected: RouteReservationReleaseRejectedPayload;
 
-  routeReservationReleased: {
-    fromBlockName: string;
-    toBlockName: string;
-    releasedSectionNames: string[];
-    retainedSectionNames: string[];
-    releasedTurnoutAddresses: number[];
-    retainedTurnoutAddresses: number[];
-  };
+  routeReservationReleased: RouteReservationReleasedPayload;
 
   allRouteReservationsCleared: {};
 
@@ -363,18 +337,11 @@ export type ServerWsPayloadMap = {
   scriptDocumentChanged: ScriptDocumentDto;
   scriptStateChanged: ScriptStateDto | null;
 
-  taskRejected: {
-    reason: string;
-  };
+  taskRejected: TaskRejectedPayload;
 
   taskManagerSnapshotChanged: TaskManagerSnapshot;
 
-  taskWaitingForLoco: {
-    taskId: string;
-    taskName: string;
-    blockId: string;
-    message: string;
-  };
+  taskWaitingForLoco: TaskWaitingForLocoPayload;
 
   taskCompleted: TaskLifecycleEventPayload;
   taskCycleCompleted: TaskLifecycleEventPayload;

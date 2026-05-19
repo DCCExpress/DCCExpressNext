@@ -140,3 +140,27 @@ export type LoadTrainTasksResult =
       error: string;
       snapshot?: TaskManagerSnapshot | undefined;
     };
+
+/**
+ * Task manager szerver -> kliens domain event payloadok.
+ */
+export type TaskRejectedPayload = {
+  reason: string;
+};
+
+export type TaskWaitingForLocoPayload = {
+  taskId: string;
+  taskName: string;
+  blockId: string;
+  message: string;
+};
+
+export type TaskLifecycleEventPayload = {
+  taskId: string;
+  taskName: string;
+  fromBlockId: string;
+  toBlockId: string;
+  completedAt: number;
+  message: string;
+};
+
