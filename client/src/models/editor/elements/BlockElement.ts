@@ -68,6 +68,14 @@ export class BlockElement extends TrackElement implements IBlockElement {
         ctx.fillRect(blockX, blockY, blockW, blockH);
         ctx.strokeRect(blockX, blockY, blockW, blockH);
 
+        this.drawForwardDirectionTriangle(
+            ctx,
+            blockX,
+            blockY,
+            blockW,
+            blockH
+        );
+
         //ctx.restore();
 
         // ----------------------------------------------------
@@ -207,6 +215,14 @@ export class BlockElement extends TrackElement implements IBlockElement {
         ctx.fillRect(blockX, blockY, blockW, blockH);
         ctx.strokeRect(blockX, blockY, blockW, blockH);
 
+        this.drawForwardDirectionTriangle(
+            ctx,
+            blockX,
+            blockY,
+            blockW,
+            blockH
+        );
+
         const withReadableOverlayAt180 = (drawFn: () => void) => {
             if (this.rotation === 180) {
                 ctx.translate(this.centerX, this.centerY);
@@ -326,6 +342,58 @@ export class BlockElement extends TrackElement implements IBlockElement {
         this.endDraw(ctx);
     }
 
+    /**
+     * Kis lime háromszög a blokk rövid oldalán.
+     *
+     * A canvas a BlockElement.draw() elején már a blokk rotation értékére
+     * van elforgatva, ezért itt lokális koordinátákkal dolgozunk:
+     *   - travelDirection = forward -> jobb rövid oldal
+     *   - travelDirection = reverse -> bal rövid oldal
+     *
+     * Így forgatott blokknál is automatikusan a helyes forward irányba mutat.
+     */
+    private drawForwardDirectionTriangle(
+        ctx: CanvasRenderingContext2D,
+        blockX: number,
+        blockY: number,
+        blockW: number,
+        blockH: number
+    ): void {
+        if (this.travelDirection === "unknown") {
+            return;
+        }
+
+        const arrowLength = Math.min(8, Math.max(5, blockW * 0.12));
+        const arrowHalfHeight = Math.min(5, Math.max(3, blockH * 0.28));
+        const centerY = blockY + blockH / 2;
+        const edgePadding = 2;
+
+        const points =
+            this.travelDirection === "forward"
+                ? {
+                    tipX: blockX + blockW - edgePadding,
+                    backX: blockX + blockW - edgePadding - arrowLength,
+                }
+                : {
+                    tipX: blockX + edgePadding,
+                    backX: blockX + edgePadding + arrowLength,
+                };
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(points.tipX, centerY);
+        ctx.lineTo(points.backX, centerY - arrowHalfHeight);
+        ctx.lineTo(points.backX, centerY + arrowHalfHeight);
+        ctx.closePath();
+
+        ctx.fillStyle = "lime";
+        ctx.fill();
+
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+    }
     override getBounds(): IRect {
 
         const c = Math.ceil(this.w / 2);

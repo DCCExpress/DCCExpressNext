@@ -282,11 +282,32 @@ layoutRoutes.get("/route-graph", (_req, res) => {
     })),
 
     trackRuntime:
-      topology?.getPhysicalTrackElements().map(elem => ({
-        id: elem.id,
-        section: elem.section,
-        travelDirection: elem.travelDirection,
-      })) ?? [],
+      topology
+        ? [
+          ...topology.getPhysicalTrackElements().map(elem => ({
+            id: elem.id,
+            section: elem.section,
+            travelDirection: elem.travelDirection,
+          })),
+
+          /**
+           * A BlockElement nem része a fizikai sínbejárásnak,
+           * ezért a travelDirection runtime értékét a blokk középpontján
+           * fekvő valódi sín elemtől örökli.
+           */
+          ...topology.getBlocks().map(block => {
+            const centerTrack =
+              topology.getPhysicalTrackAt(block.pos);
+
+            return {
+              id: block.id,
+              section: centerTrack?.section ?? 0,
+              travelDirection:
+                centerTrack?.travelDirection ?? "unknown",
+            };
+          }),
+        ]
+        : [],
   };
 
   res.json(response);
