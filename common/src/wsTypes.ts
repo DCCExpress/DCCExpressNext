@@ -7,16 +7,22 @@ import type {
 } from "./domainTypes.js";
 
 import type {
+  ScriptDocumentDto,
   ScriptRunSource,
+  ScriptStateDto,
 } from "./scriptTypes.js";
+
+import type {
+  TaskManagerSnapshot,
+} from "./task.js";
+
+import type {
+  FastClockSnapshot,
+} from "./fastClock.js";
 
 /**
  * Általános, szerveroldalon és bejövő kliensüzeneteknél is
  * használható WebSocket message alap.
- *
- * A data szándékosan opcionális:
- * régebbi és szerverről érkező üzenetek között is van olyan,
- * ahol nincs értelmes payload.
  */
 export type WsMessage<T = any> = {
   type: string;
@@ -26,10 +32,7 @@ export type WsMessage<T = any> = {
 
 /**
  * Lazább kliensüzenet-alap.
- *
- * Ezt megtartjuk kompatibilitási célból, de az új wsApi.send()
- * már a ClientWsPayloadMap alapján típusosított
- * TypedClientWsMessage formát állítja elő.
+ * A konkrét, típusos küldést a TypedClientWsMessage végzi.
  */
 export type ClientWsMessage<T = any> = {
   type: string;
@@ -39,10 +42,6 @@ export type ClientWsMessage<T = any> = {
 
 /**
  * Kliens -> szerver WebSocket parancsok payload térképe.
- *
- * Ez a wsApi.send() típusalapja:
- * ha itt el van írva egy mezőnév, a kliensoldali fordítás
- * rögtön szólni fog.
  */
 export type ClientWsPayloadMap = {
   setTrackPower: {
@@ -93,11 +92,9 @@ export type ClientWsPayloadMap = {
   };
 
   setBlocksReset: {};
-
   getBlocks: {};
 
   routeLock: {};
-
   routeUnlock: {};
 
   reserveRoute: {
@@ -111,7 +108,6 @@ export type ClientWsPayloadMap = {
   };
 
   clearAllRouteReservations: {};
-
   getRouteReservations: {};
 
   runScript: {
@@ -121,7 +117,6 @@ export type ClientWsPayloadMap = {
   };
 
   stopScript: {};
-
   getScriptRuntimeState: {};
 
   startTask: {
@@ -145,9 +140,7 @@ export type ClientWsPayloadMap = {
   };
 
   finishAllTasks: {};
-
   abortAllTasks: {};
-
   getTaskRuntimeState: {};
 };
 
@@ -218,6 +211,18 @@ export type SetLocoFunctionMessage =
 export type SetTurnoutMessage =
   TypedClientWsMessage<"setTurnout">;
 
+export type SetSensorMessage =
+  TypedClientWsMessage<"setSensor">;
+
+export type ReserveRouteMessage =
+  TypedClientWsMessage<"reserveRoute">;
+
+export type ClearAllRouteReservationsMessage =
+  TypedClientWsMessage<"clearAllRouteReservations">;
+
+/**
+ * Megtartott, konkrét server event aliasok.
+ */
 export type TurnoutChangedMessage = {
   type: "turnoutChanged";
   data: {
@@ -234,29 +239,24 @@ export type AccessoryChangedMessage = {
   };
 };
 
-export type SetSensorMessage =
-  TypedClientWsMessage<"setSensor">;
-
 export type CommandCenterInfo = {
   type: "commandCenterInfo";
   data: {
-    type: string;
     alive: boolean;
-    power: boolean;
+    power?: boolean;
+    type?: string;
+    name?: string;
+    ip?: string;
+    port?: number;
   };
 };
-
-export type ReserveRouteMessage =
-  TypedClientWsMessage<"reserveRoute">;
-
-export type ClearAllRouteReservationsMessage =
-  TypedClientWsMessage<"clearAllRouteReservations">;
 
 export type RouteReservationChangedMessage = {
   type: "routeReservationChanged";
   data: {
     busy: boolean;
     sectionNames: string[];
+    elementIds: string[];
     turnoutAddresses: number[];
     fromBlockName?: string;
     toBlockName?: string;
@@ -270,17 +270,17 @@ export type RouteReservationRejectedMessage = {
   };
 };
 
+type TaskLifecycleEventPayload = {
+  taskId: string;
+  taskName: string;
+  fromBlockId: string;
+  toBlockId: string;
+  completedAt: number;
+  message: string;
+};
 
 /**
  * Szerver -> kliens WebSocket események payload térképe.
- *
- * Ez az első, óvatos közös alap:
- * - a stabil, egyszerű server eventek már pontos payloadot kapnak,
- * - a jelenleg még szerver-local DTO-kat használó eseményeknél
- *   szándékosan unknown marad a payload.
- *
- * A következő sprintben ezek közül több DTO-t is commonba lehet emelni,
- * majd a wsServer send/broadcast segédfüggvényeit erre a térképre húzni.
  */
 export type ServerWsPayloadMap = {
   "ws:welcome": {
@@ -300,12 +300,15 @@ export type ServerWsPayloadMap = {
     alive: boolean;
     power?: boolean;
     type?: string;
+    name?: string;
+    ip?: string;
+    port?: number;
   };
 
   commandCenterLockChanged: {
     locked: boolean;
     lockOwner: string | null;
-    reason?: "route" | null;
+    reason?: "route" | "task-route" | null;
   };
 
   locoState: {
@@ -322,9 +325,17 @@ export type ServerWsPayloadMap = {
     active: boolean;
   };
 
+  /**
+   * A projektben jelenleg két alak is előfordul:
+   * - simulator: on
+   * - Z21 cache rebroadcast: active
+   *
+   * A későbbi szenzor-egységesítésnél érdemes egyetlen mezőre átállni.
+   */
   sensorChanged: {
     address: number;
-    on: boolean;
+    on?: boolean;
+    active?: boolean;
   };
 
   blockStateChanged: Record<string, BlockState>;
@@ -361,26 +372,48 @@ export type ServerWsPayloadMap = {
     reason: string;
   };
 
+  scriptDocumentChanged: ScriptDocumentDto;
+  scriptStateChanged: ScriptStateDto | null;
+
   taskRejected: {
     reason: string;
   };
 
-  /**
-   * Ezek payloadja jelenleg szerveroldali DTO-kból él.
-   * A következő common-DTO sprintben pontosíthatók.
-   */
-  scriptDocumentChanged: unknown;
-  scriptStateChanged: unknown;
-  taskManagerSnapshotChanged: unknown;
-  fastClockChanged: unknown;
+  taskManagerSnapshotChanged: TaskManagerSnapshot;
 
-  /**
-   * A z21 és command center specifikus státuszcsomagokat
-   * most még nem betonozzuk be commonban.
-   */
+  taskWaitingForLoco: {
+    taskId: string;
+    taskName: string;
+    blockId: string;
+    message: string;
+  };
+
+  taskCompleted: TaskLifecycleEventPayload;
+  taskCycleCompleted: TaskLifecycleEventPayload;
+
+  fastClockChanged: FastClockSnapshot;
+
   z21SystemState: unknown;
   powerInfo: unknown;
-  rbusInfo: unknown;
+
+  rbusInfo: {
+    group: number;
+    bytes: number[];
+  };
+
+  z21SerialNumber: {
+    serialNumber: number;
+  };
+
+  z21TurnoutInfo: {
+    address: number;
+    closed: boolean;
+    valid: boolean;
+    state: string;
+    source?: string;
+    rawState?: number;
+    functionAddress?: number;
+  };
 };
 
 export type ServerWsMessageType =

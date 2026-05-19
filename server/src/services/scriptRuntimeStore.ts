@@ -12,42 +12,12 @@ import type {
 } from "../../../common/src/railway/topology.js";
 
 import type {
-    ScriptRunSource,
-    SingleScriptFile,
+    ScriptDocumentDto,
+    ScriptLogEntryDto,
+    ScriptRunContext,
+    ScriptStateDto,
+    TypedServerWsMessage,
 } from "../../../common/src/types.js";
-
-export type ScriptStatus =
-    | "idle"
-    | "running"
-    | "stopping"
-    | "stopped"
-    | "finished"
-    | "error";
-
-export type ScriptRunContext = {
-    source?: ScriptRunSource;
-    elementId?: string | null;
-};
-
-export type ScriptLogEntryDto = {
-    time: string;
-    source: ScriptRunSource;
-    message: string;
-};
-
-export type ScriptStateDto = {
-    id: string;
-    status: ScriptStatus;
-    source: ScriptRunSource;
-    startedAt?: string;
-    finishedAt?: string;
-    error?: string;
-    logs: ScriptLogEntryDto[];
-};
-
-export type ScriptDocumentDto = SingleScriptFile & {
-    autoStart: boolean;
-};
 
 export type ScriptRuntimeCommands = {
     setTrackPower(on: boolean): Promise<boolean>;
@@ -83,7 +53,7 @@ type ScriptStateListener = (
 ) => void;
 
 type BroadcastFn = (
-    message: unknown
+    message: TypedServerWsMessage
 ) => void;
 
 class ScriptStoppedError extends Error {
