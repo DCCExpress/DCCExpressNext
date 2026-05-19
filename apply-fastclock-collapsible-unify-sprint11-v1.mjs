@@ -1,4 +1,30 @@
-// client/src/components/common/FastClockCard.tsx
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = process.cwd();
+
+const FILE = path.join(
+  ROOT,
+  "client/src/components/common/FastClockCard.tsx"
+);
+
+function fail(message) {
+  throw new Error(message);
+}
+
+function ensureExisting(file) {
+  if (!fs.existsSync(file)) {
+    fail(`Hiányzó fájl: ${path.relative(ROOT, file)}`);
+  }
+}
+
+function write(file, content) {
+  fs.writeFileSync(file, content, "utf8");
+  console.log(`✓ Frissítve: ${path.relative(ROOT, file)}`);
+}
+
+const FAST_CLOCK_CARD = `// client/src/components/common/FastClockCard.tsx
 
 import {
   useEffect,
@@ -188,7 +214,7 @@ export default function FastClockCard() {
                 color="cyan"
                 variant="light"
               >
-                {snapshot ? `${snapshot.speed}×` : "-"}
+                {snapshot ? \`\${snapshot.speed}×\` : "-"}
               </Badge>
             </>
           }
@@ -293,4 +319,26 @@ export default function FastClockCard() {
       </Stack>
     </Card>
   );
+}
+`;
+
+try {
+  console.log("DCCExpressNext – FastClock collapsible unify Sprint 11 patch V1");
+  console.log("Repo gyökér:", ROOT);
+  console.log("");
+
+  ensureExisting(FILE);
+  write(FILE, FAST_CLOCK_CARD);
+
+  console.log("");
+  console.log("Kész.");
+  console.log("Nem készültek .bak fájlok.");
+  console.log("");
+  console.log("Javasolt ellenőrzés:");
+  console.log("  npm run build");
+} catch (error) {
+  console.error("");
+  console.error("PATCH HIBA:");
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
 }
