@@ -1,4 +1,36 @@
-// server/src/commandCenter/CommandCenter.ts
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = process.cwd();
+
+const FILES = {
+  commandCenter: path.join(
+    ROOT,
+    "server/src/commandCenter/CommandCenter.ts"
+  ),
+  simulator: path.join(
+    ROOT,
+    "server/src/commandCenter/simulator.ts"
+  ),
+};
+
+function fail(message) {
+  throw new Error(message);
+}
+
+function ensureExisting(file) {
+  if (!fs.existsSync(file)) {
+    fail(`Hiányzó fájl: ${path.relative(ROOT, file)}`);
+  }
+}
+
+function write(file, content) {
+  fs.writeFileSync(file, content, "utf8");
+  console.log(`✓ Frissítve: ${path.relative(ROOT, file)}`);
+}
+
+const COMMAND_CENTER = `// server/src/commandCenter/CommandCenter.ts
 
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -418,7 +450,7 @@ export abstract class CommandCenter {
       );
 
       console.log(
-        `[CommandCenter] Runtime state saved: ${this.runtimeStateFile}`
+        \`[CommandCenter] Runtime state saved: \${this.runtimeStateFile}\`
       );
     } catch (err) {
       console.error(
@@ -441,7 +473,7 @@ export abstract class CommandCenter {
 
       if (state.version !== 1) {
         console.warn(
-          `[CommandCenter] Unsupported runtime state version: ${state.version}`
+          \`[CommandCenter] Unsupported runtime state version: \${state.version}\`
         );
 
         return;
@@ -454,7 +486,7 @@ export abstract class CommandCenter {
         new Map(state.turnouts ?? []);
 
       console.log(
-        `[CommandCenter] Runtime state loaded: ${this.blocks.size} blocks, ${this.turnouts.size} turnouts`
+        \`[CommandCenter] Runtime state loaded: \${this.blocks.size} blocks, \${this.turnouts.size} turnouts\`
       );
 
       await this.runtimeStateLoadedCallback?.(
@@ -476,4 +508,343 @@ export abstract class CommandCenter {
       );
     }
   }
+}
+`;
+
+const SIMULATOR = `// server/src/commandCenter/simulator.ts
+
+import {
+  AccessoryChangedMessage,
+  LocoState,
+  SensorInfo,
+  TurnoutChangedMessage,
+  TurnoutInfo,
+  WsMessage,
+} from "../../../common/src/types.js";
+
+import {
+  CommandCenter,
+} from "./CommandCenter.js";
+
+import {
+  log,
+} from "../utility.js";
+
+import {
+  broadcastAll,
+} from "../ws/wsServer.js";
+
+export class CommandCenterSimulator extends CommandCenter {
+  alive = false;
+  aliveTask: NodeJS.Timeout | null = null;
+
+  private power = false;
+
+  start(): Promise<boolean> {
+    log("Starting command center simulator...");
+
+    this.alive = true;
+    this.power = true;
+
+    if (this.aliveTask) {
+      clearInterval(this.aliveTask);
+      this.aliveTask = null;
+    }
+
+    this.aliveTask = setInterval(() => {
+      const msg: WsMessage = {
+        type: "commandCenterInfo",
+        data: {
+          alive: this.alive,
+          power: this.power,
+          type: "simulator",
+        },
+        uuid: this.lockOwnerUUID,
+      };
+
+      broadcastAll(msg);
+    }, 1000);
+
+    return Promise.resolve(true);
+  }
+
+  stop(): Promise<boolean> {
+    log("Stopping command center simulator...");
+
+    this.alive = false;
+    this.power = false;
+
+    if (this.aliveTask) {
+      clearInterval(this.aliveTask);
+      this.aliveTask = null;
+    }
+
+    const msg: WsMessage = {
+      type: "commandCenterInfo",
+      data: {
+        alive: this.alive,
+        power: this.power,
+        type: "simulator",
+      },
+      uuid: this.lockOwnerUUID,
+    };
+
+    broadcastAll(msg);
+
+    return Promise.resolve(true);
+  }
+
+  getConnectionString(): string {
+    return "simulator://local";
+  }
+
+  clientConnected(): void {
+    // A kezdeti runtime snapshotokat a WebSocket réteg küldi ki.
+  }
+
+  setTurnout(
+    address: number,
+    closed: boolean
+  ): Promise<boolean> {
+    log("Sim: setTurnout", {
+      address,
+      closed,
+    });
+
+    const turnout =
+      this.getOrCreateTurnout(address);
+
+    turnout.closed = closed;
+
+    const msg: TurnoutChangedMessage = {
+      type: "turnoutChanged",
+      data: {
+        address,
+        closed,
+      },
+    };
+
+    broadcastAll(msg);
+
+    return Promise.resolve(true);
+  }
+
+  getTurnout(
+    address: number
+  ): Promise<TurnoutInfo | null> {
+    return Promise.resolve(
+      this.turnouts.get(address) ?? null
+    );
+  }
+
+  setLoco(
+    address: number,
+    speed: number,
+    direction: "forward" | "reverse"
+  ): Promise<boolean> {
+    const loco =
+      this.getOrCreateLoco(address);
+
+    loco.speed = speed;
+    loco.direction = direction;
+
+    broadcastAll({
+      type: "locoState",
+      data: {
+        loco,
+      },
+    });
+
+    return Promise.resolve(true);
+  }
+
+  setLocoFunction(
+    address: number,
+    fn: number,
+    active: boolean
+  ): Promise<boolean> {
+    const loco =
+      this.getOrCreateLoco(address);
+
+    loco.functions[fn] = active;
+
+    broadcastAll({
+      type: "locoState",
+      data: {
+        loco,
+      },
+    });
+
+    return Promise.resolve(true);
+  }
+
+  getLoco(
+    address: number
+  ): Promise<LocoState | null> {
+    return Promise.resolve(
+      this.getOrCreateLoco(address)
+    );
+  }
+
+  setBasicAccessory(
+    address: number,
+    active: boolean
+  ): Promise<boolean> {
+    const accessory =
+      this.getOrCreateAccessory(address);
+
+    accessory.active = active;
+
+    const msg: AccessoryChangedMessage = {
+      type: "accessoryChanged",
+      data: {
+        address,
+        active,
+      },
+    };
+
+    broadcastAll(msg);
+
+    return Promise.resolve(true);
+  }
+
+  setTrackPower(
+    on: boolean
+  ): Promise<boolean> {
+    this.power = on;
+    this.powerInfo.trackVoltageOn = on;
+    this.powerInfo.emergencyStop = false;
+
+    const powerInfo = {
+      emergencyStop: false,
+      trackVoltageOff: !on,
+      trackVoltageOn: on,
+      shortCircuit: false,
+      programmingModeActive: false,
+    };
+
+    const state = {
+      alive: this.alive,
+      power: this.power,
+      type: "simulator",
+      trackPower: on,
+      powerInfo,
+    };
+
+    broadcastAll({
+      type: "z21SystemState",
+      data: state,
+    });
+
+    broadcastAll({
+      type: "powerInfo",
+      data: powerInfo,
+    });
+
+    broadcastAll({
+      type: "commandCenterInfo",
+      data: {
+        alive: this.alive,
+        power: this.power,
+        type: "simulator",
+      },
+      uuid: this.lockOwnerUUID,
+    } as WsMessage);
+
+    return Promise.resolve(true);
+  }
+
+  emergencyStop(): Promise<boolean> {
+    log("Sim: emergencyStop");
+
+    this.powerInfo.emergencyStop = true;
+
+    for (const loco of this.locos.values()) {
+      if (loco.speed === 0) {
+        continue;
+      }
+
+      loco.speed = 0;
+
+      broadcastAll({
+        type: "locoState",
+        data: {
+          loco,
+        },
+      });
+    }
+
+    const powerInfo = {
+      emergencyStop: true,
+      trackVoltageOff: !this.power,
+      trackVoltageOn: this.power,
+      shortCircuit: false,
+      programmingModeActive: false,
+    };
+
+    broadcastAll({
+      type: "powerInfo",
+      data: powerInfo,
+    });
+
+    return Promise.resolve(true);
+  }
+
+  setSensor(
+    address: number,
+    on: boolean
+  ): Promise<boolean> {
+    log("Sim: setSensor", {
+      address,
+      on,
+    });
+
+    this.sensors.set(address, {
+      address,
+      active: on,
+    });
+
+    broadcastAll({
+      type: "sensorChanged",
+      data: {
+        address,
+        on,
+      },
+    });
+
+    return Promise.resolve(true);
+  }
+
+  getSensor(
+    address: number
+  ): Promise<SensorInfo | null> {
+    return Promise.resolve(
+      this.sensors.get(address) ?? null
+    );
+  }
+}
+`;
+
+try {
+  console.log("DCCExpressNext – CommandCenter + Simulator cleanup Sprint 8 patch V1");
+  console.log("Repo gyökér:", ROOT);
+  console.log("");
+
+  ensureExisting(FILES.commandCenter);
+  ensureExisting(FILES.simulator);
+
+  write(FILES.commandCenter, COMMAND_CENTER);
+  write(FILES.simulator, SIMULATOR);
+
+  console.log("");
+  console.log("Kész.");
+  console.log("Nem készültek .bak fájlok.");
+  console.log("");
+  console.log("Javasolt ellenőrzés:");
+  console.log("  npm run build");
+} catch (error) {
+  console.error("");
+  console.error("PATCH HIBA:");
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
 }

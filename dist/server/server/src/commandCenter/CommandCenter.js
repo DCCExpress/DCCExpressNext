@@ -1,10 +1,11 @@
-import { readLocos } from "../routes/locoRoutes.js";
-import { log } from "../utility.js";
-import { onLocosChanged } from "../services/locoChangeNotifier.js";
-import { broadcastAll } from "../ws/wsServer.js";
-import { dataDir } from "../paths.js";
-import path from "path/win32";
+// server/src/commandCenter/CommandCenter.ts
+import path from "node:path";
 import fs from "node:fs/promises";
+import { readLocos, } from "../routes/locoRoutes.js";
+import { log, } from "../utility.js";
+import { onLocosChanged, } from "../services/locoChangeNotifier.js";
+import { broadcastAll, } from "../ws/wsServer.js";
+import { dataDir, } from "../paths.js";
 export class CommandCenter {
     static activeInstance = null;
     name;
@@ -26,11 +27,13 @@ export class CommandCenter {
         this.name = name;
         CommandCenter.activeInstance = this;
         onLocosChanged(async () => {
-            const llocos = await readLocos();
-            this.setLocos(llocos);
-            await this.loadRuntimeState().then(() => {
+            const locos = await readLocos();
+            this.setLocos(locos);
+            await this.loadRuntimeState()
+                .then(() => {
                 log("Runtime state loaded successfully after loco change");
-            }).catch(err => {
+            })
+                .catch(err => {
                 log("Failed to load runtime state after loco change:", err);
             });
         });
@@ -38,9 +41,9 @@ export class CommandCenter {
     static getActive() {
         return CommandCenter.activeInstance;
     }
-    setLocos(llocos) {
+    setLocos(locos) {
         this.locos.clear();
-        for (const loco of llocos) {
+        for (const loco of locos) {
             this.locos.set(loco.address, {
                 ...loco,
                 speed: 0,
@@ -54,49 +57,60 @@ export class CommandCenter {
         for (const block of blocks) {
             this.blocks.set(block.blockId.toString(), block);
         }
-        this.saveRuntimeState();
+        void this.saveRuntimeState();
     }
     setBlock(block) {
-        for (const [b, v] of this.blocks) {
-            if (v.locoId === block.locoId) {
-                v.locoId = null;
-                this.blocks.set(b, v);
+        for (const [blockId, state] of this.blocks) {
+            if (state.locoId === block.locoId) {
+                state.locoId = null;
+                this.blocks.set(blockId, state);
             }
         }
         this.blocks.set(block.blockId, block);
-        const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
-        broadcastAll(data);
-        this.saveRuntimeState();
-    }
-    setBlockRemove(b) {
-        log("setBlockRemove", b);
-        const block = this.blocks.get(b.blockId);
-        if (block && block.locoId === b.locoId) {
-            block.locoId = null;
-            this.blocks.set(block.blockId, block);
-        }
-        const data = {
+        broadcastAll({
             type: "blockStateChanged",
             data: Object.fromEntries(this.blocks),
             uuid: null,
-        };
-        broadcastAll(data);
-        this.saveRuntimeState();
+        });
+        void this.saveRuntimeState();
+    }
+    setBlockRemove(blockState) {
+        log("setBlockRemove", blockState);
+        const block = this.blocks.get(blockState.blockId);
+        if (block &&
+            block.locoId === blockState.locoId) {
+            block.locoId = null;
+            this.blocks.set(block.blockId, block);
+        }
+        broadcastAll({
+            type: "blockStateChanged",
+            data: Object.fromEntries(this.blocks),
+            uuid: null,
+        });
+        void this.saveRuntimeState();
     }
     setBlocksReset() {
-        for (const [b, v] of this.blocks) {
-            v.locoId = null;
-            this.blocks.set(b, v);
+        for (const [blockId, block] of this.blocks) {
+            block.locoId = null;
+            this.blocks.set(blockId, block);
         }
-        const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
-        broadcastAll(data);
+        broadcastAll({
+            type: "blockStateChanged",
+            data: Object.fromEntries(this.blocks),
+            uuid: null,
+        });
     }
     getBlocks() {
-        this.loadRuntimeState().then(() => {
+        this.loadRuntimeState()
+            .then(() => {
             log("GET BLOCKS:", this.blocks);
-            const data = { type: "blockStateChanged", data: Object.fromEntries(this.blocks), uuid: null };
-            broadcastAll(data);
-        }).catch(err => {
+            broadcastAll({
+                type: "blockStateChanged",
+                data: Object.fromEntries(this.blocks),
+                uuid: null,
+            });
+        })
+            .catch(err => {
             log("Failed to load runtime state in getBlocks:", err);
         });
     }
@@ -149,7 +163,7 @@ export class CommandCenter {
         let accessory = this.accessories.get(address);
         if (!accessory) {
             accessory = {
-                address: address,
+                address,
                 active: false,
             };
             this.accessories.set(address, accessory);
@@ -162,18 +176,18 @@ export class CommandCenter {
     getTurnouts() {
         return Array.from(this.turnouts.values());
     }
-    // Ha csatlakozott a commandcenter a 
-    // locos layout belvasása és lekérni az állapotokat
+    /**
+     * Command center indulásakor a felvett mozdonyok aktuális
+     * állapotát is bekérjük az implementációtól.
+     */
     async init() {
         log("========================================");
         log("COMMANDCENTER INIT");
         log("========================================");
         const locos = await readLocos();
-        if (locos) {
-            for (const loco of locos) {
-                log("getLoco:", loco.address);
-                this.getLoco(loco.address);
-            }
+        for (const loco of locos) {
+            log("getLoco:", loco.address);
+            void this.getLoco(loco.address);
         }
     }
     runtimeStateLoadedCallback;
@@ -207,8 +221,10 @@ export class CommandCenter {
                 console.warn(`[CommandCenter] Unsupported runtime state version: ${state.version}`);
                 return;
             }
-            this.blocks = new Map(state.blocks ?? []);
-            this.turnouts = new Map(state.turnouts ?? []);
+            this.blocks =
+                new Map(state.blocks ?? []);
+            this.turnouts =
+                new Map(state.turnouts ?? []);
             console.log(`[CommandCenter] Runtime state loaded: ${this.blocks.size} blocks, ${this.turnouts.size} turnouts`);
             await this.runtimeStateLoadedCallback?.(this.blocks, this.turnouts);
         }

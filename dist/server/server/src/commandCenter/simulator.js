@@ -1,16 +1,19 @@
-import { CommandCenter } from "./CommandCenter.js";
-import { log } from "../utility.js";
-import { broadcastAll } from "../ws/wsServer.js";
+// server/src/commandCenter/simulator.ts
+import { CommandCenter, } from "./CommandCenter.js";
+import { log, } from "../utility.js";
+import { broadcastAll, } from "../ws/wsServer.js";
 export class CommandCenterSimulator extends CommandCenter {
-    getSystemState() {
-        throw new Error("Method not implemented.");
-    }
     alive = false;
     aliveTask = null;
+    power = false;
     start() {
         log("Starting command center simulator...");
         this.alive = true;
         this.power = true;
+        if (this.aliveTask) {
+            clearInterval(this.aliveTask);
+            this.aliveTask = null;
+        }
         this.aliveTask = setInterval(() => {
             const msg = {
                 type: "commandCenterInfo",
@@ -19,7 +22,7 @@ export class CommandCenterSimulator extends CommandCenter {
                     power: this.power,
                     type: "simulator",
                 },
-                uuid: this.lockOwnerUUID
+                uuid: this.lockOwnerUUID,
             };
             broadcastAll(msg);
         }, 1000);
@@ -32,27 +35,30 @@ export class CommandCenterSimulator extends CommandCenter {
         if (this.aliveTask) {
             clearInterval(this.aliveTask);
             this.aliveTask = null;
-            const msg = {
-                type: "commandCenterInfo",
-                data: {
-                    alive: this.alive,
-                    power: this.power,
-                    type: "simulator",
-                },
-                uuid: this.lockOwnerUUID
-            };
-            broadcastAll(msg);
         }
+        const msg = {
+            type: "commandCenterInfo",
+            data: {
+                alive: this.alive,
+                power: this.power,
+                type: "simulator",
+            },
+            uuid: this.lockOwnerUUID,
+        };
+        broadcastAll(msg);
         return Promise.resolve(true);
     }
     getConnectionString() {
-        throw new Error("Method not implemented.");
+        return "simulator://local";
     }
     clientConnected() {
-        //throw new Error("Method not implemented.");
+        // A kezdeti runtime snapshotokat a WebSocket réteg küldi ki.
     }
     setTurnout(address, closed) {
-        console.log("Sim: setTurnout", { address, closed });
+        log("Sim: setTurnout", {
+            address,
+            closed,
+        });
         const turnout = this.getOrCreateTurnout(address);
         turnout.closed = closed;
         const msg = {
@@ -66,7 +72,7 @@ export class CommandCenterSimulator extends CommandCenter {
         return Promise.resolve(true);
     }
     getTurnout(address) {
-        throw new Error("Method not implemented.");
+        return Promise.resolve(this.turnouts.get(address) ?? null);
     }
     setLoco(address, speed, direction) {
         const loco = this.getOrCreateLoco(address);
@@ -74,7 +80,9 @@ export class CommandCenterSimulator extends CommandCenter {
         loco.direction = direction;
         broadcastAll({
             type: "locoState",
-            data: { loco },
+            data: {
+                loco,
+            },
         });
         return Promise.resolve(true);
     }
@@ -82,15 +90,17 @@ export class CommandCenterSimulator extends CommandCenter {
         const loco = this.getOrCreateLoco(address);
         loco.functions[fn] = active;
         broadcastAll({
-            type: "locoState", data: { loco },
+            type: "locoState",
+            data: {
+                loco,
+            },
         });
         return Promise.resolve(true);
     }
     getLoco(address) {
-        return Promise.resolve(this.getOrCreateLoco(address) ?? null);
+        return Promise.resolve(this.getOrCreateLoco(address));
     }
     setBasicAccessory(address, active) {
-        //log("Sim: setBasicAccessory", { address, active });
         const accessory = this.getOrCreateAccessory(address);
         accessory.active = active;
         const msg = {
@@ -104,28 +114,75 @@ export class CommandCenterSimulator extends CommandCenter {
         return Promise.resolve(true);
     }
     setTrackPower(on) {
+        this.power = on;
+        this.powerInfo.trackVoltageOn = on;
+        this.powerInfo.emergencyStop = false;
+        const powerInfo = {
+            emergencyStop: false,
+            trackVoltageOff: !on,
+            trackVoltageOn: on,
+            shortCircuit: false,
+            programmingModeActive: false,
+        };
         const state = {
             alive: this.alive,
-            power: on,
+            power: this.power,
             type: "simulator",
             trackPower: on,
-            powerInfo: {
-                emergencyStop: false,
-                trackVoltageOff: !on,
-                trackVoltageOn: on,
-                shortCircuit: false,
-                programmingModeActive: false
-            },
+            powerInfo,
         };
-        broadcastAll({ "type": "z21SystemState", "data": state });
-        broadcastAll({ "type": "powerInfo", "data": state.powerInfo });
+        broadcastAll({
+            type: "z21SystemState",
+            data: state,
+        });
+        broadcastAll({
+            type: "powerInfo",
+            data: powerInfo,
+        });
+        broadcastAll({
+            type: "commandCenterInfo",
+            data: {
+                alive: this.alive,
+                power: this.power,
+                type: "simulator",
+            },
+            uuid: this.lockOwnerUUID,
+        });
         return Promise.resolve(true);
     }
     emergencyStop() {
-        throw new Error("Method not implemented.");
+        log("Sim: emergencyStop");
+        this.powerInfo.emergencyStop = true;
+        for (const loco of this.locos.values()) {
+            if (loco.speed === 0) {
+                continue;
+            }
+            loco.speed = 0;
+            broadcastAll({
+                type: "locoState",
+                data: {
+                    loco,
+                },
+            });
+        }
+        const powerInfo = {
+            emergencyStop: true,
+            trackVoltageOff: !this.power,
+            trackVoltageOn: this.power,
+            shortCircuit: false,
+            programmingModeActive: false,
+        };
+        broadcastAll({
+            type: "powerInfo",
+            data: powerInfo,
+        });
+        return Promise.resolve(true);
     }
     setSensor(address, on) {
-        log("Sim: setSensor", { address, on });
+        log("Sim: setSensor", {
+            address,
+            on,
+        });
         this.sensors.set(address, {
             address,
             active: on,
@@ -141,116 +198,5 @@ export class CommandCenterSimulator extends CommandCenter {
     }
     getSensor(address) {
         return Promise.resolve(this.sensors.get(address) ?? null);
-    }
-    power = false;
-    sensorTimer = null;
-    //   constructor(private broadcaster: BroadcastFn) {}
-    // start() {
-    //   this.broadcastInfo();
-    //   this.sensorTimer = setInterval(() => {
-    //     this.randomSensorTick();
-    //   }, 5000);
-    // }
-    // stop() {
-    //   if (this.sensorTimer) {
-    //     clearInterval(this.sensorTimer);
-    //     this.sensorTimer = null;
-    //   }
-    // }
-    sendInitialState() {
-        this.broadcastInfo();
-        for (const [address, loco] of this.locos.entries()) {
-            this.emit("locoChanged", {
-                address,
-                speed: loco.speed,
-                direction: loco.direction,
-                functions: loco.functions,
-            });
-            //   for (const [fn, active] of Object.entries(loco.functions)) {
-            //     this.emit("locoFunctionChanged", {
-            //       locoId: `sim-${address}`,
-            //       address,
-            //       functionNumber: Number(fn),
-            //       active,
-            //     });
-            //   }
-        }
-        for (const [address, closed] of this.turnouts.entries()) {
-            this.emit("turnoutChanged", { address, closed });
-        }
-        for (const [address, on] of this.sensors.entries()) {
-            this.emit("sensorChanged", { address, on });
-        }
-    }
-    // private handleSetLoco(msg: SetLocoMessage) {
-    //   const loco = this.getOrCreateLoco(msg.data.address);
-    //   loco.speed = msg.data.speed;
-    //   loco.direction = msg.data.direction;
-    //   this.emit("locoChanged", {
-    //     address: msg.data.address,
-    //     speed: msg.data.speed,
-    //     direction: msg.data.direction,
-    //   });
-    // }
-    // private handleSetLocoFunction(msg: SetLocoFunctionMessage) {
-    //   //const loco = this.getOrCreateLoco(msg.data.fn);
-    //   //loco.functions[data.functionNumber] = msg.data.on;
-    //   // this.emit("locoFunctionChanged", {
-    //   //   locoId: data.locoId,
-    //   //   address: data.address,
-    //   //   functionNumber: data.functionNumber,
-    //   //   active: data.active,
-    //   //   momentary: data.momentary,
-    //   // });
-    //   // if (data.momentary && data.active) {
-    //   //   setTimeout(() => {
-    //   //     loco.functions[data.functionNumber] = false;
-    //   //     this.emit("locoFunctionChanged", {
-    //   //       locoId: data.locoId,
-    //   //       address: data.address,
-    //   //       functionNumber: data.functionNumber,
-    //   //       active: false,
-    //   //       momentary: true,
-    //   //     });
-    //   //   }, 500);
-    //   // }
-    // }
-    // private getOrCreateLoco(address: number): LocoState {
-    //   let loco = this.locos.get(address);
-    //   if (!loco) {
-    //     loco = {
-    //       address,
-    //       speed: 0,
-    //       direction: "forward",
-    //       functions: {},
-    //     };
-    //     this.locos.set(address, loco);
-    //   }
-    //   return loco!;
-    // }
-    randomSensorTick() {
-        if (!this.power)
-            return;
-        const address = Math.floor(Math.random() * 8) + 1;
-        const current = this.sensors.get(address) ?? false;
-        const next = !current;
-        //this.sensors.set(address, next);
-        // this.emit("sensorChanged", {
-        //   address,
-        //   on: next,
-        // });
-    }
-    broadcastInfo() {
-        // this.emit("commandCenterInfo", {
-        //   alive: this.alive,
-        //   power: this.power,
-        //   type: "simulator",
-        // });
-    }
-    emit(t, data) {
-        //     type: K,
-        //     data: ServerToClientEvents[K]
-        //   ) {
-        //     this.broadcaster(type, data);
     }
 }
