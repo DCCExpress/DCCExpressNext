@@ -15,3 +15,4 @@
 export * from "./domainTypes.js";
 export * from "./scriptTypes.js";
 export * from "./wsTypes.js";
+export * from "./commandCenterTelemetry.js";

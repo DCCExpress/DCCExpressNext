@@ -1,11 +1,14 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { wsClient } from "../services/wsClient";
 
-type CommandCenterLockState = {
-  locked: boolean;
-  lockOwner?: string | null;
-  reason?: string | null;
-};
+import type {
+  CommandCenterLockChangedPayload,
+  WsPowerInfoPayload as PowerInfo,
+  Z21SystemStatePayload as Z21SystemState,
+} from "../../../common/src/types";
+
+type CommandCenterLockState =
+  CommandCenterLockChangedPayload;
 
 type CommandCenterInfoState = {
   alive: boolean;
@@ -13,45 +16,6 @@ type CommandCenterInfoState = {
   name?: string | null;
   ip?: string | null;
   port?: number | null;
-};
-
-type PowerInfo = {
-  emergencyStop: boolean;
-  trackVoltageOn: boolean;
-  trackVoltageOff: boolean;
-  shortCircuit: boolean;
-  programmingModeActive: boolean;
-};
-
-type Z21SystemState = {
-  mainCurrentMa: number;
-  progCurrentMa: number;
-  filteredMainCurrentMa: number;
-  temperatureC: number;
-  supplyVoltageMv: number;
-  vccVoltageMv: number;
-  centralState: number;
-  centralStateEx: number;
-  reserved: number;
-  capabilities: number;
-
-  powerInfo: PowerInfo;
-
-  flags: {
-    highTemperature: boolean;
-    powerLost: boolean;
-    shortCircuitExternal: boolean;
-    shortCircuitInternal: boolean;
-    rcn213: boolean;
-
-    capDcc: boolean;
-    capMm: boolean;
-    capRailCom: boolean;
-    capLocoCmds: boolean;
-    capAccessoryCmds: boolean;
-    capDetectorCmds: boolean;
-    capNeedsUnlockCode: boolean;
-  };
 };
 
 type CommandCenterContextValue = {

@@ -1,4 +1,4 @@
-import { CommandCenter } from "./CommandCenter.js";
+import { CommandCenter, } from "./CommandCenter.js";
 import { log, logError } from "../utility.js";
 import { UdpClient, bufferToHex } from "./udpClient.js";
 const LAN_X_HEADER = 0x0040;
@@ -134,7 +134,7 @@ export class Z21CommandCenter extends CommandCenter {
         for (const sensor of this.sensors.values()) {
             this.broadcastWs("sensorChanged", {
                 address: sensor.address,
-                active: sensor.active,
+                on: sensor.active,
             });
         }
         for (const [group, bytes] of this.rbusGroups.entries()) {

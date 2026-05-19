@@ -33,21 +33,6 @@ import {
   dataDir,
 } from "../paths.js";
 
-export type RBusInfo = {
-  group: number;
-  bytes: number[];
-};
-
-export type RBusSensorInfo = {
-  address: number;
-  moduleAddress: number;
-  input: number;
-  on: boolean;
-  group: number;
-  byteIndex: number;
-  bitIndex: number;
-};
-
 type PersistedCommandCenterState = {
   version: 1;
   savedAt: string;

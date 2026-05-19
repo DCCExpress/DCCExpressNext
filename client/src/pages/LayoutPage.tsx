@@ -589,7 +589,7 @@ export default function LayoutPage({ onGoHome }: LayoutPageProps) {
 
             if (sensor.address === data.address) {
               sensor.on =
-              data.on ?? data.active ?? false;
+              data.on;
               changed = true;
             }
           }

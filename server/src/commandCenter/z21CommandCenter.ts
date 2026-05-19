@@ -1,7 +1,5 @@
 import {
     CommandCenter,
-    RBusInfo,
-    RBusSensorInfo
 } from "./CommandCenter.js";
 
 import { log, logError } from "../utility.js";
@@ -9,11 +7,14 @@ import { UdpClient, bufferToHex, type UdpMessage } from "./udpClient.js";
 import type {
     AccessoryInfo,
     LocoState,
+    RBusInfo,
+    RBusSensorInfo,
     SensorInfo,
     ServerWsMessageType,
     ServerWsPayloadMap,
     TurnoutInfo,
     TypedServerWsMessage,
+    Z21SystemStatePayload,
 } from "../../../common/src/types.js";
 
 const LAN_X_HEADER = 0x0040;
@@ -52,42 +53,8 @@ type WsBroadcaster = (
     message: TypedServerWsMessage
 ) => void;
 
-export type Z21SystemState = {
-    mainCurrentMa: number;
-    progCurrentMa: number;
-    filteredMainCurrentMa: number;
-    temperatureC: number;
-    supplyVoltageMv: number;
-    vccVoltageMv: number;
-    centralState: number;
-    centralStateEx: number;
-    reserved: number;
-    capabilities: number;
-
-    powerInfo: {
-        emergencyStop: boolean;
-        trackVoltageOn: boolean;
-        trackVoltageOff: boolean;
-        shortCircuit: boolean;
-        programmingModeActive: boolean;
-    };
-
-    flags: {
-        highTemperature: boolean;
-        powerLost: boolean;
-        shortCircuitExternal: boolean;
-        shortCircuitInternal: boolean;
-        rcn213: boolean;
-
-        capDcc: boolean;
-        capMm: boolean;
-        capRailCom: boolean;
-        capLocoCmds: boolean;
-        capAccessoryCmds: boolean;
-        capDetectorCmds: boolean;
-        capNeedsUnlockCode: boolean;
-    };
-};
+export type Z21SystemState =
+    Z21SystemStatePayload;
 
 export class Z21CommandCenter extends CommandCenter {
     ip: string = "";
@@ -238,7 +205,7 @@ export class Z21CommandCenter extends CommandCenter {
         for (const sensor of this.sensors.values()) {
             this.broadcastWs("sensorChanged", {
                 address: sensor.address,
-                active: sensor.active,
+                on: sensor.active,
             });
         }
 

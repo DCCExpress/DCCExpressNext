@@ -20,6 +20,19 @@ import type {
   FastClockSnapshot,
 } from "./fastClock.js";
 
+import type {
+  CommandCenterInfoPayload,
+  CommandCenterLockChangedPayload,
+  CommandRejectedPayload,
+  RBusInfo,
+  RBusSensorInfo,
+  WsPowerInfoPayload,
+  Z21AccessoryInfoPayload,
+  Z21SerialNumberPayload,
+  Z21SystemStatePayload,
+  Z21TurnoutInfoPayload,
+} from "./commandCenterTelemetry.js";
+
 /**
  * Általános, szerveroldalon és bejövő kliensüzeneteknél is
  * használható WebSocket message alap.
@@ -241,14 +254,7 @@ export type AccessoryChangedMessage = {
 
 export type CommandCenterInfo = {
   type: "commandCenterInfo";
-  data: {
-    alive: boolean;
-    power?: boolean;
-    type?: string;
-    name?: string;
-    ip?: string;
-    port?: number;
-  };
+  data: CommandCenterInfoPayload;
 };
 
 export type RouteReservationChangedMessage = {
@@ -279,45 +285,6 @@ type TaskLifecycleEventPayload = {
   message: string;
 };
 
-export type WsPowerInfoPayload = {
-  emergencyStop: boolean;
-  trackVoltageOn: boolean;
-  trackVoltageOff: boolean;
-  shortCircuit: boolean;
-  programmingModeActive: boolean;
-};
-
-export type Z21SystemStatePayload = {
-  mainCurrentMa: number;
-  progCurrentMa: number;
-  filteredMainCurrentMa: number;
-  temperatureC: number;
-  supplyVoltageMv: number;
-  vccVoltageMv: number;
-  centralState: number;
-  centralStateEx: number;
-  reserved: number;
-  capabilities: number;
-
-  powerInfo: WsPowerInfoPayload;
-
-  flags: {
-    highTemperature: boolean;
-    powerLost: boolean;
-    shortCircuitExternal: boolean;
-    shortCircuitInternal: boolean;
-    rcn213: boolean;
-
-    capDcc: boolean;
-    capMm: boolean;
-    capRailCom: boolean;
-    capLocoCmds: boolean;
-    capAccessoryCmds: boolean;
-    capDetectorCmds: boolean;
-    capNeedsUnlockCode: boolean;
-  };
-};
-
 /**
  * Szerver -> kliens WebSocket események payload térképe.
  */
@@ -330,25 +297,11 @@ export type ServerWsPayloadMap = {
     message: string;
   };
 
-  commandRejected: {
-    reason: string;
-    lockOwner: string | null;
-  };
+  commandRejected: CommandRejectedPayload;
 
-  commandCenterInfo: {
-    alive: boolean;
-    power?: boolean;
-    type?: string;
-    name?: string;
-    ip?: string;
-    port?: number;
-  };
+  commandCenterInfo: CommandCenterInfoPayload;
 
-  commandCenterLockChanged: {
-    locked: boolean;
-    lockOwner: string | null;
-    reason?: "route" | "task-route" | null;
-  };
+  commandCenterLockChanged: CommandCenterLockChangedPayload;
 
   locoState: {
     loco: LocoState;
@@ -365,16 +318,12 @@ export type ServerWsPayloadMap = {
   };
 
   /**
-   * A projektben jelenleg két alak is előfordul:
-   * - simulator: on
-   * - Z21 cache rebroadcast: active
-   *
-   * A későbbi szenzor-egységesítésnél érdemes egyetlen mezőre átállni.
+   * Egységes szerver -> kliens szenzor esemény.
+   * A külső WS contractban minden command center `on` mezőt használ.
    */
   sensorChanged: {
     address: number;
-    on?: boolean;
-    active?: boolean;
+    on: boolean;
   };
 
   blockStateChanged: Record<string, BlockState>;
@@ -435,39 +384,15 @@ export type ServerWsPayloadMap = {
   z21SystemState: Z21SystemStatePayload;
   powerInfo: WsPowerInfoPayload;
 
-  rbusInfo: {
-    group: number;
-    bytes: number[];
-  };
+  rbusInfo: RBusInfo;
 
-  z21SerialNumber: {
-    serialNumber: number;
-  };
+  z21SerialNumber: Z21SerialNumberPayload;
 
-  z21TurnoutInfo: {
-    address: number;
-    closed: boolean;
-    valid: boolean;
-    state: string;
-    source?: string;
-    rawState?: number;
-    functionAddress?: number;
-  };
+  z21TurnoutInfo: Z21TurnoutInfoPayload;
 
-  z21AccessoryInfo: {
-    address: number;
-    active: boolean;
-  };
+  z21AccessoryInfo: Z21AccessoryInfoPayload;
 
-  rbusSensorChanged: {
-    address: number;
-    moduleAddress: number;
-    input: number;
-    on: boolean;
-    group: number;
-    byteIndex: number;
-    bitIndex: number;
-  };
+  rbusSensorChanged: RBusSensorInfo;
 };
 
 export type ServerWsMessageType =
