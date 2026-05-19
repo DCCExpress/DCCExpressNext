@@ -526,6 +526,19 @@ export default function TaskManagerDialog({
             );
         }
 
+        if (task.runtime.simulation.phase === "waitingForBlockSensor") {
+            const sensorAddress =
+                task.runtime.simulation.waitingSensorAddress;
+
+            return (
+                <Badge color="yellow" variant="light">
+                    {sensorAddress && sensorAddress > 0
+                        ? `Waiting sensor #${sensorAddress}`
+                        : "Waiting next block free"}
+                </Badge>
+            );
+        }
+
         if (task.runtime.inTransit) {
             return (
                 <Badge color="red" variant="light">
@@ -769,6 +782,7 @@ export default function TaskManagerDialog({
 
         const routeStepDone =
             simulation.phase === "departing" ||
+            simulation.phase === "waitingForBlockSensor" ||
             simulation.phase === "transit";
 
         const routeStepActive =
@@ -795,6 +809,39 @@ export default function TaskManagerDialog({
 
         for (let legIndex = 0; legIndex < legs.length; legIndex++) {
             const leg = legs[legIndex]!;
+
+            const waitingForBlockSensorActive =
+                simulation.legIndex === legIndex &&
+                simulation.phase === "waitingForBlockSensor";
+
+            const targetBlockGuardDone =
+                simulation.legIndex > legIndex ||
+                (
+                    simulation.legIndex === legIndex &&
+                    (
+                        simulation.phase === "departing" ||
+                        simulation.phase === "transit"
+                    )
+                );
+
+            steps.push({
+                key: `guard-${leg.from.id}-${leg.to.id}`,
+                title: `${leg.to.name} blokk szabad jelzésére vár`,
+                description:
+                    waitingForBlockSensorActive
+                        ? simulation.waitingSensorAddress && simulation.waitingSensorAddress > 0
+                            ? `Ütközésvédelem: a következő blokk foglalt. A task a(z) #${simulation.waitingSensorAddress} szenzor felszabadulására vár.`
+                            : "Ütközésvédelem: a következő blokk foglalt. A task a blokk felszabadulására vár."
+                        : targetBlockGuardDone
+                            ? "A célblokk szabad, az indulás engedélyezett."
+                            : "Ez a lépés még hátravan.",
+                state:
+                    waitingForBlockSensorActive
+                        ? "active"
+                        : targetBlockGuardDone
+                            ? "done"
+                            : "upcoming",
+            });
 
             const departureDone =
                 simulation.legIndex > legIndex ||

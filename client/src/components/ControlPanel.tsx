@@ -522,6 +522,14 @@ function ControllerTab() {
         return "Mozdonyra vár";
       case "waitingForRoute":
         return "Útvonal foglalására vár";
+      case "waitingForBlockSensor": {
+        const sensorAddress =
+          task.runtime.simulation.waitingSensorAddress;
+
+        return sensorAddress && sensorAddress > 0
+          ? `Sensor #${sensorAddress} felszabadulására vár`
+          : "A következő blokk felszabadulására vár";
+      }
       case "departing":
         return "Indulási szakasz";
       case "transit":
@@ -550,6 +558,10 @@ function ControllerTab() {
     }
   }
   function getProgressColor(task: TrainTask): string {
+    if (task.runtime.simulation.phase === "waitingForBlockSensor") {
+      return "yellow";
+    }
+
     if (task.status === "completed") {
       return "blue";
     }

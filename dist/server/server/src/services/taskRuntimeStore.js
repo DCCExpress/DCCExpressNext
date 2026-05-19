@@ -22,6 +22,7 @@ class TaskRuntimeStore {
             params.getSimulatorCommandCenter;
         trainSimulatorRuntimeStore.configure({
             getTasks: () => this.tasks.map(cloneTask),
+            getBlockState: (blockId) => params.getBlockState(blockId),
             tryResolveTaskLoco: (taskId) => {
                 return this.tryResolveTaskLoco(taskId);
             },
@@ -207,6 +208,7 @@ class TaskRuntimeStore {
             fromBlockName: task.transition.fromBlock.name,
             toBlockId: null,
             toBlockName: null,
+            waitingSensorAddress: null,
         };
         /**
          * Ha már most van mozdony az induló blokkban,
@@ -426,12 +428,15 @@ class TaskRuntimeStore {
             previous.fromBlockId !== progress.fromBlockId ||
             previous.fromBlockName !== progress.fromBlockName ||
             previous.toBlockId !== progress.toBlockId ||
-            previous.toBlockName !== progress.toBlockName;
+            previous.toBlockName !== progress.toBlockName ||
+            (previous.waitingSensorAddress ?? null) !==
+                (progress.waitingSensorAddress ?? null);
         if (!changed) {
             return this.actionOk();
         }
         task.runtime.simulation = {
             ...progress,
+            waitingSensorAddress: progress.waitingSensorAddress ?? null,
         };
         this.broadcastSnapshot();
         return this.actionOk();
@@ -636,6 +641,7 @@ class TaskRuntimeStore {
                 fromBlockName: null,
                 toBlockId: null,
                 toBlockName: null,
+                waitingSensorAddress: null,
             },
         };
     }
@@ -700,6 +706,7 @@ class TaskRuntimeStore {
             fromBlockName: task.transition.fromBlock.name,
             toBlockId: task.toBlockId,
             toBlockName: task.transition.toBlock.name,
+            waitingSensorAddress: null,
         });
     }
     releaseTaskRoute(taskId) {

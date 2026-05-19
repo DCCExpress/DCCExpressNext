@@ -25,6 +25,7 @@ export type TrainTaskSimulationPhase =
   | "idle"
   | "waitingForLoco"
   | "waitingForRoute"
+  | "waitingForBlockSensor"
   | "departing"
   | "transit";
 
@@ -47,6 +48,12 @@ export type TrainTaskSimulationProgress = {
 
   toBlockId: string | null;
   toBlockName: string | null;
+
+  /**
+   * Ütközésvédelemnél megmutatjuk,
+   * melyik foglaltsági szenzor felszabadulására vár a task.
+   */
+  waitingSensorAddress?: number | null;
 };
 
 export type TrainTaskRuntimeState = {

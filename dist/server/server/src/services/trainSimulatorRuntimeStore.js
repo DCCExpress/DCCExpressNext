@@ -188,6 +188,57 @@ class TrainSimulatorRuntimeStore {
             return;
         }
         /**
+         * Ütközésvédelem:
+         * mielőtt a mozdony elhagyná az aktuális blokkot,
+         * megnézzük, hogy a következő blokk foglalt-e másik mozdonnyal.
+         * Ha igen, megállítjuk a mozdonyt és várunk.
+         */
+        if (session.phase === "departing" &&
+            this.isBlockOccupiedByOtherLoco(currentLeg.toBlockId, task)) {
+            const waitingSensorAddress = this.getBlockSensorAddress(currentLeg.toBlockId);
+            await simulator.setLoco(task.runtime.loco.address, 0, this.resolveDirection(task));
+            session.phase = "waitingForBlockSensor";
+            session.phaseStartedAt = Date.now();
+            await params.updateTaskSimulationProgress(task.id, {
+                phase: "waitingForBlockSensor",
+                legIndex: session.legIndex,
+                legCount: session.legs.length,
+                fromBlockId: currentLeg.fromBlockId,
+                fromBlockName: currentLeg.fromBlockName,
+                toBlockId: currentLeg.toBlockId,
+                toBlockName: currentLeg.toBlockName,
+                waitingSensorAddress: waitingSensorAddress > 0
+                    ? waitingSensorAddress
+                    : null,
+            });
+            log(`[TrainSimulator] Waiting for sensor #${waitingSensorAddress > 0 ? waitingSensorAddress : "?"} before entering ${currentLeg.toBlockName}: ${task.name} (${task.id})`);
+            return;
+        }
+        /**
+         * Ha korábban ütközésvédelem miatt álltunk meg,
+         * addig maradunk itt, amíg a célblokk fel nem szabadul.
+         */
+        if (session.phase === "waitingForBlockSensor") {
+            if (this.isBlockOccupiedByOtherLoco(currentLeg.toBlockId, task)) {
+                return;
+            }
+            await simulator.setLoco(task.runtime.loco.address, task.targetSpeed, this.resolveDirection(task));
+            session.phase = "departing";
+            session.phaseStartedAt = Date.now();
+            await params.updateTaskSimulationProgress(task.id, {
+                phase: "departing",
+                legIndex: session.legIndex,
+                legCount: session.legs.length,
+                fromBlockId: currentLeg.fromBlockId,
+                fromBlockName: currentLeg.fromBlockName,
+                toBlockId: currentLeg.toBlockId,
+                toBlockName: currentLeg.toBlockName,
+                waitingSensorAddress: null,
+            });
+            log(`[TrainSimulator] Collision guard released, departure allowed: ${currentLeg.fromBlockName}→${currentLeg.toBlockName}: ${task.name} (${task.id})`);
+            return;
+        }
+        /**
          * 1. fázis:
          * a jelenlegi blokk elhagyása.
          *
@@ -294,6 +345,13 @@ class TrainSimulatorRuntimeStore {
         if (!success) {
             logError(`[TrainSimulator] Failed to set sensor #${sensorAddress} to ${on ? "ON" : "OFF"}.`);
         }
+    }
+    isBlockOccupiedByOtherLoco(blockId, task) {
+        const blockState = this.params?.getBlockState(blockId) ?? null;
+        const occupantLocoId = blockState?.locoId ?? null;
+        const currentLocoId = task.runtime.loco?.id ?? null;
+        return (occupantLocoId !== null &&
+            occupantLocoId !== currentLocoId);
     }
     getBlockSensorAddress(blockId) {
         const topology = railwayTopologyStore.getTopology();

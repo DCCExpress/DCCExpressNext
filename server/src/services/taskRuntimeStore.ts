@@ -71,6 +71,8 @@ class TaskRuntimeStore {
 
     trainSimulatorRuntimeStore.configure({
       getTasks: () => this.tasks.map(cloneTask),
+      getBlockState: (blockId: string) =>
+        params.getBlockState(blockId),
 
       tryResolveTaskLoco: (
         taskId: string
@@ -409,6 +411,7 @@ class TaskRuntimeStore {
       fromBlockName: task.transition.fromBlock.name,
       toBlockId: null,
       toBlockName: null,
+      waitingSensorAddress: null,
     };
 
     /**
@@ -757,7 +760,9 @@ class TaskRuntimeStore {
       previous.fromBlockId !== progress.fromBlockId ||
       previous.fromBlockName !== progress.fromBlockName ||
       previous.toBlockId !== progress.toBlockId ||
-      previous.toBlockName !== progress.toBlockName;
+      previous.toBlockName !== progress.toBlockName ||
+      (previous.waitingSensorAddress ?? null) !==
+        (progress.waitingSensorAddress ?? null);
 
     if (!changed) {
       return this.actionOk();
@@ -765,6 +770,8 @@ class TaskRuntimeStore {
 
     task.runtime.simulation = {
       ...progress,
+      waitingSensorAddress:
+        progress.waitingSensorAddress ?? null,
     };
 
     this.broadcastSnapshot();
@@ -1088,6 +1095,7 @@ class TaskRuntimeStore {
         fromBlockName: null,
         toBlockId: null,
         toBlockName: null,
+        waitingSensorAddress: null,
       },
     };
   }
@@ -1197,6 +1205,7 @@ class TaskRuntimeStore {
         fromBlockName: task.transition.fromBlock.name,
         toBlockId: task.toBlockId,
         toBlockName: task.transition.toBlock.name,
+        waitingSensorAddress: null,
       }
     );
   }
