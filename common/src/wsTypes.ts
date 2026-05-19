@@ -148,6 +148,47 @@ export type ClientWsPayloadMap = {
 export type ClientWsMessageType =
   keyof ClientWsPayloadMap;
 
+export const CLIENT_WS_MESSAGE_TYPES = [
+  "setTrackPower",
+  "emergencyStop",
+  "setLoco",
+  "getLoco",
+  "setLocoFunction",
+  "setTurnout",
+  "setSensor",
+  "setBasicAccessory",
+  "setBlock",
+  "setBlockRemove",
+  "setBlocksReset",
+  "getBlocks",
+  "routeLock",
+  "routeUnlock",
+  "reserveRoute",
+  "releaseRouteReservation",
+  "clearAllRouteReservations",
+  "getRouteReservations",
+  "runScript",
+  "stopScript",
+  "getScriptRuntimeState",
+  "startTask",
+  "finishTask",
+  "abortTask",
+  "pauseTask",
+  "resumeTask",
+  "finishAllTasks",
+  "abortAllTasks",
+  "getTaskRuntimeState",
+] as const satisfies readonly ClientWsMessageType[];
+
+export function isClientWsMessageType(
+  value: unknown
+): value is ClientWsMessageType {
+  return (
+    typeof value === "string" &&
+    (CLIENT_WS_MESSAGE_TYPES as readonly string[]).includes(value)
+  );
+}
+
 export type TypedClientWsMessage<
   TType extends ClientWsMessageType = ClientWsMessageType
 > = {

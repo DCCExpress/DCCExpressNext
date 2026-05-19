@@ -7,6 +7,7 @@ import { taskRuntimeStore, } from "../services/taskRuntimeStore.js";
 import { configureWebSocketRuntimes, } from "./wsRuntimeConfiguration.js";
 import { sendInitialWebSocketSnapshots, } from "./wsInitialSnapshots.js";
 import { routeIncomingWebSocketMessage, } from "./wsMessageRouter.js";
+import { parseIncomingClientWsMessage, } from "./wsIncomingClientMessageParser.js";
 import { configureCommandCenterLifecycle, getCurrentCommandCenter, getLogicalTurnoutState, initializeCommandCenter, registerCommandCenterConfigLoadedCallback, } from "./wsCommandCenterLifecycle.js";
 function sendToClient(ws, message) {
     if (ws.readyState === WebSocket.OPEN) {
@@ -77,13 +78,21 @@ export function setupWebSocketServer(server) {
                 });
                 return;
             }
+            const parseResult = parseIncomingClientWsMessage(text);
+            if (!parseResult.ok) {
+                sendToClient(ws, {
+                    type: "error",
+                    data: {
+                        message: parseResult.reason,
+                    },
+                });
+                return;
+            }
+            const msg = parseResult.message;
+            clientUUID =
+                msg.uuid;
+            log("Received message of type:", msg.type);
             try {
-                const msg = JSON.parse(text);
-                if (msg.uuid) {
-                    clientUUID =
-                        msg.uuid;
-                }
-                log("Received message of type:", msg.type);
                 await routeIncomingWebSocketMessage({
                     ws,
                     msg,

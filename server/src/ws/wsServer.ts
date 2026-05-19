@@ -7,9 +7,7 @@ import {
   WebSocket,
 } from "ws";
 
-import type {
-  ClientWsMessageUnion,
-} from "../../../common/src/types.js";
+
 
 import {
   readCommandCenter,
@@ -39,6 +37,10 @@ import {
 import {
   routeIncomingWebSocketMessage,
 } from "./wsMessageRouter.js";
+
+import {
+  parseIncomingClientWsMessage,
+} from "./wsIncomingClientMessageParser.js";
 
 import {
   configureCommandCenterLifecycle,
@@ -164,17 +166,29 @@ export function setupWebSocketServer(
         return;
       }
 
+      const parseResult =
+        parseIncomingClientWsMessage(text);
+
+      if (!parseResult.ok) {
+        sendToClient(ws, {
+          type: "error",
+          data: {
+            message: parseResult.reason,
+          },
+        });
+
+        return;
+      }
+
+      const msg =
+        parseResult.message;
+
+      clientUUID =
+        msg.uuid;
+
+      log("Received message of type:", msg.type);
+
       try {
-        const msg =
-          JSON.parse(text) as ClientWsMessageUnion;
-
-        if (msg.uuid) {
-          clientUUID =
-            msg.uuid;
-        }
-
-        log("Received message of type:", msg.type);
-
         await routeIncomingWebSocketMessage({
           ws,
           msg,

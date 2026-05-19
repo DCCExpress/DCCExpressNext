@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-05-19T11:33:40.633Z",
+  "savedAt": "2026-05-19T11:44:29.282Z",
   "blocks": [
     [
       "5dfc831-fbaa-4c2b-9b12-3874268a",
@@ -64,7 +64,7 @@
       10,
       {
         "address": 10,
-        "closed": true
+        "closed": false
       }
     ],
     [
@@ -78,7 +78,7 @@
       12,
       {
         "address": 12,
-        "closed": false
+        "closed": true
       }
     ],
     [
