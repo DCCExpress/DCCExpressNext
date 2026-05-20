@@ -8,6 +8,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import type {
   TrainTask,
@@ -24,18 +25,20 @@ export default function TaskDeleteDialog({
   onClose,
   onConfirm,
 }: TaskDeleteDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <Modal
       opened={task !== null}
       onClose={onClose}
-      title="Feladat törlése"
+      title={t("task.delete.title")}
       centered
       size="sm"
       zIndex={10000}
     >
       <Stack gap="md">
         <Text>
-          Biztosan törlöd ezt a feladatot?
+          {t("task.delete.confirm")}
         </Text>
 
         {task && (
@@ -53,14 +56,14 @@ export default function TaskDeleteDialog({
             variant="default"
             onClick={onClose}
           >
-            Mégse
+            {t("common.cancel")}
           </Button>
 
           <Button
             color="red"
             onClick={onConfirm}
           >
-            Törlés
+            {t("task.actions.delete")}
           </Button>
         </Group>
       </Stack>

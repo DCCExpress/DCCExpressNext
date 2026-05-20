@@ -189,6 +189,29 @@
       "resume": "Resume",
       "startAgain": "Start again",
       "editDisabled": "Running, paused or finishing tasks cannot be edited"
+    },
+    "form": {
+      "name": "Task name",
+      "namePlaceholder": "e.g. B1 → C1",
+      "fromBlock": "From block",
+      "fromPlaceholder": "From block",
+      "toBlock": "To block",
+      "toPlaceholder": "To block",
+      "targetSpeed": "Target speed"
+    },
+    "add": {
+      "title": "New task",
+      "notAddable": "Task cannot be added",
+      "selectedRoute": "Selected runnable block transition",
+      "submit": "Add"
+    },
+    "edit": {
+      "title": "Edit task",
+      "notEditable": "Task cannot be edited"
+    },
+    "delete": {
+      "title": "Delete task",
+      "confirm": "Are you sure you want to delete this task?"
     }
   },
   "editor": {
@@ -251,7 +274,15 @@
     "errors": {
       "actionFailed": "Fast clock action failed.",
       "minSpeed": "Speed multiplier minimum is 1×."
-    }
+    },
+    "status": {
+      "serverDisconnected": "Fast Clock server disconnected"
+    },
+    "runningLower": "running",
+    "pausedLower": "paused",
+    "pauseAction": "Pause fast clock",
+    "runAction": "Run fast clock",
+    "resetAction": "Reset fast clock"
   },
   "routeTask": {
     "title": "Route & Task control",

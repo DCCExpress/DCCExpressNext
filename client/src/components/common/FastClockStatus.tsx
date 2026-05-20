@@ -7,6 +7,7 @@ import {
 import {
   Group,
 } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import {
   IconClock,
@@ -61,6 +62,8 @@ function formatFastClock(
 }
 
 export default function FastClockStatus() {
+  const { t } = useTranslation();
+
   const {
     snapshot,
     connected,
@@ -106,17 +109,17 @@ export default function FastClockStatus() {
     snapshot
       ? connected
         ? `${formatFastClock(snapshot.timeMs)} · ${snapshot.speed}×`
-        : `OFFLINE · ${formatFastClock(snapshot.timeMs)}`
+        : `${t("common.offline")} · ${formatFastClock(snapshot.timeMs)}`
       : connected
         ? "--:--:--"
-        : "OFFLINE";
+        : t("common.offline");
 
   const statusTooltip =
     !connected
-      ? "Fast Clock server disconnected"
+      ? t("fastClock.status.serverDisconnected")
       : snapshot
-        ? `Fast Clock · ${snapshot.running ? "running" : "paused"} · ${snapshot.speed}×`
-        : "Fast Clock";
+        ? `Fast Clock · ${snapshot.running ? t("fastClock.runningLower") : t("fastClock.pausedLower")} · ${snapshot.speed}×`
+        : t("fastClock.title");
 
   return (
     <Group
@@ -141,8 +144,8 @@ export default function FastClockStatus() {
       <StatusActionIcon
         tooltip={
           snapshot?.running
-            ? "Pause fast clock"
-            : "Run fast clock"
+            ? t("fastClock.pauseAction")
+            : t("fastClock.runAction")
         }
         color={
           snapshot?.running
@@ -164,7 +167,7 @@ export default function FastClockStatus() {
       </StatusActionIcon>
 
       <StatusActionIcon
-        tooltip="Reset fast clock"
+        tooltip={t("fastClock.resetAction")}
         color="gray"
         disabled={
           !snapshot ||

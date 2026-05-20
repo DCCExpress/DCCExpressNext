@@ -10,6 +10,7 @@ import {
   Stack,
   TextInput,
 } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 type SelectOption = {
   value: string;
@@ -49,11 +50,13 @@ export default function TaskEditDialog({
   onToBlockChange,
   onSave,
 }: TaskEditDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Feladat szerkesztése"
+      title={t("task.edit.title")}
       centered
       size="lg"
       zIndex={10001}
@@ -62,15 +65,15 @@ export default function TaskEditDialog({
         {editError && (
           <Alert
             color="red"
-            title="Feladat nem módosítható"
+            title={t("task.edit.notEditable")}
           >
             {editError}
           </Alert>
         )}
 
         <TextInput
-          label="Task name"
-          placeholder="Pl. B1 → C1"
+          label={t("task.form.name")}
+          placeholder={t("task.form.namePlaceholder")}
           value={taskName}
           onChange={event =>
             onTaskNameChange(event.currentTarget.value)
@@ -82,8 +85,8 @@ export default function TaskEditDialog({
           align="end"
         >
           <Select
-            label="From block"
-            placeholder="Induló blokk"
+            label={t("task.form.fromBlock")}
+            placeholder={t("task.form.fromPlaceholder")}
             data={fromBlockSelectData}
             value={fromBlockId}
             comboboxProps={{ zIndex: 10001 }}
@@ -92,8 +95,8 @@ export default function TaskEditDialog({
           />
 
           <Select
-            label="To block"
-            placeholder="Cél blokk"
+            label={t("task.form.toBlock")}
+            placeholder={t("task.form.toPlaceholder")}
             data={toBlockSelectData}
             value={toBlockId}
             comboboxProps={{ zIndex: 10001 }}
@@ -103,7 +106,7 @@ export default function TaskEditDialog({
           />
 
           <NumberInput
-            label="Target speed"
+            label={t("task.form.targetSpeed")}
             value={targetSpeed}
             onChange={onTargetSpeedChange}
             min={0}
@@ -117,14 +120,14 @@ export default function TaskEditDialog({
             variant="default"
             onClick={onClose}
           >
-            Mégse
+            {t("common.cancel")}
           </Button>
 
           <Button
             color="blue"
             onClick={onSave}
           >
-            Mentés
+            {t("common.save")}
           </Button>
         </Group>
       </Stack>

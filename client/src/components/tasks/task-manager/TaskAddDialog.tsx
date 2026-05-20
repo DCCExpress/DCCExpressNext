@@ -12,6 +12,7 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import {
   IconPlus,
@@ -68,11 +69,13 @@ export default function TaskAddDialog({
   selectedRoute,
   onAddTask,
 }: TaskAddDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Új feladat"
+      title={t("task.add.title")}
       centered
       size="lg"
       zIndex={10000}
@@ -81,15 +84,15 @@ export default function TaskAddDialog({
         {formError && (
           <Alert
             color="red"
-            title="Feladat nem vehető fel"
+            title={t("task.add.notAddable")}
           >
             {formError}
           </Alert>
         )}
 
         <TextInput
-          label="Task name"
-          placeholder="Pl. B1 → C1"
+          label={t("task.form.name")}
+          placeholder={t("task.form.namePlaceholder")}
           value={taskName}
           onChange={event =>
             onTaskNameChange(event.currentTarget.value)
@@ -101,8 +104,8 @@ export default function TaskAddDialog({
           align="end"
         >
           <Select
-            label="From block"
-            placeholder="Induló blokk"
+            label={t("task.form.fromBlock")}
+            placeholder={t("task.form.fromPlaceholder")}
             data={fromBlockSelectData}
             value={fromBlockId}
             onChange={onFromBlockChange}
@@ -112,8 +115,8 @@ export default function TaskAddDialog({
           />
 
           <Select
-            label="To block"
-            placeholder="Cél blokk"
+            label={t("task.form.toBlock")}
+            placeholder={t("task.form.toPlaceholder")}
             data={toBlockSelectData}
             value={toBlockId}
             comboboxProps={{ zIndex: 10001 }}
@@ -123,7 +126,7 @@ export default function TaskAddDialog({
           />
 
           <NumberInput
-            label="Target speed"
+            label={t("task.form.targetSpeed")}
             value={targetSpeed}
             onChange={onTargetSpeedChange}
             min={0}
@@ -138,7 +141,7 @@ export default function TaskAddDialog({
               size="sm"
               fw={600}
             >
-              Kiválasztott végrehajtható blokkátmenet
+              {t("task.add.selectedRoute")}
             </Text>
 
             <BlockRoutePath
@@ -172,7 +175,7 @@ export default function TaskAddDialog({
             variant="default"
             onClick={onClose}
           >
-            Mégse
+            {t("common.cancel")}
           </Button>
 
           <Button
@@ -180,7 +183,7 @@ export default function TaskAddDialog({
             onClick={onAddTask}
             disabled={!hasGraph}
           >
-            Hozzáadás
+            {t("task.add.submit")}
           </Button>
         </Group>
       </Stack>

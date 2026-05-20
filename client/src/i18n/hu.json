@@ -191,6 +191,29 @@
       "resume": "Folytatás",
       "startAgain": "Újraindítás",
       "editDisabled": "Futó, szüneteltetett vagy befejezés alatt álló task nem módosítható"
+    },
+    "form": {
+      "name": "Feladat neve",
+      "namePlaceholder": "Pl. B1 → C1",
+      "fromBlock": "Induló blokk",
+      "fromPlaceholder": "Induló blokk",
+      "toBlock": "Cél blokk",
+      "toPlaceholder": "Cél blokk",
+      "targetSpeed": "Célsebesség"
+    },
+    "add": {
+      "title": "Új feladat",
+      "notAddable": "Feladat nem vehető fel",
+      "selectedRoute": "Kiválasztott végrehajtható blokkátmenet",
+      "submit": "Hozzáadás"
+    },
+    "edit": {
+      "title": "Feladat szerkesztése",
+      "notEditable": "Feladat nem módosítható"
+    },
+    "delete": {
+      "title": "Feladat törlése",
+      "confirm": "Biztosan törlöd ezt a feladatot?"
     }
   },
   "editor": {
@@ -253,7 +276,15 @@
     "errors": {
       "actionFailed": "Gyorsóra művelet sikertelen.",
       "minSpeed": "A sebességszorzó minimum 1×."
-    }
+    },
+    "status": {
+      "serverDisconnected": "Gyorsóra szerverkapcsolat megszakadt"
+    },
+    "runningLower": "fut",
+    "pausedLower": "szünetel",
+    "pauseAction": "Gyorsóra szüneteltetése",
+    "runAction": "Gyorsóra indítása",
+    "resetAction": "Gyorsóra nullázása"
   },
   "routeTask": {
     "title": "Útvonal és feladat vezérlés",
