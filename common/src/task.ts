@@ -93,6 +93,7 @@ export type SavedTrainTask = {
 export type TaskManagerOverlayState = {
   reservedSectionNames: string[];
   transitSectionNames: string[];
+  transitTurnoutAddresses: number[];
   activeBlockIds: string[];
   activeTurnoutAddresses: number[];
 };
@@ -163,4 +164,3 @@ export type TaskLifecycleEventPayload = {
   completedAt: number;
   message: string;
 };
-

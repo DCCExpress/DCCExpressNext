@@ -322,6 +322,90 @@ class LayoutStore {
 
     return changed;
   }
+
+  setTransitSectionsByNames(
+    sectionNames: string[]
+  ): boolean {
+    const layout = this.layout;
+
+    if (!layout) {
+      return false;
+    }
+
+    const transitSectionNumbers =
+      new Set<number>();
+
+    for (const sectionName of sectionNames) {
+      const match =
+        /^S(\d+)$/u.exec(sectionName);
+
+      if (!match) {
+        continue;
+      }
+
+      transitSectionNumbers.add(
+        Number(match[1])
+      );
+    }
+
+    let changed = false;
+
+    for (const elem of layout.getTrackElements()) {
+      const nextTransit =
+        transitSectionNumbers.has(elem.section);
+
+      if (elem.isTransit !== nextTransit) {
+        elem.isTransit = nextTransit;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.emit();
+    }
+
+    return changed;
+  }
+
+  setTurnoutsTransitByAddresses(
+    turnoutAddresses: number[]
+  ): boolean {
+    const transitTurnoutAddresses =
+      new Set(turnoutAddresses);
+
+    let changed = false;
+
+    for (const elem of this.getElements()) {
+      if (!this.isTurnout(elem)) {
+        continue;
+      }
+
+      const turnout =
+        elem as RouteTurnoutElement;
+
+      const turnoutAddress =
+        (turnout as any).turnoutAddress;
+
+      if (typeof turnoutAddress !== "number") {
+        continue;
+      }
+
+      const nextTransit =
+        transitTurnoutAddresses.has(turnoutAddress);
+
+      if (turnout.isTransit !== nextTransit) {
+        turnout.isTransit = nextTransit;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.emit();
+    }
+
+    return changed;
+  }
+
   setElementsBusyByIds(
     elementIds: string[],
     busy: boolean

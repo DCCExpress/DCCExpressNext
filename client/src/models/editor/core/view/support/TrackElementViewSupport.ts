@@ -16,6 +16,7 @@ export const TrackColors = {
   free: "gray",
   selected: "yellow",
   occupied: "red",
+  transit: "#fd2020",
 };
 
 export type TrackElementViewSupportTarget =
@@ -25,6 +26,22 @@ export type TrackElementViewSupportTarget =
 export function getTrackStateColor(
   element: TrackElementViewSupportTarget
 ): string {
+  /**
+   * Prioritás:
+   * 1. Valódi occupancy
+   * 2. Mozdony transit / mozgásban
+   * 3. Lefoglalt útvonal
+   * 4. Sima route-ellenőrzés
+   * 5. Egyéb állapot
+   */
+  if (element.state === TrackStates.occupied) {
+    return TrackColors.occupied;
+  }
+
+  if (element.isTransit) {
+    return TrackColors.transit;
+  }
+
   if (element.isBusy) {
     return "orange";
   }
@@ -33,12 +50,8 @@ export function getTrackStateColor(
     return "yellow";
   }
 
-  switch (element.state) {
-    case TrackStates.selected:
-      return TrackColors.selected;
-
-    case TrackStates.occupied:
-      return TrackColors.occupied;
+  if (element.state === TrackStates.selected) {
+    return TrackColors.selected;
   }
 
   return TrackColors.free;

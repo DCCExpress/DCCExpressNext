@@ -28,6 +28,13 @@ export abstract class TrackElement extends BaseElement {
   travelDirection: TravelDirection = "unknown";
   isBusy: boolean = false;
 
+  /**
+   * Csak runtime kliensoldali overlay:
+   * true, ha egy aktív train task szerint
+   * a mozdony éppen ezen a sín-szakaszon halad.
+   */
+  isTransit: boolean = false;
+
   override toJSON(): TrackElementDto {
     return {
       ...super.toJSON(),

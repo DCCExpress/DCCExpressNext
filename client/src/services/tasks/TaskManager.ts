@@ -340,9 +340,24 @@ export class TaskManager {
       layoutStore.setLayout(layout);
     }
   }
+
   private setSnapshot(snapshot: TaskManagerSnapshot): void {
     this.snapshot = cloneSnapshot(snapshot);
     this.applyTransitBlockOverlay(this.snapshot);
+
+    /**
+     * A szerver már kiszámolja, mely szekciókon halad
+     * éppen aktív transit állapotban a train task.
+     * Ezt ráhúzzuk a track elemek runtime overlayére.
+     */
+    layoutStore.setTransitSectionsByNames(
+      this.snapshot.overlay.transitSectionNames
+    );
+
+    layoutStore.setTurnoutsTransitByAddresses(
+      this.snapshot.overlay.transitTurnoutAddresses
+    );
+
     this.emitChange();
   }
 
@@ -359,6 +374,7 @@ function createEmptySnapshot(): TaskManagerSnapshot {
     overlay: {
       reservedSectionNames: [],
       transitSectionNames: [],
+      transitTurnoutAddresses: [],
       activeBlockIds: [],
       activeTurnoutAddresses: [],
     },
@@ -395,6 +411,9 @@ function cloneSnapshot(
       ],
       transitSectionNames: [
         ...snapshot.overlay.transitSectionNames,
+      ],
+      transitTurnoutAddresses: [
+        ...snapshot.overlay.transitTurnoutAddresses,
       ],
       activeBlockIds: [
         ...snapshot.overlay.activeBlockIds,
