@@ -1,0 +1,110 @@
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
+import { drawTextWithRoundedBackground } from "../../../graphics";
+import { generateId } from "../../../helpers";
+import { TrackElement } from "../core/TrackElement";
+import { DrawOptions, ITrackSensorElement } from "../types/EditorTypes";
+import { IEditableProperty } from "./PropertyDescriptor";
+
+export enum SensorTypes { circle, rect }
+
+export class TrackSensorElementView extends TrackElement implements ITrackSensorElement {
+    //override type: ElementType = ELEMENT_TYPES.TRACK_SENSOR;
+    override type: typeof ELEMENT_TYPES.TRACK_SENSOR = ELEMENT_TYPES.TRACK_SENSOR;
+    address: number = 0;
+    on: boolean = false;
+    kind: SensorTypes = SensorTypes.rect;
+    colorOn: string = "lime";
+    colorOff: string = "green";
+    textOn: string = "ON";
+    textOff: string = "OFF";
+    radius: number = 6;
+
+    constructor(x: number, y: number) {
+        super(x, y);
+        this.layerName = "sensors";
+    }
+
+    draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
+        if (!this.visible) return;
+
+        this.beginDraw(ctx, options);
+
+
+        // console.log("SENSOR: ", this.on);
+
+        ctx.fillStyle = this.on ? this.colorOn : "gray";
+
+        ctx.beginPath();
+        ctx.arc(this.centerX, this.centerY, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "black"
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        if (options?.showSensorAddress) {
+            drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.address.toString())
+        }
+
+        this.endDraw(ctx);
+
+        super.drawSelection(ctx)
+
+    }
+
+    override toJSON(): ITrackSensorElement {
+        return {
+            ...super.toJSON(),
+            type: ELEMENT_TYPES.TRACK_SENSOR,
+            address: this.address,
+            kind: this.kind,
+            colorOn: this.colorOn,
+            colorOff: this.colorOff,
+            radius: this.radius,
+            // textOn: this.textOn,
+            // textOff: this.textOff,
+        };
+    }
+
+    static fromJSON(data: ITrackSensorElement): TrackSensorElementView {
+        const e = new TrackSensorElementView(data.x, data.y);
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+        e.address = data.address;
+        e.kind = data.kind;
+        e.colorOn = data.colorOn;
+        e.colorOff = data.colorOff;
+        e.radius = data.radius ?? 6;
+        return e;
+       
+    }
+    override clone(): TrackSensorElementView {
+        const copy = new TrackSensorElementView(this.x, this.y);
+        copy.id = generateId();
+        copy.rotation = this.rotation;
+        copy.rotationStep = this.rotationStep;
+        copy.selected = this.selected;
+        copy.address = this.address;
+        copy.kind = this.kind;
+        copy.colorOn = this.colorOn;
+        copy.colorOff = this.colorOff;
+        copy.textOn = this.textOn;
+        copy.textOff = this.textOff;
+        return copy;
+    }
+
+    override getEditableProperties(): IEditableProperty[] {
+        return [
+            ...super.getEditableProperties(),
+            { label: "Sensor Address", key: "address", type: "number", readonly: false },
+            // { label: "Text ON", key: "textOn", type: "string", readonly: false },
+            // { label: "Text OFF", key: "textOff", type: "string", readonly: false },
+            { label: "Color ON", key: "colorOn", type: "colorpicker", readonly: false },
+            { label: "Radius", key: "radius", type: "number", min: 4, max: 12, readonly: false },
+        ];
+    }
+
+}

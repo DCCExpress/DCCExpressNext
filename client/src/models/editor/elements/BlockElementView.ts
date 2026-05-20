@@ -1,0 +1,652 @@
+import Api from "../../../api/Api";
+import { getRotatedRectPoints } from "../../../graphics";
+import { generateId } from "../../../helpers";
+import { BaseElement } from "../core/BaseElement";
+import { IRect } from "../core/Rect";
+
+import { DrawOptions, IBlockElement } from "../types/EditorTypes";
+import { IEditableProperty } from "./PropertyDescriptor";
+import { getCanvasImage } from "../rendering/ImageCache";
+
+import i18n from "../../../i18n";
+import { TrackElement } from "../core/TrackElement";
+import { BLOCK_TYPES, BlockType, ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
+
+export class BlockElementView extends TrackElement implements IBlockElement {
+    override type: typeof ELEMENT_TYPES.TRACK_BLOCK = ELEMENT_TYPES.TRACK_BLOCK;
+    text: string = 'HELLO';
+    textColor: string = 'black';
+    locoAddress: number = 0;
+
+    /**
+     * Csak kliensoldali, átmeneti overlay:
+     * ha a task két blokk között halad,
+     * mindkét érintett blokkban ezt a címet mutatjuk.
+     */
+    runtimeTransitLocoAddress: number = 0;
+
+    /**
+     * Csak runtime vizuális adat.
+     * A blokk alatt fekvő valódi sín elem abszolút forward irányszöge.
+     *
+     * Nem a blokk saját rotation értékéből következtetünk, mert
+     * a blokk 0°/180° vagy 90°/270° elforgatása vizuálisan ugyanaz,
+     * de a forward oldal pont megfordulhat.
+     */
+    runtimeForwardRotation: number | null = null;
+
+    length: number = 1;
+    sensorAddress: number = 0;
+    blockType: BlockType = BLOCK_TYPES.NORMAL;
+
+    constructor(x: number, y: number) {
+        super(x, y);
+        this.layerName = "blocks";
+        this.rotationStep = 90;
+        this.w = 3;
+        this.h = 1;
+    }
+
+    draw11(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
+        if (!this.visible) return;
+
+        this.beginDraw(ctx, options);
+
+        const rotationRad = this.rotation * Math.PI / 180;
+
+        const blockX = this.posLeft + 5;
+        const blockY = this.posTop + 10;
+        const blockW = this.width - 10;
+        const blockH = this.height - 20;
+
+        const bg = options?.darkMode ? "#888888" : "#f0f0f0";
+        const fg = "black";
+
+        // ----------------------------------------------------
+        // 1. BLOKK KIRAJZOLÁSA FORGATVA
+        // ----------------------------------------------------
+        ctx.save();
+
+        ctx.translate(this.centerX, this.centerY);
+        ctx.rotate(rotationRad);
+        ctx.translate(-this.centerX, -this.centerY);
+
+        ctx.fillStyle = bg;
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 1;
+
+        ctx.fillRect(blockX, blockY, blockW, blockH);
+        ctx.strokeRect(blockX, blockY, blockW, blockH);
+
+        this.drawForwardDirectionTriangle(
+            ctx,
+            blockX,
+            blockY,
+            blockW,
+            blockH
+        );
+
+        //ctx.restore();
+
+        // ----------------------------------------------------
+        // 2. A blokk közepének forgatott pozíciója
+        // ----------------------------------------------------
+        const overlayCenterX = blockX + blockW / 2;
+        const overlayCenterY = blockY + blockH / 2;
+
+        const dx = overlayCenterX - this.centerX;
+        const dy = overlayCenterY - this.centerY;
+
+        const rotatedCenterX =
+            this.centerX + dx * Math.cos(rotationRad) - dy * Math.sin(rotationRad);
+
+        const rotatedCenterY =
+            this.centerY + dx * Math.sin(rotationRad) + dy * Math.cos(rotationRad);
+
+        // ----------------------------------------------------
+        // 3. LOCO IMAGE + SZÖVEG, DE MÁR NEM FORGATVA
+        // ----------------------------------------------------
+        if (this.locoAddress > 0) {
+            const loco = options?.locos?.find(
+                l => l.address === this.locoAddress
+            );
+
+            if (loco?.image) {
+                const img = getCanvasImage(loco.image);
+
+                if (img.naturalWidth > 0) {
+                    const padding = 3;
+
+                    const maxW = blockW - padding * 2;
+                    const maxH = blockH - padding * 2;
+
+                    const scale = Math.min(
+                        maxW / img.naturalWidth,
+                        maxH / img.naturalHeight
+                    );
+
+                    const imgW = img.naturalWidth * scale;
+                    const imgH = img.naturalHeight * scale;
+
+                    const imgX = rotatedCenterX - imgW / 2;
+                    const imgY = rotatedCenterY - imgH / 2;
+                    if (this.rotation === 180) {
+                        ctx.translate(this.centerX, this.centerY);
+                        ctx.rotate(Math.PI);
+                        ctx.translate(-this.centerX, -this.centerY);
+                    }
+                    ctx.drawImage(img, imgX, imgY, imgW, imgH);
+
+                    // Address kiírás balra a kép mellé
+                    ctx.fillStyle = fg;
+                    ctx.font = "8px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(
+                        "#" + this.locoAddress.toString(),
+                        imgX - 10,
+                        rotatedCenterY
+                    );
+                }
+            } else {
+                ctx.fillStyle = fg;
+                ctx.font = "8px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(
+                    this.locoAddress.toString(),
+                    rotatedCenterX,
+                    rotatedCenterY
+                );
+            }
+        }
+
+        // ----------------------------------------------------
+        // 4. Selection rajzolás – nálad valszeg ez is forgatva kell
+        // ----------------------------------------------------
+        ctx.save();
+
+        ctx.translate(this.centerX, this.centerY);
+        ctx.rotate(rotationRad);
+        ctx.translate(-this.centerX, -this.centerY);
+
+        this.drawSelection(ctx);
+
+        ctx.restore();
+
+        this.endDraw(ctx);
+    }
+    draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
+        if (!this.visible) return;
+
+        this.beginDraw(ctx, options);
+
+        ctx.translate(this.centerX, this.centerY);
+        ctx.rotate(this.rotation * Math.PI / 180);
+        ctx.translate(-this.centerX, -this.centerY);
+
+        const blockX = this.posLeft + 5;
+        const blockY = this.posTop + 10;
+        const blockW = this.width - 10;
+        const blockH = this.height - 20;
+
+        const occupied =
+            this.locoAddress > 0;
+
+        const inTransit =
+            !occupied &&
+            this.runtimeTransitLocoAddress > 0;
+
+        const bg = occupied
+            ? (options?.darkMode ? "#7f1d1d" : "#ffc9c9")
+            : inTransit
+                ? (options?.darkMode ? "#8a5a00" : "#ffe8a3")
+                : options?.darkMode
+                    ? "#888888"
+                    : "#f0f0f0";
+
+        const fg = "black";
+
+        const displayLocoAddress =
+            occupied
+                ? this.locoAddress
+                : this.runtimeTransitLocoAddress;
+
+        const showBlockName =
+            options?.showBlockNames === true &&
+            this.name.trim().length > 0;
+
+        const blockNameHeight = showBlockName ? 9 : 0;
+
+        ctx.fillStyle = bg;
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 1;
+
+        ctx.fillRect(blockX, blockY, blockW, blockH);
+        ctx.strokeRect(blockX, blockY, blockW, blockH);
+
+        this.drawForwardDirectionTriangle(
+            ctx,
+            blockX,
+            blockY,
+            blockW,
+            blockH
+        );
+
+        const withReadableOverlayAt180 = (drawFn: () => void) => {
+            if (this.rotation === 180) {
+                ctx.translate(this.centerX, this.centerY);
+                ctx.rotate(Math.PI);
+                ctx.translate(-this.centerX, -this.centerY);
+            }
+
+            drawFn();
+
+            if (this.rotation === 180) {
+                ctx.translate(this.centerX, this.centerY);
+                ctx.rotate(-Math.PI);
+                ctx.translate(-this.centerX, -this.centerY);
+            }
+        };
+
+        const drawBlockName = () => {
+            if (!showBlockName) return;
+
+            ctx.fillStyle = fg;
+            ctx.font = "bold 8px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+
+            ctx.fillText(
+                this.name.trim(),
+                blockX + blockW / 2,
+                blockY + 2
+            );
+        };
+
+        // ----------------------------------------------------
+        // NINCS MOZDONYA, DE A BLOKK NEVE AKKOR IS LÁTSZÓDHAT
+        // ----------------------------------------------------
+        if (displayLocoAddress <= 0) {
+            withReadableOverlayAt180(() => {
+                drawBlockName();
+            });
+        }
+
+        // ----------------------------------------------------
+        // LOCO IMAGE / ADDRESS
+        // ----------------------------------------------------
+        if (displayLocoAddress > 0) {
+            const loco = options?.locos?.find(
+                l => l.address === displayLocoAddress
+            );
+
+            if (loco?.image) {
+                const img = getCanvasImage(loco.image);
+
+                if (img.naturalWidth > 0) {
+                    const padding = 2;
+
+                    const availableImageHeight =
+                        blockH - blockNameHeight - padding * 2;
+
+                    const maxW = blockW - padding * 2;
+                    const maxH = Math.max(1, availableImageHeight);
+
+                    const scale = Math.min(
+                        maxW / img.naturalWidth,
+                        maxH / img.naturalHeight
+                    );
+
+                    const imgW = img.naturalWidth * scale;
+                    const imgH = img.naturalHeight * scale;
+
+                    const contentY = blockY + blockNameHeight;
+                    const contentH = blockH - blockNameHeight;
+
+                    const imgX = blockX + (blockW - imgW) / 2;
+                    const imgY = contentY + (contentH - imgH) / 2;
+
+                    withReadableOverlayAt180(() => {
+                        drawBlockName();
+
+                        ctx.drawImage(img, imgX, imgY, imgW, imgH);
+
+                        ctx.fillStyle = fg;
+                        ctx.font = "8px Arial";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+
+                        ctx.fillText(
+                            "#" + displayLocoAddress.toString(),
+                            imgX - 10,
+                            contentY + contentH / 2
+                        );
+                    });
+                }
+            } else {
+                // Ha nincs kép, a blokk neve felül, a loco address középtájon
+                withReadableOverlayAt180(() => {
+                    drawBlockName();
+
+                    ctx.fillStyle = fg;
+                    ctx.font = "8px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+
+                    const addressY =
+                        blockY +
+                        blockNameHeight +
+                        (blockH - blockNameHeight) / 2;
+
+                    ctx.fillText(
+                        displayLocoAddress.toString(),
+                        blockX + blockW / 2,
+                        addressY
+                    );
+                });
+            }
+        }
+
+        this.drawSelection(ctx);
+        this.endDraw(ctx);
+    }
+
+    /**
+     * Kis lime háromszög a blokk rövid oldalán.
+     *
+     * A canvas a BlockElementView.draw() elején már a blokk rotation értékére
+     * van elforgatva, ezért itt lokális koordinátákkal dolgozunk:
+     *   - travelDirection = forward -> jobb rövid oldal
+     *   - travelDirection = reverse -> bal rövid oldal
+     *
+     * Így forgatott blokknál is automatikusan a helyes forward irányba mutat.
+     */
+    /**
+     * Kis lime háromszög a blokk rövid oldalán.
+     *
+     * A helper nem a blokk travelDirection + rotation párosából tippeli
+     * a nyíl oldalát, hanem a Layout által kiszámolt abszolút
+     * runtimeForwardRotation értéket használja.
+     *
+     * A draw() elején a canvas már this.rotation szerint el van forgatva,
+     * ezért az abszolút forward szöget visszatranszformáljuk lokális szöggé.
+     */
+    private drawForwardDirectionTriangle(
+        ctx: CanvasRenderingContext2D,
+        blockX: number,
+        blockY: number,
+        blockW: number,
+        blockH: number
+    ): void {
+        if (this.runtimeForwardRotation === null) {
+            return;
+        }
+
+        const normalizeRotation = (angle: number): number => {
+            const result = angle % 360;
+            return result < 0 ? result + 360 : result;
+        };
+
+        /**
+         * A canvas már a blokk rotation értékével el van forgatva.
+         * A lokális 0° a blokk jobb rövid oldala.
+         */
+        const localForwardRotation =
+            normalizeRotation(
+                this.runtimeForwardRotation - this.rotation
+            );
+
+        const localForwardRad =
+            localForwardRotation * Math.PI / 180;
+
+        /**
+         * A blokk hosszanti tengelye mentén várunk 0° vagy 180° körüli irányt.
+         * cos >= 0 -> jobb rövid oldal
+         * cos <  0 -> bal rövid oldal
+         */
+        const pointsRight =
+            Math.cos(localForwardRad) >= 0;
+
+        // const arrowLength = Math.min(8, Math.max(5, blockW * 0.12));
+        // const arrowHalfHeight = Math.min(5, Math.max(3, blockH * 0.28));
+
+        const arrowLength = 4;
+        const arrowHalfHeight = 3;
+        const centerY = blockY + blockH / 2;
+        const edgePadding = 2;
+
+        const points = pointsRight
+            ? {
+                tipX: blockX + blockW - edgePadding,
+                backX: blockX + blockW - edgePadding - arrowLength,
+            }
+            : {
+                tipX: blockX + edgePadding,
+                backX: blockX + edgePadding + arrowLength,
+            };
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(points.tipX, centerY);
+        ctx.lineTo(points.backX, centerY - arrowHalfHeight);
+        ctx.lineTo(points.backX, centerY + arrowHalfHeight);
+        ctx.closePath();
+
+        ctx.fillStyle = "gainsboro";
+        ctx.fill();
+
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+    }
+    override getBounds(): IRect {
+
+        const c = Math.ceil(this.w / 2);
+        if (this.rotation == 0 || this.rotation == 180) {
+            return {
+                x: this.x - 1, //this.posLeft,
+                y: this.y,
+                width: this.w,
+                height: this.h
+            }
+        }
+
+        return {
+            x: this.x, //this.posLeft,
+            y: this.y - 1,
+            width: this.h,
+            height: this.w
+        }
+
+
+        if (this.rotation == 0 || this.rotation == 180) {
+            //alert("90")
+            return {
+                x: this.x, //this.posLeft,
+                y: this.y,
+                width: this.h,
+                height: this.w
+            }
+
+        }
+        //alert("90")
+        return {
+            x: this.x, //this.posLeft,
+            y: this.y,
+            width: this.h,
+            height: this.w
+        }
+    }
+
+    override get posLeft(): number {
+        return (this.x - 1) * this.GridSizeX
+    }
+    override get posRight(): number {
+        return (this.x - 1) * this.GridSizeX + this.w * this.GridSizeX
+    }
+    override get posTop(): number {
+        return this.y * this.GridSizeY
+    }
+    override get posBottom(): number {
+        return this.y * this.GridSizeY + this.h * this.GridSizeY
+    }
+
+    override get centerX(): number {
+        return this.x * this.GridSizeX + this.GridSizeX / 2
+    }
+    override get centerY(): number {
+        return this.y * this.GridSizeY + this.GridSizeY / 2
+    }
+
+
+    override clone(): BlockElementView {
+        const copy = new BlockElementView(this.x, this.y);
+
+        copy.id = generateId();
+        copy.name = this.name;
+        copy.rotation = this.rotation;
+        copy.rotationStep = this.rotationStep;
+        copy.selected = this.selected;
+
+        copy.bg = this.bg;
+        copy.fg = this.fg;
+
+        copy.locoAddress = this.locoAddress;
+        copy.length = this.length;
+        copy.sensorAddress = this.sensorAddress;
+        copy.blockType = this.blockType;
+
+        return copy;
+    }
+
+    static fromJSON(data: IBlockElement): BlockElementView {
+        const e = new BlockElementView(data.x, data.y);
+
+        e.id = data.id;
+        e.name = data.name;
+        e.rotation = data.rotation;
+        e.bg = data.bg;
+        e.fg = data.fg;
+
+        e.length = data.length ?? 100;
+        e.sensorAddress = data.sensorAddress ?? 0;
+
+        // Futáskor majd runtime kezeli, ezért induláskor nem töltjük vissza.
+        e.locoAddress = 0;
+
+        e.blockType = data.blockType ?? BLOCK_TYPES.NORMAL;
+
+        return e;
+    }
+    override toJSON(): IBlockElement {
+        return {
+            ...super.toJSON(),
+            type: ELEMENT_TYPES.TRACK_BLOCK,
+            locoAddress: this.locoAddress,
+            length: this.length,
+            sensorAddress: this.sensorAddress,
+            blockType: this.blockType,
+        };
+    }
+    override getEditableProperties(): IEditableProperty[] {
+        return [
+            ...super.getEditableProperties(),
+
+            {
+                label: "Block type",
+                key: "blockType",
+                type: "blockTypeSelect",
+                readonly: false,
+            },
+
+            {
+                label: "Length",
+                key: "length",
+                type: "number",
+                readonly: false,
+                min: 1,
+            },
+
+            {
+                label: "Occupancy sensor address",
+                key: "sensorAddress",
+                type: "number",
+                readonly: false,
+                min: 0,
+            },
+
+            {
+                label: "Color ON",
+                key: "colorOn",
+                type: "colorpicker",
+                readonly: false,
+            },
+        ];
+    }
+
+    override getHelp(): string {
+        return `
+      <h3 style="margin-top:0;">
+        ${i18n.t("help.block.title")}
+      </h3>
+
+      <p>
+        ${i18n.t("help.block.description")}
+      </p>
+
+      <p>
+        ${i18n.t("help.block.occupancyDescription")}
+      </p>
+
+      <ul>
+        <li>
+          <b>${i18n.t("help.block.fields.name.title")}</b>:
+          ${i18n.t("help.block.fields.name.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.fields.blockType.title")}</b>:
+          ${i18n.t("help.block.fields.blockType.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.fields.length.title")}</b>:
+          ${i18n.t("help.block.fields.length.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.fields.sensorAddress.title")}</b>:
+          ${i18n.t("help.block.fields.sensorAddress.description")}
+        </li>
+      </ul>
+
+      <h4>${i18n.t("help.block.types.title")}</h4>
+
+      <ul>
+        <li>
+          <b>${i18n.t("help.block.types.normal.title")}</b>:
+          ${i18n.t("help.block.types.normal.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.station.title")}</b>:
+          ${i18n.t("help.block.types.station.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.terminal.title")}</b>:
+          ${i18n.t("help.block.types.terminal.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.staging.title")}</b>:
+          ${i18n.t("help.block.types.staging.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.siding.title")}</b>:
+          ${i18n.t("help.block.types.siding.description")}
+        </li>
+        <li>
+          <b>${i18n.t("help.block.types.yard.title")}</b>:
+          ${i18n.t("help.block.types.yard.description")}
+        </li>
+      </ul>
+    `;
+    }
+}

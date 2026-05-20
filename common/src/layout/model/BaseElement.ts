@@ -16,11 +16,6 @@ import type {
 
 /**
  * Grafikamentes, szerveroldalon is használható layout elem alap.
- *
- * Ez szándékosan NEM tartalmaz:
- * - Canvas rajzolást
- * - editor selection/marked UI logikát
- * - property panel / help UI metódusokat
  */
 export abstract class BaseElement {
   id: string = "";

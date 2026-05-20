@@ -2,25 +2,24 @@ import {
   ELEMENT_TYPES,
 } from "../elementTypes.js";
 import type {
-  TrackStraightElementDto,
+  TrackCrossingElementDto,
 } from "../layoutDto.js";
 import {
   TrackElement,
 } from "../model/TrackElement.js";
 
-export class TrackStraightElement extends TrackElement {
-  override type: typeof ELEMENT_TYPES.TRACK_STRAIGHT =
-    ELEMENT_TYPES.TRACK_STRAIGHT;
+export class TrackCrossingElement extends TrackElement {
+  override type: typeof ELEMENT_TYPES.TRACK_CROSSING =
+    ELEMENT_TYPES.TRACK_CROSSING;
 
   constructor(x: number, y: number) {
     super(x, y);
-    this.type = ELEMENT_TYPES.TRACK_STRAIGHT;
+    this.type = ELEMENT_TYPES.TRACK_CROSSING;
     this.rotationStep = 45;
-    this.length = 200;
   }
 
-  static fromJSON(data: TrackStraightElementDto): TrackStraightElement {
-    const element = new TrackStraightElement(data.x, data.y);
+  static fromJSON(data: TrackCrossingElementDto): TrackCrossingElement {
+    const element = new TrackCrossingElement(data.x, data.y);
     element.id = data.id;
     element.name = data.name;
     element.layerName = data.layerName;
@@ -33,10 +32,10 @@ export class TrackStraightElement extends TrackElement {
     return element;
   }
 
-  override toJSON(): TrackStraightElementDto {
+  override toJSON(): TrackCrossingElementDto {
     return {
       ...super.toJSON(),
-      type: ELEMENT_TYPES.TRACK_STRAIGHT,
+      type: ELEMENT_TYPES.TRACK_CROSSING,
     };
   }
 }

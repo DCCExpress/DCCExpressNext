@@ -18,13 +18,6 @@ export type TravelDirection =
   | "forward"
   | "reverse";
 
-/**
- * Grafikamentes, közös track modell.
- *
- * A state/section/runtime mezők itt maradnak,
- * mert route graph, simulator és szerveroldali pályafeldolgozás
- * is használhatja őket.
- */
 export abstract class TrackElement extends BaseElement {
   address: number = 0;
   length: number = 200;

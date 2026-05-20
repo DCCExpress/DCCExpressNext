@@ -1,0 +1,220 @@
+
+import { drawTextWithRoundedBackground } from "../../../graphics";
+import { generateId } from "../../../helpers";
+import { TrackElement } from "../core/TrackElement";
+import { BaseElement } from "../core/BaseElement";
+import { getDirectionXy } from "../../../../../common/src/helpers";
+import { Point } from "../core/Rect";
+
+import { DrawOptions, ITrackCurveElement } from "../types/EditorTypes";
+import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
+
+export class TrackCurveElementView extends TrackElement implements ITrackCurveElement {
+
+    override type = ELEMENT_TYPES.TRACK_CURVE;
+    constructor(x: number, y: number) {
+        super(x, y);
+        this.type = ELEMENT_TYPES.TRACK_CURVE;
+        this.rotationStep = 45;
+    }
+
+
+
+    draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
+        if (!this.visible) return;
+
+        this.beginDraw(ctx, options);
+
+        if (!this.enabled) {
+            ctx.globalAlpha = this.alpha;
+        }
+
+        var w = this.GridSizeX / 2.0
+        var h = this.GridSizeY / 2.0
+        //ctx.save()
+
+        ctx.lineWidth = this.TrackWidth7;
+        ctx.strokeStyle = this.TrackPrimaryColor
+
+        if (this.rotation == 0) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.PositionY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 45) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX + this.GridSizeX / 2, this.PositionY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY + this.GridSizeY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 90) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX + this.GridSizeX, this.PositionY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 135) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 180) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.centerY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY + this.GridSizeY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 225) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.PositionY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 270) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.centerX, this.PositionY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 315) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.centerY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY);
+            ctx.stroke();
+        }
+
+        ctx.lineWidth = this.TrackWidth3;
+        ctx.strokeStyle = this.stateColor;
+
+        var w2 = this.GridSizeX / 3
+        ctx.lineDashOffset = -w2 / 3 //w3 / 2.0
+        ctx.setLineDash([w2, w2]);
+
+        if (this.rotation == 0) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.PositionY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 45) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX + this.GridSizeX / 2, this.PositionY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY + this.GridSizeY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 90) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX + this.GridSizeX, this.PositionY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 135) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 180) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.centerY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY + this.GridSizeY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 225) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.PositionY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 270) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.centerX, this.PositionY);
+            ctx.stroke();
+        }
+        else if (this.rotation == 315) {
+            ctx.beginPath();
+            ctx.moveTo(this.PositionX, this.centerY);
+            ctx.lineTo(this.centerX, this.centerY);
+            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY);
+            ctx.stroke();
+        }
+
+        if (options?.showOccupancySensorAddress) {
+            drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.address.toString())
+        }
+
+        this.drawSectionInfo(ctx, options);
+        
+        this.endDraw(ctx);
+        super.drawSelection(ctx);
+    }
+
+    override getNextItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation + 0)
+    }
+
+    override getPrevItemXy(): Point {
+        return getDirectionXy(this.pos, this.rotation + 225)
+    }
+
+    // getBounds(): Rect {
+    //     return {
+    //         x: this.x - this.GridSizeX,
+    //         y: this.y - this.GridSizeX,
+    //         width: this.GridSizeX,
+    //         height: this.GridSizeX,
+    //     };
+    // }
+
+    hitTest(px: number, py: number): boolean {
+        //const b = this.getBounds();
+        //return px >= b.x && px <= b.x + b.width && py >= b.y && py <= b.y + b.height;
+        return this.x == px && this.y == py;
+    }
+
+    override toJSON(): ITrackCurveElement {
+        return {
+            ...super.toJSON(),
+            type: ELEMENT_TYPES.TRACK_CURVE,
+        };
+    }
+
+    static fromJSON(data: ITrackCurveElement): TrackCurveElementView{
+        const curve = new TrackCurveElementView(data.x, data.y);
+        curve.id = data.id;
+        curve.name = data.name;
+        curve.rotation = data.rotation;
+        curve.address = data.address;
+        curve.bg = data.bg;
+        curve.fg = data.fg;
+        return curve;        
+    }
+
+    override clone(): TrackCurveElementView {
+        const copy = new TrackCurveElementView(this.x, this.y);
+        copy.id = generateId();
+        copy.rotation = this.rotation;
+        copy.rotationStep = this.rotationStep;
+        copy.selected = this.selected;
+        return copy;
+    }
+
+}

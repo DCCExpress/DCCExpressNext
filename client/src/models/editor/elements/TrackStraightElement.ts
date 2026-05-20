@@ -2,11 +2,12 @@
  * Kompatibilitási export.
  *
  * A régi klienskód továbbra is innen importál:
- *   ../elements/TrackStraightElement
+ *   TrackStraightElement
  *
- * Belül viszont már a név szerint is UI-s
- * TrackStraightElementView implementációt használjuk.
+ * A tényleges editor/UI implementáció:
+ *   TrackStraightElementView
  */
 export {
   TrackStraightElementView as TrackStraightElement,
+  TrackStraightElementView,
 } from "./TrackStraightElementView";
