@@ -179,6 +179,17 @@
       "progress": "Folyamat",
       "turnouts": "Váltók",
       "controls": "Vezérlés"
+    },
+    "actions": {
+      "edit": "Szerkesztés",
+      "delete": "Törlés",
+      "start": "Indítás",
+      "pause": "Szünet",
+      "finish": "Befejezés",
+      "abort": "Megszakítás",
+      "resume": "Folytatás",
+      "startAgain": "Újraindítás",
+      "editDisabled": "Futó, szüneteltetett vagy befejezés alatt álló task nem módosítható"
     }
   },
   "editor": {
@@ -209,6 +220,19 @@
       "clock": "Óra",
       "block": "Blokk",
       "tree": "Fa"
+    },
+    "top": {
+      "editMode": "Szerkesztés mód (E)",
+      "fitLayout": "Pálya igazítása (F)",
+      "cursorEsc": "Kurzor (Esc)",
+      "cursorMode": "Kurzor mód",
+      "elements": "Elemek",
+      "element": "Elem",
+      "deleteDel": "Törlés (Del)",
+      "undo": "Visszavonás (Ctrl+Z)",
+      "undoShort": "Visszavonás",
+      "redo": "Ismétlés (Ctrl+Y / Ctrl+Shift+Z)",
+      "redoShort": "Ismétlés"
     }
   }
 }

@@ -177,6 +177,17 @@
       "progress": "Progress",
       "turnouts": "Turnouts",
       "controls": "Controls"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "start": "Start",
+      "pause": "Pause",
+      "finish": "Finish",
+      "abort": "Abort",
+      "resume": "Resume",
+      "startAgain": "Start again",
+      "editDisabled": "Running, paused or finishing tasks cannot be edited"
     }
   },
   "editor": {
@@ -207,6 +218,19 @@
       "clock": "Clock",
       "block": "Block",
       "tree": "Tree"
+    },
+    "top": {
+      "editMode": "Edit mode (E)",
+      "fitLayout": "Fit layout (F)",
+      "cursorEsc": "Cursor (Esc)",
+      "cursorMode": "Cursor mode",
+      "elements": "Elements",
+      "element": "Element",
+      "deleteDel": "Delete (Del)",
+      "undo": "Undo (Ctrl+Z)",
+      "undoShort": "Undo",
+      "redo": "Redo (Ctrl+Y / Ctrl+Shift+Z)",
+      "redoShort": "Redo"
     }
   }
 }
