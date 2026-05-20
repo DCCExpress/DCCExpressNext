@@ -13,6 +13,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import {
   IconPlayerPause,
@@ -69,6 +70,7 @@ function formatFastClock(
 }
 
 export default function FastClockCard() {
+  const { t } = useTranslation();
   const {
     snapshot,
     connected,
@@ -107,7 +109,7 @@ export default function FastClockCard() {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Fast clock action failed."
+          : t("fastClock.errors.actionFailed")
       );
     } finally {
       setBusy(false);
@@ -134,7 +136,7 @@ export default function FastClockCard() {
       speed < 1
     ) {
       setError(
-        "A sebességszorzó minimum 1×."
+        t("fastClock.errors.minSpeed")
       );
 
       return;
@@ -147,12 +149,12 @@ export default function FastClockCard() {
 
   return (
     <CollapsiblePanelCard
-      title="Fast Clock"
+      title={t("fastClock.title")}
       collapsedStorageKey={
         FAST_CLOCK_CARD_COLLAPSED_KEY
       }
-      expandTooltip="Expand fast clock"
-      collapseTooltip="Collapse fast clock"
+      expandTooltip={t("fastClock.expand")}
+      collapseTooltip={t("fastClock.collapse")}
       rightSection={
         <>
           <Badge
@@ -166,10 +168,10 @@ export default function FastClockCard() {
             variant="light"
           >
             {!connected
-              ? "OFFLINE"
+              ? t("common.offline")
               : snapshot?.running
-                ? "RUNNING"
-                : "PAUSED"}
+                ? t("fastClock.running")
+                : t("fastClock.paused")}
           </Badge>
 
           <Badge
@@ -222,8 +224,8 @@ export default function FastClockCard() {
           onClick={toggleClock}
         >
           {snapshot?.running
-            ? "Pause"
-            : "Run"}
+            ? t("fastClock.pause")
+            : t("fastClock.run")}
         </Button>
 
         <Button
@@ -251,8 +253,8 @@ export default function FastClockCard() {
         gap="xs"
       >
         <NumberInput
-          label="Speed multiplier"
-          description="Minimum 1×"
+          label={t("fastClock.speedMultiplier")}
+          description={t("fastClock.minimum")}
           value={speedInput}
           min={1}
           step={1}
@@ -281,8 +283,8 @@ export default function FastClockCard() {
         c={!connected ? "red" : "dimmed"}
       >
         {!connected
-          ? "Server disconnected. The fast clock display is frozen."
-          : "Server-synced over WebSocket, rendered smoothly in the client."}
+          ? t("fastClock.serverDisconnected")
+          : t("fastClock.serverSynced")}
       </Text>
 
       {error && (

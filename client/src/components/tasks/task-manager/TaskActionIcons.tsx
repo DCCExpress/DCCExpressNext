@@ -22,6 +22,7 @@ import type {
 import {
   taskManager,
 } from "../../../services/tasks/taskManagerSingleton";
+import { useTranslation } from "react-i18next";
 
 type TaskActionResult =
   | { ok: true }
@@ -44,6 +45,7 @@ export default function TaskActionIcons({
   onEditTask,
   onDeleteTask,
 }: TaskActionIconsProps) {
+  const { t } = useTranslation();
   const renderEditButton = () => {
     const disabled =
       task.status === "running" ||
@@ -54,8 +56,8 @@ export default function TaskActionIcons({
       <Tooltip
         label={
           disabled
-            ? "Futó, szüneteltetett vagy befejezés alatt álló task nem módosítható"
-            : "Edit"
+            ? t("task.actions.editDisabled")
+            : t("task.actions.edit")
         }
       >
         <ActionIcon
@@ -72,7 +74,7 @@ export default function TaskActionIcons({
 
   const renderDeleteButton = () => {
     return (
-      <Tooltip label="Delete">
+      <Tooltip label={t("task.actions.delete")}>
         <ActionIcon
           color="red"
           variant="light"
@@ -91,7 +93,7 @@ export default function TaskActionIcons({
           gap="xs"
           wrap="nowrap"
         >
-          <Tooltip label="Start">
+          <Tooltip label={t("task.actions.start")}>
             <ActionIcon
               color="green"
               variant="light"
@@ -116,7 +118,7 @@ export default function TaskActionIcons({
           gap="xs"
           wrap="nowrap"
         >
-          <Tooltip label="Pause">
+          <Tooltip label={t("task.actions.pause")}>
             <ActionIcon
               color="yellow"
               variant="light"
@@ -130,7 +132,7 @@ export default function TaskActionIcons({
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="Finish">
+          <Tooltip label={t("task.actions.finish")}>
             <ActionIcon
               color="orange"
               variant="light"
@@ -144,7 +146,7 @@ export default function TaskActionIcons({
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="Abort">
+          <Tooltip label={t("task.actions.abort")}>
             <ActionIcon
               color="red"
               variant="light"
@@ -166,7 +168,7 @@ export default function TaskActionIcons({
           gap="xs"
           wrap="nowrap"
         >
-          <Tooltip label="Resume">
+          <Tooltip label={t("task.actions.resume")}>
             <ActionIcon
               color="green"
               variant="light"
@@ -180,7 +182,7 @@ export default function TaskActionIcons({
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="Finish">
+          <Tooltip label={t("task.actions.finish")}>
             <ActionIcon
               color="orange"
               variant="light"
@@ -194,7 +196,7 @@ export default function TaskActionIcons({
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="Abort">
+          <Tooltip label={t("task.actions.abort")}>
             <ActionIcon
               color="red"
               variant="light"
@@ -216,7 +218,7 @@ export default function TaskActionIcons({
           gap="xs"
           wrap="nowrap"
         >
-          <Tooltip label="Abort">
+          <Tooltip label={t("task.actions.abort")}>
             <ActionIcon
               color="red"
               variant="light"
@@ -239,7 +241,7 @@ export default function TaskActionIcons({
           gap="xs"
           wrap="nowrap"
         >
-          <Tooltip label="Start again">
+          <Tooltip label={t("task.actions.startAgain")}>
             <ActionIcon
               color="green"
               variant="light"

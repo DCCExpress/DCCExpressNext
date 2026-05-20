@@ -9,6 +9,7 @@ import {
   IconSettings,
   IconSun,
 } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import TrainIcon from "../../icons/TrainIcon";
 
 type RightToolbarActionsProps = {
@@ -24,6 +25,7 @@ export default function RightToolbarActions({
   propertyPanelCollapsed,
   onTogglePropertyPanel,
 }: RightToolbarActionsProps) {
+  const { t } = useTranslation();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
 
   return (
@@ -33,7 +35,7 @@ export default function RightToolbarActions({
         onClick={() =>
           setColorScheme(colorScheme === "dark" ? "light" : "dark")
         }
-        aria-label="Theme toggle"
+        aria-label={t("toolbar.themeToggle")}
       >
         {colorScheme === "dark" ? (
           <IconSun size={18} />
@@ -43,7 +45,11 @@ export default function RightToolbarActions({
       </ActionIcon>
 
       <Tooltip
-        label={locoPanelCollapsed ? "Loco panel mutatása" : "Loco panel elrejtése"}
+        label={
+          locoPanelCollapsed
+            ? t("toolbar.showLocoPanel")
+            : t("toolbar.hideLocoPanel")
+        }
         withArrow
         position="bottom"
       >
@@ -55,8 +61,8 @@ export default function RightToolbarActions({
       <Tooltip
         label={
           propertyPanelCollapsed
-            ? "Property panel mutatása"
-            : "Property panel elrejtése"
+            ? t("toolbar.showPropertyPanel")
+            : t("toolbar.hidePropertyPanel")
         }
         withArrow
         position="bottom"

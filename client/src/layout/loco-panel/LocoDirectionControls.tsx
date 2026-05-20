@@ -1,4 +1,5 @@
 import { Button, Group } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import {
   IconPlayerStop,
   IconPlayerTrackNext,
@@ -23,6 +24,8 @@ export default function LocoDirectionControls({
   onReverse,
   onStop,
 }: LocoDirectionControlsProps) {
+  const { t } = useTranslation();
+
   return (
     <Group grow gap={4} w="100%">
       <Button
@@ -37,7 +40,7 @@ export default function LocoDirectionControls({
         }
         onClick={onReverse}
       >
-        Hátra
+        {t("loco.direction.reverse")}
       </Button>
 
       <Button
@@ -49,7 +52,7 @@ export default function LocoDirectionControls({
         }
         onClick={onStop}
       >
-        Stop
+        {t("loco.direction.stop")}
       </Button>
 
       <Button
@@ -64,7 +67,7 @@ export default function LocoDirectionControls({
         }
         onClick={onForward}
       >
-        Előre
+        {t("loco.direction.forward")}
       </Button>
     </Group>
   );

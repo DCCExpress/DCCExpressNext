@@ -49,7 +49,7 @@ export default function EditorToolbar({
 
   return (
     <>
-      <Tooltip label="Edit mode (E)">
+      <Tooltip label={t("editor.top.editMode")}>
         <ActionIcon
           variant={editMode ? "filled" : "light"}
           disabled={touchOnly}
@@ -63,13 +63,13 @@ export default function EditorToolbar({
 
       <Divider orientation="vertical" size="sm" mr={4} ml={4} />
 
-      <Tooltip label="Fit layout (F)">
+      <Tooltip label={t("editor.top.fitLayout")}>
         <ActionIcon
           variant="light"
           color="blue"
           onClick={onFitLayout}
           onMouseDown={event => event.preventDefault()}
-          aria-label="Fit layout"
+          aria-label={t("editor.top.fitLayout")}
         >
           <IconMaximize size={18} />
         </ActionIcon>
@@ -79,34 +79,34 @@ export default function EditorToolbar({
         <Group gap={6} wrap="nowrap">
           <Divider orientation="vertical" size="sm" mr={4} ml={4} />
 
-          <Tooltip label="Cursor (Esc)">
+          <Tooltip label={t("editor.top.cursorEsc")}>
             <ActionIcon
               variant={tool.mode === "cursor" ? "filled" : "light"}
               onClick={onCursorToolClick}
               onMouseDown={event => event.preventDefault()}
-              aria-label="Cursor mode"
+              aria-label={t("editor.top.cursorMode")}
             >
               <IconPointer size={18} />
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="Elements">
+          <Tooltip label={t("editor.top.elements")}>
             <ActionIcon
               variant={tool.mode === "draw" ? "filled" : "light"}
               onClick={onOpenElementPicker}
               onMouseDown={event => event.preventDefault()}
-              aria-label="Element"
+              aria-label={t("editor.top.element")}
             >
               <IconTopologyStar3 size={18} />
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label={t("Delete (Del)")}>
+          <Tooltip label={t("editor.top.deleteDel")}>
             <ActionIcon
               variant={tool.mode === "delete" ? "filled" : "light"}
               onClick={onDeleteToolClick}
               onMouseDown={event => event.preventDefault()}
-              aria-label={t("Delete")}
+              aria-label={t("task.actions.delete")}
             >
               <IconTrash size={18} />
             </ActionIcon>
@@ -114,24 +114,24 @@ export default function EditorToolbar({
 
           <Divider orientation="vertical" size="sm" mr={4} ml={4} />
 
-          <Tooltip label="Undo (Ctrl+Z)">
+          <Tooltip label={t("editor.top.undo")}>
             <ActionIcon
               variant="light"
               onClick={onUndo}
               onMouseDown={event => event.preventDefault()}
-              aria-label={t("Undo")}
+              aria-label={t("editor.top.undoShort")}
               disabled={!canUndo}
             >
               <IconArrowBackUp size={18} />
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="Redo (Ctrl+Y / Ctrl+Shift+Z)">
+          <Tooltip label={t("editor.top.redo")}>
             <ActionIcon
               variant="light"
               onClick={onRedo}
               onMouseDown={event => event.preventDefault()}
-              aria-label="Redo"
+              aria-label={t("editor.top.redoShort")}
               disabled={!canRedo}
             >
               <IconArrowForwardUp size={18} />

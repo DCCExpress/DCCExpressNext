@@ -1,4 +1,5 @@
 import { Card, Group, Modal, Stack } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import { TrackStraightElementView } from "../../models/editor/elements/TrackStraightElementView";
@@ -35,7 +36,7 @@ export default function ElementPickerDialog({
   onClose,
   onPick,
 }: ElementPickerDialogProps) {
-
+  const { t } = useTranslation();
 
   const track = new TrackStraightElementView(0, 0);
   const trackdirection = new TrackDirectionElementView(0, 0);
@@ -67,32 +68,32 @@ export default function ElementPickerDialog({
   signal4.aspect = 4;
 
   return (
-    <Modal size={"xl"} opened={opened} onClose={onClose} title="Elem kiválasztása" centered>
+    <Modal size={"xl"} opened={opened} onClose={onClose} title={t("editor.pickElement")} centered>
 
       <Stack p={2} gap="xs">
         <Card padding="xs" withBorder >
           <Group>
-            <ElementPreview element={trackdirection} label="Direction" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackdirection} label={t("editor.elements.direction")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_DIRECTION);
               onClose();
             }} />
-            <ElementPreview element={track} label="Straight" width={40} height={40} onClick={() => {
+            <ElementPreview element={track} label={t("editor.elements.straight")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_STRAIGHT);
               onClose();
             }} />
-            <ElementPreview element={trackend} label="Track End" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackend} label={t("editor.elements.trackEnd")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_END);
               onClose();
             }} />
-            <ElementPreview element={trackcorner} label="Corner" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackcorner} label={t("editor.elements.corner")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_CORNER);
               onClose();
             }} />
-            <ElementPreview element={trackcurve} label="Curve" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackcurve} label={t("editor.elements.curve")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_CURVE);
               onClose();
             }} />
-            <ElementPreview element={trackcrossing} label="Crossing" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackcrossing} label={t("editor.elements.crossing")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_CROSSING);
               onClose();
             }} />
@@ -101,21 +102,21 @@ export default function ElementPickerDialog({
 
         <Card padding="xs" withBorder>
           <Group>
-            <ElementPreview element={trackturnoutleft} label="Turnout Left" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackturnoutleft} label={t("editor.elements.turnoutLeft")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_TURNOUT_LEFT);
               onClose();
             }} />
-            <ElementPreview element={trackturnoutright} label="Turnout Right" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackturnoutright} label={t("editor.elements.turnoutRight")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_TURNOUT_RIGHT);
               onClose();
             }} />
 
-            <ElementPreview element={trackturnouttwoway} label="Turnout Y" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackturnouttwoway} label={t("editor.elements.turnoutY")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY);
               onClose();
             }} />
 
-            <ElementPreview element={trackturnoutdouble} label="Turnout Double" width={40} height={40} onClick={() => {
+            <ElementPreview element={trackturnoutdouble} label={t("editor.elements.turnoutDouble")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE);
               onClose();
             }} />
@@ -124,15 +125,15 @@ export default function ElementPickerDialog({
 
         <Card padding="xs" withBorder >
           <Group>
-            <ElementPreview element={signal2} label="Signal 2" width={40} height={40} translateX={-10} onClick={() => {
+            <ElementPreview element={signal2} label={t("editor.elements.signal2")} width={40} height={40} translateX={-10} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SIGNAL2);
               onClose();
             }} />
-            <ElementPreview element={signal3} label="Signal 3" width={40} height={40} translateX={-10} onClick={() => {
+            <ElementPreview element={signal3} label={t("editor.elements.signal3")} width={40} height={40} translateX={-10} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SIGNAL3);
               onClose();
             }} />
-            <ElementPreview element={signal4} label="Signal 4" width={40} height={40} translateX={-10} onClick={() => {
+            <ElementPreview element={signal4} label={t("editor.elements.signal4")} width={40} height={40} translateX={-10} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SIGNAL4);
               onClose();
             }} />
@@ -141,29 +142,29 @@ export default function ElementPickerDialog({
 
         <Card padding="xs" withBorder >
           <Group>
-            <ElementPreview element={tracksensor} label="Sensor" width={40} height={40} onClick={() => {
+            <ElementPreview element={tracksensor} label={t("editor.elements.sensor")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SENSOR);
               onClose();
             }} />
-            <ElementPreview element={label} label="Label" width={40} height={40} onClick={() => {
+            <ElementPreview element={label} label={t("editor.elements.label")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.LABEL);
               onClose();
             }} />
-            <ElementPreview element={button} label="Button" width={40} height={40} onClick={() => {
+            <ElementPreview element={button} label={t("editor.elements.button")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.BUTTON);
               onClose();
             }} />
-            <ElementPreview element={buttonscript} label="Script Button" width={40} height={40} onClick={() => {
+            <ElementPreview element={buttonscript} label={t("editor.elements.scriptButton")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.BUTTON_SCRIPT);
               onClose();
             }} />
-            <ElementPreview element={routebutton} label="Route" width={40} height={40} onClick={() => {
+            <ElementPreview element={routebutton} label={t("editor.elements.route")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.BUTTON_ROUTE);
               onClose();
             }} />
             <ElementPreview
               element={extendedroutebutton}
-              label="Auto Route"
+              label={t("editor.elements.autoRoute")}
               width={40}
               height={40}
               onClick={() => {
@@ -171,19 +172,19 @@ export default function ElementPickerDialog({
                 onClose();
               }}
             />
-            <ElementPreview element={audiobutton} label="Audio" width={40} height={40} onClick={() => {
+            <ElementPreview element={audiobutton} label={t("editor.elements.audio")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.BUTTON_AUDIO);
               onClose();
             }} />
-            <ElementPreview element={clock} scale={1} label="Clock" width={40} height={40} onClick={() => {
+            <ElementPreview element={clock} scale={1} label={t("editor.elements.clock")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.CLOCK);
               onClose();
             }} />
-            <ElementPreview element={block} label="Block" width={40} height={40} onClick={() => {
+            <ElementPreview element={block} label={t("editor.elements.block")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_BLOCK);
               onClose();
             }} />
-            <ElementPreview element={tree} label="Tree" width={40} height={40} onClick={() => {
+            <ElementPreview element={tree} label={t("editor.elements.tree")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TREE);
               onClose();
             }} />
