@@ -1,6 +1,6 @@
 {
   "name": "Z21",
-  "type": "simulator",
+  "type": "dcc-ex-tcp",
   "simulator": {},
   "z21": {
     "host": "192.168.1.70",
@@ -8,11 +8,13 @@
   },
   "dccexTcp": {
     "host": "192.168.1.143",
-    "port": 2560
+    "port": 2560,
+    "init": ""
   },
   "dccexSerial": {
     "serialPort": "COM3",
-    "baudRate": 115200
+    "baudRate": 115200,
+    "init": ""
   },
   "autoConnect": false
 }

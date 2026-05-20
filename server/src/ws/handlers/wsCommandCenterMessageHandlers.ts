@@ -220,6 +220,52 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
       return true;
     }
 
+    case "setProgrammingPower": {
+      const {
+        on,
+      } = msg.data;
+
+      commandCenter
+        .setProgrammingPower(on)
+        .then(success => {
+          log("Set programming power result:", success);
+
+          if (!success) {
+            broadcast({
+              type: "error",
+              data: {
+                message: "Failed to set programming power",
+              },
+            });
+          }
+        });
+
+      return true;
+    }
+
+    case "writeDccExDirectCommand": {
+      const {
+        command,
+      } = msg.data;
+
+      commandCenter
+        .writeDirectCommand(command)
+        .then(success => {
+          log("DCC-EX direct command result:", success);
+
+          if (!success) {
+            broadcast({
+              type: "error",
+              data: {
+                message: "Failed to write DCC-EX direct command",
+              },
+            });
+          }
+        });
+
+      return true;
+    }
+
     case "emergencyStop": {
       commandCenter
         .emergencyStop()

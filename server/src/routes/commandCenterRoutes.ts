@@ -9,8 +9,8 @@ export interface CommandCenterConfig {
   type: CommandCenterType;
   simulator: {};
   z21: { host?: string; port?: number };
-  dccexTcp: { host?: string; port?: number };
-  dccexSerial: { serialPort?: string; baudRate?: number };
+  dccexTcp: { host?: string; port?: number; init?: string };
+  dccexSerial: { serialPort?: string; baudRate?: number; init?: string };
   autoConnect?: boolean;
 }
 
@@ -67,6 +67,7 @@ function normalizeCommandCenter(input: Partial<CommandCenterConfig>): CommandCen
     dccexTcp: {
       host: typeof input.dccexTcp?.host === "string" ? input.dccexTcp.host : "",
       port: typeof input.dccexTcp?.port === "number" ? input.dccexTcp.port : 2560,
+      init: typeof input.dccexTcp?.init === "string" ? input.dccexTcp.init : "",
     },
     dccexSerial: {
       serialPort:
@@ -77,6 +78,10 @@ function normalizeCommandCenter(input: Partial<CommandCenterConfig>): CommandCen
         typeof input.dccexSerial?.baudRate === "number"
           ? input.dccexSerial.baudRate
           : 115200,
+      init:
+        typeof input.dccexSerial?.init === "string"
+          ? input.dccexSerial.init
+          : "",
     },
     autoConnect:
       typeof input.autoConnect === "boolean" ? input.autoConnect : false,

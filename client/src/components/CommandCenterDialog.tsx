@@ -7,6 +7,7 @@ import {
   NumberInput,
   Select,
   Stack,
+  Textarea,
   TextInput,
   Text,
 } from "@mantine/core";
@@ -77,6 +78,28 @@ export default function CommandCenterDialog(p: CommandCenterDialogProps) {
     setCommandCenter((prev) => {
       const copy = prev.clone();
       copy.dccexSerial.serialPort = serialPort;
+      return copy;
+    });
+  };
+
+  const setSerialBaudRate = (baudRate: number) => {
+    setCommandCenter((prev) => {
+      const copy = prev.clone();
+      copy.dccexSerial.baudRate = baudRate;
+      return copy;
+    });
+  };
+
+  const setDccExInit = (init: string) => {
+    setCommandCenter((prev) => {
+      const copy = prev.clone();
+
+      if (copy.type === "dcc-ex-tcp") {
+        copy.dccexTcp.init = init;
+      } else if (copy.type === "dcc-ex-serial") {
+        copy.dccexSerial.init = init;
+      }
+
       return copy;
     });
   };
@@ -170,13 +193,41 @@ export default function CommandCenterDialog(p: CommandCenterDialogProps) {
           )}
 
         {commandCenter.type === "dcc-ex-serial" && (
-          <TextInput
-            label={t("commandCenter.serialPort")}
-            placeholder={t("commandCenter.serialPortPlaceholder")}
-            value={commandCenter.dccexSerial.serialPort ?? ""}
-            onChange={(e) => setSerialPort(e.currentTarget.value)}
-          />
+          <>
+            <TextInput
+              label={t("commandCenter.serialPort")}
+              placeholder={t("commandCenter.serialPortPlaceholder")}
+              value={commandCenter.dccexSerial.serialPort ?? ""}
+              onChange={(e) => setSerialPort(e.currentTarget.value)}
+            />
+
+            <NumberInput
+              label={t("commandCenter.baudRate")}
+              placeholder="115200"
+              min={300}
+              max={1000000}
+              value={commandCenter.dccexSerial.baudRate ?? 115200}
+              onChange={(v) => setSerialBaudRate(Number(v) || 115200)}
+            />
+          </>
         )}
+
+        {(commandCenter.type === "dcc-ex-tcp" ||
+          commandCenter.type === "dcc-ex-serial") && (
+            <Textarea
+              label={t("commandCenter.dccExInit")}
+              description={t("commandCenter.dccExInitDescription")}
+              placeholder="<s>"
+              autosize
+              minRows={3}
+              value={
+                commandCenter.type === "dcc-ex-tcp"
+                  ? commandCenter.dccexTcp.init ?? ""
+                  : commandCenter.dccexSerial.init ?? ""
+              }
+              onChange={(e) => setDccExInit(e.currentTarget.value)}
+            />
+          )}
 
         <Checkbox
           label={t("commandCenter.autoConnect")}

@@ -67,10 +67,12 @@ export interface ICommandCenter {
   dccexTcp: {
     host?: string;
     port?: number;
+    init?: string;
   };
   dccexSerial: {
     serialPort?: string;
     baudRate?: number;
+    init?: string;
   };
   autoConnect?: boolean;
 }

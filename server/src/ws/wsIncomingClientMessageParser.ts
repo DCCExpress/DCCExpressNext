@@ -125,6 +125,23 @@ function parsePayload<
       };
     }
 
+    case "setProgrammingPower": {
+      if (!isRecord(data)) {
+        return invalidPayload(type, "data must be an object.");
+      }
+
+      if (typeof data.on !== "boolean") {
+        return invalidPayload(type, "on must be boolean.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          on: data.on,
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
     case "emergencyStop":
     case "setBlocksReset":
     case "getBlocks":
@@ -138,6 +155,23 @@ function parsePayload<
     case "abortAllTasks":
     case "getTaskRuntimeState":
       return parseEmptyPayload(type, data);
+
+    case "writeDccExDirectCommand": {
+      if (!isRecord(data)) {
+        return invalidPayload(type, "data must be an object.");
+      }
+
+      if (typeof data.command !== "string") {
+        return invalidPayload(type, "command must be string.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          command: data.command,
+        } as ClientWsPayloadMap[TType],
+      };
+    }
 
     case "setLoco": {
       if (!isRecord(data)) {

@@ -48,6 +48,8 @@ export default function CommandCenterTab(
     type,
     ip,
     port,
+    serialPort,
+    connectionString,
 
     locked,
     lockOwner,
@@ -162,7 +164,7 @@ export default function CommandCenterTab(
             value={type ?? "-"}
           />
 
-          {type === "z21" && (
+          {(type === "z21" || type === "dcc-ex-tcp") && (
             <>
               <InfoValueRow
                 label="IP"
@@ -174,6 +176,27 @@ export default function CommandCenterTab(
                 value={port ?? "-"}
               />
             </>
+          )}
+
+          {type === "dcc-ex-serial" && (
+            <>
+              <InfoValueRow
+                label={t("commandCenter.serialPort")}
+                value={serialPort ?? "-"}
+              />
+
+              <InfoValueRow
+                label={t("commandCenter.baudRate")}
+                value={port ?? "-"}
+              />
+            </>
+          )}
+
+          {connectionString && (
+            <InfoValueRow
+              label={t("commandCenter.connectionString")}
+              value={connectionString}
+            />
           )}
         </InfoSection>
 

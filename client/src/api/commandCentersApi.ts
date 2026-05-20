@@ -6,8 +6,8 @@ export class CommandCenter implements ICommandCenter {
   name: string;
   type: CommandCenterType;
   z21: { host?: string; port?: number };
-  dccexTcp: { host?: string; port?: number };
-  dccexSerial: { serialPort?: string; baudRate?: number };
+  dccexTcp: { host?: string; port?: number; init?: string };
+  dccexSerial: { serialPort?: string; baudRate?: number; init?: string };
   autoConnect?: boolean;
   alive: boolean = false;
 
@@ -21,10 +21,12 @@ export class CommandCenter implements ICommandCenter {
     this.dccexTcp = {
       host: data?.dccexTcp?.host ?? "192.168.1.143",
       port: data?.dccexTcp?.port ?? 2560,
+      init: data?.dccexTcp?.init ?? "",
     };
     this.dccexSerial = {
       serialPort: data?.dccexSerial?.serialPort ?? "COM3",
       baudRate: data?.dccexSerial?.baudRate ?? 115200,
+      init: data?.dccexSerial?.init ?? "",
     };
     this.autoConnect = data?.autoConnect ?? false;
   }
@@ -49,6 +51,7 @@ export class CommandCenter implements ICommandCenter {
     cc.z21 = { ...this.z21 };
     cc.dccexTcp = { ...this.dccexTcp };
     cc.dccexSerial = { ...this.dccexSerial };
+    cc.autoConnect = this.autoConnect ?? false;
     return cc;
   }
 }

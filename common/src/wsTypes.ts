@@ -39,6 +39,7 @@ import type {
   CommandCenterInfoPayload,
   CommandCenterLockChangedPayload,
   CommandRejectedPayload,
+  DccExDirectCommandResponsePayload,
   RBusInfo,
   RBusSensorInfo,
   WsPowerInfoPayload,
@@ -80,7 +81,9 @@ export type ClientWsMessageType =
 
 export const CLIENT_WS_MESSAGE_TYPES = [
   "setTrackPower",
+  "setProgrammingPower",
   "emergencyStop",
+  "writeDccExDirectCommand",
   "setLoco",
   "getLoco",
   "setLocoFunction",
@@ -196,6 +199,8 @@ export type ServerWsPayloadMap = {
   commandCenterInfo: CommandCenterInfoPayload;
 
   commandCenterLockChanged: CommandCenterLockChangedPayload;
+
+  dccExDirectCommandResponse: DccExDirectCommandResponsePayload;
 
   locoState: LocoStateChangedPayload;
 

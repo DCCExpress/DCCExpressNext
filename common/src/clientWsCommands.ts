@@ -21,6 +21,14 @@ export type SetTrackPowerCommandPayload = {
   on: boolean;
 };
 
+export type SetProgrammingPowerCommandPayload = {
+  on: boolean;
+};
+
+export type DccExDirectCommandPayload = {
+  command: string;
+};
+
 export type SetLocoCommandPayload = {
   locoAddress: number;
   speed: number;
@@ -85,7 +93,9 @@ export type TaskIdOrNameCommandPayload = {
  */
 export type ClientWsPayloadMap = {
   setTrackPower: SetTrackPowerCommandPayload;
+  setProgrammingPower: SetProgrammingPowerCommandPayload;
   emergencyStop: EmptyClientWsCommandPayload;
+  writeDccExDirectCommand: DccExDirectCommandPayload;
 
   setLoco: SetLocoCommandPayload;
   getLoco: GetLocoCommandPayload;

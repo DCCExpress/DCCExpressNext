@@ -50,6 +50,8 @@ export type CommandCenterInfoPayload = {
   name?: string;
   ip?: string;
   port?: number;
+  serialPort?: string;
+  connectionString?: string;
 };
 
 export type CommandCenterLockChangedPayload = {
@@ -61,6 +63,10 @@ export type CommandCenterLockChangedPayload = {
 export type CommandRejectedPayload = {
   reason: string;
   lockOwner: string | null;
+};
+
+export type DccExDirectCommandResponsePayload = {
+  response: string;
 };
 
 export type RBusInfo = {

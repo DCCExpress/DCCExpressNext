@@ -16,6 +16,8 @@ type CommandCenterInfoState = {
   name?: string | null;
   ip?: string | null;
   port?: number | null;
+  serialPort?: string | null;
+  connectionString?: string | null;
 };
 
 type CommandCenterContextValue = {
@@ -28,6 +30,8 @@ type CommandCenterContextValue = {
   name: string | null;
   ip: string | null;
   port: number | null;
+  serialPort: string | null;
+  connectionString: string | null;
 
   powerInfo: PowerInfo | null;
   z21SystemState: Z21SystemState | null;
@@ -43,6 +47,8 @@ const CommandCenterContext = createContext<CommandCenterContextValue>({
   name: null,
   ip: null,
   port: null,
+  serialPort: null,
+  connectionString: null,
 
   powerInfo: null,
   z21SystemState: null,
@@ -66,6 +72,8 @@ export function CommandCenterProvider({
       name: null,
       ip: null,
       port: null,
+      serialPort: null,
+      connectionString: null,
     });
 
   const [powerInfo, setPowerInfo] = useState<PowerInfo | null>(null);
@@ -126,6 +134,9 @@ export function CommandCenterProvider({
           name: data.name ?? prev.name ?? null,
           ip: data.ip ?? prev.ip ?? null,
           port: data.port ?? prev.port ?? null,
+          serialPort: data.serialPort ?? prev.serialPort ?? null,
+          connectionString:
+            data.connectionString ?? prev.connectionString ?? null,
         }));
       }
     );
@@ -172,6 +183,8 @@ export function CommandCenterProvider({
         name: commandCenterInfo.name ?? null,
         ip: commandCenterInfo.ip ?? null,
         port: commandCenterInfo.port ?? null,
+        serialPort: commandCenterInfo.serialPort ?? null,
+        connectionString: commandCenterInfo.connectionString ?? null,
 
         powerInfo,
         z21SystemState,

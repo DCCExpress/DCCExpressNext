@@ -21,6 +21,14 @@ import {
 } from "../commandCenter/z21CommandCenter.js";
 
 import {
+  DccExTcpCommandCenter,
+} from "../commandCenter/dccExTcpCommandCenter.js";
+
+import {
+  DccExSerialCommandCenter,
+} from "../commandCenter/dccExSerialCommandCenter.js";
+
+import {
   railwayTopologyStore,
 } from "../services/railwayTopologyStore.js";
 
@@ -91,6 +99,50 @@ export function initializeCommandCenter(
           message => {
             broadcast?.(message);
           }
+        );
+
+      commandCenter
+        .start()
+        .then(() => {
+          log("Command center started:", conf?.type);
+        })
+        .catch(err => {
+          console.error("Failed to start command center:", err);
+        });
+
+      break;
+
+    case "dcc-ex-tcp":
+      log("Starting command center:", "DCC-EX TCP");
+
+      commandCenter =
+        new DccExTcpCommandCenter(
+          conf.name || "DCC-EX TCP",
+          conf.dccexTcp.host || "127.0.0.1",
+          conf.dccexTcp.port || 2560,
+          conf.dccexTcp.init || ""
+        );
+
+      commandCenter
+        .start()
+        .then(() => {
+          log("Command center started:", conf?.type);
+        })
+        .catch(err => {
+          console.error("Failed to start command center:", err);
+        });
+
+      break;
+
+    case "dcc-ex-serial":
+      log("Starting command center:", "DCC-EX Serial");
+
+      commandCenter =
+        new DccExSerialCommandCenter(
+          conf.name || "DCC-EX Serial",
+          conf.dccexSerial.serialPort || "COM3",
+          conf.dccexSerial.baudRate || 115200,
+          conf.dccexSerial.init || ""
         );
 
       commandCenter

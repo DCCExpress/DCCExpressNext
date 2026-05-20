@@ -59,6 +59,18 @@ class WebSocketApi {
     return this.setTrackPower(false);
   }
 
+  setProgrammingPower(on: boolean): boolean {
+    return this.send("setProgrammingPower", {
+      on,
+    });
+  }
+
+  writeDccExDirectCommand(command: string): boolean {
+    return this.send("writeDccExDirectCommand", {
+      command,
+    });
+  }
+
   emergencyStop(): boolean {
     return this.send("emergencyStop", {});
   }

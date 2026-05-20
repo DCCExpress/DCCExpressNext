@@ -12,6 +12,7 @@
     "cors": "^2.8.5",
     "express": "^5.0.0",
     "multer": "^2.0.0",
+    "serialport": "^13.0.0",
     "ws": "^8.0.0"
   },
   "devDependencies": {

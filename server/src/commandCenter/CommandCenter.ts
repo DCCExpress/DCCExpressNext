@@ -274,6 +274,18 @@ export abstract class CommandCenter {
     on: boolean
   ): Promise<boolean>;
 
+  setProgrammingPower(
+    _on: boolean
+  ): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
+  writeDirectCommand(
+    _command: string
+  ): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
   abstract emergencyStop(): Promise<boolean>;
 
   abstract getSensor(
