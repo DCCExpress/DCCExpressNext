@@ -10,7 +10,7 @@ import VisibilitySettings from "../components/VisibilitySettings";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Layout } from "../models/editor/core/Layout";
 import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
-import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
+import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { useRouteGraph } from "../hooks/useRouteGraph";
 import { wsApi } from "../services/wsApi";
@@ -115,7 +115,7 @@ export default function RightPropertyPanel({
   };
 
   const refreshExtendedRouteGraph = async (): Promise<void> => {
-    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+    if (!(selectedElement instanceof ExtendedRouteButtonElementView)) {
       setRouteGraphError(null);
       return;
     }
@@ -141,7 +141,7 @@ export default function RightPropertyPanel({
   };
 
   const handleTestExtendedRoute = async (): Promise<void> => {
-    if (!(selectedElement instanceof ExtendedRouteButtonElement)) {
+    if (!(selectedElement instanceof ExtendedRouteButtonElementView)) {
       return;
     }
 
@@ -200,7 +200,7 @@ export default function RightPropertyPanel({
   };
 
   useEffect(() => {
-    if (editMode && selectedElement instanceof ExtendedRouteButtonElement) {
+    if (editMode && selectedElement instanceof ExtendedRouteButtonElementView) {
       if (!routeGraph) {
         void refreshExtendedRouteGraph();
       } else {
@@ -260,7 +260,7 @@ export default function RightPropertyPanel({
             </div>
           ))}
 
-        {selectedElement instanceof ExtendedRouteButtonElement && (
+        {selectedElement instanceof ExtendedRouteButtonElementView && (
           <ExtendedRouteActions
             selectedElement={selectedElement}
             onRefreshRouteGraph={refreshExtendedRouteGraph}

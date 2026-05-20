@@ -12,7 +12,7 @@ import { useLayoutRuntimeWsBindings } from "../hooks/layout/useLayoutRuntimeWsBi
 import LayoutPageView from "./layout/LayoutPageView";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Layout } from "../models/editor/core/Layout";
-import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
+import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 import { type EditorTool } from "../models/editor/types/EditorTypes";
 import { layoutStore } from "../services/layoutStore";
 import { routeGraphStore } from "../services/routeGraphStore";
@@ -210,7 +210,7 @@ export default function LayoutPage({
      * ezért nem töröljük a route graphot.
      */
     if (
-      !(updated instanceof ExtendedRouteButtonElement)
+      !(updated instanceof ExtendedRouteButtonElementView)
     ) {
       routeGraphStore.clear();
     }

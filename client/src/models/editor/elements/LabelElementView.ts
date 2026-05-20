@@ -7,7 +7,7 @@ import { IEditableProperty } from "./PropertyDescriptor";
 
 
 
-export class LabelElement extends BaseElement implements ILabelElement {
+export class LabelElementView extends BaseElement implements ILabelElement {
     override type = ELEMENT_TYPES.LABEL;
     layerName = "buildings";
     text: string = "Label";
@@ -72,8 +72,8 @@ export class LabelElement extends BaseElement implements ILabelElement {
         };
     }
 
-    static fromJSON(data: ILabelElement) :LabelElement {
-        const e = new LabelElement(data.x, data.y);
+    static fromJSON(data: ILabelElement) :LabelElementView {
+        const e = new LabelElementView(data.x, data.y);
         e.id = data.id;
         e.text = data.text;
         e.fontSize = data.fontSize;
@@ -87,8 +87,8 @@ export class LabelElement extends BaseElement implements ILabelElement {
         return e;
     }
 
-    override clone(): LabelElement {
-        const copy = new LabelElement(this.x, this.y);
+    override clone(): LabelElementView {
+        const copy = new LabelElementView(this.x, this.y);
         copy.id = generateId();
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;

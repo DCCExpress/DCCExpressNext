@@ -2,11 +2,11 @@ import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
 import { DrawOptions, IButtonScriptElement, ITrackSensorElement } from "../types/EditorTypes";
-import { ButtonElement } from "./ButtonElement";
+import { ButtonElementView } from "./ButtonElementView";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 
-export class ButtonScriptElement extends BaseElement implements IButtonScriptElement {
+export class ButtonScriptElementView extends BaseElement implements IButtonScriptElement {
     type = ELEMENT_TYPES.BUTTON_SCRIPT;
     address: number = 0;
     on: boolean = true;
@@ -62,8 +62,8 @@ export class ButtonScriptElement extends BaseElement implements IButtonScriptEle
         };
     }
 
-    static fromJSON(data: IButtonScriptElement) : ButtonScriptElement {
-        const e = new ButtonScriptElement(data.x, data.y);
+    static fromJSON(data: IButtonScriptElement) : ButtonScriptElementView {
+        const e = new ButtonScriptElementView(data.x, data.y);
         e.id = data.id;
         e.name = data.name;
         e.rotation = data.rotation;
@@ -77,8 +77,8 @@ export class ButtonScriptElement extends BaseElement implements IButtonScriptEle
         return e;
     }
 
-    override clone(): ButtonScriptElement {
-        const copy = new ButtonScriptElement(this.x, this.y);
+    override clone(): ButtonScriptElementView {
+        const copy = new ButtonScriptElementView(this.x, this.y);
         copy.id = generateId();
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;

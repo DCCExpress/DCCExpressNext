@@ -5,7 +5,7 @@ import { DrawOptions, IButtonElement, ITrackSensorElement } from "../types/Edito
 import { IEditableProperty } from "./PropertyDescriptor";
 
 
-export class ButtonElement extends BaseElement implements IButtonElement {
+export class ButtonElementView extends BaseElement implements IButtonElement {
     override type = ELEMENT_TYPES.BUTTON;
     address: number = 0;
     on: boolean = false;
@@ -53,8 +53,8 @@ export class ButtonElement extends BaseElement implements IButtonElement {
         };
     }
     
-    static fromJSON(data: IButtonElement): ButtonElement {
-        const e = new ButtonElement(data.x, data.y);
+    static fromJSON(data: IButtonElement): ButtonElementView {
+        const e = new ButtonElementView(data.x, data.y);
         e.id = data.id;
         e.name = data.name;
         e.rotation = data.rotation;
@@ -67,8 +67,8 @@ export class ButtonElement extends BaseElement implements IButtonElement {
         e.textOff = data.textOff;
         return e;
     }
-    override clone(): ButtonElement {
-        const copy = new ButtonElement(this.x, this.y);
+    override clone(): ButtonElementView {
+        const copy = new ButtonElementView(this.x, this.y);
         copy.id = generateId();
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;

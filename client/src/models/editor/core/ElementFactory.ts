@@ -9,18 +9,18 @@ import { TrackTurnoutRightElementView } from "../elements/TrackTurnoutRightEleme
 import TrackTurnoutDoubleElementView from "../elements/TrackTurnoutDoubleElementView";
 import { TrackTurnoutTwoWayElementView } from "../elements/TrackTurnoutTwoWayElementView";
 import { TrackSensorElementView } from "../elements/TrackSensorElementView";
-import { ButtonElement } from "../elements/ButtonElement";
-import { ClockElement } from "../elements/ClockElement";
+import { ButtonElementView } from "../elements/ButtonElementView";
+import { ClockElementView } from "../elements/ClockElementView";
 import { BlockElementView } from "../elements/BlockElementView";
-import { TreeElement } from "../elements/TreeElement";
+import { TreeElementView } from "../elements/TreeElementView";
 import { TrackSignalElementView } from "../elements/TrackSignalElementView";
-import { AudioButtonElement } from "../elements/AudioButtonElement";
-import { RouteButtonElement } from "../elements/RouteButtonElement";
+import { AudioButtonElementView } from "../elements/AudioButtonElementView";
+import { RouteButtonElementView } from "../elements/RouteButtonElementView";
 import { TrackCrossingElementView } from "../elements/TrackCrossingElementView";
-import { ButtonScriptElement } from "../elements/ButtonScriptElement";
-import { LabelElement } from "../elements/LabelElement";
+import { ButtonScriptElementView } from "../elements/ButtonScriptElementView";
+import { LabelElementView } from "../elements/LabelElementView";
 import { TrackDirectionElementView } from "../elements/TrackDirectionElementView";
-import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
+import { ExtendedRouteButtonElementView } from "../elements/ExtendedRouteButtonElementView";
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
 export class ElementFactory {
@@ -87,27 +87,27 @@ export class ElementFactory {
 
 
       case ELEMENT_TYPES.BUTTON: {
-        return ButtonElement.fromJSON(data);
+        return ButtonElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.BUTTON_SCRIPT: {
-        return ButtonScriptElement.fromJSON(data);
+        return ButtonScriptElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.BUTTON_AUDIO: {
-        return AudioButtonElement.fromJSON(data);
+        return AudioButtonElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.BUTTON_ROUTE: {
-        return RouteButtonElement.fromJSON(data);
+        return RouteButtonElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED: {
-        return ExtendedRouteButtonElement.fromJSON(data);
+        return ExtendedRouteButtonElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.CLOCK: {
-        return ClockElement.fromJSON(data);
+        return ClockElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_BLOCK: {
@@ -115,11 +115,11 @@ export class ElementFactory {
       }
 
       case ELEMENT_TYPES.TREE: {
-        return TreeElement.fromJSON(data);
+        return TreeElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.LABEL: {
-        return LabelElement.fromJSON(data);
+        return LabelElementView.fromJSON(data);
       }
 
       default:

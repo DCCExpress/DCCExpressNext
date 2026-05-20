@@ -10,18 +10,18 @@ import { TrackTurnoutRightElementView } from "../../models/editor/elements/Track
 import { TrackTurnoutTwoWayElementView } from "../../models/editor/elements/TrackTurnoutTwoWayElementView";
 import TrackTurnoutDoubleElementView from "../../models/editor/elements/TrackTurnoutDoubleElementView";
 import { TrackSensorElementView } from "../../models/editor/elements/TrackSensorElementView";
-import { ButtonElement } from "../../models/editor/elements/ButtonElement";
-import { ClockElement } from "../../models/editor/elements/ClockElement";
-import { TreeElement } from "../../models/editor/elements/TreeElement";
+import { ButtonElementView } from "../../models/editor/elements/ButtonElementView";
+import { ClockElementView } from "../../models/editor/elements/ClockElementView";
+import { TreeElementView } from "../../models/editor/elements/TreeElementView";
 import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
-import { AudioButtonElement } from "../../models/editor/elements/AudioButtonElement";
-import { RouteButtonElement } from "../../models/editor/elements/RouteButtonElement";
+import { AudioButtonElementView } from "../../models/editor/elements/AudioButtonElementView";
+import { RouteButtonElementView } from "../../models/editor/elements/RouteButtonElementView";
 import { TrackCrossingElementView } from "../../models/editor/elements/TrackCrossingElementView";
-import { ButtonScriptElement } from "../../models/editor/elements/ButtonScriptElement";
-import { LabelElement } from "../../models/editor/elements/LabelElement";
+import { ButtonScriptElementView } from "../../models/editor/elements/ButtonScriptElementView";
+import { LabelElementView } from "../../models/editor/elements/LabelElementView";
 import { TrackDirectionElementView } from "../../models/editor/elements/TrackDirectionElementView";
-import { ExtendedRouteButtonElement } from "../../models/editor/elements/ExtendedRouteButtonElement";
+import { ExtendedRouteButtonElementView } from "../../models/editor/elements/ExtendedRouteButtonElementView";
 import { ELEMENT_TYPES, ElementType } from "../../../../common/src/layout/elementTypes";
 
 type ElementPickerDialogProps = {
@@ -48,15 +48,15 @@ export default function ElementPickerDialog({
   const trackturnouttwoway = new TrackTurnoutTwoWayElementView(0, 0);
   const trackturnoutdouble = new TrackTurnoutDoubleElementView(0, 0);
   const tracksensor = new TrackSensorElementView(0, 0);
-  const button = new ButtonElement(0, 0);
-  const buttonscript = new ButtonScriptElement(0, 0);
-  const audiobutton = new AudioButtonElement(0, 0);
-  const routebutton = new RouteButtonElement(0, 0);
-  const extendedroutebutton = new ExtendedRouteButtonElement(0, 0);
-  const label = new LabelElement(0, 0);
-  const clock = new ClockElement(0, 0);
+  const button = new ButtonElementView(0, 0);
+  const buttonscript = new ButtonScriptElementView(0, 0);
+  const audiobutton = new AudioButtonElementView(0, 0);
+  const routebutton = new RouteButtonElementView(0, 0);
+  const extendedroutebutton = new ExtendedRouteButtonElementView(0, 0);
+  const label = new LabelElementView(0, 0);
+  const clock = new ClockElementView(0, 0);
   clock.scale = 0.28
-  const tree = new TreeElement(0, 0);
+  const tree = new TreeElementView(0, 0);
   const block = new BlockElementView(0, 0);
   const signal2 = new TrackSignalElementView(0, 0);
   signal2.aspect = 2;

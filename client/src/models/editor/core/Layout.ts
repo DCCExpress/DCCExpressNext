@@ -1,7 +1,7 @@
 import { Loco } from "../../../../../common/src/types";
 import { showWarningMessage } from "../../../helpers";
 import { BlockElementView } from "../elements/BlockElementView";
-import { RouteButtonElement } from "../elements/RouteButtonElement";
+import { RouteButtonElementView } from "../elements/RouteButtonElementView";
 import { TrackStraightElementView } from "../elements/TrackStraightElementView";
 import { TrackTurnoutLeftElementView } from "../elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../elements/TrackTurnoutRightElementView";
@@ -142,8 +142,8 @@ export class Layout {
     public removeElement(element: BaseElement): void {
         const elems = this.getAllElements();
         for (const el of elems) {
-            if (el instanceof RouteButtonElement) {
-                const rb = el as RouteButtonElement;
+            if (el instanceof RouteButtonElementView) {
+                const rb = el as RouteButtonElementView;
                 for (const t of rb.routeTurnouts) {
                     if (t.turnoutId === element.id) {
                         rb.removeTurnout(element.id);
@@ -434,8 +434,8 @@ export class Layout {
         // --------------------------------------------------
         const belems = this.getAllElements();
         const routeButtons = belems.filter(
-            (elem: BaseElement) => elem instanceof RouteButtonElement
-        ) as RouteButtonElement[];
+            (elem: BaseElement) => elem instanceof RouteButtonElementView
+        ) as RouteButtonElementView[];
 
         routeButtons.forEach(rb => {
             let active = true;

@@ -3,7 +3,7 @@ import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
 import { DrawOptions, ITreeElement } from "../types/EditorTypes";
 
-export class TreeElement extends BaseElement implements ITreeElement {
+export class TreeElementView extends BaseElement implements ITreeElement {
     override type: typeof ELEMENT_TYPES.TREE = ELEMENT_TYPES.TREE;
     constructor(x: number, y: number) {
         super(x, y);
@@ -60,8 +60,8 @@ export class TreeElement extends BaseElement implements ITreeElement {
 
     }
 
-    static fromJSON(data: ITreeElement) : TreeElement {
-        const e = new TreeElement(data.x, data.y);
+    static fromJSON(data: ITreeElement) : TreeElementView {
+        const e = new TreeElementView(data.x, data.y);
         e.id = data.id;
         e.name = data.name;
         e.rotation = data.rotation;
@@ -70,8 +70,8 @@ export class TreeElement extends BaseElement implements ITreeElement {
         return e;
     }
 
-    override clone(): TreeElement {
-        const copy = new TreeElement(this.x, this.y);
+    override clone(): TreeElementView {
+        const copy = new TreeElementView(this.x, this.y);
         copy.id = generateId();
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;

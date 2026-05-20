@@ -7,7 +7,7 @@ import {
 } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
-export class ExtendedRouteButtonElement
+export class ExtendedRouteButtonElementView
     extends ClickableBaseElement
     implements IExtendedRouteButtonElement {
     override type: typeof ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED =
@@ -147,8 +147,8 @@ export class ExtendedRouteButtonElement
 
     static fromJSON(
         data: IExtendedRouteButtonElement
-    ): ExtendedRouteButtonElement {
-        const e = new ExtendedRouteButtonElement(data.x, data.y);
+    ): ExtendedRouteButtonElementView {
+        const e = new ExtendedRouteButtonElementView(data.x, data.y);
 
         e.id = data.id;
         e.name = data.name;
@@ -170,8 +170,8 @@ export class ExtendedRouteButtonElement
         return e;
     }
 
-    override clone(): ExtendedRouteButtonElement {
-        const copy = new ExtendedRouteButtonElement(this.x, this.y);
+    override clone(): ExtendedRouteButtonElementView {
+        const copy = new ExtendedRouteButtonElementView(this.x, this.y);
 
         copy.id = generateId();
         copy.rotation = this.rotation;

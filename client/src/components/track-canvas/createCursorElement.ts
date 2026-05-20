@@ -1,13 +1,13 @@
 import { ELEMENT_TYPES } from "../../../../common/src/layout/elementTypes";
 import { BaseElement } from "../../models/editor/core/BaseElement";
-import { AudioButtonElement } from "../../models/editor/elements/AudioButtonElement";
+import { AudioButtonElementView } from "../../models/editor/elements/AudioButtonElementView";
 import { BlockElementView } from "../../models/editor/elements/BlockElementView";
-import { ButtonElement } from "../../models/editor/elements/ButtonElement";
-import { ButtonScriptElement } from "../../models/editor/elements/ButtonScriptElement";
-import { ClockElement } from "../../models/editor/elements/ClockElement";
-import { ExtendedRouteButtonElement } from "../../models/editor/elements/ExtendedRouteButtonElement";
-import { LabelElement } from "../../models/editor/elements/LabelElement";
-import { RouteButtonElement } from "../../models/editor/elements/RouteButtonElement";
+import { ButtonElementView } from "../../models/editor/elements/ButtonElementView";
+import { ButtonScriptElementView } from "../../models/editor/elements/ButtonScriptElementView";
+import { ClockElementView } from "../../models/editor/elements/ClockElementView";
+import { ExtendedRouteButtonElementView } from "../../models/editor/elements/ExtendedRouteButtonElementView";
+import { LabelElementView } from "../../models/editor/elements/LabelElementView";
+import { RouteButtonElementView } from "../../models/editor/elements/RouteButtonElementView";
 import { TrackCornerElementView } from "../../models/editor/elements/TrackCornerElementView";
 import { TrackCrossingElementView } from "../../models/editor/elements/TrackCrossingElementView";
 import { TrackCurveElementView } from "../../models/editor/elements/TrackCurveElementView";
@@ -20,7 +20,7 @@ import TrackTurnoutDoubleElementView from "../../models/editor/elements/TrackTur
 import { TrackTurnoutLeftElementView } from "../../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../../models/editor/elements/TrackTurnoutRightElementView";
 import { TrackTurnoutTwoWayElementView } from "../../models/editor/elements/TrackTurnoutTwoWayElementView";
-import { TreeElement } from "../../models/editor/elements/TreeElement";
+import { TreeElementView } from "../../models/editor/elements/TreeElementView";
 import type { EditorTool } from "../../models/editor/types/EditorTypes";
 
 const cursorTrackElement = new TrackStraightElementView(0, 0);
@@ -44,15 +44,15 @@ const cursorTrackSignal4Element = new TrackSignalElementView(0, 0);
 cursorTrackSignal4Element.aspect = 4;
 
 const cursorTrackCrossingElement = new TrackCrossingElementView(0, 0);
-const cursorButtonElement = new ButtonElement(0, 0);
-const cursorButtonScriptElement = new ButtonScriptElement(0, 0);
-const cursorRouteButtonElement = new RouteButtonElement(0, 0);
-const cursorExtendedRouteButtonElement = new ExtendedRouteButtonElement(0, 0);
-const cursorAudioButtonElement = new AudioButtonElement(0, 0);
-const cursorClockElement = new ClockElement(0, 0);
-const cursorTreeElement = new TreeElement(0, 0);
+const cursorButtonElement = new ButtonElementView(0, 0);
+const cursorButtonScriptElement = new ButtonScriptElementView(0, 0);
+const cursorRouteButtonElement = new RouteButtonElementView(0, 0);
+const cursorExtendedRouteButtonElement = new ExtendedRouteButtonElementView(0, 0);
+const cursorAudioButtonElement = new AudioButtonElementView(0, 0);
+const cursorClockElement = new ClockElementView(0, 0);
+const cursorTreeElement = new TreeElementView(0, 0);
 const cursorBlockElement = new BlockElementView(0, 0);
-const cursorLabelElement = new LabelElement(0, 0);
+const cursorLabelElement = new LabelElementView(0, 0);
 
 export function createCursorElement(
   tool: EditorTool

@@ -15,25 +15,25 @@ import "../styles/TrackCanvas.css";
 import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
 import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";
 import { TrackSensorElementView } from "../models/editor/elements/TrackSensorElementView";
-import { ButtonElement } from "../models/editor/elements/ButtonElement";
-import { ClockElement } from "../models/editor/elements/ClockElement";
-import { TreeElement } from "../models/editor/elements/TreeElement";
+import { ButtonElementView } from "../models/editor/elements/ButtonElementView";
+import { ClockElementView } from "../models/editor/elements/ClockElementView";
+import { TreeElementView } from "../models/editor/elements/TreeElementView";
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
 import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
-import { AudioButtonElement } from "../models/editor/elements/AudioButtonElement";
-import { RouteButtonElement } from "../models/editor/elements/RouteButtonElement";
+import { AudioButtonElementView } from "../models/editor/elements/AudioButtonElementView";
+import { RouteButtonElementView } from "../models/editor/elements/RouteButtonElementView";
 import { TrackCrossingElementView } from "../models/editor/elements/TrackCrossingElementView";
 import { ClickableBaseElement } from "../models/editor/core/ClickableBaseElement";
 import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../services/wsApi";
 import { useCommandCenter } from "../context/CommandCenterContext";
-import { ButtonScriptElement } from "../models/editor/elements/ButtonScriptElement";
-import { LabelElement } from "../models/editor/elements/LabelElement";
+import { ButtonScriptElementView } from "../models/editor/elements/ButtonScriptElementView";
+import { LabelElementView } from "../models/editor/elements/LabelElementView";
 import LocoPicker from "./loco/LocoPicker";
 import { Loco } from "../../../common/src/types";
 import { TrackDirectionElementView } from "../models/editor/elements/TrackDirectionElementView";
-import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
+import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 
 import { routeGraphStore } from "../services/routeGraphStore";
 import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
@@ -327,7 +327,7 @@ export default function TrackCanvas({
 
   useEffect(() => {
 
-    if (selectedElementRef.current && selectedElementRef.current instanceof RouteButtonElement) {
+    if (selectedElementRef.current && selectedElementRef.current instanceof RouteButtonElementView) {
       if (layoutRef.current) {
         const elems = layoutRef.current.getAllElements();
         elems.forEach(elem => { elem.marked = false; })
@@ -430,7 +430,7 @@ export default function TrackCanvas({
     };
   }, []);
 
-  const setRouteTurnoutsMarked = (rb: RouteButtonElement) => {
+  const setRouteTurnoutsMarked = (rb: RouteButtonElementView) => {
     const elems = layoutRef.current.getAllElements();
     for (const elem of elems) {
       if (isTurnoutElement(elem)) {
@@ -460,7 +460,7 @@ export default function TrackCanvas({
           }
         }
 
-        setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElement);
+        setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElementView);
 
       } else {
         for (const elem of elems) {
@@ -495,8 +495,8 @@ export default function TrackCanvas({
 
 
     //if(turnoutSelectionModeRef.current){
-    if (selectedElementRef.current instanceof RouteButtonElement) {
-      setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElement);
+    if (selectedElementRef.current instanceof RouteButtonElementView) {
+      setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElementView);
     }
     //}
 
@@ -571,7 +571,7 @@ export default function TrackCanvas({
     };
 
 
-    const executeRoute = async function (rb: RouteButtonElement) {
+    const executeRoute = async function (rb: RouteButtonElementView) {
 
       if (commandCenterRef.current.locked) {
         showWarningMessage(
@@ -608,7 +608,7 @@ export default function TrackCanvas({
 
 
     const executeExtendedRoute = async function (
-      rb: ExtendedRouteButtonElement
+      rb: ExtendedRouteButtonElementView
     ) {
       if (!rb.fromBlockId || !rb.toBlockId) {
         showWarningMessage(
@@ -699,12 +699,12 @@ export default function TrackCanvas({
         return false;
       }
 
-      if (hitElement instanceof RouteButtonElement) {
+      if (hitElement instanceof RouteButtonElementView) {
         void executeRoute(hitElement);
         return true;
       }
 
-      if (hitElement instanceof ExtendedRouteButtonElement) {
+      if (hitElement instanceof ExtendedRouteButtonElementView) {
         void executeExtendedRoute(hitElement);
         return true;
       }
@@ -765,7 +765,7 @@ export default function TrackCanvas({
 
 
       if (!editModeRef.current && hitElement?.type === ELEMENT_TYPES.BUTTON_AUDIO) {
-        const audioButton = hitElement as AudioButtonElement;
+        const audioButton = hitElement as AudioButtonElementView;
         audioButton.press(() => {
           invalidate();
         });
@@ -775,12 +775,12 @@ export default function TrackCanvas({
       if (currentEditMode) {
         if (currentTurnoutSelection) {
           if (hitElement) {
-            if (currentElement instanceof RouteButtonElement) {
+            if (currentElement instanceof RouteButtonElementView) {
               if (isTurnoutElement(hitElement)) {
-                const rb = currentElement as RouteButtonElement;
+                const rb = currentElement as RouteButtonElementView;
                 const closed = hitElement.turnoutClosed;
                 rb.addOrUpdateTurnout(hitElement.id, closed);
-                setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElement);
+                setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElementView);
                 onInvalidate();
               }
             } else {
@@ -816,8 +816,8 @@ export default function TrackCanvas({
       // A klikkelést lehet csak Control módban kellene engedélyezni!
       // if (toolRef.current.mode == "cursor" && hitElement && !editModeRef.current) {
       //   if (hitElement instanceof ClickableBaseElement) {
-      //     if (hitElement instanceof RouteButtonElement) {
-      //       const rb = hitElement as RouteButtonElement;
+      //     if (hitElement instanceof RouteButtonElementView) {
+      //       const rb = hitElement as RouteButtonElementView;
       //       const elems = currentLayout.getAllElements();
 
       //       //setBusy?.(true, "Route is being set...");
@@ -1081,7 +1081,7 @@ export default function TrackCanvas({
           hoveredElement instanceof TrackTurnoutDoubleElementView ||
           hoveredElement instanceof TrackSignalElementView ||
           hoveredElement instanceof ClickableBaseElement ||
-          hoveredElement instanceof AudioButtonElement ||
+          hoveredElement instanceof AudioButtonElementView ||
           hoveredElement instanceof BlockElementView
 
         ) {

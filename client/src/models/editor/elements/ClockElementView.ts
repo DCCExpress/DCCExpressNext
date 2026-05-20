@@ -3,7 +3,7 @@ import { generateId } from "../../../helpers";
 import { BaseElement } from "../core/BaseElement";
 import { DrawOptions, IClockElement } from "../types/EditorTypes";
 
-export class ClockElement extends BaseElement implements IClockElement {
+export class ClockElementView extends BaseElement implements IClockElement {
     override type: typeof ELEMENT_TYPES.CLOCK = ELEMENT_TYPES.CLOCK;
     currentTime: Date = new Date();
     scale = 1;
@@ -115,8 +115,8 @@ export class ClockElement extends BaseElement implements IClockElement {
         ctx.stroke();
     }
 
-    static fromJSON(data: IClockElement) : ClockElement {
-        const e = new ClockElement(data.x, data.y);
+    static fromJSON(data: IClockElement) : ClockElementView {
+        const e = new ClockElementView(data.x, data.y);
         e.id = data.id;
         e.name = data.name;
         e.rotation = data.rotation;
@@ -125,8 +125,8 @@ export class ClockElement extends BaseElement implements IClockElement {
         return e;
     }
 
-    override clone(): ClockElement {
-        const copy = new ClockElement(this.x, this.y);
+    override clone(): ClockElementView {
+        const copy = new ClockElementView(this.x, this.y);
         copy.id = generateId();
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;

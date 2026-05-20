@@ -8,7 +8,7 @@ import {
 } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
-export class AudioButtonElement
+export class AudioButtonElementView
     extends BaseElement
     implements IAudioButtonElement {
     override type: typeof ELEMENT_TYPES.BUTTON_AUDIO = ELEMENT_TYPES.BUTTON_AUDIO;
@@ -29,8 +29,8 @@ export class AudioButtonElement
 
     play() {
         if (!this.fileName) {
-            console.warn("[AudioButtonElement] audio fileName does not exist");
-            showErrorMessage("Error", "[AudioButtonElement] audio fileName does not exist")
+            console.warn("[AudioButtonElementView] audio fileName does not exist");
+            showErrorMessage("Error", "[AudioButtonElementView] audio fileName does not exist")
             return;
         }
 
@@ -39,8 +39,8 @@ export class AudioButtonElement
 
     press(onChanged?: () => void) {
         if (!this.fileName) {
-            console.warn("[AudioButtonElement] audio fileName does not exist");
-            showWarningMessage("Warning", "[AudioButtonElement] audio fileName does not exist")
+            console.warn("[AudioButtonElementView] audio fileName does not exist");
+            showWarningMessage("Warning", "[AudioButtonElementView] audio fileName does not exist")
             return;
         }
 
@@ -167,8 +167,8 @@ export class AudioButtonElement
         };
     }
 
-    static fromJSON(data: IAudioButtonElement): AudioButtonElement {
-        const e = new AudioButtonElement(data.x, data.y);
+    static fromJSON(data: IAudioButtonElement): AudioButtonElementView {
+        const e = new AudioButtonElementView(data.x, data.y);
         e.id = data.id;
         e.name = data.name;
         e.rotation = data.rotation;
@@ -179,8 +179,8 @@ export class AudioButtonElement
         return e;
     }
 
-    override clone(): AudioButtonElement {
-        const copy = new AudioButtonElement(this.x, this.y);
+    override clone(): AudioButtonElementView {
+        const copy = new AudioButtonElementView(this.x, this.y);
 
         copy.id = generateId();
         copy.rotation = this.rotation;

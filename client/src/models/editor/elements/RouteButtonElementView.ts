@@ -8,7 +8,7 @@ import { IEditableProperty } from "./PropertyDescriptor";
 
 export type RouteTurnoutItem = RouteTurnoutItemDto;
 
-export class RouteButtonElement extends ClickableBaseElement implements IRouteButtonElement {
+export class RouteButtonElementView extends ClickableBaseElement implements IRouteButtonElement {
     override type: typeof ELEMENT_TYPES.BUTTON_ROUTE = ELEMENT_TYPES.BUTTON_ROUTE;
     label: string = "Route";
     colorOn: string = "lime";
@@ -165,8 +165,8 @@ export class RouteButtonElement extends ClickableBaseElement implements IRouteBu
         };
     }
 
-    static fromJSON(data: IRouteButtonElement) : RouteButtonElement{
-       const e = new RouteButtonElement(data.x, data.y);
+    static fromJSON(data: IRouteButtonElement) : RouteButtonElementView{
+       const e = new RouteButtonElementView(data.x, data.y);
         e.id = data.id;
         e.name = data.name;
         e.rotation = data.rotation;
@@ -186,8 +186,8 @@ export class RouteButtonElement extends ClickableBaseElement implements IRouteBu
         return e;      
     }
 
-    override clone(): RouteButtonElement {
-        const copy = new RouteButtonElement(this.x, this.y);
+    override clone(): RouteButtonElementView {
+        const copy = new RouteButtonElementView(this.x, this.y);
         copy.id = generateId();
         copy.rotation = this.rotation;
         copy.rotationStep = this.rotationStep;

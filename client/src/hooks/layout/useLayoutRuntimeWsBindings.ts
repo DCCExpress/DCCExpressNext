@@ -61,8 +61,8 @@ import {
 } from "../../models/editor/elements/BlockElementView";
 
 import {
-  ExtendedRouteButtonElement,
-} from "../../models/editor/elements/ExtendedRouteButtonElement";
+  ExtendedRouteButtonElementView,
+} from "../../models/editor/elements/ExtendedRouteButtonElementView";
 
 type InvalidateSetter =
   Dispatch<SetStateAction<number>>;
@@ -105,7 +105,7 @@ export function useLayoutRuntimeWsBindings({
         layoutRef.current.getAllElements();
 
       for (const elem of elements) {
-        if (!(elem instanceof ExtendedRouteButtonElement)) {
+        if (!(elem instanceof ExtendedRouteButtonElementView)) {
           continue;
         }
 

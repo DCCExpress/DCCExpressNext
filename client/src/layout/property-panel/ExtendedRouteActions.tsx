@@ -1,9 +1,9 @@
 import { Button, Card, Stack, Text } from "@mantine/core";
 
-import type { ExtendedRouteButtonElement } from "../../models/editor/elements/ExtendedRouteButtonElement";
+import type { ExtendedRouteButtonElementView } from "../../models/editor/elements/ExtendedRouteButtonElementView";
 
 type ExtendedRouteActionsProps = {
-  selectedElement: ExtendedRouteButtonElement;
+  selectedElement: ExtendedRouteButtonElementView;
   onRefreshRouteGraph: () => Promise<void>;
   onTestRoute: () => Promise<void>;
 };

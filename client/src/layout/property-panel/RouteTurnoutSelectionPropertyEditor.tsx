@@ -12,9 +12,9 @@ import type { BaseElement } from "../../models/editor/core/BaseElement";
 import type { Layout } from "../../models/editor/core/Layout";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import {
-  RouteButtonElement,
+  RouteButtonElementView,
   type RouteTurnoutItem,
-} from "../../models/editor/elements/RouteButtonElement";
+} from "../../models/editor/elements/RouteButtonElementView";
 import { TrackTurnoutElement } from "../../models/editor/elements/TrackTurnoutElement";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import type {
@@ -49,7 +49,7 @@ function removeTurnout(
   turnoutId: string,
   onUpdateSelectedElement: SelectedElementUpdateHandler
 ) {
-  const routeButton = selectedElement as RouteButtonElement;
+  const routeButton = selectedElement as RouteButtonElementView;
   routeButton.removeTurnout(turnoutId);
   onUpdateSelectedElement(selectedElement);
 }
