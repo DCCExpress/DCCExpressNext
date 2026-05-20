@@ -1,6 +1,7 @@
 import { Button, Card, Stack, Text } from "@mantine/core";
 
 import type { ExtendedRouteButtonElementView } from "../../models/editor/elements/ExtendedRouteButtonElementView";
+import { useTranslation } from "react-i18next";
 
 type ExtendedRouteActionsProps = {
   selectedElement: ExtendedRouteButtonElementView;
@@ -13,11 +14,13 @@ export default function ExtendedRouteActions({
   onRefreshRouteGraph,
   onTestRoute,
 }: ExtendedRouteActionsProps) {
+  const { t } = useTranslation();
+
   return (
     <Card withBorder p="xs" mr={16} mb={12}>
       <Stack gap="xs">
         <Text size="sm" fw={600}>
-          Automatic route test
+          {t("routesPanel.automaticRouteTest")}
         </Text>
 
         <Button
@@ -27,7 +30,7 @@ export default function ExtendedRouteActions({
             void onRefreshRouteGraph();
           }}
         >
-          Refresh segments
+          {t("routesPanel.refreshSegments")}
         </Button>
 
         <Button
@@ -39,7 +42,7 @@ export default function ExtendedRouteActions({
           }}
           disabled={!selectedElement.fromBlockId || !selectedElement.toBlockId}
         >
-          Test route
+          {t("graph.solver.testRoute")}
         </Button>
       </Stack>
     </Card>

@@ -1,5 +1,6 @@
 import { Accordion, Group, Text, useMantineColorScheme } from "@mantine/core";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 
@@ -10,6 +11,7 @@ type PropertyPanelHelpProps = {
 export default function PropertyPanelHelp({
   selectedElement,
 }: PropertyPanelHelpProps) {
+  const { t } = useTranslation();
   const [opened, setOpened] = useState<string | null>("help");
   const { colorScheme } = useMantineColorScheme();
 
@@ -33,14 +35,14 @@ export default function PropertyPanelHelp({
         >
           <Group gap={0}>
             <Text>❓</Text>
-            <Text>Help</Text>
+            <Text>{t("help.title")}</Text>
           </Group>
         </Accordion.Control>
 
         <Accordion.Panel>
           <div
             dangerouslySetInnerHTML={{
-              __html: selectedElement ? selectedElement.getHelp() : "GENERAL HELP",
+              __html: selectedElement ? selectedElement.getHelp() : t("help.general"),
             }}
           />
         </Accordion.Panel>

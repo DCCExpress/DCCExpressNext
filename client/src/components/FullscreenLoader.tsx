@@ -1,6 +1,7 @@
 import { Button, Center, Loader, Overlay, Stack, Text } from "@mantine/core";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { wsApi } from "../services/wsApi";
+import { useTranslation } from "react-i18next";
 
 type FullscreenLoaderProps = {
   visible: boolean;
@@ -9,8 +10,10 @@ type FullscreenLoaderProps = {
 
 export default function FullscreenLoader({
   visible,
-  text = "Loading...",
+  text,
 }: FullscreenLoaderProps) {
+  const { t } = useTranslation();
+
   if (!visible) return null;
 
   const handleEmergencyStop = () => {
@@ -29,7 +32,7 @@ export default function FullscreenLoader({
           <Loader size="xl" />
 
           <Text size="md" c="dimmed">
-            {text}
+            {text ?? t("common.loading")}
           </Text>
 
           <Button
@@ -39,7 +42,7 @@ export default function FullscreenLoader({
             leftSection={<IconAlertTriangle size={18} />}
             onClick={handleEmergencyStop}
           >
-            EMERGENCY STOP
+            {t("commandCenter.emergencyStop")}
           </Button>
         </Stack>
       </Center>

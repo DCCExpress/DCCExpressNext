@@ -17,7 +17,29 @@
     "remove": "Remove",
     "removeAll": "Remove all",
     "error": "Error",
-    "success": "Successful"
+    "success": "Successful",
+    "loading": "Loading..."
+  },
+  "home": {
+    "heroTitle": "Railway control made simple,\nvisual and powerful.",
+    "heroDescription": "Welcome to DCCExpress - a modern model railway control system for editing layouts, programming railway components, and controlling trains from desktop or mobile devices.",
+    "startLayout": "Start with LayoutView Editor",
+    "comingSoon": "Coming Soon",
+    "cards": {
+      "layout": {
+        "title": "LayoutView & Control",
+        "description": "Design your railway layout and control it live with turnouts, signals, sensors, blocks, routes, and locomotive panels.",
+        "button": "Open LayoutView & Control"
+      },
+      "programmer": {
+        "title": "Programmer",
+        "description": "Configure locomotives, accessories, functions, decoder values, and automation settings from a clean programming workspace."
+      },
+      "mobile": {
+        "title": "Mobile Controller",
+        "description": "Control your trains from a touch-friendly interface with speed control, direction, emergency stop, and function buttons."
+      }
+    }
   },
   "locodialog": {
     "close": "Close",
@@ -44,13 +66,24 @@
     "save": "Save",
     "selectimage": "Select image"
   },
+  "locopanel": {
+    "nolocos": "No locomotive"
+  },
   "settings": {
     "language": "Language",
+    "languagePlaceholder": "Select language",
     "languages": {
       "en": "English",
       "hu": "Hungarian"
     },
     "title": "Settings"
+  },
+  "topMenu": {
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "quickHelp": {
+    "title": "Quick help"
   },
   "block": {
     "typePlaceholder": "Select block type",
@@ -64,6 +97,8 @@
     }
   },
   "help": {
+    "title": "Help",
+    "general": "Select an element to show help.",
     "block": {
       "title": "Block element",
       "description": "A block is an operational railway section used by the automatic route and train tracking system.",
@@ -133,6 +168,219 @@
     "hideLocoPanel": "Hide loco panel",
     "showPropertyPanel": "Show property panel",
     "hidePropertyPanel": "Hide property panel"
+  },
+  "visibility": {
+    "title": "Visibility",
+    "showOccupancyAddress": "Show occupancy address",
+    "showSensorAddress": "Show sensor address",
+    "showTurnoutAddress": "Show turnout address",
+    "showSignalAddress": "Show signal address",
+    "showSegments": "Show segments",
+    "showBlockNames": "Show block names",
+    "showGrid": "Show grid"
+  },
+  "controlPanel": {
+    "tabs": {
+      "commandCenter": "Command center",
+      "controller": "Controller",
+      "routes": "Routes",
+      "visibility": "Visibility",
+      "log": "Log"
+    }
+  },
+  "commandCenter": {
+    "title": "Command Center",
+    "name": "Name",
+    "connectionType": "Connection type",
+    "types": {
+      "simulator": "Simulator",
+      "z21": "Z21",
+      "dccExTcp": "DCC-EX TCP",
+      "dccExSerial": "DCC-EX Serial"
+    },
+    "simulatorDescription": "The simulator command center is a built-in command center that simulates a connection. It can be used for testing and development purposes.",
+    "host": "Host",
+    "port": "Port",
+    "serialPort": "Serial port",
+    "serialPortPlaceholder": "COM3 or /dev/ttyUSB0",
+    "autoConnect": "Auto connect",
+    "powerOn": "Power ON",
+    "powerOff": "Power OFF",
+    "emergencyStop": "EMERGENCY STOP",
+    "online": "ONLINE",
+    "offline": "OFFLINE",
+    "connection": "Connection",
+    "type": "Type",
+    "lock": "Lock",
+    "state": "State",
+    "locked": "LOCKED",
+    "free": "FREE",
+    "owner": "Owner",
+    "thisClient": "This client",
+    "reason": "Reason",
+    "power": "Power",
+    "trackPower": "Track power",
+    "emergencyStopState": "Emergency stop",
+    "shortCircuit": "Short circuit",
+    "programming": "Programming",
+    "z21System": "Z21 System",
+    "mainCurrent": "Main current",
+    "progCurrent": "Prog current",
+    "filteredCurrent": "Filtered current",
+    "temperature": "Temperature",
+    "supplyVoltage": "Supply voltage",
+    "vccVoltage": "VCC voltage",
+    "centralState": "Central state",
+    "centralStateEx": "Central state EX",
+    "capabilities": "Capabilities",
+    "z21Flags": "Z21 Flags",
+    "highTemp": "High temp",
+    "powerLost": "Power lost",
+    "shortExternal": "Short external",
+    "shortInternal": "Short internal",
+    "locoCmds": "Loco cmds",
+    "accessoryCmds": "Accessory cmds",
+    "detectorCmds": "Detector cmds",
+    "needsUnlock": "Needs unlock",
+    "yes": "YES",
+    "no": "NO"
+  },
+  "programmer": {
+    "title": "Decoder Programmer",
+    "subtitle": "CV programming for locomotive and accessory decoders",
+    "commandCenter": "Command center",
+    "experimental": "Experimental",
+    "powerShort": "PWR",
+    "panelTitle": "Programmer",
+    "decoderType": "Decoder type",
+    "decoderTypes": {
+      "loco": "Loco decoder",
+      "accessory": "Accessory decoder"
+    },
+    "programmingMode": "Programming mode",
+    "modes": {
+      "serviceTrack": "Service track",
+      "pomLoco": "POM - loco",
+      "pomAccessory": "POM - accessory"
+    },
+    "address": "Address",
+    "cv": "CV",
+    "value": "Value",
+    "readCv": "Read CV",
+    "writeCv": "Write CV",
+    "logTitle": "CV log",
+    "readLog": "Read CV {{cv}}...",
+    "writeLog": "Write CV {{cv}} = {{value}}...",
+    "help": {
+      "title": "CV help",
+      "databaseError": "Database error",
+      "empty": "Enter a CV number and known information will appear here.",
+      "unknown": "Unknown",
+      "unknownDescription": "There is no description for this CV in the database yet.",
+      "known": "Known",
+      "min": "Min",
+      "max": "Max",
+      "default": "Default",
+      "bits": "Bits",
+      "notes": "Notes"
+    }
+  },
+  "graph": {
+    "title": "Graph",
+    "tabs": {
+      "graph": "Graph",
+      "connections": "Connections",
+      "blocks": "Blocks",
+      "runnableBlocks": "Runnable Blocks",
+      "solver": "Route search"
+    },
+    "emptyGraph": "No generated graph yet.",
+    "emptyConnections": "No connection to display.",
+    "emptyBlockConnections": "No block connection to display.",
+    "emptyRunnableBlocks": "No actually runnable block route.",
+    "noSearchableGraph": "There is no graph to search routes on.",
+    "headers": {
+      "from": "From",
+      "to": "To",
+      "sectionObjects": "Section objects",
+      "turnoutRequirement": "Turnout requirement",
+      "blockConnection": "Block connection",
+      "sectionChain": "Section chain",
+      "fromBlock": "From block",
+      "toBlock": "To block",
+      "runnablePath": "Runnable path",
+      "locoDirection": "Loco direction"
+    },
+    "items": {
+      "detectors": "Detectors",
+      "signals": "Signals",
+      "blocks": "Blocks",
+      "turnout": "Turnout"
+    },
+    "solver": {
+      "fromPlaceholder": "Select departure block",
+      "toPlaceholder": "Select destination block",
+      "search": "Search route",
+      "intro": "Select a departure and destination block, then start the search.",
+      "notFoundTitle": "No runnable route",
+      "notFound": "No route was found between the selected blocks that can be traversed with consistent turnout states.",
+      "foundTitle": "Route found",
+      "found": "A runnable route exists between the selected blocks.",
+      "testRoute": "Test route",
+      "directionTitle": "Locomotive direction",
+      "directionForward": "The locomotive travels the route forward.",
+      "directionReverse": "The locomotive travels the route in reverse.",
+      "directionUnknown": "The direction cannot be determined from the travel direction marked on the layout.",
+      "blockPathTitle": "Block route with segment chain",
+      "turnoutsTitle": "Required turnout states",
+      "noTurnouts": "This route does not require turnout changes.",
+      "edgesTitle": "Edges in detail"
+    }
+  },
+  "routesPanel": {
+    "title": "Route graph",
+    "generate": "Generate",
+    "openGraph": "Open Graph",
+    "generateHint": "Generate the graph to display segment connections.",
+    "segmentConnections": "Segment connections",
+    "connectionCount_one": "{{count}} connection",
+    "connectionCount_other": "{{count}} connections",
+    "required": "Required",
+    "test": "Test",
+    "noTurnoutRequired": "No turnout required",
+    "noActiveGraph": "No active route graph on the server yet.",
+    "graphRefreshed": "Server route graph refreshed: {{nodes}} node, {{edges}} edge.",
+    "reloadFailed": "Could not reload server route graph.",
+    "turnoutNotFound": "Turnout not found for address: {{address}}",
+    "routeTestSent": "Route test sent: {{route}}",
+    "routeConnectionTestFailed": "Could not test route connection.",
+    "routeTestFailed": "Could not test route.",
+    "selectBothBlocks": "Select both From block and To block first.",
+    "noServerGraph": "No server route graph is available.",
+    "selectedBlocksMissing": "The selected route blocks could not be found in the server graph.",
+    "routeRequestSent": "Route request sent: {{from}} -> {{to}}",
+    "routeRequest": "Route request",
+    "reservationRequested": "Reservation requested: {{from}} -> {{to}}",
+    "reservationFailed": "Could not request route reservation.",
+    "releaseRequest": "Route release",
+    "releaseRequested": "Release requested: {{from}} -> {{to}}",
+    "automaticRouteMissingBlocks": "The automatic route button has no From / To block configured.",
+    "configuredBlocksMissing": "The configured From / To block could not be found in the server graph.",
+    "commandCenterBusy": "Command center is busy. Route cannot be started.",
+    "routeIsBeingSet": "Route is being set...",
+    "automaticRouteFailed": "Could not request automatic route.",
+    "automaticRouteTest": "Automatic route test",
+    "refreshSegments": "Refresh segments",
+    "selectBlock": "Select block",
+    "noRouteGraph": "No route graph available.",
+    "noBlocks": "No blocks available in the generated route graph."
+  },
+  "propertyPanel": {
+    "title": "Properties"
+  },
+  "turnout": {
+    "closed": "closed",
+    "thrown": "thrown"
   },
   "task": {
     "status": {
@@ -290,13 +538,13 @@
     "collapse": "Collapse route and task controls",
     "fromPlaceholder": "A1",
     "toPlaceholder": "C1",
-    "setRoute": "Set route",
-    "releaseRoute": "Release route",
-    "clearAllBusy": "Clear all busy",
-    "taskManager": "Task Manager...",
-    "startAll": "Start all tasks",
-    "finishAll": "Finish all tasks",
-    "abortAll": "Abort all tasks",
+    "setRoute": "Reserve",
+    "releaseRoute": "Release",
+    "clearAllBusy": "Clear busy",
+    "taskManager": "Tasks...",
+    "startAll": "Start all",
+    "finishAll": "Finish all",
+    "abortAll": "Abort all",
     "allStarted": "All tasks started.",
     "allFinishing": "All tasks marked for finish.",
     "allAborted": "All active tasks aborted."

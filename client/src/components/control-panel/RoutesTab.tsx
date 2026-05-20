@@ -30,6 +30,7 @@ import {
 } from "../../helpers";
 import { useRouteGraph } from "../../hooks/useRouteGraph";
 import type { RouteTurnoutElement } from "../../models/editor/core/LayoutView";
+import { useTranslation } from "react-i18next";
 type RoutesTabProps = {
   routes?: string | undefined;
   layout: LayoutView,
@@ -37,6 +38,7 @@ type RoutesTabProps = {
 };
 
 export default function RoutesTab(p: RoutesTabProps) {
+  const { t } = useTranslation();
   //const { graph, setGraph } = useRouteGraph();
   //const { settings, updateSettings } = useEditorSettings();
   const {
@@ -62,22 +64,25 @@ export default function RoutesTab(p: RoutesTabProps) {
 
       if (!loadedGraph) {
         showWarningMessage(
-          "Route graph",
-          "A szerveren még nincs aktív route gráf."
+          t("routesPanel.title"),
+          t("routesPanel.noActiveGraph")
         );
         return;
       }
 
       showOkMessage(
-        "Route graph",
-        `Szerveroldali gráf frissítve: ${loadedGraph.nodes.length} node, ${loadedGraph.edges.length} edge.`
+        t("routesPanel.title"),
+        t("routesPanel.graphRefreshed", {
+          nodes: loadedGraph.nodes.length,
+          edges: loadedGraph.edges.length,
+        })
       );
     } catch (error) {
       showErrorMessage(
-        "ERROR",
+        t("common.error"),
         error instanceof Error
           ? error.message
-          : "Could not reload server route graph."
+          : t("routesPanel.reloadFailed")
       );
     }
   };
@@ -97,7 +102,7 @@ export default function RoutesTab(p: RoutesTabProps) {
 
       if (!turnout) {
         throw new Error(
-          `Turnout not found for address: ${turnoutState.address}`
+          t("routesPanel.turnoutNotFound", { address: turnoutState.address })
         );
       }
 
@@ -114,18 +119,18 @@ export default function RoutesTab(p: RoutesTabProps) {
 
       const routeText = solution.nodes
         .map((node) => node.name)
-        .join(" → ");
+        .join(" -> ");
 
       showOkMessage(
-        "SUCCESSFUL",
-        `Route test sent: ${routeText}`
+        t("common.success"),
+        t("routesPanel.routeTestSent", { route: routeText })
       );
     } catch (error) {
       showErrorMessage(
-        "ERROR",
+        t("common.error"),
         error instanceof Error
           ? error.message
-          : "Could not test route."
+          : t("routesPanel.routeTestFailed")
       );
     }
   };
@@ -134,15 +139,17 @@ export default function RoutesTab(p: RoutesTabProps) {
       await applyTurnoutStates(edge.turnoutStates);
 
       showOkMessage(
-        "SUCCESSFUL",
-        `Route test sent: ${edge.from.name} → ${edge.to.name}`
+        t("common.success"),
+        t("routesPanel.routeTestSent", {
+          route: `${edge.from.name} -> ${edge.to.name}`,
+        })
       );
     } catch (error) {
       showErrorMessage(
-        "ERROR",
+        t("common.error"),
         error instanceof Error
           ? error.message
-          : "Could not test route connection."
+          : t("routesPanel.routeConnectionTestFailed")
       );
     }
   };
@@ -156,31 +163,31 @@ export default function RoutesTab(p: RoutesTabProps) {
             leftSection={<IconRoute size={16} />}
             onClick={handleRunRouteProcess}
           >
-            Generate
+            {t("routesPanel.generate")}
           </Button>
           <Button
             size="sm"
             onClick={() => setGraphDialogOpened(true)}
             disabled={!graph}
           >
-            Open Graph
+            {t("routesPanel.openGraph")}
           </Button>
 
         </Group>
 
         {!graph && (
           <Text size="sm" c="dimmed">
-            Generate the graph to display segment connections.
+            {t("routesPanel.generateHint")}
           </Text>
         )}
 
         {graph && (
           <Stack gap="xs">
             <Group justify="space-between">
-              <Text fw={600}>Segment connections</Text>
+              <Text fw={600}>{t("routesPanel.segmentConnections")}</Text>
 
               <Badge variant="light">
-                {graph.edges.length} connection{graph.edges.length === 1 ? "" : "s"}
+                {t("routesPanel.connectionCount", { count: graph.edges.length })}
               </Badge>
             </Group>
 
@@ -188,10 +195,10 @@ export default function RoutesTab(p: RoutesTabProps) {
               <Table striped highlightOnHover withTableBorder withColumnBorders>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>From</Table.Th>
-                    <Table.Th>To</Table.Th>
-                    <Table.Th>Required</Table.Th>
-                    <Table.Th style={{ width: 110 }}>Test</Table.Th>
+                    <Table.Th>{t("graph.headers.from")}</Table.Th>
+                    <Table.Th>{t("graph.headers.to")}</Table.Th>
+                    <Table.Th>{t("routesPanel.required")}</Table.Th>
+                    <Table.Th style={{ width: 110 }}>{t("routesPanel.test")}</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
 
@@ -207,7 +214,7 @@ export default function RoutesTab(p: RoutesTabProps) {
                       <Table.Td>
                         {edge.turnoutStates.length === 0 ? (
                           <Text size="sm" c="dimmed">
-                            No turnout required
+                            {t("routesPanel.noTurnoutRequired")}
                           </Text>
                         ) : (
                           <Group gap={6}>
@@ -234,7 +241,7 @@ export default function RoutesTab(p: RoutesTabProps) {
                           onClick={() => handleTestConnection(edge)}
                           disabled={edge.turnoutStates.length === 0}
                         >
-                          Test
+                          {t("routesPanel.test")}
                         </Button>
                       </Table.Td>
                     </Table.Tr>

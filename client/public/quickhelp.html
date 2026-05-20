@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="color-scheme" content="light dark" />
-  <title>Quick Help</title>
+  <title>Quick help</title>
 
   <style>
     :root {
@@ -13,8 +13,6 @@
       --border: #ddd;
       --key-bg: #e9ecef;
       --note: #666;
-      --button-bg: #ffffff;
-      --button-border: #ccc;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -24,8 +22,6 @@
         --border: #444;
         --key-bg: #2c2e33;
         --note: #adb5bd;
-        --button-bg: #2c2e33;
-        --button-border: #555;
       }
     }
 
@@ -35,8 +31,6 @@
       --border: #ddd;
       --key-bg: #e9ecef;
       --note: #666;
-      --button-bg: #ffffff;
-      --button-border: #ccc;
     }
 
     html[data-theme="dark"] {
@@ -45,8 +39,6 @@
       --border: #444;
       --key-bg: #2c2e33;
       --note: #adb5bd;
-      --button-bg: #2c2e33;
-      --button-border: #555;
     }
 
     body {
@@ -58,16 +50,8 @@
       transition: background 0.2s ease, color 0.2s ease;
     }
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      gap: 12px;
-    }
-
     h1 {
-      margin: 0;
+      margin: 0 0 16px;
       font-size: 26px;
     }
 
@@ -108,132 +92,180 @@
       font-size: 13px;
       color: var(--note);
     }
-
-    .theme-toggle {
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--button-border);
-      background: var(--button-bg);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 13px;
-    }
-
-    .theme-toggle:hover {
-      opacity: 0.9;
-    }
   </style>
 </head>
 
 <body>
-  <div class="topbar">
-    <h1>🚆 Quick Help</h1>
-  </div>
+  <h1 data-i18n="title">Quick help</h1>
 
   <div class="section">
-    <h2>General Controls</h2>
+    <h2 data-i18n="generalTitle">General controls</h2>
 
     <div class="item">
-      <div class="key">Left Click</div>
-      <div class="desc">Select element or place new element (draw mode)</div>
+      <div class="key" data-i18n="leftClickKey">Left click</div>
+      <div class="desc" data-i18n="leftClickDesc">Select element or place new element in draw mode</div>
     </div>
 
     <div class="item">
       <div class="key">Ctrl + Drag</div>
-      <div class="desc">Pan (move) the canvas</div>
+      <div class="desc" data-i18n="ctrlDragDesc">Pan the canvas</div>
     </div>
 
     <div class="item">
-      <div class="key">Mouse Wheel</div>
-      <div class="desc">Zoom in / out</div>
+      <div class="key" data-i18n="wheelKey">Mouse wheel</div>
+      <div class="desc" data-i18n="wheelDesc">Zoom in or out</div>
     </div>
 
     <div class="item">
-      <div class="key">ESC</div>
-      <div class="desc">Switch back to cursor mode</div>
+      <div class="key">Esc</div>
+      <div class="desc" data-i18n="escDesc">Switch back to cursor mode</div>
     </div>
   </div>
 
   <div class="section">
-    <h2>Editing</h2>
+    <h2 data-i18n="editingTitle">Editing</h2>
 
     <div class="item">
-      <div class="key">Click</div>
-      <div class="desc">Select element</div>
+      <div class="key" data-i18n="clickKey">Click</div>
+      <div class="desc" data-i18n="clickDesc">Select element</div>
     </div>
 
     <div class="item">
-      <div class="key">Drag</div>
-      <div class="desc">Move selected element</div>
+      <div class="key" data-i18n="dragKey">Drag</div>
+      <div class="desc" data-i18n="dragDesc">Move selected element</div>
     </div>
 
     <div class="item">
       <div class="key">Delete / Backspace</div>
-      <div class="desc">Delete selected element</div>
+      <div class="desc" data-i18n="deleteDesc">Delete selected element</div>
     </div>
   </div>
 
   <div class="section">
-    <h2>Rotation</h2>
+    <h2 data-i18n="rotationTitle">Rotation</h2>
 
     <div class="item">
       <div class="key">R</div>
-      <div class="desc">Rotate selected element</div>
+      <div class="desc" data-i18n="rotateDesc">Rotate selected element</div>
     </div>
 
     <div class="item">
-      <div class="key">R (Draw Mode)</div>
-      <div class="desc">Rotate preview (ghost element)</div>
+      <div class="key" data-i18n="drawRotateKey">R (Draw mode)</div>
+      <div class="desc" data-i18n="drawRotateDesc">Rotate preview element</div>
     </div>
   </div>
 
   <div class="section">
-    <h2>Undo / Redo</h2>
+    <h2 data-i18n="undoTitle">Undo / Redo</h2>
 
     <div class="item">
       <div class="key">Ctrl + Z</div>
-      <div class="desc">Undo last action</div>
+      <div class="desc" data-i18n="undoDesc">Undo last action</div>
     </div>
 
     <div class="item">
       <div class="key">Ctrl + Y</div>
-      <div class="desc">Redo last undone action</div>
+      <div class="desc" data-i18n="redoDesc">Redo last undone action</div>
     </div>
 
     <div class="item">
       <div class="key">Ctrl + Shift + Z</div>
-      <div class="desc">Redo (alternative shortcut)</div>
+      <div class="desc" data-i18n="redoAltDesc">Redo with alternative shortcut</div>
     </div>
   </div>
 
   <div class="section">
-    <h2>Modes</h2>
+    <h2 data-i18n="modesTitle">Modes</h2>
 
     <div class="item">
-      <div class="key">Cursor Mode</div>
-      <div class="desc">Select and move elements</div>
+      <div class="key" data-i18n="cursorModeKey">Cursor mode</div>
+      <div class="desc" data-i18n="cursorModeDesc">Select and move elements</div>
     </div>
 
     <div class="item">
-      <div class="key">Draw Mode</div>
-      <div class="desc">Place new elements on the grid</div>
+      <div class="key" data-i18n="drawModeKey">Draw mode</div>
+      <div class="desc" data-i18n="drawModeDesc">Place new elements on the grid</div>
     </div>
   </div>
 
-  <div class="note">
-    Tip: Use zoom + pan for precise placement. Undo/Redo helps experimenting safely.
+  <div class="note" data-i18n="tip">
+    Tip: Use zoom and pan for precise placement. Undo/Redo helps experimenting safely.
   </div>
 
   <script>
-
     const quickHelpStorageKey = "dcc-express.quickhelp.theme";
     const mantineStorageKey = "mantine-color-scheme-value";
-
     const html = document.documentElement;
-    const button = document.getElementById("themeToggle");
+
+    const translations = {
+      en: {
+        title: "Quick help",
+        generalTitle: "General controls",
+        leftClickKey: "Left click",
+        leftClickDesc: "Select element or place new element in draw mode",
+        ctrlDragDesc: "Pan the canvas",
+        wheelKey: "Mouse wheel",
+        wheelDesc: "Zoom in or out",
+        escDesc: "Switch back to cursor mode",
+        editingTitle: "Editing",
+        clickKey: "Click",
+        clickDesc: "Select element",
+        dragKey: "Drag",
+        dragDesc: "Move selected element",
+        deleteDesc: "Delete selected element",
+        rotationTitle: "Rotation",
+        rotateDesc: "Rotate selected element",
+        drawRotateKey: "R (Draw mode)",
+        drawRotateDesc: "Rotate preview element",
+        undoTitle: "Undo / Redo",
+        undoDesc: "Undo last action",
+        redoDesc: "Redo last undone action",
+        redoAltDesc: "Redo with alternative shortcut",
+        modesTitle: "Modes",
+        cursorModeKey: "Cursor mode",
+        cursorModeDesc: "Select and move elements",
+        drawModeKey: "Draw mode",
+        drawModeDesc: "Place new elements on the grid",
+        tip: "Tip: Use zoom and pan for precise placement. Undo/Redo helps experimenting safely."
+      },
+      hu: {
+        title: "Gyors súgó",
+        generalTitle: "Általános vezérlés",
+        leftClickKey: "Bal kattintás",
+        leftClickDesc: "Elem kijelölése vagy új elem lerakása rajz módban",
+        ctrlDragDesc: "Vászon mozgatása",
+        wheelKey: "Egérgörgő",
+        wheelDesc: "Nagyítás vagy kicsinyítés",
+        escDesc: "Vissza kurzor módba",
+        editingTitle: "Szerkesztés",
+        clickKey: "Kattintás",
+        clickDesc: "Elem kijelölése",
+        dragKey: "Húzás",
+        dragDesc: "Kijelölt elem mozgatása",
+        deleteDesc: "Kijelölt elem törlése",
+        rotationTitle: "Forgatás",
+        rotateDesc: "Kijelölt elem forgatása",
+        drawRotateKey: "R (rajz mód)",
+        drawRotateDesc: "Előnézeti elem forgatása",
+        undoTitle: "Visszavonás / Ismétlés",
+        undoDesc: "Utolsó művelet visszavonása",
+        redoDesc: "Visszavont művelet ismétlése",
+        redoAltDesc: "Ismétlés alternatív gyorsgombbal",
+        modesTitle: "Módok",
+        cursorModeKey: "Kurzor mód",
+        cursorModeDesc: "Elemek kijelölése és mozgatása",
+        drawModeKey: "Rajz mód",
+        drawModeDesc: "Új elemek lerakása a rácsra",
+        tip: "Tipp: pontos elhelyezéshez használj nagyítást és mozgatást. A visszavonás segít biztonságosan próbálkozni."
+      }
+    };
 
     function normalizeTheme(theme) {
       return theme === "dark" || theme === "light" ? theme : null;
+    }
+
+    function normalizeLanguage(language) {
+      return language && language.toLowerCase().startsWith("hu") ? "hu" : "en";
     }
 
     function applyTheme(theme) {
@@ -246,6 +278,21 @@
       }
     }
 
+    function applyLanguage(language) {
+      const normalized = normalizeLanguage(language);
+      const labels = translations[normalized];
+
+      html.setAttribute("lang", normalized);
+      document.title = labels.title;
+
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        const key = element.getAttribute("data-i18n");
+        if (key && labels[key]) {
+          element.textContent = labels[key];
+        }
+      });
+    }
+
     function getInitialTheme() {
       return (
         normalizeTheme(localStorage.getItem(mantineStorageKey)) ||
@@ -253,28 +300,33 @@
       );
     }
 
+    function getInitialLanguage() {
+      return (
+        localStorage.getItem("lang") ||
+        localStorage.getItem("i18nextLng") ||
+        navigator.language ||
+        "en"
+      );
+    }
+
     applyTheme(getInitialTheme());
-
-    button.addEventListener("click", () => {
-      const current = html.getAttribute("data-theme");
-      const next = current === "dark" ? "light" : "dark";
-
-      applyTheme(next);
-
-      localStorage.setItem(quickHelpStorageKey, next);
-      localStorage.setItem(mantineStorageKey, next);
-    });
+    applyLanguage(getInitialLanguage());
 
     window.addEventListener("message", (event) => {
       if (event.origin !== window.location.origin) return;
 
       const message = event.data;
 
-      if (!message || message.type !== "DCCEXPRESS_THEME_CHANGED") return;
+      if (!message) return;
 
-      applyTheme(message.theme);
+      if (message.type === "DCCEXPRESS_THEME_CHANGED") {
+        applyTheme(message.theme);
+      }
+
+      if (message.type === "DCCEXPRESS_LANGUAGE_CHANGED") {
+        applyLanguage(message.language);
+      }
     });
-  </script>
   </script>
 </body>
 

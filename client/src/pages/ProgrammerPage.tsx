@@ -27,6 +27,7 @@ import {
     type CvDefinition,
 } from "../data/cvDatabase";
 import { useCommandCenter } from "../context/CommandCenterContext";
+import { useTranslation } from "react-i18next";
 
 type DecoderType = "loco" | "accessory";
 type ProgrammingMode = "service-track" | "pom-loco" | "pom-accessory";
@@ -43,6 +44,7 @@ type ProgrammerPageProps = {
 };
 
 export default function ProgrammerPage(p: ProgrammerPageProps) {
+    const { t } = useTranslation();
     const [decoderType, setDecoderType] = useState<DecoderType>("loco");
     const [mode, setMode] = useState<ProgrammingMode>("service-track");
     const [address, setAddress] = useState<number | "">(3);
@@ -89,12 +91,12 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
 
     function readCv() {
         if (typeof cv !== "number") return;
-        addLog(`Read CV ${cv}...`);
+        addLog(t("programmer.readLog", { cv }));
     }
 
     function writeCv() {
         if (typeof cv !== "number" || typeof value !== "number") return;
-        addLog(`Write CV ${cv} = ${value}...`);
+        addLog(t("programmer.writeLog", { cv, value }));
     }
 
     return (
@@ -104,12 +106,12 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
                     <IconCpu size={28} />
 
                     <div>
-                        <Title order={3}>Decoder Programmer</Title>
+                        <Title order={3}>{t("programmer.title")}</Title>
                         <Text size="sm" c="dimmed">
-                            Mozdony- és eszközdekóderek CV programozása
+                            {t("programmer.subtitle")}
                         </Text>
                         <Text size="xs" c="dimmed">
-                            Command center: {name ?? "-"} / {type ?? "-"} / {ip ?? "-"}:{port ?? "-"}
+                            {t("programmer.commandCenter")}: {name ?? "-"} / {type ?? "-"} / {ip ?? "-"}:{port ?? "-"}
                         </Text>
                     </div>
                 </Group>
@@ -117,27 +119,27 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
                 <Group>
                     <Group>
                         <Badge color="blue" variant="light">
-                            Experimental
+                            {t("programmer.experimental")}
                         </Badge>
 
                         <Badge color={alive ? "green" : "red"} variant="filled">
-                            {alive ? "ONLINE" : "OFFLINE"}
+                            {alive ? t("commandCenter.online") : t("commandCenter.offline")}
                         </Badge>
 
                         <Badge color={powerInfo?.trackVoltageOn ? "green" : "red"} variant="filled">
-                            PWR {powerInfo?.trackVoltageOn ? "ON" : "OFF"}
+                            {t("programmer.powerShort")} {powerInfo?.trackVoltageOn ? "ON" : "OFF"}
                         </Badge>
 
                         <Button variant="light" onClick={p.onGoHome}>
-                            Home
+                            {t("Home")}
                         </Button>
                     </Group>
                     <Badge color="blue" variant="light">
-                        Experimental
+                        {t("programmer.experimental")}
                     </Badge>
 
                     <Button variant="light" onClick={p.onGoHome}>
-                        Home
+                        {t("Home")}
                     </Button>
                 </Group>
             </Group>
@@ -145,7 +147,7 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
                 {/* <Card withBorder radius="md" p="md">
                     <Stack gap="sm">
-                        <Title order={5}>Programmer</Title>
+                        <Title order={5}>{t("programmer.panelTitle")}</Title>
 
                         <Select
                             label="Decoder type"
@@ -226,36 +228,36 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
                 </Card> */}
                 <Card withBorder radius="md" p="md">
                     <Stack gap="sm">
-                        <Title order={5}>Programmer</Title>
+                        <Title order={5}>{t("programmer.panelTitle")}</Title>
 
                         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
                             <Stack gap="sm">
                                 <Select
-                                    label="Decoder type"
+                                    label={t("programmer.decoderType")}
                                     value={decoderType}
                                     onChange={(v) => setDecoderType((v ?? "loco") as DecoderType)}
                                     data={[
-                                        { value: "loco", label: "Loco decoder" },
-                                        { value: "accessory", label: "Accessory decoder" },
+                                        { value: "loco", label: t("programmer.decoderTypes.loco") },
+                                        { value: "accessory", label: t("programmer.decoderTypes.accessory") },
                                     ]}
                                 />
 
                                 <Select
-                                    label="Programming mode"
+                                    label={t("programmer.programmingMode")}
                                     value={mode}
                                     onChange={(v) =>
                                         setMode((v ?? "service-track") as ProgrammingMode)
                                     }
                                     data={[
-                                        { value: "service-track", label: "Service track" },
-                                        { value: "pom-loco", label: "POM - loco" },
-                                        { value: "pom-accessory", label: "POM - accessory" },
+                                        { value: "service-track", label: t("programmer.modes.serviceTrack") },
+                                        { value: "pom-loco", label: t("programmer.modes.pomLoco") },
+                                        { value: "pom-accessory", label: t("programmer.modes.pomAccessory") },
                                     ]}
                                 />
 
                                 {mode !== "service-track" && (
                                     <NumberInput
-                                        label="Address"
+                                        label={t("programmer.address")}
                                         value={address}
                                         min={1}
                                         max={9999}
@@ -267,7 +269,7 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
 
                                 <Group grow align="end">
                                     <NumberInput
-                                        label="CV"
+                                        label={t("programmer.cv")}
                                         value={cv}
                                         min={1}
                                         max={1024}
@@ -275,7 +277,7 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
                                     />
 
                                     <NumberInput
-                                        label="Value"
+                                        label={t("programmer.value")}
                                         value={value}
                                         min={0}
                                         max={255}
@@ -299,11 +301,11 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
                                         leftSection={<IconDownload size={16} />}
                                         onClick={readCv}
                                     >
-                                        Read CV
+                                        {t("programmer.readCv")}
                                     </Button>
 
                                     <Button leftSection={<IconUpload size={16} />} onClick={writeCv}>
-                                        Write CV
+                                        {t("programmer.writeCv")}
                                     </Button>
                                 </Group>
                             </Stack>
@@ -319,7 +321,7 @@ export default function ProgrammerPage(p: ProgrammerPageProps) {
                 <Card withBorder radius="md" p="md">
                     <Stack gap="sm">
                         <Group justify="space-between">
-                            <Title order={5}>CV log</Title>
+                            <Title order={5}>{t("programmer.logTitle")}</Title>
 
                         </Group>
 
@@ -364,17 +366,18 @@ type CvHelpPanelProps = {
 };
 
 function CvHelpPanel({ cv, definition, error }: CvHelpPanelProps) {
+    const { t } = useTranslation();
 
     if (error) {
         return (
             <Card withBorder radius="md" p="sm">
                 <Stack gap="xs">
                     <Text size="sm" fw={700}>
-                        CV help
+                        {t("programmer.help.title")}
                     </Text>
 
                     <Badge color="red" variant="light">
-                        Database error
+                        {t("programmer.help.databaseError")}
                     </Badge>
 
                     <Text size="xs" c="red">
@@ -390,11 +393,11 @@ function CvHelpPanel({ cv, definition, error }: CvHelpPanelProps) {
 
             <Card withBorder radius="md" p="sm">
                 <Text size="sm" fw={700}>
-                    CV help
+                    {t("programmer.help.title")}
                 </Text>
 
                 <Text size="xs" c="dimmed">
-                    Adj meg egy CV számot, és itt megjelenik az ismert információ.
+                    {t("programmer.help.empty")}
                 </Text>
             </Card>
         );
@@ -410,12 +413,12 @@ function CvHelpPanel({ cv, definition, error }: CvHelpPanelProps) {
                         </Text>
 
                         <Badge color="gray" variant="light">
-                            Unknown
+                            {t("programmer.help.unknown")}
                         </Badge>
                     </Group>
 
                     <Text size="xs" c="dimmed">
-                        Ehhez a CV-hez még nincs leírás az adatbázisban.
+                        {t("programmer.help.unknownDescription")}
                     </Text>
                 </Stack>
             </Card>
@@ -437,16 +440,16 @@ function CvHelpPanel({ cv, definition, error }: CvHelpPanelProps) {
                     </Box>
 
                     <Badge color="blue" variant="light">
-                        Known
+                        {t("programmer.help.known")}
                     </Badge>
                 </Group>
 
                 <Divider />
 
                 <Group gap="xs">
-                    <InfoBadge label="Min" value={definition.min ?? "-"} />
-                    <InfoBadge label="Max" value={definition.max ?? "-"} />
-                    <InfoBadge label="Default" value={definition.defaultValue ?? "-"} />
+                    <InfoBadge label={t("programmer.help.min")} value={definition.min ?? "-"} />
+                    <InfoBadge label={t("programmer.help.max")} value={definition.max ?? "-"} />
+                    <InfoBadge label={t("programmer.help.default")} value={definition.defaultValue ?? "-"} />
                 </Group>
 
                 {definition.bits && definition.bits.length > 0 && (
@@ -455,7 +458,7 @@ function CvHelpPanel({ cv, definition, error }: CvHelpPanelProps) {
 
                         <Stack gap={4}>
                             <Text size="xs" fw={700} c="dimmed">
-                                Bits
+                                {t("programmer.help.bits")}
                             </Text>
 
                             {definition.bits.map((bit) => (
@@ -487,7 +490,7 @@ function CvHelpPanel({ cv, definition, error }: CvHelpPanelProps) {
 
                         <Stack gap={4}>
                             <Text size="xs" fw={700} c="dimmed">
-                                Notes
+                                {t("programmer.help.notes")}
                             </Text>
 
                             {definition.notes.map((note, index) => (

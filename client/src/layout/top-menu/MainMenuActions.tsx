@@ -99,7 +99,7 @@ export default function MainMenuActions({
       <Menu>
         <Menu.Target>
           <Button variant="subtle" size="xs">
-            {t("Settings")}
+            {t("topMenu.settings")}
           </Button>
         </Menu.Target>
 
@@ -114,7 +114,7 @@ export default function MainMenuActions({
       </Menu>
 
       <Button variant="subtle" size="xs" onClick={onOpenHelp}>
-        {t("Help")}
+        {t("topMenu.help")}
       </Button>
     </>
   );

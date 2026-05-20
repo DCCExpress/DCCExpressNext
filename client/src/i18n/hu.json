@@ -8,6 +8,7 @@
   "Routes": "Útvonalak",
   "Save": "Mentés",
   "Trains": "Vonatok",
+  "UI": "UI",
   "common": {
     "cancel": "Mégsem",
     "save": "Mentés",
@@ -16,7 +17,29 @@
     "remove": "Eltávolítás",
     "removeAll": "Összes eltávolítása",
     "error": "Hiba",
-    "success": "Sikeres"
+    "success": "Sikeres",
+    "loading": "Betöltés..."
+  },
+  "home": {
+    "heroTitle": "Vasútvezérlés egyszerűen,\nlátványosan és erősen.",
+    "heroDescription": "Üdv a DCCExpressben - modern modellvasút-vezérlő rendszer pályaszerkesztéshez, vasúti elemek programozásához, valamint asztali és mobil vonatvezérléshez.",
+    "startLayout": "Indítás a LayoutView szerkesztővel",
+    "comingSoon": "Hamarosan",
+    "cards": {
+      "layout": {
+        "title": "LayoutView és vezérlés",
+        "description": "Tervezd meg a vasúti pályát, és vezéreld élőben váltókkal, jelzőkkel, érzékelőkkel, blokkokkal, útvonalakkal és mozdonymodulokkal.",
+        "button": "LayoutView és vezérlés megnyitása"
+      },
+      "programmer": {
+        "title": "Programozó",
+        "description": "Mozdonyok, kiegészítők, funkciók, dekóderértékek és automatizálási beállítások kezelése egy tiszta programozó felületen."
+      },
+      "mobile": {
+        "title": "Mobil vezérlő",
+        "description": "Vonatvezérlés érintőbarát felületről: sebesség, irány, vészleállítás és funkciógombok."
+      }
+    }
   },
   "locodialog": {
     "close": "Bezárás",
@@ -48,11 +71,19 @@
   },
   "settings": {
     "language": "Nyelv",
+    "languagePlaceholder": "Válassz nyelvet",
     "languages": {
       "en": "Angol",
       "hu": "Magyar"
     },
     "title": "Beállítások"
+  },
+  "topMenu": {
+    "settings": "Beállítások",
+    "help": "Súgó"
+  },
+  "quickHelp": {
+    "title": "Gyors súgó"
   },
   "block": {
     "typePlaceholder": "Válassz blokktípust",
@@ -66,6 +97,8 @@
     }
   },
   "help": {
+    "title": "Súgó",
+    "general": "Válassz ki egy elemet a súgó megjelenítéséhez.",
     "block": {
       "title": "Blokk elem",
       "description": "A blokk egy üzemi vasúti szakasz, amelyet az automatikus útvonalkeresés és a vonatkövetés használ.",
@@ -135,6 +168,219 @@
     "hideLocoPanel": "Mozdony panel elrejtése",
     "showPropertyPanel": "Tulajdonság panel mutatása",
     "hidePropertyPanel": "Tulajdonság panel elrejtése"
+  },
+  "visibility": {
+    "title": "Láthatóság",
+    "showOccupancyAddress": "Foglaltságérzékelő címének mutatása",
+    "showSensorAddress": "Érzékelő címének mutatása",
+    "showTurnoutAddress": "Váltócím mutatása",
+    "showSignalAddress": "Jelzőcím mutatása",
+    "showSegments": "Szegmensek mutatása",
+    "showBlockNames": "Blokknevek mutatása",
+    "showGrid": "Rács mutatása"
+  },
+  "controlPanel": {
+    "tabs": {
+      "commandCenter": "Parancsközpont",
+      "controller": "Vezérlő",
+      "routes": "Útvonalak",
+      "visibility": "Láthatóság",
+      "log": "Napló"
+    }
+  },
+  "commandCenter": {
+    "title": "Parancsközpont",
+    "name": "Név",
+    "connectionType": "Kapcsolat típusa",
+    "types": {
+      "simulator": "Szimulátor",
+      "z21": "Z21",
+      "dccExTcp": "DCC-EX TCP",
+      "dccExSerial": "DCC-EX soros"
+    },
+    "simulatorDescription": "A szimulátor parancsközpont beépített, kapcsolatot utánzó parancsközpont. Teszteléshez és fejlesztéshez használható.",
+    "host": "Host",
+    "port": "Port",
+    "serialPort": "Soros port",
+    "serialPortPlaceholder": "COM3 vagy /dev/ttyUSB0",
+    "autoConnect": "Automatikus kapcsolódás",
+    "powerOn": "Táp BE",
+    "powerOff": "Táp KI",
+    "emergencyStop": "VÉSZLEÁLLÍTÁS",
+    "online": "ONLINE",
+    "offline": "OFFLINE",
+    "connection": "Kapcsolat",
+    "type": "Típus",
+    "lock": "Zárolás",
+    "state": "Állapot",
+    "locked": "ZÁROLVA",
+    "free": "SZABAD",
+    "owner": "Tulajdonos",
+    "thisClient": "Ez a kliens",
+    "reason": "Ok",
+    "power": "Tápellátás",
+    "trackPower": "Pályatáp",
+    "emergencyStopState": "Vészleállítás",
+    "shortCircuit": "Rövidzár",
+    "programming": "Programozás",
+    "z21System": "Z21 rendszer",
+    "mainCurrent": "Főáram",
+    "progCurrent": "Programozó áram",
+    "filteredCurrent": "Szűrt áram",
+    "temperature": "Hőmérséklet",
+    "supplyVoltage": "Tápfeszültség",
+    "vccVoltage": "VCC feszültség",
+    "centralState": "Központ állapota",
+    "centralStateEx": "Központ állapota EX",
+    "capabilities": "Képességek",
+    "z21Flags": "Z21 jelzők",
+    "highTemp": "Magas hőmérséklet",
+    "powerLost": "Tápvesztés",
+    "shortExternal": "Külső rövidzár",
+    "shortInternal": "Belső rövidzár",
+    "locoCmds": "Mozdony parancsok",
+    "accessoryCmds": "Kiegészítő parancsok",
+    "detectorCmds": "Detektor parancsok",
+    "needsUnlock": "Feloldókód kell",
+    "yes": "IGEN",
+    "no": "NEM"
+  },
+  "programmer": {
+    "title": "Dekóder programozó",
+    "subtitle": "Mozdony- és eszközdekóderek CV programozása",
+    "commandCenter": "Parancsközpont",
+    "experimental": "Kísérleti",
+    "powerShort": "TÁP",
+    "panelTitle": "Programozó",
+    "decoderType": "Dekóder típusa",
+    "decoderTypes": {
+      "loco": "Mozdonydekóder",
+      "accessory": "Kiegészítő dekóder"
+    },
+    "programmingMode": "Programozási mód",
+    "modes": {
+      "serviceTrack": "Programozó vágány",
+      "pomLoco": "POM - mozdony",
+      "pomAccessory": "POM - kiegészítő"
+    },
+    "address": "Cím",
+    "cv": "CV",
+    "value": "Érték",
+    "readCv": "CV olvasása",
+    "writeCv": "CV írása",
+    "logTitle": "CV napló",
+    "readLog": "CV {{cv}} olvasása...",
+    "writeLog": "CV {{cv}} írása = {{value}}...",
+    "help": {
+      "title": "CV súgó",
+      "databaseError": "Adatbázis hiba",
+      "empty": "Adj meg egy CV számot, és itt megjelenik az ismert információ.",
+      "unknown": "Ismeretlen",
+      "unknownDescription": "Ehhez a CV-hez még nincs leírás az adatbázisban.",
+      "known": "Ismert",
+      "min": "Min",
+      "max": "Max",
+      "default": "Alapérték",
+      "bits": "Bitek",
+      "notes": "Megjegyzések"
+    }
+  },
+  "graph": {
+    "title": "Gráf",
+    "tabs": {
+      "graph": "Gráf",
+      "connections": "Kapcsolatok",
+      "blocks": "Blokkok",
+      "runnableBlocks": "Járható blokkok",
+      "solver": "Útvonal keresés"
+    },
+    "emptyGraph": "Még nincs legenerált gráf.",
+    "emptyConnections": "Nincs megjeleníthető kapcsolat.",
+    "emptyBlockConnections": "Nincs megjeleníthető blokk kapcsolat.",
+    "emptyRunnableBlocks": "Nincs ténylegesen megoldható blokk útvonal.",
+    "noSearchableGraph": "Nincs gráf, amelyen útvonalat lehetne keresni.",
+    "headers": {
+      "from": "Honnan",
+      "to": "Hová",
+      "sectionObjects": "Szakasz objektumok",
+      "turnoutRequirement": "Váltófeltételek",
+      "blockConnection": "Blokk kapcsolat",
+      "sectionChain": "Szakaszlánc",
+      "fromBlock": "Induló blokk",
+      "toBlock": "Cél blokk",
+      "runnablePath": "Járható útvonal",
+      "locoDirection": "Mozdony iránya"
+    },
+    "items": {
+      "detectors": "Detektorok",
+      "signals": "Jelzők",
+      "blocks": "Blokkok",
+      "turnout": "Váltó"
+    },
+    "solver": {
+      "fromPlaceholder": "Válassz induló blokkot",
+      "toPlaceholder": "Válassz cél blokkot",
+      "search": "Útvonal keresése",
+      "intro": "Válassz ki egy induló és egy cél blokkot, majd indítsd el a keresést.",
+      "notFoundTitle": "Nincs megoldható útvonal",
+      "notFound": "A kiválasztott blokkok között nem találtam olyan útvonalat, amely konzisztens váltóállásokkal bejárható.",
+      "foundTitle": "Találtam útvonalat",
+      "found": "A kiválasztott blokkok között van megoldható útvonal.",
+      "testRoute": "Útvonal tesztelése",
+      "directionTitle": "Mozdony menetiránya",
+      "directionForward": "A mozdony előremenetben járja be az útvonalat.",
+      "directionReverse": "A mozdony hátramenetben járja be az útvonalat.",
+      "directionUnknown": "A menetirány nem állapítható meg a pályán kijelölt travel direction alapján.",
+      "blockPathTitle": "Blokk útvonal szegmenslánccal",
+      "turnoutsTitle": "Szükséges váltóállások",
+      "noTurnouts": "Ehhez az útvonalhoz nincs szükség váltóállításra.",
+      "edgesTitle": "Élek részletesen"
+    }
+  },
+  "routesPanel": {
+    "title": "Útvonalgráf",
+    "generate": "Generálás",
+    "openGraph": "Gráf megnyitása",
+    "generateHint": "Generáld a gráfot a szegmenskapcsolatok megjelenítéséhez.",
+    "segmentConnections": "Szegmenskapcsolatok",
+    "connectionCount_one": "{{count}} kapcsolat",
+    "connectionCount_other": "{{count}} kapcsolat",
+    "required": "Szükséges",
+    "test": "Teszt",
+    "noTurnoutRequired": "Nem szükséges váltóállítás",
+    "noActiveGraph": "A szerveren még nincs aktív route gráf.",
+    "graphRefreshed": "Szerveroldali gráf frissítve: {{nodes}} node, {{edges}} edge.",
+    "reloadFailed": "Nem sikerült újratölteni a szerveroldali route gráfot.",
+    "turnoutNotFound": "Nem található váltó ezen a címen: {{address}}",
+    "routeTestSent": "Útvonalteszt elküldve: {{route}}",
+    "routeConnectionTestFailed": "Nem sikerült tesztelni az útvonalkapcsolatot.",
+    "routeTestFailed": "Nem sikerült tesztelni az útvonalat.",
+    "selectBothBlocks": "Először válaszd ki az induló és a cél blokkot.",
+    "noServerGraph": "Nincs elérhető szerveroldali route gráf.",
+    "selectedBlocksMissing": "A kiválasztott útvonalblokkok nem találhatók a szerver gráfjában.",
+    "routeRequestSent": "Útvonalkérés elküldve: {{from}} -> {{to}}",
+    "routeRequest": "Útvonalkérés",
+    "reservationRequested": "Foglalás kérve: {{from}} -> {{to}}",
+    "reservationFailed": "Nem sikerült elküldeni az útvonalfoglalást.",
+    "releaseRequest": "Útvonal elengedése",
+    "releaseRequested": "Elengedés kérve: {{from}} -> {{to}}",
+    "automaticRouteMissingBlocks": "Az automatikus útvonalgombhoz nincs induló / cél blokk beállítva.",
+    "configuredBlocksMissing": "A beállított induló / cél blokk nem található a szerver gráfjában.",
+    "commandCenterBusy": "A parancsközpont foglalt. Az útvonal nem indítható.",
+    "routeIsBeingSet": "Útvonal beállítása...",
+    "automaticRouteFailed": "Nem sikerült elküldeni az automatikus útvonalkérést.",
+    "automaticRouteTest": "Automatikus útvonal teszt",
+    "refreshSegments": "Szegmensek frissítése",
+    "selectBlock": "Válassz blokkot",
+    "noRouteGraph": "Nincs elérhető útvonalgráf.",
+    "noBlocks": "Nincsenek blokkok a generált útvonalgráfban."
+  },
+  "propertyPanel": {
+    "title": "Tulajdonságok"
+  },
+  "turnout": {
+    "closed": "zárt",
+    "thrown": "kitérő"
   },
   "task": {
     "status": {
@@ -292,13 +538,13 @@
     "collapse": "Útvonal és feladat vezérlés összecsukása",
     "fromPlaceholder": "A1",
     "toPlaceholder": "C1",
-    "setRoute": "Útvonal beállítása",
-    "releaseRoute": "Útvonal elengedése",
-    "clearAllBusy": "Összes foglalás törlése",
-    "taskManager": "Feladatkezelő...",
-    "startAll": "Összes feladat indítása",
-    "finishAll": "Összes feladat befejezése",
-    "abortAll": "Összes feladat megszakítása",
+    "setRoute": "Foglalás",
+    "releaseRoute": "Feloldás",
+    "clearAllBusy": "Mind szabad",
+    "taskManager": "Feladatok...",
+    "startAll": "Mind indít",
+    "finishAll": "Mind befejez",
+    "abortAll": "Mind megszakít",
     "allStarted": "Minden feladat elindult.",
     "allFinishing": "Minden feladat befejezésre jelölve.",
     "allAborted": "Minden aktív feladat megszakítva."

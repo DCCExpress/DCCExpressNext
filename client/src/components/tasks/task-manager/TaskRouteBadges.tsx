@@ -9,6 +9,7 @@ import {
 import type {
   BlockRouteSolution,
 } from "../../../../../common/src/railway/graph";
+import { useTranslation } from "react-i18next";
 
 type TurnoutRequirementBadgesProps = {
   turnoutStates: {
@@ -20,6 +21,8 @@ type TurnoutRequirementBadgesProps = {
 export function TurnoutRequirementBadges({
   turnoutStates,
 }: TurnoutRequirementBadgesProps) {
+  const { t } = useTranslation();
+
   if (turnoutStates.length === 0) {
     return (
       <Text
@@ -49,7 +52,7 @@ export function TurnoutRequirementBadges({
             },
           }}
         >
-          <span>Turnout {turnoutState.address}</span>
+          <span>{t("graph.items.turnout")} {turnoutState.address}</span>
 
           <Badge
             size="xs"
@@ -57,7 +60,7 @@ export function TurnoutRequirementBadges({
             variant="filled"
             radius="sm"
           >
-            {turnoutState.closed ? "closed" : "thrown"}
+            {turnoutState.closed ? t("turnout.closed") : t("turnout.thrown")}
           </Badge>
         </Badge>
       ))}

@@ -41,6 +41,7 @@ import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMap
 import { getRouteGraph } from "../api/http";
 import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
 import { createCursorElement } from "./track-canvas/createCursorElement";
+import { useTranslation } from "react-i18next";
 
 type TrackCanvasProps = {
   editMode?: boolean;
@@ -201,6 +202,7 @@ export default function TrackCanvas({
   setBusy,
   locos,
 }: TrackCanvasProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { colorScheme } = useMantineColorScheme();
 
@@ -575,15 +577,15 @@ export default function TrackCanvas({
 
       if (commandCenterRef.current.locked) {
         showWarningMessage(
-          "Warning",
-          "Command center is busy. Route cannot be started."
+          t("common.error"),
+          t("routesPanel.commandCenterBusy")
         );
         return;
       }
 
       const elems = layoutRef.current.getAllElements();
       wsApi.routeLock();
-      setBusy?.(true, "Route is being set...");
+      setBusy?.(true, t("routesPanel.routeIsBeingSet"));
       await sleep(1000);
       try {
         for (const ri of rb.routeTurnouts) {
@@ -612,8 +614,8 @@ export default function TrackCanvas({
     ) {
       if (!rb.fromBlockId || !rb.toBlockId) {
         showWarningMessage(
-          "Warning",
-          "The automatic route button has no From / To block configured."
+          t("common.error"),
+          t("routesPanel.automaticRouteMissingBlocks")
         );
         return;
       }
@@ -623,8 +625,8 @@ export default function TrackCanvas({
 
         if (!graph) {
           showWarningMessage(
-            "Warning",
-            "No server route graph is available."
+            t("common.error"),
+            t("routesPanel.noServerGraph")
           );
           return;
         }
@@ -634,8 +636,8 @@ export default function TrackCanvas({
 
         if (!fromBlock || !toBlock) {
           showWarningMessage(
-            "Warning",
-            "The configured From / To block could not be found in the server graph."
+          t("common.error"),
+          t("routesPanel.configuredBlocksMissing")
           );
           return;
         }
@@ -650,8 +652,11 @@ export default function TrackCanvas({
           );
 
           showOkMessage(
-            "Route release",
-            `Release requested: ${fromBlock.label} → ${toBlock.label}`
+            t("routesPanel.releaseRequest"),
+            t("routesPanel.releaseRequested", {
+              from: fromBlock.label,
+              to: toBlock.label,
+            })
           );
 
           return;
@@ -662,8 +667,8 @@ export default function TrackCanvas({
         // =====================================
         if (commandCenterRef.current.locked) {
           showWarningMessage(
-            "Warning",
-            "Command center is busy. Route cannot be started."
+            t("common.error"),
+            t("routesPanel.commandCenterBusy")
           );
           return;
         }
@@ -674,15 +679,18 @@ export default function TrackCanvas({
         );
 
         showOkMessage(
-          "Route request",
-          `Reservation requested: ${fromBlock.label} → ${toBlock.label}`
+          t("routesPanel.routeRequest"),
+          t("routesPanel.reservationRequested", {
+            from: fromBlock.label,
+            to: toBlock.label,
+          })
         );
       } catch (error) {
         showErrorMessage(
-          "ERROR",
+          t("common.error"),
           error instanceof Error
             ? error.message
-            : "Could not request automatic route."
+            : t("routesPanel.automaticRouteFailed")
         );
       }
     };

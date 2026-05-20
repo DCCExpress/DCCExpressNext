@@ -12,7 +12,7 @@ export default function QuickHelpDialog({
   opened,
   onClose,
 }: QuickHelpDialogProps) {
-  const { t } = useTranslation();
+  const { i18n, t } = useTranslation();
   const { colorScheme } = useMantineColorScheme();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
@@ -29,23 +29,39 @@ export default function QuickHelpDialog({
   useEffect(() => {
     if (opened) {
       sendThemeToHelp();
+      iframeRef.current?.contentWindow?.postMessage(
+        {
+          type: "DCCEXPRESS_LANGUAGE_CHANGED",
+          language: i18n.language,
+        },
+        window.location.origin
+      );
     }
-  }, [colorScheme, opened]);
+  }, [colorScheme, i18n.language, opened]);
 
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title={t("Quick help")}
+      title={t("quickHelp.title")}
       size="xl"
       centered
     >
       <iframe
         ref={iframeRef}
         src="/quickhelp.html"
-        title="Quick Help"
+        title={t("quickHelp.title")}
         className="help-iframe"
-        onLoad={sendThemeToHelp}
+        onLoad={() => {
+          sendThemeToHelp();
+          iframeRef.current?.contentWindow?.postMessage(
+            {
+              type: "DCCEXPRESS_LANGUAGE_CHANGED",
+              language: i18n.language,
+            },
+            window.location.origin
+          );
+        }}
       />
     </Modal>
   );

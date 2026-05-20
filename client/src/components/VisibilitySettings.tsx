@@ -1,25 +1,27 @@
 import { Card, Checkbox, Group, Stack, Text } from "@mantine/core";
 import { useEditorSettings } from "../context/EditorSettingsContext";
+import { useTranslation } from "react-i18next";
 
 type VisibilitySettingsProps = {
   title?: string;
 };
 
 export default function VisibilitySettings({
-  title = "Visibility",
+  title,
 }: VisibilitySettingsProps) {
+  const { t } = useTranslation();
   const { settings, updateSettings } = useEditorSettings();
 
   return (
     <Card withBorder p="xs">
       <Stack gap={6}>
         <Group mb={2}>
-          <Text fw={500}>{title}</Text>
+          <Text fw={500}>{title ?? t("visibility.title")}</Text>
         </Group>
 
         <Checkbox
           mb={4}
-          label="Show occupancy address"
+          label={t("visibility.showOccupancyAddress")}
           checked={settings.showOccupacySensorAddress}
           onChange={(e) =>
             updateSettings({
@@ -30,7 +32,7 @@ export default function VisibilitySettings({
 
         <Checkbox
           mb={4}
-          label="Show sensor address"
+          label={t("visibility.showSensorAddress")}
           checked={settings.showSensorAddress}
           onChange={(e) =>
             updateSettings({
@@ -41,7 +43,7 @@ export default function VisibilitySettings({
 
         <Checkbox
           mb={4}
-          label="Show turnout address"
+          label={t("visibility.showTurnoutAddress")}
           checked={settings.showTurnoutAddress}
           onChange={(e) =>
             updateSettings({
@@ -52,7 +54,7 @@ export default function VisibilitySettings({
 
         <Checkbox
           mb={4}
-          label="Show signal address"
+          label={t("visibility.showSignalAddress")}
           checked={settings.showSignalAddress}
           onChange={(e) =>
             updateSettings({
@@ -63,7 +65,7 @@ export default function VisibilitySettings({
 
         <Checkbox
           mb={4}
-          label="Show segments"
+          label={t("visibility.showSegments")}
           checked={settings.showSegments}
           onChange={(e) =>
             updateSettings({
@@ -73,7 +75,7 @@ export default function VisibilitySettings({
         />
         <Checkbox
           mb={4}
-          label="Show block names"
+          label={t("visibility.showBlockNames")}
           checked={settings.showBlockNames}
           onChange={(e) =>
             updateSettings({
@@ -83,7 +85,7 @@ export default function VisibilitySettings({
         />
         <Checkbox
           mb={4}
-          label="Show grid"
+          label={t("visibility.showGrid")}
           checked={settings.showGrid}
           onChange={(e) =>
             updateSettings({

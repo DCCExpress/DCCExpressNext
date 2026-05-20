@@ -20,6 +20,7 @@ import {
   IconTool,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 type HomePageProps = {
   onOpenLayout: () => void;
@@ -38,35 +39,34 @@ type HomeCardItem = {
 };
 
 export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePageProps) {
+  const { t } = useTranslation();
+
   const cards: HomeCardItem[] = [
     {
       key: "layout",
-      title: "LayoutView & Control",
-      description:
-        "Design your railway layout and control it live with turnouts, signals, sensors, blocks, routes, and locomotive panels.",
+      title: t("home.cards.layout.title"),
+      description: t("home.cards.layout.description"),
       image: "/images/home-layout.jpg",
-      buttonLabel: "Open LayoutView & Control",
+      buttonLabel: t("home.cards.layout.button"),
       icon: <IconMap2 size={18} />,
       onClick: onOpenLayout,
       disabled: false,
     }, {
       key: "programmer",
-      title: "Programmer",
-      description:
-        "Configure locomotives, accessories, functions, decoder values, and automation settings from a clean programming workspace.",
+      title: t("home.cards.programmer.title"),
+      description: t("home.cards.programmer.description"),
       image: "/images/home-programmer.jpg",
-      buttonLabel: "Coming Soon",
+      buttonLabel: t("home.comingSoon"),
       icon: <IconTool size={18} />,
       onClick: onOpenProgrammer,
       disabled: false,
     },
     {
       key: "mobile",
-      title: "Mobile Controller",
-      description:
-        "Control your trains from a touch-friendly interface with speed control, direction, emergency stop, and function buttons.",
+      title: t("home.cards.mobile.title"),
+      description: t("home.cards.mobile.description"),
       image: "/images/home-mobile.jpg",
-      buttonLabel: "Coming Soon",
+      buttonLabel: t("home.comingSoon"),
       icon: <IconDeviceMobile size={18} />,
       disabled: true,
     },
@@ -99,15 +99,16 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
             </Badge>
 
             <Title order={1}>
-              Railway control made simple,
-              <br />
-              visual and powerful.
+              {t("home.heroTitle").split("\n").map((line, index) => (
+                <span key={line}>
+                  {line}
+                  {index === 0 && <br />}
+                </span>
+              ))}
             </Title>
 
             <Text size="lg" c="dimmed" maw={760}>
-              Welcome to DCCExpress — a modern model railway control system for
-              editing layouts, programming railway components, and controlling
-              trains from desktop or mobile devices.
+              {t("home.heroDescription")}
             </Text>
 
             <Group>
@@ -116,7 +117,7 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                 rightSection={<IconArrowRight size={16} />}
                 onClick={onOpenLayout}
               >
-                Start with LayoutView Editor
+                {t("home.startLayout")}
               </Button>
             </Group>
           </Stack>

@@ -181,7 +181,7 @@ export default function RouteTaskControlCard({
           variant="light"
           onClick={handleReserveRoute}
         >
-          Set route
+          {t("routeTask.setRoute")}
         </Button>
 
         <Button
@@ -189,7 +189,7 @@ export default function RouteTaskControlCard({
           variant="light"
           onClick={handleReleaseRoute}
         >
-          Release route
+          {t("routeTask.releaseRoute")}
         </Button>
 
         <Button
@@ -197,7 +197,7 @@ export default function RouteTaskControlCard({
           variant="light"
           onClick={handleClearAllBusy}
         >
-          Clear all busy
+          {t("routeTask.clearAllBusy")}
         </Button>
       </Group>
 
@@ -209,7 +209,7 @@ export default function RouteTaskControlCard({
           leftSection={<IconRoute size={16} />}
           onClick={onOpenTaskManager}
         >
-          Task Manager...
+          {t("routeTask.taskManager")}
         </Button>
 
         <Button
@@ -224,7 +224,7 @@ export default function RouteTaskControlCard({
           }}
           disabled={snapshot.tasks.length === 0}
         >
-          Start all tasks
+          {t("routeTask.startAll")}
         </Button>
 
         <Button
@@ -242,7 +242,7 @@ export default function RouteTaskControlCard({
             )
           }
         >
-          Finish all tasks
+          {t("routeTask.finishAll")}
         </Button>
 
         <Button
@@ -263,7 +263,7 @@ export default function RouteTaskControlCard({
             )
           }
         >
-          Abort all tasks
+          {t("routeTask.abortAll")}
         </Button>
       </Group>
     </CollapsiblePanelCard>

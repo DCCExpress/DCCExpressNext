@@ -16,6 +16,7 @@ import { ExtendedRouteButtonElementView } from "../models/editor/elements/Extend
 import { type EditorTool } from "../models/editor/types/EditorTypes";
 import { layoutStore } from "../services/layoutStore";
 import { routeGraphStore } from "../services/routeGraphStore";
+import { useTranslation } from "react-i18next";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -24,6 +25,7 @@ type LayoutPageProps = {
 export default function LayoutPage({
   onGoHome,
 }: LayoutPageProps) {
+  const { t } = useTranslation();
   const [toolbarOpened, setToolbarOpened] =
     useState(true);
 
@@ -102,7 +104,7 @@ export default function LayoutPage({
     canvasBusyText,
     setCanvasBusyText,
   ] =
-    useState("Loading...");
+    useState(t("common.loading"));
 
   const {
     editMode,

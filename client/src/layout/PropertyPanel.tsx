@@ -19,6 +19,7 @@ import ExtendedRouteActions from "./property-panel/ExtendedRouteActions";
 import PropertyFieldRenderer from "./property-panel/PropertyFieldRenderer";
 import PropertyPanelHelp from "./property-panel/PropertyPanelHelp";
 import "../styles/propertypanel.css";
+import { useTranslation } from "react-i18next";
 
 type PropertyPanelProps = {
   selectedElement: BaseElementView | null;
@@ -82,6 +83,7 @@ export default function RightPropertyPanel({
   routes,
   setBusy,
 }: PropertyPanelProps) {
+  const { t } = useTranslation();
   const {
     graph: routeGraph,
     ensureLoaded: ensureRouteGraphLoaded,
@@ -124,7 +126,7 @@ export default function RightPropertyPanel({
       const graph = await reloadRouteGraph();
 
       if (!graph) {
-        setRouteGraphError("A szerveren még nincs aktív route gráf.");
+        setRouteGraphError(t("routesPanel.noActiveGraph"));
         return;
       }
 
@@ -133,7 +135,7 @@ export default function RightPropertyPanel({
       setRouteGraphError(
         error instanceof Error
           ? error.message
-          : "Could not reload server route graph."
+          : t("routesPanel.reloadFailed")
       );
     } finally {
       onUpdateSelectedElement(selectedElement);
@@ -147,8 +149,8 @@ export default function RightPropertyPanel({
 
     if (!selectedElement.fromBlockId || !selectedElement.toBlockId) {
       showWarningMessage(
-        "Warning",
-        "Select both From block and To block first."
+        t("common.error"),
+        t("routesPanel.selectBothBlocks")
       );
       return;
     }
@@ -161,7 +163,7 @@ export default function RightPropertyPanel({
       }
 
       if (!graph) {
-        showWarningMessage("Warning", "No server route graph is available.");
+        showWarningMessage(t("common.error"), t("routesPanel.noServerGraph"));
         return;
       }
 
@@ -170,29 +172,35 @@ export default function RightPropertyPanel({
 
       if (!fromBlock || !toBlock) {
         showWarningMessage(
-          "Warning",
-          "The selected route blocks could not be found in the server graph."
+          t("common.error"),
+          t("routesPanel.selectedBlocksMissing")
         );
         return;
       }
 
       setBusy?.(
         true,
-        `Route request sent: ${fromBlock.label} → ${toBlock.label}`
+        t("routesPanel.routeRequestSent", {
+          from: fromBlock.label,
+          to: toBlock.label,
+        })
       );
 
       wsApi.reserveRoute(fromBlock.name, toBlock.name);
 
       showOkMessage(
-        "Route request",
-        `Reservation requested: ${fromBlock.label} → ${toBlock.label}`
+        t("routesPanel.routeRequest"),
+        t("routesPanel.reservationRequested", {
+          from: fromBlock.label,
+          to: toBlock.label,
+        })
       );
     } catch (error) {
       showErrorMessage(
-        "ERROR",
+        t("common.error"),
         error instanceof Error
           ? error.message
-          : "Could not request route reservation."
+          : t("routesPanel.reservationFailed")
       );
     } finally {
       setBusy?.(false);
@@ -225,10 +233,10 @@ export default function RightPropertyPanel({
     <ScrollArea h="100%" style={{ margin: 0, padding: 0 }}>
       <div className="property-panel">
         <Text c="blue" tt="capitalize">
-          Properties
+          {t("propertyPanel.title")}
         </Text>
 
-        {!selectedElement && <VisibilitySettings title="Visibility" />}
+        {!selectedElement && <VisibilitySettings />}
 
         {selectedElement &&
           properties?.map(prop => (

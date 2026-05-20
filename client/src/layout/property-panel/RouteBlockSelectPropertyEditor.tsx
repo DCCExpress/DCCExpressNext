@@ -4,6 +4,7 @@ import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { Graph } from "../../../../common/src/railway/graph";
 import type { PropertyChangeHandler } from "./propertyPanelTypes";
+import { useTranslation } from "react-i18next";
 
 type RouteBlockSelectData = Array<{
   value: string;
@@ -27,11 +28,13 @@ export default function RouteBlockSelectPropertyEditor({
   routeGraphError,
   onChange,
 }: RouteBlockSelectPropertyEditorProps) {
+  const { t } = useTranslation();
+
   return (
     <Stack gap={6}>
       <Select
         label={prop.label}
-        placeholder="Select block"
+        placeholder={t("routesPanel.selectBlock")}
         data={routeGraphBlockSelectData}
         value={(selectedElement as any)[prop.key] || null}
         onChange={(value: string | null) => onChange(prop, value ?? "")}
@@ -42,13 +45,13 @@ export default function RouteBlockSelectPropertyEditor({
 
       {!routeGraph && (
         <Text size="xs" c="dimmed">
-          No route graph available.
+          {t("routesPanel.noRouteGraph")}
         </Text>
       )}
 
       {routeGraph && routeGraphBlockSelectData.length === 0 && (
         <Text size="xs" c="dimmed">
-          No blocks available in the generated route graph.
+          {t("routesPanel.noBlocks")}
         </Text>
       )}
 

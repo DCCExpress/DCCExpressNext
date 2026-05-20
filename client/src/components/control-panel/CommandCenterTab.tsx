@@ -28,6 +28,7 @@ import {
 import {
   wsApi,
 } from "../../services/wsApi";
+import { useTranslation } from "react-i18next";
 
 type CommandCenterTabProps = {
   onConnect: (() => void) | undefined;
@@ -41,6 +42,7 @@ type CommandCenterTabProps = {
 export default function CommandCenterTab(
   p: CommandCenterTabProps
 ) {
+  const { t } = useTranslation();
   const {
     alive,
     type,
@@ -67,7 +69,7 @@ export default function CommandCenterTab(
           size="sm"
           fw={700}
         >
-          Command Center
+          {t("commandCenter.title")}
         </Text>
 
         <Group
@@ -85,7 +87,7 @@ export default function CommandCenterTab(
               powerInfo?.trackVoltageOn === true
             }
           >
-            Power ON
+            {t("commandCenter.powerOn")}
           </Button>
 
           <Button
@@ -99,7 +101,7 @@ export default function CommandCenterTab(
               powerInfo?.trackVoltageOff === true
             }
           >
-            Power OFF
+            {t("commandCenter.powerOff")}
           </Button>
         </Group>
 
@@ -128,7 +130,7 @@ export default function CommandCenterTab(
           }}
           disabled={!alive}
         >
-          EMERGENCY STOP
+          {t("commandCenter.emergencyStop")}
         </Button>
 
         <Group
@@ -140,7 +142,7 @@ export default function CommandCenterTab(
               size="sm"
               fw={700}
             >
-              Command Center
+              {t("commandCenter.title")}
             </Text>
           </Box>
 
@@ -148,15 +150,15 @@ export default function CommandCenterTab(
             color={alive ? "green" : "red"}
             variant="light"
           >
-            {alive ? "ONLINE" : "OFFLINE"}
+            {alive ? t("commandCenter.online") : t("commandCenter.offline")}
           </StatusBadge>
         </Group>
 
         <Divider />
 
-        <InfoSection title="Connection">
+        <InfoSection title={t("commandCenter.connection")}>
           <InfoValueRow
-            label="Type"
+            label={t("commandCenter.type")}
             value={type ?? "-"}
           />
 
@@ -168,27 +170,27 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="Port"
+                label={t("commandCenter.port")}
                 value={port ?? "-"}
               />
             </>
           )}
         </InfoSection>
 
-        <InfoSection title="Lock">
+        <InfoSection title={t("commandCenter.lock")}>
           <InfoValueRow
-            label="State"
-            value={locked ? "LOCKED" : "FREE"}
+            label={t("commandCenter.state")}
+            value={locked ? t("commandCenter.locked") : t("commandCenter.free")}
             valueColor={locked ? "orange" : "green"}
           />
 
           <InfoValueRow
-            label="Owner"
+            label={t("commandCenter.owner")}
             value={lockOwner ?? "-"}
           />
 
           <InfoValueRow
-            label="This client"
+            label={t("commandCenter.thisClient")}
             value={wsApi.clientUuid}
             valueColor={
               lockOwner === wsApi.clientUuid
@@ -198,14 +200,14 @@ export default function CommandCenterTab(
           />
 
           <InfoValueRow
-            label="Reason"
+            label={t("commandCenter.reason")}
             value={reason ?? "-"}
           />
         </InfoSection>
 
-        <InfoSection title="Power">
+        <InfoSection title={t("commandCenter.power")}>
           <InfoValueRow
-            label="Track power"
+            label={t("commandCenter.trackPower")}
             value={
               powerInfo
                 ? powerInfo.trackVoltageOn
@@ -223,10 +225,10 @@ export default function CommandCenterTab(
           />
 
           <InfoValueRow
-            label="Emergency stop"
+            label={t("commandCenter.emergencyStopState")}
             value={
               powerInfo
-                ? yesNo(powerInfo.emergencyStop)
+                ? yesNo(powerInfo.emergencyStop, t)
                 : "-"
             }
             valueColor={
@@ -237,10 +239,10 @@ export default function CommandCenterTab(
           />
 
           <InfoValueRow
-            label="Short circuit"
+            label={t("commandCenter.shortCircuit")}
             value={
               powerInfo
-                ? yesNo(powerInfo.shortCircuit)
+                ? yesNo(powerInfo.shortCircuit, t)
                 : "-"
             }
             valueColor={
@@ -251,12 +253,10 @@ export default function CommandCenterTab(
           />
 
           <InfoValueRow
-            label="Programming"
+            label={t("commandCenter.programming")}
             value={
               powerInfo
-                ? yesNo(
-                    powerInfo.programmingModeActive
-                  )
+                ? yesNo(powerInfo.programmingModeActive, t)
                 : "-"
             }
             valueColor={
@@ -269,9 +269,9 @@ export default function CommandCenterTab(
 
         {type === "z21" && (
           <>
-            <InfoSection title="Z21 System">
+            <InfoSection title={t("commandCenter.z21System")}>
               <InfoValueRow
-                label="Main current"
+                label={t("commandCenter.mainCurrent")}
                 value={
                   z21SystemState
                     ? `${z21SystemState.mainCurrentMa} mA`
@@ -280,7 +280,7 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="Prog current"
+                label={t("commandCenter.progCurrent")}
                 value={
                   z21SystemState
                     ? `${z21SystemState.progCurrentMa} mA`
@@ -289,7 +289,7 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="Filtered current"
+                label={t("commandCenter.filteredCurrent")}
                 value={
                   z21SystemState
                     ? `${z21SystemState.filteredMainCurrentMa} mA`
@@ -298,7 +298,7 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="Temperature"
+                label={t("commandCenter.temperature")}
                 value={
                   z21SystemState
                     ? `${z21SystemState.temperatureC} °C`
@@ -312,7 +312,7 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="Supply voltage"
+                label={t("commandCenter.supplyVoltage")}
                 value={
                   z21SystemState
                     ? `${z21SystemState.supplyVoltageMv} mV`
@@ -321,7 +321,7 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="VCC voltage"
+                label={t("commandCenter.vccVoltage")}
                 value={
                   z21SystemState
                     ? `${z21SystemState.vccVoltageMv} mV`
@@ -330,7 +330,7 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="Central state"
+                label={t("commandCenter.centralState")}
                 value={
                   z21SystemState
                     ? toHex8(
@@ -341,7 +341,7 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="Central state EX"
+                label={t("commandCenter.centralStateEx")}
                 value={
                   z21SystemState
                     ? toHex8(
@@ -352,7 +352,7 @@ export default function CommandCenterTab(
               />
 
               <InfoValueRow
-                label="Capabilities"
+                label={t("commandCenter.capabilities")}
                 value={
                   z21SystemState
                     ? toHex8(
@@ -363,30 +363,30 @@ export default function CommandCenterTab(
               />
             </InfoSection>
 
-            <InfoSection title="Z21 Flags">
+            <InfoSection title={t("commandCenter.z21Flags")}>
               <InfoFlagRow
-                label="High temp"
+                label={t("commandCenter.highTemp")}
                 value={
                   z21SystemState?.flags.highTemperature
                 }
               />
 
               <InfoFlagRow
-                label="Power lost"
+                label={t("commandCenter.powerLost")}
                 value={
                   z21SystemState?.flags.powerLost
                 }
               />
 
               <InfoFlagRow
-                label="Short external"
+                label={t("commandCenter.shortExternal")}
                 value={
                   z21SystemState?.flags.shortCircuitExternal
                 }
               />
 
               <InfoFlagRow
-                label="Short internal"
+                label={t("commandCenter.shortInternal")}
                 value={
                   z21SystemState?.flags.shortCircuitInternal
                 }
@@ -398,7 +398,7 @@ export default function CommandCenterTab(
               />
             </InfoSection>
 
-            <InfoSection title="Capabilities">
+            <InfoSection title={t("commandCenter.capabilities")}>
               <InfoFlagRow
                 label="DCC"
                 value={z21SystemState?.flags.capDcc}
@@ -417,28 +417,28 @@ export default function CommandCenterTab(
               />
 
               <InfoFlagRow
-                label="Loco cmds"
+                label={t("commandCenter.locoCmds")}
                 value={
                   z21SystemState?.flags.capLocoCmds
                 }
               />
 
               <InfoFlagRow
-                label="Accessory cmds"
+                label={t("commandCenter.accessoryCmds")}
                 value={
                   z21SystemState?.flags.capAccessoryCmds
                 }
               />
 
               <InfoFlagRow
-                label="Detector cmds"
+                label={t("commandCenter.detectorCmds")}
                 value={
                   z21SystemState?.flags.capDetectorCmds
                 }
               />
 
               <InfoFlagRow
-                label="Needs unlock"
+                label={t("commandCenter.needsUnlock")}
                 value={
                   z21SystemState?.flags.capNeedsUnlockCode
                 }
@@ -452,9 +452,10 @@ export default function CommandCenterTab(
 }
 
 function yesNo(
-  value: boolean
+  value: boolean,
+  t: (key: string) => string
 ): string {
-  return value ? "YES" : "NO";
+  return value ? t("commandCenter.yes") : t("commandCenter.no");
 }
 
 function toHex8(

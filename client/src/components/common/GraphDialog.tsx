@@ -30,6 +30,7 @@ import type {
 import GraphRenderer from "../../models/editor/rendering/GraphRenderer";
 import { getGraphBlockSelectData } from "../../services/routeGraphUi";
 import AppModal from "./AppModal";
+import { useTranslation } from "react-i18next";
 
 type GraphDialogProps = {
     graph: Graph | null;
@@ -44,6 +45,7 @@ export default function GraphDialog({
     onClose,
     onTestRoute,
 }: GraphDialogProps) {
+    const { t } = useTranslation();
     const [fromBlockId, setFromBlockId] = useState<string | null>(null);
     const [toBlockId, setToBlockId] = useState<string | null>(null);
     const [routeSolution, setRouteSolution] =
@@ -160,42 +162,42 @@ export default function GraphDialog({
                         <Stack gap={6}>
                             {renderNodeItems(
                                 edge.from.name,
-                                "Detectors",
+                                t("graph.items.detectors"),
                                 "cyan",
                                 edge.from.detectors
                             )}
 
                             {renderNodeItems(
                                 edge.from.name,
-                                "Signals",
+                                t("graph.items.signals"),
                                 "yellow",
                                 edge.from.signals
                             )}
 
                             {renderNodeItems(
                                 edge.from.name,
-                                "Blocks",
+                                t("graph.items.blocks"),
                                 "violet",
                                 edge.from.blocks
                             )}
 
                             {renderNodeItems(
                                 edge.to.name,
-                                "Detectors",
+                                t("graph.items.detectors"),
                                 "cyan",
                                 edge.to.detectors
                             )}
 
                             {renderNodeItems(
                                 edge.to.name,
-                                "Signals",
+                                t("graph.items.signals"),
                                 "yellow",
                                 edge.to.signals
                             )}
 
                             {renderNodeItems(
                                 edge.to.name,
-                                "Blocks",
+                                t("graph.items.blocks"),
                                 "violet",
                                 edge.to.blocks
                             )}
@@ -239,7 +241,7 @@ export default function GraphDialog({
                             },
                         }}
                     >
-                        <span>Turnout {turnoutState.address}</span>
+                        <span>{t("graph.items.turnout")} {turnoutState.address}</span>
 
                         <Badge
                             size="xs"
@@ -599,7 +601,7 @@ export default function GraphDialog({
         <AppModal
             opened={opened}
             onClose={onClose}
-            title="Graph"
+            title={t("graph.title")}
             size="calc(80vw - 64px)"
             centered
             draggable
@@ -607,10 +609,10 @@ export default function GraphDialog({
             <Stack gap="md">
                 <Tabs defaultValue="graph">
                     <Tabs.List>
-                        <Tabs.Tab value="graph">Graph</Tabs.Tab>
+                        <Tabs.Tab value="graph">{t("graph.tabs.graph")}</Tabs.Tab>
 
                         <Tabs.Tab value="connections">
-                            Connections
+                            {t("graph.tabs.connections")}
                             {graph && (
                                 <Badge ml="xs" size="xs" variant="light">
                                     {graph.edges.length}
@@ -618,10 +620,10 @@ export default function GraphDialog({
                             )}
                         </Tabs.Tab>
 
-                        <Tabs.Tab value="blocks">Blocks</Tabs.Tab>
+                        <Tabs.Tab value="blocks">{t("graph.tabs.blocks")}</Tabs.Tab>
 
                         <Tabs.Tab value="runnableBlocks">
-                            Runnable Blocks
+                            {t("graph.tabs.runnableBlocks")}
                             {graph && (
                                 <Badge ml="xs" size="xs" variant="light">
                                     {runnableBlockRoutes.length}
@@ -631,7 +633,7 @@ export default function GraphDialog({
 
 
                         <Tabs.Tab value="solver">
-                            Útvonal keresés
+                            {t("graph.tabs.solver")}
                         </Tabs.Tab>
                     </Tabs.List>
 
@@ -642,7 +644,7 @@ export default function GraphDialog({
                                 draw={drawGraph}
                             />
                         ) : (
-                            <Text c="dimmed">Még nincs legenerált gráf.</Text>
+                            <Text c="dimmed">{t("graph.emptyGraph")}</Text>
                         )}
                     </Tabs.Panel>
 
@@ -658,11 +660,11 @@ export default function GraphDialog({
                                     <Table.Thead>
                                         <Table.Tr>
                                             <Table.Th>#</Table.Th>
-                                            <Table.Th>From</Table.Th>
+                                            <Table.Th>{t("graph.headers.from")}</Table.Th>
                                             <Table.Th></Table.Th>
-                                            <Table.Th>To</Table.Th>
-                                            <Table.Th>Section objects</Table.Th>
-                                            <Table.Th>Turnout requirement</Table.Th>
+                                            <Table.Th>{t("graph.headers.to")}</Table.Th>
+                                            <Table.Th>{t("graph.headers.sectionObjects")}</Table.Th>
+                                            <Table.Th>{t("graph.headers.turnoutRequirement")}</Table.Th>
                                         </Table.Tr>
                                     </Table.Thead>
 
@@ -670,7 +672,7 @@ export default function GraphDialog({
                                 </Table>
                             </ScrollArea>
                         ) : (
-                            <Text c="dimmed">Nincs megjeleníthető kapcsolat.</Text>
+                            <Text c="dimmed">{t("graph.emptyConnections")}</Text>
                         )}
                     </Tabs.Panel>
 
@@ -686,8 +688,8 @@ export default function GraphDialog({
                                     <Table.Thead>
                                         <Table.Tr>
                                             <Table.Th>#</Table.Th>
-                                            <Table.Th>Block connection</Table.Th>
-                                            <Table.Th>Section chain</Table.Th>
+                                            <Table.Th>{t("graph.headers.blockConnection")}</Table.Th>
+                                            <Table.Th>{t("graph.headers.sectionChain")}</Table.Th>
                                         </Table.Tr>
                                     </Table.Thead>
 
@@ -696,7 +698,7 @@ export default function GraphDialog({
                             </ScrollArea>
                         ) : (
                             <Text c="dimmed">
-                                Nincs megjeleníthető blokk kapcsolat.
+                                {t("graph.emptyBlockConnections")}
                             </Text>
                         )}
                     </Tabs.Panel>
@@ -713,12 +715,12 @@ export default function GraphDialog({
                                     <Table.Thead>
                                         <Table.Tr>
                                             <Table.Th>#</Table.Th>
-                                            <Table.Th>From block</Table.Th>
+                                            <Table.Th>{t("graph.headers.fromBlock")}</Table.Th>
                                             <Table.Th></Table.Th>
-                                            <Table.Th>To block</Table.Th>
-                                            <Table.Th>Runnable path</Table.Th>
-                                            <Table.Th>Loco direction</Table.Th>
-                                            <Table.Th>Turnout requirement</Table.Th>
+                                            <Table.Th>{t("graph.headers.toBlock")}</Table.Th>
+                                            <Table.Th>{t("graph.headers.runnablePath")}</Table.Th>
+                                            <Table.Th>{t("graph.headers.locoDirection")}</Table.Th>
+                                            <Table.Th>{t("graph.headers.turnoutRequirement")}</Table.Th>
                                         </Table.Tr>
                                     </Table.Thead>
 
@@ -729,7 +731,7 @@ export default function GraphDialog({
                             </ScrollArea>
                         ) : (
                             <Text c="dimmed">
-                                Nincs ténylegesen megoldható blokk útvonal.
+                                {t("graph.emptyRunnableBlocks")}
                             </Text>
                         )}
                     </Tabs.Panel>
@@ -740,8 +742,8 @@ export default function GraphDialog({
                                 <Stack gap="md">
                                     <Group grow align="end">
                                         <Select
-                                            label="From block"
-                                            placeholder="Válassz induló blokkot"
+                                            label={t("graph.headers.fromBlock")}
+                                            placeholder={t("graph.solver.fromPlaceholder")}
                                             data={blockSelectData}
                                             value={fromBlockId}
                                             onChange={setFromBlockId}
@@ -750,8 +752,8 @@ export default function GraphDialog({
                                         />
 
                                         <Select
-                                            label="To block"
-                                            placeholder="Válassz cél blokkot"
+                                            label={t("graph.headers.toBlock")}
+                                            placeholder={t("graph.solver.toPlaceholder")}
                                             data={blockSelectData}
                                             value={toBlockId}
                                             onChange={setToBlockId}
@@ -763,7 +765,7 @@ export default function GraphDialog({
                                             onClick={handleSolveRoute}
                                             disabled={!fromBlockId || !toBlockId}
                                         >
-                                            Útvonal keresése
+                                            {t("graph.solver.search")}
                                         </Button>
                                     </Group>
 
@@ -771,24 +773,20 @@ export default function GraphDialog({
 
                                     {!routeSearched && (
                                         <Text c="dimmed" size="sm">
-                                            Válassz ki egy induló és egy cél blokkot,
-                                            majd indítsd el a keresést.
+                                            {t("graph.solver.intro")}
                                         </Text>
                                     )}
 
                                     {routeSearched && !routeSolution && (
-                                        <Alert color="red" title="Nincs megoldható útvonal">
-                                            A kiválasztott blokkok között nem találtam
-                                            olyan útvonalat, amely konzisztens
-                                            váltóállásokkal bejárható.
+                                        <Alert color="red" title={t("graph.solver.notFoundTitle")}>
+                                            {t("graph.solver.notFound")}
                                         </Alert>
                                     )}
 
                                     {routeSolution && (
                                         <Stack gap="md">
-                                            <Alert color="green" title="Találtam útvonalat">
-                                                A kiválasztott blokkok között van
-                                                megoldható útvonal.
+                                            <Alert color="green" title={t("graph.solver.foundTitle")}>
+                                                {t("graph.solver.found")}
                                             </Alert>
 
                                             <Group justify="flex-end">
@@ -799,12 +797,12 @@ export default function GraphDialog({
                                                         void onTestRoute?.(routeSolution);
                                                     }}
                                                 >
-                                                    Test route
+                                                    {t("graph.solver.testRoute")}
                                                 </Button>
                                             </Group>
 
                                             <Stack gap="xs">
-                                                <Text fw={600}>Mozdony menetiránya</Text>
+                                                <Text fw={600}>{t("graph.solver.directionTitle")}</Text>
 
                                                 <Group gap="xs">
                                                     <Badge
@@ -823,20 +821,19 @@ export default function GraphDialog({
 
                                                     {routeSolution.locoDirection === "forward" && (
                                                         <Text size="sm" c="dimmed">
-                                                            A mozdony előremenetben járja be az útvonalat.
+                                                            {t("graph.solver.directionForward")}
                                                         </Text>
                                                     )}
 
                                                     {routeSolution.locoDirection === "reverse" && (
                                                         <Text size="sm" c="dimmed">
-                                                            A mozdony hátramenetben járja be az útvonalat.
+                                                            {t("graph.solver.directionReverse")}
                                                         </Text>
                                                     )}
 
                                                     {routeSolution.locoDirection === "unknown" && (
                                                         <Text size="sm" c="dimmed">
-                                                            A menetirány nem állapítható meg a pályán kijelölt
-                                                            travel direction alapján.
+                                                            {t("graph.solver.directionUnknown")}
                                                         </Text>
                                                     )}
                                                 </Group>
@@ -844,7 +841,7 @@ export default function GraphDialog({
 
                                             <Stack gap="xs">
                                                 <Text fw={600}>
-                                                    Blokk útvonal szegmenslánccal
+                                                    {t("graph.solver.blockPathTitle")}
                                                 </Text>
 
                                                 <Group gap="xs" wrap="wrap">
@@ -884,18 +881,18 @@ export default function GraphDialog({
                                             </Stack>
 
                                             <Stack gap="xs">
-                                                <Text fw={600}>Szükséges váltóállások</Text>
+                                                <Text fw={600}>{t("graph.solver.turnoutsTitle")}</Text>
 
                                                 {routeSolution.turnoutStates.length > 0 ? (
                                                     renderTurnoutRequirementBadges(routeSolution.turnoutStates)
                                                 ) : (
                                                     <Text c="dimmed" size="sm">
-                                                        Ehhez az útvonalhoz nincs szükség váltóállításra.
+                                                        {t("graph.solver.noTurnouts")}
                                                     </Text>
                                                 )}
                                             </Stack>
                                             <Stack gap="xs">
-                                                <Text fw={600}>Élek részletesen</Text>
+                                                <Text fw={600}>{t("graph.solver.edgesTitle")}</Text>
 
                                                 <Table
                                                     striped
@@ -906,10 +903,10 @@ export default function GraphDialog({
                                                     <Table.Thead>
                                                         <Table.Tr>
                                                             <Table.Th>#</Table.Th>
-                                                            <Table.Th>From</Table.Th>
-                                                            <Table.Th>To</Table.Th>
-                                                            <Table.Th>Szakasz objektumok</Table.Th>
-                                                            <Table.Th>Váltófeltételek</Table.Th>
+                                                            <Table.Th>{t("graph.headers.from")}</Table.Th>
+                                                            <Table.Th>{t("graph.headers.to")}</Table.Th>
+                                                            <Table.Th>{t("graph.headers.sectionObjects")}</Table.Th>
+                                                            <Table.Th>{t("graph.headers.turnoutRequirement")}</Table.Th>
                                                         </Table.Tr>
                                                     </Table.Thead>
 
@@ -934,42 +931,42 @@ export default function GraphDialog({
                                                                         <Stack gap={6}>
                                                                             {renderNodeItems(
                                                                                 edge.from.name,
-                                                                                "Detectors",
+                                                                                t("graph.items.detectors"),
                                                                                 "cyan",
                                                                                 edge.from.detectors
                                                                             )}
 
                                                                             {renderNodeItems(
                                                                                 edge.from.name,
-                                                                                "Signals",
+                                                                                t("graph.items.signals"),
                                                                                 "yellow",
                                                                                 edge.from.signals
                                                                             )}
 
                                                                             {renderNodeItems(
                                                                                 edge.from.name,
-                                                                                "Blocks",
+                                                                                t("graph.items.blocks"),
                                                                                 "violet",
                                                                                 edge.from.blocks
                                                                             )}
 
                                                                             {renderNodeItems(
                                                                                 edge.to.name,
-                                                                                "Detectors",
+                                                                                t("graph.items.detectors"),
                                                                                 "cyan",
                                                                                 edge.to.detectors
                                                                             )}
 
                                                                             {renderNodeItems(
                                                                                 edge.to.name,
-                                                                                "Signals",
+                                                                                t("graph.items.signals"),
                                                                                 "yellow",
                                                                                 edge.to.signals
                                                                             )}
 
                                                                             {renderNodeItems(
                                                                                 edge.to.name,
-                                                                                "Blocks",
+                                                                                t("graph.items.blocks"),
                                                                                 "violet",
                                                                                 edge.to.blocks
                                                                             )}
@@ -1026,7 +1023,7 @@ export default function GraphDialog({
                             </ScrollArea>
                         ) : (
                             <Text c="dimmed">
-                                Nincs gráf, amelyen útvonalat lehetne keresni.
+                                {t("graph.noSearchableGraph")}
                             </Text>
                         )}
                     </Tabs.Panel>

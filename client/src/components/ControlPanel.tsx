@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   Card,
@@ -40,6 +41,7 @@ const CONTROL_PANEL_ACTIVE_TAB_KEY = "dcc-express.control-panel.active-tab";
 const DEFAULT_CONTROL_PANEL_TAB = "command-center";
 
 export default function ControlPanel(p: ControlPanelProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string | null>(() => {
     return (
       window.localStorage.getItem(CONTROL_PANEL_ACTIVE_TAB_KEY) ??
@@ -61,31 +63,37 @@ export default function ControlPanel(p: ControlPanelProps) {
           <Tabs.Tab
             value="command-center"
             leftSection={<IconBolt size={16} />}
-          >
-            {/* CC */}
-          </Tabs.Tab>
+            title={t("controlPanel.tabs.commandCenter")}
+            aria-label={t("controlPanel.tabs.commandCenter")}
+          />
 
           <Tabs.Tab
             value="controller"
             leftSection={<IconDeviceGamepad2 size={16} />}
-          >
-            {/* Controller */}
-          </Tabs.Tab>
+            title={t("controlPanel.tabs.controller")}
+            aria-label={t("controlPanel.tabs.controller")}
+          />
 
-          <Tabs.Tab value="scripts" leftSection={<IconRoute2 size={16} />}>
-            {/* Scripts */}
-          </Tabs.Tab>
+          <Tabs.Tab
+            value="scripts"
+            leftSection={<IconRoute2 size={16} />}
+            title={t("controlPanel.tabs.routes")}
+            aria-label={t("controlPanel.tabs.routes")}
+          />
 
-          <Tabs.Tab value="visibility" leftSection={<IconEye size={16} />}>
-            {/* Visibility */}
-          </Tabs.Tab>
+          <Tabs.Tab
+            value="visibility"
+            leftSection={<IconEye size={16} />}
+            title={t("controlPanel.tabs.visibility")}
+            aria-label={t("controlPanel.tabs.visibility")}
+          />
 
           <Tabs.Tab
             value="log"
             leftSection={<IconAlertTriangle size={16} />}
-          >
-            {/* Log */}
-          </Tabs.Tab>
+            title={t("controlPanel.tabs.log")}
+            aria-label={t("controlPanel.tabs.log")}
+          />
         </Tabs.List>
 
         <Tabs.Panel value="command-center" pt="sm">

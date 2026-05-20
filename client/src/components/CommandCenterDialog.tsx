@@ -16,6 +16,7 @@ import {
   saveCommandCenters,
 } from "../api/commandCentersApi";
 import { CommandCenterType } from "../../../common/src/types";
+import { useTranslation } from "react-i18next";
 
 type CommandCenterDialogProps = {
   opened: boolean;
@@ -25,6 +26,7 @@ type CommandCenterDialogProps = {
 };
 
 export default function CommandCenterDialog(p: CommandCenterDialogProps) {
+  const { t } = useTranslation();
   const [commandCenter, setCommandCenter] = useState<CommandCenter>(
     p.commandCenter.clone()
   );
@@ -98,13 +100,13 @@ export default function CommandCenterDialog(p: CommandCenterDialogProps) {
     <Modal
       opened={p.opened}
       onClose={p.onClose}
-      title="Command Center"
+      title={t("commandCenter.title")}
       centered
       size="lg"
     >
       <Stack gap="md">
         <TextInput
-          label="Name"
+          label={t("commandCenter.name")}
           value={commandCenter.name}
           onChange={(e) =>
             setCommandCenter((prev) => {
@@ -116,12 +118,12 @@ export default function CommandCenterDialog(p: CommandCenterDialogProps) {
         />
 
         <Select
-          label="Connection type"
+          label={t("commandCenter.connectionType")}
           data={[
-            { value: "simulator", label: "Simulator" },
-            { value: "z21", label: "Z21" },
-            { value: "dcc-ex-tcp", label: "DCC-EX TCP" },
-            { value: "dcc-ex-serial", label: "DCC-EX Serial" },
+            { value: "simulator", label: t("commandCenter.types.simulator") },
+            { value: "z21", label: t("commandCenter.types.z21") },
+            { value: "dcc-ex-tcp", label: t("commandCenter.types.dccExTcp") },
+            { value: "dcc-ex-serial", label: t("commandCenter.types.dccExSerial") },
           ]}
           value={commandCenter.type}
           onChange={(v) => {
@@ -132,7 +134,7 @@ export default function CommandCenterDialog(p: CommandCenterDialogProps) {
         {(commandCenter.type === "simulator") && (
           <>
             <Text>
-              The simulator command center is a built-in command center that simulates a connection. It can be used for testing and development purposes.
+              {t("commandCenter.simulatorDescription")}
             </Text>
           </>
         )}
@@ -142,7 +144,7 @@ export default function CommandCenterDialog(p: CommandCenterDialogProps) {
           commandCenter.type === "dcc-ex-tcp") && (
             <>
               <TextInput
-                label="Host"
+                label={t("commandCenter.host")}
                 placeholder="127.0.0.1"
                 value={
                   commandCenter.type === "z21"
@@ -153,7 +155,7 @@ export default function CommandCenterDialog(p: CommandCenterDialogProps) {
               />
 
               <NumberInput
-                label="Port"
+                label={t("commandCenter.port")}
                 placeholder="2560"
                 min={1}
                 max={65535}
@@ -169,24 +171,24 @@ export default function CommandCenterDialog(p: CommandCenterDialogProps) {
 
         {commandCenter.type === "dcc-ex-serial" && (
           <TextInput
-            label="Serial port"
-            placeholder="COM3 vagy /dev/ttyUSB0"
+            label={t("commandCenter.serialPort")}
+            placeholder={t("commandCenter.serialPortPlaceholder")}
             value={commandCenter.dccexSerial.serialPort ?? ""}
             onChange={(e) => setSerialPort(e.currentTarget.value)}
           />
         )}
 
         <Checkbox
-          label="Auto connect"
+          label={t("commandCenter.autoConnect")}
           checked={commandCenter.autoConnect ?? false}
           onChange={(e) => setAutoConnect(e.currentTarget.checked)}
         />
 
         <Group justify="flex-end" mt="md">
           <Button variant="default" onClick={p.onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
-          <Button onClick={handleSave}>Save</Button>
+          <Button onClick={handleSave}>{t("common.save")}</Button>
         </Group>
       </Stack>
     </Modal>
