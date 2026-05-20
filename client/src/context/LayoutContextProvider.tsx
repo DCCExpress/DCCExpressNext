@@ -5,14 +5,14 @@ import {
   type ReactNode,
 } from "react";
 
-import { Layout } from "../models/editor/core/Layout";
+import { LayoutView } from "../models/editor/core/LayoutView";
 import { getLayout, saveLayout as saveLayoutApi } from "../api/http";
 
 type LayoutContextValue = {
-  layout: Layout;
+  layout: LayoutView;
   layoutVersion: number;
 
-  setLayout: (layout: Layout) => void;
+  setLayout: (layout: LayoutView) => void;
   refreshLayout: () => void;
 
   loadLayout: () => Promise<void>;
@@ -26,10 +26,10 @@ export function LayoutContextProvider({
 }: {
   children: ReactNode;
 }) {
-  const [layout, setLayoutState] = useState<Layout>(() => new Layout());
+  const [layout, setLayoutState] = useState<LayoutView>(() => new LayoutView());
   const [layoutVersion, setLayoutVersion] = useState(0);
 
-  const setLayout = (newLayout: Layout) => {
+  const setLayout = (newLayout: LayoutView) => {
     setLayoutState(newLayout);
     setLayoutVersion(v => v + 1);
   };
@@ -40,7 +40,7 @@ export function LayoutContextProvider({
 
   const loadLayout = async () => {
     const data = await getLayout();
-    const loadedLayout = Layout.fromJSON(data);
+    const loadedLayout = LayoutView.fromJSON(data);
 
     setLayout(loadedLayout);
   };

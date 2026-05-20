@@ -1,9 +1,9 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
-import { BaseElement } from "../core/BaseElement";
+import { BaseElementView } from "../core/BaseElementView";
 import { DrawOptions, ITreeElement } from "../types/EditorTypes";
 
-export class TreeElementView extends BaseElement implements ITreeElement {
+export class TreeElementView extends BaseElementView implements ITreeElement {
     override type: typeof ELEMENT_TYPES.TREE = ELEMENT_TYPES.TREE;
     constructor(x: number, y: number) {
         super(x, y);

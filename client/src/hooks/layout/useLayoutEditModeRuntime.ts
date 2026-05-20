@@ -13,8 +13,8 @@ import type {
 } from "../../models/editor/types/EditorTypes";
 
 import type {
-  Layout,
-} from "../../models/editor/core/Layout";
+  LayoutView,
+} from "../../models/editor/core/LayoutView";
 
 import {
   routeGraphStore,
@@ -31,7 +31,7 @@ type NumberSetter =
 
 export type UseLayoutEditModeRuntimeParams = {
   editMode: boolean;
-  layoutRef: MutableRefObject<Layout>;
+  layoutRef: MutableRefObject<LayoutView>;
   layoutLoadedRef: MutableRefObject<boolean>;
   refreshServerRuntimeLayout: () => Promise<void>;
   setTool: EditorToolSetter;

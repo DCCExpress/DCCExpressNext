@@ -7,8 +7,8 @@ import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 
 import ControlPanel from "../components/ControlPanel";
 import VisibilitySettings from "../components/VisibilitySettings";
-import { BaseElement } from "../models/editor/core/BaseElement";
-import { Layout } from "../models/editor/core/Layout";
+import { BaseElementView } from "../models/editor/core/BaseElementView";
+import { LayoutView } from "../models/editor/core/LayoutView";
 import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
 import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
@@ -21,21 +21,21 @@ import PropertyPanelHelp from "./property-panel/PropertyPanelHelp";
 import "../styles/propertypanel.css";
 
 type PropertyPanelProps = {
-  selectedElement: BaseElement | null;
-  onUpdateSelectedElement: (element: BaseElement | null) => void;
+  selectedElement: BaseElementView | null;
+  onUpdateSelectedElement: (element: BaseElementView | null) => void;
   invalidate: number;
   editMode: boolean;
   opened: boolean;
   turnoutSelectionMode: boolean;
   setTurnoutSelectionMode: (on: boolean) => void;
-  layout: Layout;
-  onLayoutChange: Dispatch<SetStateAction<Layout>>;
+  layout: LayoutView;
+  onLayoutChange: Dispatch<SetStateAction<LayoutView>>;
   routes?: string | undefined;
   setBusy?: (busy: boolean, text?: string) => void;
 };
 
 function updateElementProperty(
-  selectedElement: BaseElement,
+  selectedElement: BaseElementView,
   prop: IEditableProperty,
   rawValue: unknown
 ): void {

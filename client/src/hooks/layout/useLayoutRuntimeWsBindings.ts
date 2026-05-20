@@ -37,8 +37,8 @@ import {
 } from "../../helpers";
 
 import type {
-  Layout,
-} from "../../models/editor/core/Layout";
+  LayoutView,
+} from "../../models/editor/core/LayoutView";
 
 import {
   TrackSensorElementView,
@@ -68,7 +68,7 @@ type InvalidateSetter =
   Dispatch<SetStateAction<number>>;
 
 export type UseLayoutRuntimeWsBindingsParams = {
-  layoutRef: MutableRefObject<Layout>;
+  layoutRef: MutableRefObject<LayoutView>;
   locosRef: MutableRefObject<Loco[]>;
   setInvalidateCounter: InvalidateSetter;
 };

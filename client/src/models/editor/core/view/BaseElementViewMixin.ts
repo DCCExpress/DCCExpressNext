@@ -16,7 +16,7 @@ type AbstractConstructor<T = object> =
   abstract new (...args: any[]) => T;
 
 /**
- * UI/editor képességek a common BaseElement fölé.
+ * UI/editor képességek a common BaseElementView fölé.
  *
  * Ezt a mixint azért használjuk, hogy a konkrét View osztályok
  * valóban a common domain modellekből örökölhessenek,
@@ -199,10 +199,10 @@ export function BaseElementViewMixin<
     }
 
     /**
-     * Kompatibilitási példánymetódus a régi kliens BaseElement szerződéséhez.
+     * Kompatibilitási példánymetódus a régi kliens BaseElementView szerződéséhez.
      *
      * A tényleges deszerializálás továbbra is a static fromJSON() metódusokon
-     * történik, ahogy eddig is. A régi BaseElement-ben ez a példánymetódus
+     * történik, ahogy eddig is. A régi BaseElementView-ben ez a példánymetódus
      * szintén üres volt.
      */
     fromJSON(_data: IBaseElement): void {

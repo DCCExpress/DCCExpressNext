@@ -1,19 +1,19 @@
-// import { BaseElement } from "./BaseElement";
-// import { Layer, LayerId } from "./Layer";
+// import { BaseElementView } from "./BaseElementView";
+// import { LayerView, LayerId } from "./LayerView";
 
 // export class EditorLayers {
-//   private _layers: Layer[] = [];
+//   private _layers: LayerView[] = [];
 //   private _activeLayerId: LayerId = "track";
-//   //track: Layer = new Layer("track", "track")
+//   //track: LayerView = new LayerView("track", "track")
 //   constructor() {
 //     this._layers = [
-//       new Layer("track", "Pálya"),
-//       new Layer("blocks", "Blokkok"),
-//       new Layer("buildings", "Épületek")
+//       new LayerView("track", "Pálya"),
+//       new LayerView("blocks", "Blokkok"),
+//       new LayerView("buildings", "Épületek")
 //     ];
 //   }
 
-//   public get layers(): Layer[] {
+//   public get layers(): LayerView[] {
 //     return this._layers;
 //   }
 
@@ -28,7 +28,7 @@
 //     }
 //   }
 
-//   public get activeLayer(): Layer {
+//   public get activeLayer(): LayerView {
 //     const layer = this.getLayer(this._activeLayerId);
 //     if (!layer) {
 //       throw new Error(`Active layer not found: ${this._activeLayerId}`);
@@ -36,42 +36,42 @@
 //     return layer;
 //   }
 
-//   public get track(): Layer {
+//   public get track(): LayerView {
 //     return this.requireLayer("track");
 //   }
 
-//   public get blocks(): Layer {
+//   public get blocks(): LayerView {
 //     return this.requireLayer("blocks");
 //   }
 
-//   public get buildings(): Layer {
+//   public get buildings(): LayerView {
 //     return this.requireLayer("buildings");
 //   }
 
-//   public addLayer(id: LayerId, name: string): Layer {
+//   public addLayer(id: LayerId, name: string): LayerView {
 //     const existing = this.getLayer(id);
 //     if (existing) {
 //       return existing;
 //     }
 
-//     const layer = new Layer(id, name);
+//     const layer = new LayerView(id, name);
 //     this._layers.push(layer);
 //     return layer;
 //   }
 
-//   public getLayer(id: LayerId): Layer | undefined {
+//   public getLayer(id: LayerId): LayerView | undefined {
 //     return this._layers.find(l => l.id === id);
 //   }
 
-//   public requireLayer(id: LayerId): Layer {
+//   public requireLayer(id: LayerId): LayerView {
 //     const layer = this.getLayer(id);
 //     if (!layer) {
-//       throw new Error(`Layer not found: ${id}`);
+//       throw new Error(`LayerView not found: ${id}`);
 //     }
 //     return layer;
 //   }
 
-//   public addElement(element: BaseElement, layerId?: LayerId): void {
+//   public addElement(element: BaseElementView, layerId?: LayerId): void {
 //     const layer = layerId ? this.requireLayer(layerId) : this.activeLayer;
 
 //     if (layer.locked) {
@@ -81,7 +81,7 @@
 //     layer.add(element);
 //   }
 
-//   public removeElement(element: BaseElement): void {
+//   public removeElement(element: BaseElementView): void {
 //     for (const layer of this._layers) {
 //       const index = layer.elements.indexOf(element);
 //       if (index >= 0) {
@@ -97,22 +97,22 @@
 //     }
 //   }
 
-//   public getAllVisibleElements(): BaseElement[] {
+//   public getAllVisibleElements(): BaseElementView[] {
 //     return this._layers
 //       .filter(layer => layer.visible)
 //       .flatMap(layer => layer.elements);
 //   }
 
-//   public getAllElements(): BaseElement[] {
+//   public getAllElements(): BaseElementView[] {
 //     return this._layers.flatMap(layer => layer.elements);
 //   }
 
-//   public findLayerOfElement(element: BaseElement): Layer | undefined {
+//   public findLayerOfElement(element: BaseElementView): LayerView | undefined {
 //     return this._layers.find(layer => layer.elements.includes(element));
 //   }
 
 
-//   getElement(x: number, y: number): BaseElement | null {
+//   getElement(x: number, y: number): BaseElementView | null {
 //     for (const l of this.layers) {
 //       for (const e of l.elements) {
 //         if (e.hitTest(x, y)) {
@@ -123,7 +123,7 @@
 //     return null;
 //   }
 
-//   getSelected(): BaseElement | null {
+//   getSelected(): BaseElementView | null {
 //     for (const l of this.layers) {
 //       for (const e of l.elements) {
 //         if (e.selected) {
@@ -134,7 +134,7 @@
 //     return null;
 //   }
 
-//   setSelected(be: BaseElement) {
+//   setSelected(be: BaseElementView) {
 //     this.unselectAll();
 //     for (const l of this.layers) {
 //       for (const e of l.elements) {
@@ -162,7 +162,7 @@
 //   //   x: number,
 //   //   y: number,
 //   //   options?: { includeLocked?: boolean }
-//   // ): [Layer, BaseElement] | [null, null] {
+//   // ): [LayerView, BaseElementView] | [null, null] {
 //   //   const includeLocked = options?.includeLocked ?? true;
 
 //   //   for (let layerIndex = this._layers.length - 1; layerIndex >= 0; layerIndex--) {

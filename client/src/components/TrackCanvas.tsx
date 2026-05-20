@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";
-import { BaseElement } from "../models/editor/core/BaseElement";
+import { BaseElementView } from "../models/editor/core/BaseElementView";
 import { DrawOptions, EditorTool } from "../models/editor/types/EditorTypes";
 import { TrackStraightElementView } from "../models/editor/elements/TrackStraightElementView";
 import { TrackEndElementView } from "../models/editor/elements/TrackEndElementView";
@@ -9,7 +9,7 @@ import { TrackCurveElementView } from "../models/editor/elements/TrackCurveEleme
 import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
 import { generateId, showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
-import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
+import { isTurnoutElement, LayoutView } from "../models/editor/core/LayoutView";
 
 import "../styles/TrackCanvas.css";
 import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
@@ -23,7 +23,7 @@ import { TrackSignalElementView } from "../models/editor/elements/TrackSignalEle
 import { AudioButtonElementView } from "../models/editor/elements/AudioButtonElementView";
 import { RouteButtonElementView } from "../models/editor/elements/RouteButtonElementView";
 import { TrackCrossingElementView } from "../models/editor/elements/TrackCrossingElementView";
-import { ClickableBaseElement } from "../models/editor/core/ClickableBaseElement";
+import { ClickableBaseElementView } from "../models/editor/core/ClickableBaseElementView";
 import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../services/wsApi";
@@ -45,11 +45,11 @@ import { createCursorElement } from "./track-canvas/createCursorElement";
 type TrackCanvasProps = {
   editMode?: boolean;
   tool: EditorTool;
-  layout: Layout;
-  onLayoutChange: Dispatch<SetStateAction<Layout>>;
+  layout: LayoutView;
+  onLayoutChange: Dispatch<SetStateAction<LayoutView>>;
   onBeforeLayoutChange?: () => void;
-  selectedElement: BaseElement | null;
-  onSelectedElementChange: (element: BaseElement | null) => void;
+  selectedElement: BaseElementView | null;
+  onSelectedElementChange: (element: BaseElementView | null) => void;
   invalidateCounter: number;
   onInvalidate: () => void;
   fitCounter: number;
@@ -206,7 +206,7 @@ export default function TrackCanvas({
 
   const [mouseGrid, setMouseGrid] = useState({ x: 0, y: 0 });
   const [hoverGrid, setHoverGrid] = useState<{ x: number; y: number } | null>(null);
-  const [currentCursor, setCurrentCursor] = useState<BaseElement | null>(null);
+  const [currentCursor, setCurrentCursor] = useState<BaseElementView | null>(null);
   const [drawVersion, setDrawVersion] = useState(0);
   const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0, });
 
@@ -260,8 +260,8 @@ export default function TrackCanvas({
   const layoutRef = useRef(layout);
   const toolRef = useRef(tool);
   const editModeRef = useRef(editMode);
-  const selectedElementRef = useRef<BaseElement | null>(selectedElement);
-  const currentCursorRef = useRef<BaseElement | null>(currentCursor);
+  const selectedElementRef = useRef<BaseElementView | null>(selectedElement);
+  const currentCursorRef = useRef<BaseElementView | null>(currentCursor);
 
   const [signalAspectPopover, setSignalAspectPopover] =
     useState<SignalAspectPopoverState>({
@@ -688,12 +688,12 @@ export default function TrackCanvas({
     };
 
     const handleClickableDown = (
-      hitElement: BaseElement | null,
+      hitElement: BaseElementView | null,
       ev: MouseEvent | PointerEvent
     ): boolean => {
       if (!hitElement) return false;
       if (
-        !(hitElement instanceof ClickableBaseElement) &&
+        !(hitElement instanceof ClickableBaseElementView) &&
         !isTurnoutElement(hitElement)
       ) {
         return false;
@@ -714,12 +714,12 @@ export default function TrackCanvas({
     };
 
     const handleClickableUp = (
-      hitElement: BaseElement | null,
+      hitElement: BaseElementView | null,
       ev: MouseEvent | PointerEvent
     ): boolean => {
       if (!hitElement) return false;
       if (
-        !(hitElement instanceof ClickableBaseElement) &&
+        !(hitElement instanceof ClickableBaseElementView) &&
         !isTurnoutElement(hitElement)
       ) {
         return false;
@@ -815,7 +815,7 @@ export default function TrackCanvas({
 
       // A klikkelést lehet csak Control módban kellene engedélyezni!
       // if (toolRef.current.mode == "cursor" && hitElement && !editModeRef.current) {
-      //   if (hitElement instanceof ClickableBaseElement) {
+      //   if (hitElement instanceof ClickableBaseElementView) {
       //     if (hitElement instanceof RouteButtonElementView) {
       //       const rb = hitElement as RouteButtonElementView;
       //       const elems = currentLayout.getAllElements();
@@ -824,7 +824,7 @@ export default function TrackCanvas({
       //       executeRoute(rb)
 
       //     } else {
-      //       const elem = hitElement as ClickableBaseElement
+      //       const elem = hitElement as ClickableBaseElementView
       //       elem.mouseDown(ev);
       //     }
       //   }
@@ -1080,7 +1080,7 @@ export default function TrackCanvas({
           hoveredElement instanceof TrackTurnoutTwoWayElementView ||
           hoveredElement instanceof TrackTurnoutDoubleElementView ||
           hoveredElement instanceof TrackSignalElementView ||
-          hoveredElement instanceof ClickableBaseElement ||
+          hoveredElement instanceof ClickableBaseElementView ||
           hoveredElement instanceof AudioButtonElementView ||
           hoveredElement instanceof BlockElementView
 
@@ -1184,8 +1184,8 @@ export default function TrackCanvas({
 
         const hitElement = layoutRef.current.getElement(grid.x, grid.y);
         // if (hitElement) {
-        //   if (hitElement instanceof ClickableBaseElement) {
-        //     const elem = hitElement as ClickableBaseElement
+        //   if (hitElement instanceof ClickableBaseElementView) {
+        //     const elem = hitElement as ClickableBaseElementView
         //     elem.mouseUp(ev);
         //   }
         // }
@@ -1234,7 +1234,7 @@ export default function TrackCanvas({
 
       //alert("PointerDown")
       // if (!editModeRef.current) {
-      //   if (currentTool.mode === "cursor" && hitElement instanceof ClickableBaseElement) {
+      //   if (currentTool.mode === "cursor" && hitElement instanceof ClickableBaseElementView) {
       //     hitElement.mouseDown(ev as any);
       //   }
       // }
@@ -1259,7 +1259,7 @@ export default function TrackCanvas({
           return;
         }
 
-        // if (currentTool.mode === "cursor" && hitElement instanceof ClickableBaseElement) {
+        // if (currentTool.mode === "cursor" && hitElement instanceof ClickableBaseElementView) {
         //   hitElement.mouseDown(ev as any);
         // }
         if (currentTool.mode === "cursor") {
@@ -1414,7 +1414,7 @@ export default function TrackCanvas({
       //   );
 
       //   const hitElement = layoutRef.current.getElement(grid.x, grid.y);
-      //   if (hitElement instanceof ClickableBaseElement) {
+      //   if (hitElement instanceof ClickableBaseElementView) {
       //     hitElement.mouseUp(ev as any);
       //   }
       // }
@@ -1844,11 +1844,11 @@ function drawScene(
   mouseGrid: { x: number; y: number },
   tool: EditorTool,
   hoverGrid: { x: number; y: number } | null,
-  currentCursor: BaseElement | null,
-  layout: Layout,
+  currentCursor: BaseElementView | null,
+  layout: LayoutView,
   settings: EditorSettings,
   dragId?: string,
-  selected?: BaseElement,
+  selected?: BaseElementView,
   selectionRect?: SelectionRect | null,
   turnoutSelectionMode?: boolean,
   locos?: Loco[],
@@ -1977,7 +1977,7 @@ function drawInfo(
   scale: number,
   mouseGrid: { x: number; y: number },
   tool: EditorTool,
-  currentCursor: BaseElement | null
+  currentCursor: BaseElementView | null
 ) {
   const px = 20;
   const toolText =
@@ -2063,7 +2063,7 @@ function getSelectionRect(selection: SelectionState): SelectionRect | null {
   };
 }
 
-function getAllLayoutElements(layout: Layout): BaseElement[] {
+function getAllLayoutElements(layout: LayoutView): BaseElementView[] {
   return [
     ...layout.track.elements,
     ...layout.sensors.elements,
@@ -2074,10 +2074,10 @@ function getAllLayoutElements(layout: Layout): BaseElement[] {
 }
 
 function applySelectionRect(
-  layout: Layout,
+  layout: LayoutView,
   rect: SelectionRect,
   additive = false
-): BaseElement[] {
+): BaseElementView[] {
   const n = normalizeSelectionRect(rect);
   const all = getAllLayoutElements(layout);
 
@@ -2101,7 +2101,7 @@ function applySelectionRect(
   return all.filter((el) => el.selected);
 }
 
-function getLayoutBounds(layout: Layout) {
+function getLayoutBounds(layout: LayoutView) {
   const elements = getAllLayoutElements(layout);
 
   if (elements.length === 0) {
@@ -2124,7 +2124,7 @@ function getLayoutBounds(layout: Layout) {
 }
 
 function fitLayoutToView(
-  layout: Layout,
+  layout: LayoutView,
   view: ViewState,
   canvasWidth: number,
   canvasHeight: number

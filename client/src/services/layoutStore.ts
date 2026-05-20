@@ -1,25 +1,25 @@
+import type { RouteTurnoutElement } from "../models/editor/core/LayoutView";
 // src/services/layoutStore.ts
 
-import { BaseElement } from "../models/editor/core/BaseElement";
-import { Layout } from "../models/editor/core/Layout";
+import { BaseElementView } from "../models/editor/core/BaseElementView";
+import { LayoutView } from "../models/editor/core/LayoutView";
 import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
-import { TrackTurnoutElementView } from "../models/editor/elements/TrackTurnoutElementView";
 import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
 import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
 
-type LayoutListener = (layout: Layout | null) => void;
+type LayoutListener = (layout: LayoutView | null) => void;
 
 class LayoutStore {
-  private layout: Layout | null = null;
+  private layout: LayoutView | null = null;
   private listeners = new Set<LayoutListener>();
 
-  setLayout(layout: Layout | null) {
+  setLayout(layout: LayoutView | null) {
     this.layout = layout;
     this.emit();
   }
 
-  getLayout(): Layout | null {
+  getLayout(): LayoutView | null {
     return this.layout;
   }
 
@@ -40,11 +40,11 @@ class LayoutStore {
     }
   }
 
-  getElements(): BaseElement[] {
+  getElements(): BaseElementView[] {
     return this.layout?.getAllElements() ?? [];
   }
 
-  findElementById<T extends BaseElement = BaseElement>(id: string): T | undefined {
+  findElementById<T extends BaseElementView = BaseElementView>(id: string): T | undefined {
     return this.getElements().find(e => e.id === id) as T | undefined;
   }
 
@@ -126,7 +126,7 @@ class LayoutStore {
   // }
 
 
-  private isTurnout(e: BaseElement): boolean {
+  private isTurnout(e: BaseElementView): boolean {
     return (
       e instanceof TrackTurnoutLeftElementView ||
       e instanceof TrackTurnoutRightElementView ||
@@ -189,7 +189,7 @@ class LayoutStore {
   //     for (const turnoutState of solution.turnoutStates) {
   //       const turnout = this.findTurnoutByAddress(
   //         turnoutState.address
-  //       ) as TrackTurnoutElementView | undefined;
+  //       ) as RouteTurnoutElement | undefined;
 
   //       if (!turnout) {
   //         continue;
@@ -280,7 +280,7 @@ class LayoutStore {
   //   for (const address of turnoutAddresses) {
   //     const turnout = this.findTurnoutByAddress(
   //       address
-  //     ) as TrackTurnoutElementView | undefined;
+  //     ) as RouteTurnoutElement | undefined;
 
   //     if (!turnout) {
   //       continue;
@@ -306,7 +306,7 @@ class LayoutStore {
     for (const address of turnoutAddresses) {
       const turnout = this.findTurnoutByAddress(
         address
-      ) as TrackTurnoutElementView | undefined;
+      ) as RouteTurnoutElement | undefined;
 
       if (!turnout) {
         continue;

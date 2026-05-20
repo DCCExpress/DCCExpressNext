@@ -13,7 +13,7 @@ import {
   IconRoute2,
 } from "@tabler/icons-react";
 
-import type { Layout } from "../models/editor/core/Layout";
+import type { LayoutView } from "../models/editor/core/LayoutView";
 import { wsApi } from "../services/wsApi";
 
 import CommandCenterTab from "./control-panel/CommandCenterTab";
@@ -33,7 +33,7 @@ type ControlPanelProps = {
 
   routes?: string | undefined;
 
-  layout: Layout;
+  layout: LayoutView;
 };
 
 const CONTROL_PANEL_ACTIVE_TAB_KEY = "dcc-express.control-panel.active-tab";

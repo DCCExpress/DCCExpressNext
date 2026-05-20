@@ -1,4 +1,4 @@
-import { BaseElement } from "./BaseElement";
+import { BaseElementView } from "./BaseElementView";
 import { TrackStraightElementView } from "../elements/TrackStraightElementView";
 import { EditorElementData } from "../types/EditorTypes";
 import { TrackCornerElementView } from "../elements/TrackCornerElementView";
@@ -24,7 +24,7 @@ import { ExtendedRouteButtonElementView } from "../elements/ExtendedRouteButtonE
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
 export class ElementFactory {
-  static create(data: EditorElementData): BaseElement {
+  static create(data: EditorElementData): BaseElementView {
     switch (data.type) {
       case ELEMENT_TYPES.TRACK_STRAIGHT: {
         return TrackStraightElementView.fromJSON(data)
@@ -129,7 +129,7 @@ export class ElementFactory {
     }
   }
 
-  static createMany(elements: EditorElementData[]): BaseElement[] {
+  static createMany(elements: EditorElementData[]): BaseElementView[] {
     return elements.map((e) => this.create(e));
   }
 }

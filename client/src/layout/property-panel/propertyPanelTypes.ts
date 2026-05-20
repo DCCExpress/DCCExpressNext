@@ -1,10 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
 
-import type { Layout } from "../../models/editor/core/Layout";
-import type { BaseElement } from "../../models/editor/core/BaseElement";
+import type { LayoutView } from "../../models/editor/core/LayoutView";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 
-export type LayoutSetter = Dispatch<SetStateAction<Layout>>;
+export type LayoutSetter = Dispatch<SetStateAction<LayoutView>>;
 
 export type PropertyChangeHandler = (
   prop: IEditableProperty,
@@ -12,5 +12,5 @@ export type PropertyChangeHandler = (
 ) => void;
 
 export type SelectedElementUpdateHandler = (
-  element: BaseElement | null
+  element: BaseElementView | null
 ) => void;

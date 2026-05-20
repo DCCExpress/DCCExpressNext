@@ -1,5 +1,5 @@
 import { ELEMENT_TYPES } from "../../../../common/src/layout/elementTypes";
-import { BaseElement } from "../../models/editor/core/BaseElement";
+import { BaseElementView } from "../../models/editor/core/BaseElementView";
 import { AudioButtonElementView } from "../../models/editor/elements/AudioButtonElementView";
 import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 import { ButtonElementView } from "../../models/editor/elements/ButtonElementView";
@@ -56,7 +56,7 @@ const cursorLabelElement = new LabelElementView(0, 0);
 
 export function createCursorElement(
   tool: EditorTool
-): BaseElement | null {
+): BaseElementView | null {
   switch (tool.elementType) {
     case ELEMENT_TYPES.TRACK_STRAIGHT:
       return cursorTrackElement;

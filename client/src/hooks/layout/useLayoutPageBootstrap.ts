@@ -50,8 +50,8 @@ import {
 } from "../../services/locoStore";
 
 import {
-  Layout,
-} from "../../models/editor/core/Layout";
+  LayoutView,
+} from "../../models/editor/core/LayoutView";
 
 import type {
   Loco,
@@ -64,7 +64,7 @@ type NumberSetter =
   Dispatch<SetStateAction<number>>;
 
 type LayoutSetter =
-  Dispatch<SetStateAction<Layout>>;
+  Dispatch<SetStateAction<LayoutView>>;
 
 type LocoSetter =
   Dispatch<SetStateAction<Loco[]>>;
@@ -73,7 +73,7 @@ type CommandCenterSetter =
   Dispatch<SetStateAction<CommandCenter>>;
 
 export type UseLayoutPageBootstrapParams = {
-  layoutRef: MutableRefObject<Layout>;
+  layoutRef: MutableRefObject<LayoutView>;
   layoutLoadedRef: MutableRefObject<boolean>;
   setLayout: LayoutSetter;
   setLocos: LocoSetter;
@@ -141,7 +141,7 @@ export function useLayoutPageBootstrap({
         await getLayout();
 
       const nextLayout =
-        Layout.fromJSON(loaded);
+        LayoutView.fromJSON(loaded);
 
       setLayout(nextLayout);
       layoutStore.setLayout(nextLayout);
@@ -194,7 +194,7 @@ export function useLayoutPageBootstrap({
 
     showOkMessage(
       "",
-      "Layout saved!"
+      "LayoutView saved!"
     );
   }, [layoutRef]);
 

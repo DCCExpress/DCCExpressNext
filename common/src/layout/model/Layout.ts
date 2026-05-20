@@ -1,0 +1,334 @@
+// common/src/layout/model/Layout.ts
+
+import {
+  Point,
+} from "../../Rect.js";
+import {
+  BaseElement,
+} from "./BaseElement.js";
+import {
+  Layer,
+  type LayerId,
+  type LayerOptions,
+} from "./Layer.js";
+
+type LayerFactory<
+  TElement extends BaseElement,
+  TLayer extends Layer<TElement>
+> = (
+  id: LayerId,
+  name: string,
+  options?: LayerOptions
+) => TLayer;
+
+/**
+ * Grafikamentes, közös layout modell.
+ *
+ * Ide kerül minden olyan réteg- és elemkezelési logika,
+ * amelyet a kliens és a szerver is ugyanúgy tud használni.
+ *
+ * A kliensoldali LayoutView csak az editor/UI specifikus
+ * részeket tartja meg.
+ */
+export class Layout<
+  TElement extends BaseElement = BaseElement,
+  TLayer extends Layer<TElement> = Layer<TElement>
+> {
+  protected layers: TLayer[] = [];
+  protected _activeLayerId: LayerId = "track";
+
+  gridSize: number = 40;
+
+  constructor(
+    private readonly layerFactory: LayerFactory<TElement, TLayer> =
+      ((id, name, options) =>
+        new Layer<TElement>(id, name, options) as TLayer)
+  ) {
+    this.layers = [
+      this.layerFactory("buildings", "Épületek"),
+      this.layerFactory("blocks", "Blokkok"),
+      this.layerFactory("sensors", "Sensors"),
+      this.layerFactory("signals", "Signals"),
+      this.layerFactory("track", "Pálya"),
+    ];
+  }
+
+  public get activeLayerId(): LayerId {
+    return this._activeLayerId;
+  }
+
+  public set activeLayerId(value: LayerId) {
+    const exists = this.layers.some(
+      layer => layer.id === value
+    );
+
+    if (exists) {
+      this._activeLayerId = value;
+    }
+  }
+
+  public get activeLayer(): TLayer {
+    const layer = this.getLayer(this._activeLayerId);
+
+    if (!layer) {
+      throw new Error(
+        `Active layer not found: ${this._activeLayerId}`
+      );
+    }
+
+    return layer;
+  }
+
+  public get track(): TLayer {
+    return this.requireLayer("track");
+  }
+
+  public get blocks(): TLayer {
+    return this.requireLayer("blocks");
+  }
+
+  public get sensors(): TLayer {
+    return this.requireLayer("sensors");
+  }
+
+  public get signals(): TLayer {
+    return this.requireLayer("signals");
+  }
+
+  public get buildings(): TLayer {
+    return this.requireLayer("buildings");
+  }
+
+  public addLayer(
+    id: LayerId,
+    name: string,
+    options?: LayerOptions
+  ): TLayer {
+    const existing = this.getLayer(id);
+
+    if (existing) {
+      return existing;
+    }
+
+    const layer = this.layerFactory(id, name, options);
+    this.layers.push(layer);
+
+    return layer;
+  }
+
+  public getLayer(id: LayerId): TLayer | undefined {
+    return this.layers.find(
+      layer => layer.id === id
+    );
+  }
+
+  public requireLayer(id: LayerId): TLayer {
+    const layer = this.getLayer(id);
+
+    if (!layer) {
+      throw new Error(`Layer not found: ${id}`);
+    }
+
+    return layer;
+  }
+
+  public addElement(
+    element: TElement,
+    layerId?: LayerId
+  ): void {
+    const layer = layerId
+      ? this.requireLayer(layerId)
+      : this.activeLayer;
+
+    if (layer.locked) {
+      return;
+    }
+
+    layer.add(element);
+  }
+
+  public removeElement(element: TElement): void {
+    for (const layer of this.layers) {
+      const index = layer.elements.indexOf(element);
+
+      if (index >= 0) {
+        layer.elements.splice(index, 1);
+        return;
+      }
+    }
+  }
+
+  public clearAll(): void {
+    for (const layer of this.layers) {
+      layer.clear();
+    }
+  }
+
+  public getAllVisibleElements(): TElement[] {
+    return this.layers
+      .filter(layer => layer.visible)
+      .flatMap(layer => layer.elements);
+  }
+
+  public getAllElements(): TElement[] {
+    return [
+      ...this.track.elements,
+      ...this.blocks.elements,
+      ...this.signals.elements,
+      ...this.sensors.elements,
+      ...this.buildings.elements,
+    ];
+  }
+
+  public getElementAtGrid(
+    x: number,
+    y: number
+  ): TElement | null {
+    const all = this.getAllElements();
+
+    for (let index = all.length - 1; index >= 0; index--) {
+      const element = all[index]!;
+
+      if (element.x === x && element.y === y) {
+        return element;
+      }
+    }
+
+    return null;
+  }
+
+  public isOccupied(x: number, y: number): boolean {
+    return this.getElementAtGrid(x, y) !== null;
+  }
+
+  public findLayerOfElement(
+    element: TElement
+  ): TLayer | undefined {
+    return this.layers.find(
+      layer => layer.elements.includes(element)
+    );
+  }
+
+  public getElement(
+    x: number,
+    y: number
+  ): TElement | null {
+    for (const layer of this.layers) {
+      for (const element of layer.elements) {
+        if (element.hitTest(x, y)) {
+          return element;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public getLayeredElement(
+    referenceElement: TElement,
+    x: number,
+    y: number
+  ): TElement | null {
+    for (const layer of this.layers) {
+      for (const element of layer.elements) {
+        if (
+          element.hitTest(x, y) &&
+          element.layerName === referenceElement.layerName
+        ) {
+          return element;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public checkElementCollision(
+    first: TElement,
+    second: TElement
+  ): boolean {
+    const firstLayer = this.findLayerOfElement(first);
+    const secondLayer = this.findLayerOfElement(second);
+
+    return firstLayer?.name === secondLayer?.name;
+  }
+
+  public getElements(
+    x: number,
+    y: number
+  ): TElement[] {
+    const list: TElement[] = [];
+
+    for (const layer of this.layers) {
+      for (const element of layer.elements) {
+        if (element.hitTest(x, y)) {
+          list.push(element);
+        }
+      }
+    }
+
+    return list;
+  }
+
+  public getElementById(
+    id: string
+  ): TElement | undefined {
+    return this.getAllElements().find(
+      element => element.id === id
+    );
+  }
+
+  public getElementByName(
+    name: string
+  ): TElement | undefined {
+    return this.getAllElements().find(
+      element => element.name === name
+    );
+  }
+
+  public isExists(x: number, y: number): boolean {
+    return this.getElements(x, y).length > 0;
+  }
+
+  public getLayoutBounds(): {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  } | null {
+    const elements = this.getAllElements();
+
+    if (elements.length === 0) {
+      return null;
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const element of elements) {
+      minX = Math.min(minX, element.x);
+      minY = Math.min(minY, element.y);
+      maxX = Math.max(maxX, element.x);
+      maxY = Math.max(maxY, element.y);
+    }
+
+    return {
+      minX,
+      minY,
+      maxX,
+      maxY,
+    };
+  }
+
+  public getObjectXy(
+    point: Point
+  ): TElement | undefined {
+    return this.getAllElements().find(
+      element =>
+        element.x === point.x &&
+        element.y === point.y
+    );
+  }
+}

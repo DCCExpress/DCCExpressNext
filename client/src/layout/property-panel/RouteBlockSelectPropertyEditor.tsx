@@ -1,6 +1,6 @@
 import { Select, Stack, Text } from "@mantine/core";
 
-import type { BaseElement } from "../../models/editor/core/BaseElement";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { Graph } from "../../../../common/src/railway/graph";
 import type { PropertyChangeHandler } from "./propertyPanelTypes";
@@ -12,7 +12,7 @@ type RouteBlockSelectData = Array<{
 
 type RouteBlockSelectPropertyEditorProps = {
   prop: IEditableProperty;
-  selectedElement: BaseElement;
+  selectedElement: BaseElementView;
   routeGraph: Graph | null;
   routeGraphBlockSelectData: RouteBlockSelectData;
   routeGraphError: string | null;

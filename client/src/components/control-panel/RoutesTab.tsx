@@ -15,7 +15,7 @@ import {
   IconRoute,
 } from "@tabler/icons-react";
 
-import type { Layout } from "../../models/editor/core/Layout";
+import type { LayoutView } from "../../models/editor/core/LayoutView";
 import { wsApi } from "../../services/wsApi";
 import GraphDialog from "../common/GraphDialog";
 import type {
@@ -29,10 +29,10 @@ import {
   showWarningMessage,
 } from "../../helpers";
 import { useRouteGraph } from "../../hooks/useRouteGraph";
-import { TrackTurnoutElementView } from "../../models/editor/elements/TrackTurnoutElementView";
+import type { RouteTurnoutElement } from "../../models/editor/core/LayoutView";
 type RoutesTabProps = {
   routes?: string | undefined;
-  layout: Layout,
+  layout: LayoutView,
 
 };
 
@@ -93,7 +93,7 @@ export default function RoutesTab(p: RoutesTabProps) {
           "turnoutAddress" in el &&
           "turnoutClosedValue" in el &&
           el.turnoutAddress === turnoutState.address
-      ) as TrackTurnoutElementView | undefined;
+      ) as RouteTurnoutElement | undefined;
 
       if (!turnout) {
         throw new Error(

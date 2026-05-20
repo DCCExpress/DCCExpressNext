@@ -1,4 +1,4 @@
-import type { BaseElement } from "../models/editor/core/BaseElement";
+import type { BaseElementView } from "../models/editor/core/BaseElementView";
 
 import type {
   ScriptDocumentDto,
@@ -12,7 +12,7 @@ import { wsClient } from "./wsClient";
 
 export type ScriptContext = {
   source?: ScriptRunSource;
-  element?: BaseElement | null;
+  element?: BaseElementView | null;
 };
 
 export type ScriptLogEntry = {

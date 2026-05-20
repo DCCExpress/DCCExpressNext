@@ -16,12 +16,12 @@ import type {
 } from "../../api/commandCentersApi";
 
 import type {
-  BaseElement,
-} from "../../models/editor/core/BaseElement";
+  BaseElementView,
+} from "../../models/editor/core/BaseElementView";
 
 import type {
-  Layout,
-} from "../../models/editor/core/Layout";
+  LayoutView,
+} from "../../models/editor/core/LayoutView";
 
 import type {
   EditorTool,
@@ -43,7 +43,7 @@ type NumberSetter =
   Dispatch<SetStateAction<number>>;
 
 type LayoutSetter =
-  Dispatch<SetStateAction<Layout>>;
+  Dispatch<SetStateAction<LayoutView>>;
 
 type EditorToolSetter =
   Dispatch<SetStateAction<EditorTool>>;
@@ -100,13 +100,13 @@ export type LayoutPageViewProps = {
   onFitLayout: () => void;
 
   locos: Loco[];
-  layout: Layout;
+  layout: LayoutView;
   onLayoutChange: LayoutSetter;
   onBeforeLayoutChange: () => void;
 
-  selectedElement: BaseElement | null;
+  selectedElement: BaseElementView | null;
   onSelectedElementChange: (
-    element: BaseElement | null
+    element: BaseElementView | null
   ) => void;
 
   invalidateCounter: number;
@@ -117,7 +117,7 @@ export type LayoutPageViewProps = {
   setTurnoutSelection: BooleanSetter;
 
   onUpdateSelectedElement: (
-    element: BaseElement | null
+    element: BaseElementView | null
   ) => void;
 
   routesString: string;

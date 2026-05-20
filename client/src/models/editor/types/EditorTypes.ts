@@ -122,7 +122,7 @@ export interface IEditorLayers {
 
 /**
  * Régi layout-file helper típus.
- * Jelenleg a futó Layout.fromJSON() már a réteges, tömbös layout formát használja,
+ * Jelenleg a futó LayoutView.fromJSON() már a réteges, tömbös layout formát használja,
  * ezért ezt direkt nem piszkáljuk tovább ebben a patchben.
  */
 export interface ITrackLayoutFile {

@@ -1,12 +1,12 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
-import { BaseElement } from "../core/BaseElement";
+import { BaseElementView } from "../core/BaseElementView";
 import { DrawOptions, IButtonScriptElement, ITrackSensorElement } from "../types/EditorTypes";
 import { ButtonElementView } from "./ButtonElementView";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 
-export class ButtonScriptElementView extends BaseElement implements IButtonScriptElement {
+export class ButtonScriptElementView extends BaseElementView implements IButtonScriptElement {
     type = ELEMENT_TYPES.BUTTON_SCRIPT;
     address: number = 0;
     on: boolean = true;

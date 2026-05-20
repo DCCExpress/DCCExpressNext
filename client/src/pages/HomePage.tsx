@@ -41,11 +41,11 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
   const cards: HomeCardItem[] = [
     {
       key: "layout",
-      title: "Layout & Control",
+      title: "LayoutView & Control",
       description:
         "Design your railway layout and control it live with turnouts, signals, sensors, blocks, routes, and locomotive panels.",
       image: "/images/home-layout.jpg",
-      buttonLabel: "Open Layout & Control",
+      buttonLabel: "Open LayoutView & Control",
       icon: <IconMap2 size={18} />,
       onClick: onOpenLayout,
       disabled: false,
@@ -116,7 +116,7 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                 rightSection={<IconArrowRight size={16} />}
                 onClick={onOpenLayout}
               >
-                Start with Layout Editor
+                Start with LayoutView Editor
               </Button>
             </Group>
           </Stack>

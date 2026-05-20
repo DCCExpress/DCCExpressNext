@@ -8,7 +8,7 @@ import type {
   TrainTaskCreateInput,
 } from "../../../common/src/task";
 
-import { Layout } from "../models/editor/core/Layout";
+import { LayoutView } from "../models/editor/core/LayoutView";
 import type {
   RouteGraphResponseDto,
 } from "../../../common/src/railway/routeGraphDto";
@@ -37,7 +37,7 @@ export async function saveLocos(locos: Loco[]): Promise<void> {
   }
 }
 
-export async function getLayout(): Promise<Layout> {
+export async function getLayout(): Promise<LayoutView> {
   const response = await fetch("/api/layout");
 
   if (!response.ok) {
@@ -47,7 +47,7 @@ export async function getLayout(): Promise<Layout> {
   return response.json();
 }
 
-export async function saveLayout(elements: Layout): Promise<void> {
+export async function saveLayout(elements: LayoutView): Promise<void> {
   const response = await fetch("/api/layout", {
     method: "PUT",
     headers: {
@@ -62,7 +62,7 @@ export async function saveLayout(elements: Layout): Promise<void> {
 }
 
 export async function refreshLayoutRuntime(
-  layout: Layout
+  layout: LayoutView
 ): Promise<void> {
   const response = await fetch("/api/layout/runtime", {
     method: "PUT",

@@ -1,11 +1,11 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
-import { BaseElement } from "../core/BaseElement";
+import { BaseElementView } from "../core/BaseElementView";
 import { DrawOptions, IButtonElement, ITrackSensorElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 
-export class ButtonElementView extends BaseElement implements IButtonElement {
+export class ButtonElementView extends BaseElementView implements IButtonElement {
     override type = ELEMENT_TYPES.BUTTON;
     address: number = 0;
     on: boolean = false;

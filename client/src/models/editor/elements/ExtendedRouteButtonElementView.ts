@@ -1,6 +1,6 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { generateId } from "../../../helpers";
-import { ClickableBaseElement } from "../core/ClickableBaseElement";
+import { ClickableBaseElementView } from "../core/ClickableBaseElementView";
 import {
     DrawOptions,
     IExtendedRouteButtonElement,
@@ -8,7 +8,7 @@ import {
 import { IEditableProperty } from "./PropertyDescriptor";
 
 export class ExtendedRouteButtonElementView
-    extends ClickableBaseElement
+    extends ClickableBaseElementView
     implements IExtendedRouteButtonElement {
     override type: typeof ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED =
         ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED;

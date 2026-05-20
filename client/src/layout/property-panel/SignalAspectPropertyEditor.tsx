@@ -1,6 +1,6 @@
 import { Box, Group, NumberInput } from "@mantine/core";
 
-import type { BaseElement } from "../../models/editor/core/BaseElement";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
@@ -9,7 +9,7 @@ import type { SelectedElementUpdateHandler } from "./propertyPanelTypes";
 
 type SignalAspectPropertyEditorProps = {
   prop: IEditableProperty;
-  selectedElement: BaseElement;
+  selectedElement: BaseElementView;
   onUpdateSelectedElement: SelectedElementUpdateHandler;
 };
 

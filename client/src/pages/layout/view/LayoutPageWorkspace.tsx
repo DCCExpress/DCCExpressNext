@@ -16,12 +16,12 @@ import type {
 } from "../../../../../common/src/types";
 
 import type {
-  BaseElement,
-} from "../../../models/editor/core/BaseElement";
+  BaseElementView,
+} from "../../../models/editor/core/BaseElementView";
 
 import type {
-  Layout,
-} from "../../../models/editor/core/Layout";
+  LayoutView,
+} from "../../../models/editor/core/LayoutView";
 
 import type {
   EditorTool,
@@ -46,7 +46,7 @@ type NumberSetter =
   Dispatch<SetStateAction<number>>;
 
 type LayoutSetter =
-  Dispatch<SetStateAction<Layout>>;
+  Dispatch<SetStateAction<LayoutView>>;
 
 type LayoutPageWorkspaceProps = {
   toolbarOpened: boolean;
@@ -62,13 +62,13 @@ type LayoutPageWorkspaceProps = {
   editMode: boolean;
   tool: EditorTool;
 
-  layout: Layout;
+  layout: LayoutView;
   onLayoutChange: LayoutSetter;
   onBeforeLayoutChange: () => void;
 
-  selectedElement: BaseElement | null;
+  selectedElement: BaseElementView | null;
   onSelectedElementChange: (
-    element: BaseElement | null
+    element: BaseElementView | null
   ) => void;
 
   invalidateCounter: number;
@@ -79,7 +79,7 @@ type LayoutPageWorkspaceProps = {
   setTurnoutSelection: BooleanSetter;
 
   onUpdateSelectedElement: (
-    element: BaseElement | null
+    element: BaseElementView | null
   ) => void;
 
   routesString: string;

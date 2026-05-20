@@ -1,5 +1,5 @@
-import type { BaseElement } from "../../models/editor/core/BaseElement";
-import type { Layout } from "../../models/editor/core/Layout";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
+import type { LayoutView } from "../../models/editor/core/LayoutView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { Graph } from "../../../../common/src/railway/graph";
 
@@ -22,8 +22,8 @@ type RouteBlockSelectData = Array<{
 
 type PropertyFieldRendererProps = {
   prop: IEditableProperty;
-  selectedElement: BaseElement;
-  layout: Layout;
+  selectedElement: BaseElementView;
+  layout: LayoutView;
   turnoutSelectionMode: boolean;
   setTurnoutSelectionMode: (on: boolean) => void;
   onLayoutChange: LayoutSetter;

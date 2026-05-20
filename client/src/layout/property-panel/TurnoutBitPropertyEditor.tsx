@@ -1,7 +1,7 @@
 import { Box, Group } from "@mantine/core";
 
 import BitToggleElement from "../../components/editor/BitToggleElement";
-import type { BaseElement } from "../../models/editor/core/BaseElement";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import { TrackTurnoutLeftElementView } from "../../models/editor/elements/TrackTurnoutLeftElementView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
@@ -11,7 +11,7 @@ import type { PropertyChangeHandler } from "./propertyPanelTypes";
 
 type TurnoutBitPropertyEditorProps = {
   prop: IEditableProperty;
-  selectedElement: BaseElement;
+  selectedElement: BaseElementView;
   onChange: PropertyChangeHandler;
 };
 

@@ -1,21 +1,21 @@
 import { ELEMENT_TYPES } from "../../../../common/src/layout/elementTypes";
-import type { BaseElement } from "../../models/editor/core/BaseElement";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { TrackTurnoutLeftElementView } from "../../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../../models/editor/elements/TrackTurnoutRightElementView";
 
 export type SignalPreviewColor = 1 | 2 | 3 | 4;
 
-function createFallbackTurnoutPreview(): BaseElement {
+function createFallbackTurnoutPreview(): BaseElementView {
   const turnout = new TrackTurnoutLeftElementView(0, 0);
   turnout.turnoutClosed = turnout.turnoutClosedValue;
   return turnout;
 }
 
 export function createTurnoutPreview(
-  selectedElement: BaseElement,
+  selectedElement: BaseElementView,
   closed: boolean
-): BaseElement {
+): BaseElementView {
   if (selectedElement.type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT) {
     const turnout = new TrackTurnoutLeftElementView(0, 0);
     turnout.rotation = selectedElement.rotation;
@@ -34,9 +34,9 @@ export function createTurnoutPreview(
 }
 
 export function createSignalPreview(
-  selectedElement: BaseElement,
+  selectedElement: BaseElementView,
   color: SignalPreviewColor
-): BaseElement {
+): BaseElementView {
   if (selectedElement.type !== ELEMENT_TYPES.TRACK_SIGNAL2) {
     return createFallbackTurnoutPreview();
   }

@@ -8,8 +8,8 @@ import {
 } from "react";
 
 import type {
-  Layout,
-} from "../../models/editor/core/Layout";
+  LayoutView,
+} from "../../models/editor/core/LayoutView";
 
 import {
   routeGraphStore,
@@ -19,7 +19,7 @@ type NumberSetter =
   Dispatch<SetStateAction<number>>;
 
 export type UseLayoutRouteGraphBindingParams = {
-  layoutRef: MutableRefObject<Layout>;
+  layoutRef: MutableRefObject<LayoutView>;
   setInvalidateCounter: NumberSetter;
 };
 

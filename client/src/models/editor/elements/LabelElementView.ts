@@ -1,13 +1,13 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { drawTextWithRoundedBackground } from "../../../graphics";
 import { generateId } from "../../../helpers";
-import { BaseElement } from "../core/BaseElement";
+import { BaseElementView } from "../core/BaseElementView";
 import { DrawOptions, ILabelElement } from "../types/EditorTypes";
 import { IEditableProperty } from "./PropertyDescriptor";
 
 
 
-export class LabelElementView extends BaseElement implements ILabelElement {
+export class LabelElementView extends BaseElementView implements ILabelElement {
     override type = ELEMENT_TYPES.LABEL;
     layerName = "buildings";
     text: string = "Label";

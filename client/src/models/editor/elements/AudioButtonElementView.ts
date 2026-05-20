@@ -1,7 +1,7 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { errorToString, generateId, showErrorMessage, showWarningMessage } from "../../../helpers";
 import { audioManager } from "../../../services/audioManager";
-import { BaseElement } from "../core/BaseElement";
+import { BaseElementView } from "../core/BaseElementView";
 import {
     DrawOptions,
     IAudioButtonElement,
@@ -9,7 +9,7 @@ import {
 import { IEditableProperty } from "./PropertyDescriptor";
 
 export class AudioButtonElementView
-    extends BaseElement
+    extends BaseElementView
     implements IAudioButtonElement {
     override type: typeof ELEMENT_TYPES.BUTTON_AUDIO = ELEMENT_TYPES.BUTTON_AUDIO;
 

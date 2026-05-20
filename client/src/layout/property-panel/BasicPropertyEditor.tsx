@@ -7,7 +7,7 @@ import {
 } from "@mantine/core";
 import { IconPlayerPlayFilled } from "@tabler/icons-react";
 
-import type { BaseElement } from "../../models/editor/core/BaseElement";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { PropertyChangeHandler } from "./propertyPanelTypes";
 
@@ -32,7 +32,7 @@ const DEFAULT_COLORS = [
 
 type BasicPropertyEditorProps = {
   prop: IEditableProperty;
-  selectedElement: BaseElement;
+  selectedElement: BaseElementView;
   onChange: PropertyChangeHandler;
 };
 

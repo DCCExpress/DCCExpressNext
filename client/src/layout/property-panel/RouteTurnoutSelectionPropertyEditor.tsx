@@ -8,14 +8,14 @@ import {
 } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
 
-import type { BaseElement } from "../../models/editor/core/BaseElement";
-import type { Layout } from "../../models/editor/core/Layout";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
+import type { LayoutView } from "../../models/editor/core/LayoutView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import {
   RouteButtonElementView,
   type RouteTurnoutItem,
 } from "../../models/editor/elements/RouteButtonElementView";
-import { TrackTurnoutElementView } from "../../models/editor/elements/TrackTurnoutElementView";
+import { isTurnoutElement } from "../../models/editor/core/LayoutView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import type {
   LayoutSetter,
@@ -24,20 +24,20 @@ import type {
 
 type RouteTurnoutSelectionPropertyEditorProps = {
   prop: IEditableProperty;
-  selectedElement: BaseElement;
-  layout: Layout;
+  selectedElement: BaseElementView;
+  layout: LayoutView;
   turnoutSelectionMode: boolean;
   setTurnoutSelectionMode: (on: boolean) => void;
   onLayoutChange: LayoutSetter;
   onUpdateSelectedElement: SelectedElementUpdateHandler;
 };
 
-function findElementById(layout: Layout, id: string) {
+function findElementById(layout: LayoutView, id: string) {
   return layout.getAllElements().find(element => element.id === id) ?? null;
 }
 
 function getItems(
-  selectedElement: BaseElement,
+  selectedElement: BaseElementView,
   prop: IEditableProperty
 ): RouteTurnoutItem[] {
   const value = (selectedElement as any)[prop.key];
@@ -45,7 +45,7 @@ function getItems(
 }
 
 function removeTurnout(
-  selectedElement: BaseElement,
+  selectedElement: BaseElementView,
   turnoutId: string,
   onUpdateSelectedElement: SelectedElementUpdateHandler
 ) {
@@ -158,7 +158,7 @@ export default function RouteTurnoutSelectionPropertyEditor({
                   onClick={() => {
                     const elem = layout.getElementById(item.turnoutId);
 
-                    if (elem instanceof TrackTurnoutElementView) {
+                    if (isTurnoutElement(elem)) {
                       elem.toggle();
                       item.closed =
                         elem.turnoutClosed === elem.turnoutClosedValue;

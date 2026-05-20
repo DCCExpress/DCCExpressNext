@@ -10,8 +10,8 @@ import {
 } from "react";
 
 import {
-  Layout,
-} from "../../models/editor/core/Layout";
+  LayoutView,
+} from "../../models/editor/core/LayoutView";
 
 import {
   routeGraphStore,
@@ -20,13 +20,13 @@ import {
 const DEFAULT_MAX_HISTORY = 100;
 
 type LayoutSetter =
-  Dispatch<SetStateAction<Layout>>;
+  Dispatch<SetStateAction<LayoutView>>;
 
 type HistoryStackSetter =
   Dispatch<SetStateAction<string[]>>;
 
 export type UseLayoutHistoryParams = {
-  layoutRef: MutableRefObject<Layout>;
+  layoutRef: MutableRefObject<LayoutView>;
   setLayout: LayoutSetter;
   maxHistory?: number;
 };
@@ -55,7 +55,7 @@ export function useLayoutHistory({
     useState<string[]>([]);
 
   const createLayoutSnapshot = useCallback(
-    (source: Layout): string => {
+    (source: LayoutView): string => {
       return JSON.stringify(source);
     },
     []
@@ -101,7 +101,7 @@ export function useLayoutHistory({
         prevUndo[prevUndo.length - 1];
 
       const restoredLayout =
-        Layout.fromJSON(
+        LayoutView.fromJSON(
           JSON.parse(previousSnapshot!)
         );
 
@@ -139,7 +139,7 @@ export function useLayoutHistory({
         prevRedo[prevRedo.length - 1];
 
       const restoredLayout =
-        Layout.fromJSON(
+        LayoutView.fromJSON(
           JSON.parse(nextSnapshot!)
         );
 

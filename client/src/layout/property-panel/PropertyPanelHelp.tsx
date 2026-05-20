@@ -1,10 +1,10 @@
 import { Accordion, Group, Text, useMantineColorScheme } from "@mantine/core";
 import { useState } from "react";
 
-import type { BaseElement } from "../../models/editor/core/BaseElement";
+import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 
 type PropertyPanelHelpProps = {
-  selectedElement: BaseElement | null;
+  selectedElement: BaseElementView | null;
 };
 
 export default function PropertyPanelHelp({

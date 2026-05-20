@@ -10,8 +10,8 @@ import { useLayoutRouteGraphBinding } from "../hooks/layout/useLayoutRouteGraphB
 import { useLayoutPageBootstrap } from "../hooks/layout/useLayoutPageBootstrap";
 import { useLayoutRuntimeWsBindings } from "../hooks/layout/useLayoutRuntimeWsBindings";
 import LayoutPageView from "./layout/LayoutPageView";
-import { BaseElement } from "../models/editor/core/BaseElement";
-import { Layout } from "../models/editor/core/Layout";
+import { BaseElementView } from "../models/editor/core/BaseElementView";
+import { LayoutView } from "../models/editor/core/LayoutView";
 import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 import { type EditorTool } from "../models/editor/types/EditorTypes";
 import { layoutStore } from "../services/layoutStore";
@@ -43,13 +43,13 @@ export default function LayoutPage({
     useState(false);
 
   const [layout, setLayout] =
-    useState<Layout>(new Layout());
+    useState<LayoutView>(new LayoutView());
 
   const [
     selectedElement,
     setSelectedElement,
   ] =
-    useState<BaseElement | null>(null);
+    useState<BaseElementView | null>(null);
 
   const [
     invalidateCounter,
@@ -202,7 +202,7 @@ export default function LayoutPage({
   });
 
   const handleUpdateSelectedElement = (
-    updated: BaseElement | null
+    updated: BaseElementView | null
   ): void => {
     /**
      * Az ExtendedRouteButton beállításai
@@ -234,7 +234,7 @@ export default function LayoutPage({
 
   const handleLayoutChange:
     React.Dispatch<
-      React.SetStateAction<Layout>
+      React.SetStateAction<LayoutView>
     > =
     value => {
       routeGraphStore.clear();
