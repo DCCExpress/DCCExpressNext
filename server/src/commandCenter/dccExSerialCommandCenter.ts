@@ -40,6 +40,10 @@ export class DccExSerialCommandCenter extends DccExCommandCenter {
     );
   }
 
+  protected override isTransportConnected(): boolean {
+    return this.serialClient.isOpen;
+  }
+
   getConnectionString(): string {
     return `serial://${this.serialPort}@${this.baudRate}`;
   }
@@ -53,12 +57,16 @@ export class DccExSerialCommandCenter extends DccExCommandCenter {
 
   start(): Promise<boolean> {
     this.stop();
+    this.lastSentAt = Date.now();
     this.serialClient.start();
 
     this.mainTask = setInterval(() => {
       this.processBuffer();
 
-      if (Date.now() - this.lastSentAt > 5000) {
+      if (
+        this.serialClient.isOpen &&
+        Date.now() - this.lastSentAt > 5000
+      ) {
         this.enqueueKeepalive();
       }
     }, this.mainTaskIntervalMs);
@@ -77,6 +85,10 @@ export class DccExSerialCommandCenter extends DccExCommandCenter {
   }
 
   private processBuffer(): void {
+    if (!this.serialClient.isOpen) {
+      return;
+    }
+
     const data =
       this.drainQueuedCommands(5);
 

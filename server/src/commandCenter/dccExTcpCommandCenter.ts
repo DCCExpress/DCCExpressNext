@@ -41,6 +41,10 @@ export class DccExTcpCommandCenter extends DccExCommandCenter {
     );
   }
 
+  protected override isTransportConnected(): boolean {
+    return this.tcpClient.isOpen;
+  }
+
   getConnectionString(): string {
     return `tcp://${this.host}:${this.port}`;
   }
@@ -54,12 +58,16 @@ export class DccExTcpCommandCenter extends DccExCommandCenter {
 
   start(): Promise<boolean> {
     this.stop();
+    this.lastSentAt = Date.now();
     this.tcpClient.start();
 
     this.mainTask = setInterval(() => {
       this.processBuffer();
 
-      if (Date.now() - this.lastSentAt > 5000) {
+      if (
+        this.tcpClient.isOpen &&
+        Date.now() - this.lastSentAt > 5000
+      ) {
         this.enqueueKeepalive();
       }
     }, this.mainTaskIntervalMs);
@@ -78,6 +86,10 @@ export class DccExTcpCommandCenter extends DccExCommandCenter {
   }
 
   private processBuffer(): void {
+    if (!this.tcpClient.isOpen) {
+      return;
+    }
+
     const data =
       this.drainQueuedCommands(25);
 

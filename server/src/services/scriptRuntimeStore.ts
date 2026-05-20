@@ -70,6 +70,7 @@ class ServerScriptSession {
         new Set<ScriptStateListener>();
 
     private stopRequested = false;
+    private detachedAsyncError: Error | null = null;
 
     private readonly timers =
         new Set<
@@ -164,6 +165,14 @@ return (async () => {
 
             await fn(api);
 
+            if (this.detachedAsyncError) {
+                const error =
+                    this.detachedAsyncError;
+
+                this.detachedAsyncError = null;
+                throw error;
+            }
+
             this.clearTimers();
 
             this.setState({
@@ -224,6 +233,14 @@ return (async () => {
     }
 
     private async check(): Promise<void> {
+        if (this.detachedAsyncError) {
+            const error =
+                this.detachedAsyncError;
+
+            this.detachedAsyncError = null;
+            throw error;
+        }
+
         if (this.stopRequested) {
             throw new ScriptStoppedError();
         }
@@ -250,8 +267,72 @@ return (async () => {
         await this.check();
     }
 
+    private captureDetachedAsyncError(error: unknown): void {
+        if (error instanceof ScriptStoppedError) {
+            return;
+        }
+
+        if (this.detachedAsyncError) {
+            return;
+        }
+
+        this.detachedAsyncError =
+            error instanceof Error
+                ? error
+                : new Error(String(error));
+    }
+
+    private guardScriptApi<T extends Record<string, unknown>>(api: T): T {
+        const asyncApiKeys = [
+            "check",
+            "sleep",
+            "powerOn",
+            "powerOff",
+            "emergencyStop",
+            "setTurnout",
+            "setLocoFunction",
+            "setSignalGreen",
+            "setSignalYellow",
+            "setSignalRed",
+            "setSignalWhite",
+        ] as const;
+
+        const mutableApi =
+            api as Record<string, unknown>;
+
+        for (const key of asyncApiKeys) {
+            const value =
+                mutableApi[key];
+
+            if (typeof value !== "function") {
+                continue;
+            }
+
+            const fn =
+                value as (...args: unknown[]) => unknown;
+
+            mutableApi[key] = (...args: unknown[]) => {
+                const result =
+                    fn(...args);
+
+                if (
+                    result &&
+                    typeof (result as Promise<unknown>).then === "function"
+                ) {
+                    void (result as Promise<unknown>).catch(error => {
+                        this.captureDetachedAsyncError(error);
+                    });
+                }
+
+                return result;
+            };
+        }
+
+        return api;
+    }
+
     private createApi() {
-        return {
+        return this.guardScriptApi({
             log: (...args: unknown[]) => {
                 const message =
                     args.map(arg => String(arg)).join(" ");
@@ -527,7 +608,7 @@ return (async () => {
 
             layout:
                 layoutRuntimeStore.getLayout(),
-        };
+        });
     }
 
     private async setSignalAspect(

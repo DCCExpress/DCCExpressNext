@@ -38,8 +38,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
     super(name);
   }
 
-  protected abstract isTransportConnected(): boolean;
-
   protected enqueue(command: string): void {
     const trimmed =
       command.trim();
@@ -69,7 +67,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
 
   protected markDisconnected(): void {
     this.alive = false;
-    this.buffer.length = 0;
     this.broadcastCommandCenterInfo();
   }
 
@@ -107,28 +104,16 @@ export abstract class DccExCommandCenter extends CommandCenter {
   }
 
   setTrackPower(on: boolean): Promise<boolean> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(false);
-    }
-
     this.enqueue(on ? "<1 MAIN>" : "<0>");
     return Promise.resolve(true);
   }
 
   override setProgrammingPower(on: boolean): Promise<boolean> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(false);
-    }
-
     this.enqueue(on ? "<1 PROG>" : "<0 PROG>");
     return Promise.resolve(true);
   }
 
   emergencyStop(): Promise<boolean> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(false);
-    }
-
     this.enqueue("<!>");
 
     this.powerInfo.emergencyStop = true;
@@ -151,10 +136,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
     speed: number,
     direction: "forward" | "reverse"
   ): Promise<boolean> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(false);
-    }
-
     const dccExSpeed =
       Math.max(0, Math.min(126, Math.round(speed)));
     const dccExDirection =
@@ -181,10 +162,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
     fn: number,
     active: boolean
   ): Promise<boolean> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(false);
-    }
-
     this.enqueue(
       `<F ${address} ${fn} ${active ? 1 : 0}>`
     );
@@ -201,12 +178,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
   getLoco(
     address: number
   ): Promise<LocoState | null> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(
-        this.locos.get(address) ?? null
-      );
-    }
-
     this.enqueue(`<t ${address}>`);
     return Promise.resolve(
       this.locos.get(address) ?? null
@@ -217,10 +188,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
     address: number,
     closed: boolean
   ): Promise<boolean> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(false);
-    }
-
     this.enqueue(`<T ${address} ${closed ? 0 : 1}>`);
     this.enqueue(`<JT ${address}>`);
 
@@ -236,12 +203,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
   getTurnout(
     address: number
   ): Promise<TurnoutInfo | null> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(
-        this.turnouts.get(address) ?? null
-      );
-    }
-
     this.enqueue(`<JT ${address}>`);
     return Promise.resolve(
       this.turnouts.get(address) ?? null
@@ -252,10 +213,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
     address: number,
     active: boolean
   ): Promise<boolean> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(false);
-    }
-
     const command =
       `<a ${address} ${active ? 1 : 0}>`;
 
@@ -281,12 +238,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
   getSensor(
     address: number
   ): Promise<SensorInfo | null> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(
-        this.sensors.get(address) ?? null
-      );
-    }
-
     this.enqueue(`<Q ${address}>`);
     return Promise.resolve(
       this.sensors.get(address) ?? null
@@ -294,10 +245,6 @@ export abstract class DccExCommandCenter extends CommandCenter {
   }
 
   override writeDirectCommand(command: string): Promise<boolean> {
-    if (!this.isTransportConnected()) {
-      return Promise.resolve(false);
-    }
-
     for (const line of command.split(/\r?\n/u)) {
       this.enqueue(line);
     }
