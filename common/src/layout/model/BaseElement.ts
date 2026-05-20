@@ -39,7 +39,15 @@ export abstract class BaseElement {
   isVisited: boolean = false;
   trackName: string = "";
 
-  protected constructor(x: number, y: number) {
+  /**
+   * Public konstruktor kell ahhoz, hogy a kliensoldali
+   * BaseElement is ugyanazt a BaseElementViewMixin(...) ágat
+   * használhassa, mint a common domainből leszármazó View elemek.
+   *
+   * Maga az osztály továbbra is abstract, tehát közvetlenül
+   * továbbra sem példányosítható.
+   */
+  constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
   }
@@ -75,11 +83,6 @@ export abstract class BaseElement {
     this.y = y;
   }
 
-  /**
-   * Public, hogy a commonból származó View osztályok
-   * strukturálisan kompatibilisek maradjanak a régi kliens
-   * BaseElement szerződéssel az átmeneti refaktor alatt.
-   */
   public normalizeRotation(value: number): number {
     let result = value % 360;
     if (result < 0) result += 360;
