@@ -1,16 +1,18 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { dataDir } from "../paths.js";
-import type { SerializedLayoutDto } from "../../../common/src/railway/topology.js";
+import type {
+  SerializedLayoutDto,
+} from "../../../common/src/layout/layoutDto.js";
 import { railwayTopologyStore } from "./railwayTopologyStore.js";
 import { routeGraphRuntimeStore } from "./routeGraphRuntimeStore.js";
 
 /**
  * A szerveren memóriában tartott, mentett layout nyers DTO-ja.
  *
- * Egyelőre szándékosan nem próbáljuk meg teljesen letípusozni,
- * mert a kliens jelenlegi layout modellje még UI-osztályokra épül.
- * A következő lépésben ebből készül majd közös, rajzolásmentes topology modell.
+ * A layoutot továbbra is nyers, perzisztálható DTO-ként őrizzük,
+ * a szerveroldali vasúti/topológiai modell viszont már ebből
+ * a közös common domain elemekre épül fel.
  */
 export type ServerLayoutDto = SerializedLayoutDto;
 
@@ -30,17 +32,14 @@ class LayoutRuntimeStore {
     this.layout = await this.readLayoutFromDisk();
     this.initialized = true;
 
-    railwayTopologyStore.rebuildFromLayout(this.layout);
-
-    routeGraphRuntimeStore.rebuildFromTopology(
-      railwayTopologyStore.getTopology()
-    );
+    this.rebuildDerivedRuntime(this.layout);
 
     console.log(
       "[LayoutRuntimeStore] Initialized:",
       this.layout ? "layout loaded" : "no layout found"
     );
   }
+
   getLayout(): ServerLayoutDto | null {
     return this.layout;
   }
@@ -53,15 +52,29 @@ class LayoutRuntimeStore {
     this.layout = layout;
     this.initialized = true;
 
-    railwayTopologyStore.rebuildFromLayout(layout);
-    routeGraphRuntimeStore.rebuildFromTopology(
-      railwayTopologyStore.getTopology()
-    );
-
+    this.rebuildDerivedRuntime(layout);
     await this.writeLayoutToDisk(layout);
 
     console.log(
       "[LayoutRuntimeStore] Runtime layout replaced and persisted."
+    );
+  }
+
+  refreshRuntimeFromLayout(layout: ServerLayoutDto): void {
+    this.rebuildDerivedRuntime(layout);
+
+    console.log(
+      "[LayoutRuntimeStore] Runtime topology and route graph refreshed without persisting layout."
+    );
+  }
+
+  private rebuildDerivedRuntime(
+    layout: ServerLayoutDto | null
+  ): void {
+    railwayTopologyStore.rebuildFromLayout(layout);
+
+    routeGraphRuntimeStore.rebuildFromTopology(
+      railwayTopologyStore.getTopology()
     );
   }
 
@@ -94,17 +107,6 @@ class LayoutRuntimeStore {
       filePath,
       JSON.stringify(layout, null, 2),
       "utf8"
-    );
-  }
-  refreshRuntimeFromLayout(layout: ServerLayoutDto): void {
-    railwayTopologyStore.rebuildFromLayout(layout);
-
-    routeGraphRuntimeStore.rebuildFromTopology(
-      railwayTopologyStore.getTopology()
-    );
-
-    console.log(
-      "[LayoutRuntimeStore] Runtime topology and route graph refreshed without persisting layout."
     );
   }
 }

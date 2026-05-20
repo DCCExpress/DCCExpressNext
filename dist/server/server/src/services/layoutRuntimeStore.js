@@ -15,8 +15,7 @@ class LayoutRuntimeStore {
         }
         this.layout = await this.readLayoutFromDisk();
         this.initialized = true;
-        railwayTopologyStore.rebuildFromLayout(this.layout);
-        routeGraphRuntimeStore.rebuildFromTopology(railwayTopologyStore.getTopology());
+        this.rebuildDerivedRuntime(this.layout);
         console.log("[LayoutRuntimeStore] Initialized:", this.layout ? "layout loaded" : "no layout found");
     }
     getLayout() {
@@ -28,10 +27,17 @@ class LayoutRuntimeStore {
     async replaceLayout(layout) {
         this.layout = layout;
         this.initialized = true;
-        railwayTopologyStore.rebuildFromLayout(layout);
-        routeGraphRuntimeStore.rebuildFromTopology(railwayTopologyStore.getTopology());
+        this.rebuildDerivedRuntime(layout);
         await this.writeLayoutToDisk(layout);
         console.log("[LayoutRuntimeStore] Runtime layout replaced and persisted.");
+    }
+    refreshRuntimeFromLayout(layout) {
+        this.rebuildDerivedRuntime(layout);
+        console.log("[LayoutRuntimeStore] Runtime topology and route graph refreshed without persisting layout.");
+    }
+    rebuildDerivedRuntime(layout) {
+        railwayTopologyStore.rebuildFromLayout(layout);
+        routeGraphRuntimeStore.rebuildFromTopology(railwayTopologyStore.getTopology());
     }
     async readLayoutFromDisk() {
         const filePath = this.resolveFilePath();
@@ -50,11 +56,6 @@ class LayoutRuntimeStore {
             recursive: true,
         });
         await fs.writeFile(filePath, JSON.stringify(layout, null, 2), "utf8");
-    }
-    refreshRuntimeFromLayout(layout) {
-        railwayTopologyStore.rebuildFromLayout(layout);
-        routeGraphRuntimeStore.rebuildFromTopology(railwayTopologyStore.getTopology());
-        console.log("[LayoutRuntimeStore] Runtime topology and route graph refreshed without persisting layout.");
     }
 }
 export const layoutRuntimeStore = new LayoutRuntimeStore();

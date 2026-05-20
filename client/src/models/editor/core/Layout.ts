@@ -18,7 +18,13 @@ import type {
 
 import { Layer, LayerId } from "./Layer";
 import { Point } from "./Rect";
-import { TrackElement } from "./TrackElement";
+import {
+    TrackElement as DomainTrackElement,
+} from "../../../../../common/src/layout/model/TrackElement";
+
+type LayoutTrackElement =
+    BaseElement &
+    DomainTrackElement;
 
 export type RouteTurnoutElement =
     | TrackTurnoutLeftElement
@@ -172,12 +178,12 @@ export class Layout {
     //     return this.layers.flatMap(layer => layer.elements);
     // }
 
-    public getTrackElements(): TrackElement[] {
+    public getTrackElements(): LayoutTrackElement[] {
         return [
-            ...this.track.elements as TrackElement[],
-            ...this.blocks.elements as TrackElement[],
-            ...this.signals.elements as TrackElement[],
-            ...this.sensors.elements as TrackElement[],
+            ...this.track.elements as LayoutTrackElement[],
+            ...this.blocks.elements as LayoutTrackElement[],
+            ...this.signals.elements as LayoutTrackElement[],
+            ...this.sensors.elements as LayoutTrackElement[],
         ];
     }
 
@@ -385,7 +391,7 @@ export class Layout {
 
     resetRoutes() {
         const elems = this.getTrackElements();
-        elems.forEach((elem: TrackElement) => {
+        elems.forEach((elem: LayoutTrackElement) => {
             elem.isVisited = false;
             elem.isRoute = false;
             elem.section = 0;
@@ -418,7 +424,7 @@ export class Layout {
         // mert a RouteGraphBuilder összekoszolja az isVisited mezőket.
         // Innentől a régi RouteButton startWalk() tiszta lappal indul.
         // --------------------------------------------------
-        elems.forEach((elem: TrackElement) => {
+        elems.forEach((elem: LayoutTrackElement) => {
             elem.isVisited = false;
             elem.isRoute = false;
         });
@@ -512,7 +518,7 @@ export class Layout {
     }
 
 
-    startWalk(obj: TrackElement) {
+    startWalk(obj: LayoutTrackElement) {
         // Lehet meg kellene vizsgálni, hogy a következő elem az
         // a route váltóiban szerepel e?
         // vagy váltótól váltói kellene vizsgálódni??
@@ -522,7 +528,7 @@ export class Layout {
         var p1 = obj.getNextItemXy()
         var p2 = obj.getPrevItemXy()
 
-        var next = this.getObjectXy(p1) as TrackElement
+        var next = this.getObjectXy(p1) as LayoutTrackElement
         if (next) {
             if (!next.isVisited && (obj.pos.isEqual(next.getNextItemXy()) || obj.pos.isEqual(next.getPrevItemXy()))) {
                 next.isRoute = true
@@ -530,7 +536,7 @@ export class Layout {
             }
         }
 
-        var prev = this.getObjectXy(p2) as TrackElement
+        var prev = this.getObjectXy(p2) as LayoutTrackElement
         if (prev) {
             if (!prev.isVisited && (obj.pos.isEqual(prev.getNextItemXy()) || obj.pos.isEqual(prev.getPrevItemXy()))) {
                 prev.isRoute = true
@@ -540,7 +546,7 @@ export class Layout {
     }
 
 
-    walkTrack(obj: TrackElement, section: number) {
+    walkTrack(obj: LayoutTrackElement, section: number) {
         // Lehet meg kellene vizsgálni, hogy a következő elem az
         // a route váltóiban szerepel e?
         // vagy váltótól váltói kellene vizsgálódni??
@@ -550,7 +556,7 @@ export class Layout {
         var p1 = obj.getNextItemXy()
         var p2 = obj.getPrevItemXy()
 
-        var next = this.getObjectXy(p1) as TrackElement;
+        var next = this.getObjectXy(p1) as LayoutTrackElement;
         if (next && !isTurnoutElement(next)) {
             if (!next.isVisited && (obj.pos.isEqual(next.getNextItemXy()) || obj.pos.isEqual(next.getPrevItemXy()))) {
                 next.isRoute = true
@@ -558,7 +564,7 @@ export class Layout {
             }
         }
 
-        var prev = this.getObjectXy(p2) as TrackElement;
+        var prev = this.getObjectXy(p2) as LayoutTrackElement;
         if (prev && !isTurnoutElement(prev)) {
             if (!prev.isVisited && (obj.pos.isEqual(prev.getNextItemXy()) || obj.pos.isEqual(prev.getPrevItemXy()))) {
                 prev.isRoute = true
@@ -608,8 +614,8 @@ export class Layout {
          */
         const physicalTrackElements =
             this.track.elements.filter(
-                (elem): elem is TrackElement =>
-                    elem instanceof TrackElement
+                (elem): elem is LayoutTrackElement =>
+                    elem instanceof DomainTrackElement
             );
 
         const normalizeRotation = (angle: number): number => {

@@ -3,8 +3,10 @@
 import {
   buildRailwayTopologyFromLayout,
   RailwayTopologyLayout,
-  type SerializedLayoutDto,
 } from "../../../common/src/railway/topology.js";
+import type {
+  SerializedLayoutDto,
+} from "../../../common/src/layout/layoutDto.js";
 
 class RailwayTopologyStore {
   private topology: RailwayTopologyLayout | null = null;
