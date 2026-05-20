@@ -379,7 +379,7 @@
           "fg": "white",
           "address": 0,
           "length": 100,
-          "locoAddress": 0,
+          "locoAddress": 7,
           "sensorAddress": 303,
           "blockType": "terminal"
         },
@@ -413,7 +413,7 @@
           "fg": "white",
           "address": 0,
           "length": 100,
-          "locoAddress": 7,
+          "locoAddress": 0,
           "sensorAddress": 102,
           "blockType": "terminal"
         },
@@ -664,7 +664,7 @@
           "rotationStep": 0,
           "bg": "black",
           "fg": "white",
-          "address": 5,
+          "address": 201,
           "length": 200,
           "kind": 1,
           "colorOn": "#82c91e",
