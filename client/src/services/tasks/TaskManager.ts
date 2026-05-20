@@ -17,7 +17,7 @@ import {
 
 import { wsClient } from "../wsClient";
 import { layoutStore } from "../layoutStore";
-import { BlockElement } from "../../models/editor/elements/BlockElement";
+import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 
 import type {
   AddTrainTaskResult,
@@ -283,7 +283,7 @@ export class TaskManager {
 
     for (const element of layout.getAllElements()) {
       if (
-        element instanceof BlockElement &&
+        element instanceof BlockElementView &&
         element.runtimeTransitLocoAddress !== 0
       ) {
         element.runtimeTransitLocoAddress = 0;
@@ -325,7 +325,7 @@ export class TaskManager {
         const element =
           layout.getElementById(blockId);
 
-        if (!(element instanceof BlockElement)) {
+        if (!(element instanceof BlockElementView)) {
           continue;
         }
 

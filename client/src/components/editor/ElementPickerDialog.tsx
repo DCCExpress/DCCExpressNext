@@ -1,26 +1,26 @@
 import { Card, Group, Modal, Stack } from "@mantine/core";
 
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
-import { TrackStraightElement } from "../../models/editor/elements/TrackStraightElement";
-import { TrackEndElement } from "../../models/editor/elements/TrackEndElement";
-import { TrackCornerElement } from "../../models/editor/elements/TrackCornerElement";
-import { TrackCurveElement } from "../../models/editor/elements/TrackCurveElement";
-import { TrackTurnoutLeftElement } from "../../models/editor/elements/TrackTurnoutLeftElement";
-import { TrackTurnoutRightElement } from "../../models/editor/elements/TrackTurnoutRightElement";
-import { TrackTurnoutTwoWayElement } from "../../models/editor/elements/TrackTurnoutTwoWayElement";
-import TrackTurnoutDoubleElement from "../../models/editor/elements/TrackTurnoutDoubleElement";
-import { TrackSensorElement } from "../../models/editor/elements/TrackSensorElement";
+import { TrackStraightElementView } from "../../models/editor/elements/TrackStraightElementView";
+import { TrackEndElementView } from "../../models/editor/elements/TrackEndElementView";
+import { TrackCornerElementView } from "../../models/editor/elements/TrackCornerElementView";
+import { TrackCurveElementView } from "../../models/editor/elements/TrackCurveElementView";
+import { TrackTurnoutLeftElementView } from "../../models/editor/elements/TrackTurnoutLeftElementView";
+import { TrackTurnoutRightElementView } from "../../models/editor/elements/TrackTurnoutRightElementView";
+import { TrackTurnoutTwoWayElementView } from "../../models/editor/elements/TrackTurnoutTwoWayElementView";
+import TrackTurnoutDoubleElementView from "../../models/editor/elements/TrackTurnoutDoubleElementView";
+import { TrackSensorElementView } from "../../models/editor/elements/TrackSensorElementView";
 import { ButtonElement } from "../../models/editor/elements/ButtonElement";
 import { ClockElement } from "../../models/editor/elements/ClockElement";
 import { TreeElement } from "../../models/editor/elements/TreeElement";
-import { BlockElement } from "../../models/editor/elements/BlockElement";
-import { TrackSignalElement } from "../../models/editor/elements/TrackSignalElement";
+import { BlockElementView } from "../../models/editor/elements/BlockElementView";
+import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { AudioButtonElement } from "../../models/editor/elements/AudioButtonElement";
 import { RouteButtonElement } from "../../models/editor/elements/RouteButtonElement";
-import { TrackCrossingElement } from "../../models/editor/elements/TrackCrossingElement";
+import { TrackCrossingElementView } from "../../models/editor/elements/TrackCrossingElementView";
 import { ButtonScriptElement } from "../../models/editor/elements/ButtonScriptElement";
 import { LabelElement } from "../../models/editor/elements/LabelElement";
-import { TrackDirectionElement } from "../../models/editor/elements/TrackDirectionElement";
+import { TrackDirectionElementView } from "../../models/editor/elements/TrackDirectionElementView";
 import { ExtendedRouteButtonElement } from "../../models/editor/elements/ExtendedRouteButtonElement";
 import { ELEMENT_TYPES, ElementType } from "../../../../common/src/layout/elementTypes";
 
@@ -37,17 +37,17 @@ export default function ElementPickerDialog({
 }: ElementPickerDialogProps) {
 
 
-  const track = new TrackStraightElement(0, 0);
-  const trackdirection = new TrackDirectionElement(0, 0);
-  const trackend = new TrackEndElement(0, 0);
-  const trackcorner = new TrackCornerElement(0, 0);
-  const trackcurve = new TrackCurveElement(0, 0);
-  const trackcrossing = new TrackCrossingElement(0, 0);
-  const trackturnoutleft = new TrackTurnoutLeftElement(0, 0);
-  const trackturnoutright = new TrackTurnoutRightElement(0, 0);
-  const trackturnouttwoway = new TrackTurnoutTwoWayElement(0, 0);
-  const trackturnoutdouble = new TrackTurnoutDoubleElement(0, 0);
-  const tracksensor = new TrackSensorElement(0, 0);
+  const track = new TrackStraightElementView(0, 0);
+  const trackdirection = new TrackDirectionElementView(0, 0);
+  const trackend = new TrackEndElementView(0, 0);
+  const trackcorner = new TrackCornerElementView(0, 0);
+  const trackcurve = new TrackCurveElementView(0, 0);
+  const trackcrossing = new TrackCrossingElementView(0, 0);
+  const trackturnoutleft = new TrackTurnoutLeftElementView(0, 0);
+  const trackturnoutright = new TrackTurnoutRightElementView(0, 0);
+  const trackturnouttwoway = new TrackTurnoutTwoWayElementView(0, 0);
+  const trackturnoutdouble = new TrackTurnoutDoubleElementView(0, 0);
+  const tracksensor = new TrackSensorElementView(0, 0);
   const button = new ButtonElement(0, 0);
   const buttonscript = new ButtonScriptElement(0, 0);
   const audiobutton = new AudioButtonElement(0, 0);
@@ -57,13 +57,13 @@ export default function ElementPickerDialog({
   const clock = new ClockElement(0, 0);
   clock.scale = 0.28
   const tree = new TreeElement(0, 0);
-  const block = new BlockElement(0, 0);
-  const signal2 = new TrackSignalElement(0, 0);
+  const block = new BlockElementView(0, 0);
+  const signal2 = new TrackSignalElementView(0, 0);
   signal2.aspect = 2;
 
-  const signal3 = new TrackSignalElement(0, 0);
+  const signal3 = new TrackSignalElementView(0, 0);
   signal3.aspect = 3;
-  const signal4 = new TrackSignalElement(0, 0);
+  const signal4 = new TrackSignalElementView(0, 0);
   signal4.aspect = 4;
 
   return (

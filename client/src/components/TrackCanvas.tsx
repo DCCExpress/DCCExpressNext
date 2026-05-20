@@ -2,27 +2,27 @@ import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { DrawOptions, EditorTool } from "../models/editor/types/EditorTypes";
-import { TrackStraightElement } from "../models/editor/elements/TrackStraightElement";
-import { TrackEndElement } from "../models/editor/elements/TrackEndElement";
-import { TrackCornerElement } from "../models/editor/elements/TrackCornerElement";
-import { TrackCurveElement } from "../models/editor/elements/TrackCurveElement";
-import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
-import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
+import { TrackStraightElementView } from "../models/editor/elements/TrackStraightElementView";
+import { TrackEndElementView } from "../models/editor/elements/TrackEndElementView";
+import { TrackCornerElementView } from "../models/editor/elements/TrackCornerElementView";
+import { TrackCurveElementView } from "../models/editor/elements/TrackCurveElementView";
+import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
+import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
 import { generateId, showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
 import { isTurnoutElement, Layout } from "../models/editor/core/Layout";
 
 import "../styles/TrackCanvas.css";
-import { TrackTurnoutTwoWayElement } from "../models/editor/elements/TrackTurnoutTwoWayElement";
-import TrackTurnoutDoubleElement from "../models/editor/elements/TrackTurnoutDoubleElement";
-import { TrackSensorElement } from "../models/editor/elements/TrackSensorElement";
+import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
+import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";
+import { TrackSensorElementView } from "../models/editor/elements/TrackSensorElementView";
 import { ButtonElement } from "../models/editor/elements/ButtonElement";
 import { ClockElement } from "../models/editor/elements/ClockElement";
 import { TreeElement } from "../models/editor/elements/TreeElement";
-import { BlockElement } from "../models/editor/elements/BlockElement";
-import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
+import { BlockElementView } from "../models/editor/elements/BlockElementView";
+import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
 import { AudioButtonElement } from "../models/editor/elements/AudioButtonElement";
 import { RouteButtonElement } from "../models/editor/elements/RouteButtonElement";
-import { TrackCrossingElement } from "../models/editor/elements/TrackCrossingElement";
+import { TrackCrossingElementView } from "../models/editor/elements/TrackCrossingElementView";
 import { ClickableBaseElement } from "../models/editor/core/ClickableBaseElement";
 import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
@@ -32,7 +32,7 @@ import { ButtonScriptElement } from "../models/editor/elements/ButtonScriptEleme
 import { LabelElement } from "../models/editor/elements/LabelElement";
 import LocoPicker from "./loco/LocoPicker";
 import { Loco } from "../../../common/src/types";
-import { TrackDirectionElement } from "../models/editor/elements/TrackDirectionElement";
+import { TrackDirectionElementView } from "../models/editor/elements/TrackDirectionElementView";
 import { ExtendedRouteButtonElement } from "../models/editor/elements/ExtendedRouteButtonElement";
 
 import { routeGraphStore } from "../services/routeGraphStore";
@@ -177,12 +177,12 @@ type SignalAspectPopoverState = {
   opened: boolean;
   x: number;
   y: number;
-  signal: TrackSignalElement | null;
+  signal: TrackSignalElementView | null;
   previews: {
-    green: TrackSignalElement;
-    red: TrackSignalElement;
-    yellow: TrackSignalElement;
-    white: TrackSignalElement;
+    green: TrackSignalElementView;
+    red: TrackSignalElementView;
+    yellow: TrackSignalElementView;
+    white: TrackSignalElementView;
   } | null;
 };
 
@@ -213,7 +213,7 @@ export default function TrackCanvas({
   const turnoutSelectionModeRef = useRef(false);
   //const [lo]
   const [locoPickerOpen, setLocoPickerOpen] = useState(false);
-  const [selectedBlock, setSelectedBlock] = useState<BlockElement | null>(null);
+  const [selectedBlock, setSelectedBlock] = useState<BlockElementView | null>(null);
 
   const touchPointsRef = useRef<Map<number, TouchPoint>>(new Map());
   const viewRef = useRef<ViewState>(loadSavedViewState());
@@ -453,7 +453,7 @@ export default function TrackCanvas({
       const elems = layoutRef.current.getAllElements();
       if (turnoutSelectionMode) {
         for (const elem of elems) {
-          if (elem instanceof TrackTurnoutLeftElement || elem instanceof TrackTurnoutRightElement) {
+          if (elem instanceof TrackTurnoutLeftElementView || elem instanceof TrackTurnoutRightElementView) {
             elem.enabled = true;
           } else {
             elem.enabled = false;
@@ -559,7 +559,7 @@ export default function TrackCanvas({
     };
 
     const reopenSignalAspectPopover = (
-      signal: TrackSignalElement,
+      signal: TrackSignalElementView,
       clientX: number,
       clientY: number
     ) => {
@@ -793,13 +793,13 @@ export default function TrackCanvas({
       }
 
       if (!editModeRef.current) {
-        if (hitElement instanceof BlockElement) {
+        if (hitElement instanceof BlockElementView) {
           setSelectedBlock(hitElement);
           setLocoPickerOpen(true);
         }
 
 
-        if (hitElement instanceof TrackSignalElement) {
+        if (hitElement instanceof TrackSignalElementView) {
           if (signalAspectPopoverRef.current.opened) {
             reopenSignalAspectPopover(hitElement, ev.clientX, ev.clientY);
           } else {
@@ -1075,14 +1075,14 @@ export default function TrackCanvas({
       }
 
       if (!editModeRef.current) {
-        if (hoveredElement instanceof TrackTurnoutLeftElement ||
-          hoveredElement instanceof TrackTurnoutRightElement ||
-          hoveredElement instanceof TrackTurnoutTwoWayElement ||
-          hoveredElement instanceof TrackTurnoutDoubleElement ||
-          hoveredElement instanceof TrackSignalElement ||
+        if (hoveredElement instanceof TrackTurnoutLeftElementView ||
+          hoveredElement instanceof TrackTurnoutRightElementView ||
+          hoveredElement instanceof TrackTurnoutTwoWayElementView ||
+          hoveredElement instanceof TrackTurnoutDoubleElementView ||
+          hoveredElement instanceof TrackSignalElementView ||
           hoveredElement instanceof ClickableBaseElement ||
           hoveredElement instanceof AudioButtonElement ||
-          hoveredElement instanceof BlockElement
+          hoveredElement instanceof BlockElementView
 
         ) {
           canvas.style.cursor = "pointer";
@@ -1240,7 +1240,7 @@ export default function TrackCanvas({
       // }
 
       if (!editModeRef.current) {
-        if (hitElement instanceof TrackSignalElement) {
+        if (hitElement instanceof TrackSignalElementView) {
           if (signalAspectPopoverRef.current.opened) {
             reopenSignalAspectPopover(hitElement, ev.clientX, ev.clientY);
           } else {
@@ -1634,24 +1634,24 @@ export default function TrackCanvas({
   // popover
   // =======================================================
   const openSignalAspectPopover = (
-    signal: TrackSignalElement,
+    signal: TrackSignalElementView,
     clientX: number,
     clientY: number
   ) => {
 
-    const green = new TrackSignalElement(0, 0);
+    const green = new TrackSignalElementView(0, 0);
     green.aspect = signal.aspect;
     green.setGreen();
 
-    const red = new TrackSignalElement(0, 0);
+    const red = new TrackSignalElementView(0, 0);
     red.aspect = signal.aspect;
     red.setRed();
 
-    const yellow = new TrackSignalElement(0, 0);
+    const yellow = new TrackSignalElementView(0, 0);
     yellow.aspect = signal.aspect;
     yellow.setYellow();
 
-    const white = new TrackSignalElement(0, 0);
+    const white = new TrackSignalElementView(0, 0);
     white.aspect = signal.aspect;
     white.setWhite();
 

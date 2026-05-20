@@ -2,11 +2,11 @@
 
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Layout } from "../models/editor/core/Layout";
-import { TrackSignalElement } from "../models/editor/elements/TrackSignalElement";
+import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
 import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
-import { TrackTurnoutLeftElement } from "../models/editor/elements/TrackTurnoutLeftElement";
-import { TrackTurnoutRightElement } from "../models/editor/elements/TrackTurnoutRightElement";
-import { TrackTurnoutTwoWayElement } from "../models/editor/elements/TrackTurnoutTwoWayElement";
+import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
+import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
+import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
 
 type LayoutListener = (layout: Layout | null) => void;
 
@@ -60,7 +60,7 @@ class LayoutStore {
   // findSignalByAddress(address: number) {
   //   const elems = this.getElements();
   //   return elems.find(e => {
-  //     return (e instanceof TrackSignalElement && (e as any).address === address);
+  //     return (e instanceof TrackSignalElementView && (e as any).address === address);
   //   });
   // }
 
@@ -85,7 +85,7 @@ class LayoutStore {
   // }
 
   // setSignalGreenByAddress(address: number): boolean {
-  //   const signal = this.findSignalByAddress(address) as TrackSignalElement;
+  //   const signal = this.findSignalByAddress(address) as TrackSignalElementView;
   //   if (signal) {
   //     signal.sendGreenIfNotGreen();
 
@@ -96,7 +96,7 @@ class LayoutStore {
   // }
 
   // setSignalYellowByAddress(address: number): boolean {
-  //   const signal = this.findSignalByAddress(address) as TrackSignalElement;
+  //   const signal = this.findSignalByAddress(address) as TrackSignalElementView;
   //   if (signal) {
   //     signal.sendYellowIfNotYellow();
   //   }
@@ -106,7 +106,7 @@ class LayoutStore {
   // }
 
   // setSignalRedByAddress(address: number): boolean {
-  //   const signal = this.findSignalByAddress(address) as TrackSignalElement;
+  //   const signal = this.findSignalByAddress(address) as TrackSignalElementView;
   //   if (signal) {
   //     signal.sendRedIfNotRed();
   //   }
@@ -116,7 +116,7 @@ class LayoutStore {
   // }
 
   // setSignalWhiteByAddress(address: number): boolean {
-  //   const signal = this.findSignalByAddress(address) as TrackSignalElement;
+  //   const signal = this.findSignalByAddress(address) as TrackSignalElementView;
   //   if (signal) {
   //     signal.sendWhiteIfNotWhite();
   //   }
@@ -128,9 +128,9 @@ class LayoutStore {
 
   private isTurnout(e: BaseElement): boolean {
     return (
-      e instanceof TrackTurnoutLeftElement ||
-      e instanceof TrackTurnoutRightElement ||
-      e instanceof TrackTurnoutTwoWayElement
+      e instanceof TrackTurnoutLeftElementView ||
+      e instanceof TrackTurnoutRightElementView ||
+      e instanceof TrackTurnoutTwoWayElementView
 
     );
   }

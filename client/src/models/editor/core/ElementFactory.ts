@@ -1,25 +1,25 @@
 import { BaseElement } from "./BaseElement";
-import { TrackStraightElement } from "../elements/TrackStraightElement";
+import { TrackStraightElementView } from "../elements/TrackStraightElementView";
 import { EditorElementData } from "../types/EditorTypes";
-import { TrackCornerElement } from "../elements/TrackCornerElement";
-import { TrackEndElement } from "../elements/TrackEndElement";
-import { TrackCurveElement } from "../elements/TrackCurveElement";
-import { TrackTurnoutLeftElement } from "../elements/TrackTurnoutLeftElement";
-import { TrackTurnoutRightElement } from "../elements/TrackTurnoutRightElement";
-import TrackTurnoutDoubleElement from "../elements/TrackTurnoutDoubleElement";
-import { TrackTurnoutTwoWayElement } from "../elements/TrackTurnoutTwoWayElement";
-import { TrackSensorElement } from "../elements/TrackSensorElement";
+import { TrackCornerElementView } from "../elements/TrackCornerElementView";
+import { TrackEndElementView } from "../elements/TrackEndElementView";
+import { TrackCurveElementView } from "../elements/TrackCurveElementView";
+import { TrackTurnoutLeftElementView } from "../elements/TrackTurnoutLeftElementView";
+import { TrackTurnoutRightElementView } from "../elements/TrackTurnoutRightElementView";
+import TrackTurnoutDoubleElementView from "../elements/TrackTurnoutDoubleElementView";
+import { TrackTurnoutTwoWayElementView } from "../elements/TrackTurnoutTwoWayElementView";
+import { TrackSensorElementView } from "../elements/TrackSensorElementView";
 import { ButtonElement } from "../elements/ButtonElement";
 import { ClockElement } from "../elements/ClockElement";
-import { BlockElement } from "../elements/BlockElement";
+import { BlockElementView } from "../elements/BlockElementView";
 import { TreeElement } from "../elements/TreeElement";
-import { TrackSignalElement } from "../elements/TrackSignalElement";
+import { TrackSignalElementView } from "../elements/TrackSignalElementView";
 import { AudioButtonElement } from "../elements/AudioButtonElement";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
-import { TrackCrossingElement } from "../elements/TrackCrossingElement";
+import { TrackCrossingElementView } from "../elements/TrackCrossingElementView";
 import { ButtonScriptElement } from "../elements/ButtonScriptElement";
 import { LabelElement } from "../elements/LabelElement";
-import { TrackDirectionElement } from "../elements/TrackDirectionElement";
+import { TrackDirectionElementView } from "../elements/TrackDirectionElementView";
 import { ExtendedRouteButtonElement } from "../elements/ExtendedRouteButtonElement";
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 
@@ -27,43 +27,43 @@ export class ElementFactory {
   static create(data: EditorElementData): BaseElement {
     switch (data.type) {
       case ELEMENT_TYPES.TRACK_STRAIGHT: {
-        return TrackStraightElement.fromJSON(data)
+        return TrackStraightElementView.fromJSON(data)
       }
 
       case ELEMENT_TYPES.TRACK_DIRECTION: {
-        return TrackDirectionElement.fromJSON(data)
+        return TrackDirectionElementView.fromJSON(data)
       }
 
       case ELEMENT_TYPES.TRACK_END: {
-        return TrackEndElement.fromJSON(data);
+        return TrackEndElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_CORNER: {
-        return TrackCornerElement.fromJSON(data);
+        return TrackCornerElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_CURVE: {
-        return TrackCurveElement.fromJSON(data);
+        return TrackCurveElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_CROSSING: {
-        return TrackCrossingElement.fromJSON(data);
+        return TrackCrossingElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_LEFT: {
-        return TrackTurnoutLeftElement.fromJSON(data);
+        return TrackTurnoutLeftElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT: {
-        return TrackTurnoutRightElement.fromJSON(data);
+        return TrackTurnoutRightElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY: {
-        return TrackTurnoutTwoWayElement.fromJSON(data);
+        return TrackTurnoutTwoWayElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE: {
-        return TrackTurnoutDoubleElement.fromJSON(data);
+        return TrackTurnoutDoubleElementView.fromJSON(data);
       }
 
 
@@ -78,11 +78,11 @@ export class ElementFactory {
       // }
 
       case ELEMENT_TYPES.TRACK_SENSOR: {
-        return TrackSensorElement.fromJSON(data);
+        return TrackSensorElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_SIGNAL2: {
-        return TrackSignalElement.fromJSON(data);
+        return TrackSignalElementView.fromJSON(data);
       }
 
 
@@ -111,7 +111,7 @@ export class ElementFactory {
       }
 
       case ELEMENT_TYPES.TRACK_BLOCK: {
-        return BlockElement.fromJSON(data);
+        return BlockElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TREE: {

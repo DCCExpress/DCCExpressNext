@@ -1,10 +1,10 @@
 import { Loco } from "../../../../../common/src/types";
 import { showWarningMessage } from "../../../helpers";
-import { BlockElement } from "../elements/BlockElement";
+import { BlockElementView } from "../elements/BlockElementView";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
-import { TrackStraightElement } from "../elements/TrackStraightElement";
-import { TrackTurnoutLeftElement } from "../elements/TrackTurnoutLeftElement";
-import { TrackTurnoutRightElement } from "../elements/TrackTurnoutRightElement";
+import { TrackStraightElementView } from "../elements/TrackStraightElementView";
+import { TrackTurnoutLeftElementView } from "../elements/TrackTurnoutLeftElementView";
+import { TrackTurnoutRightElementView } from "../elements/TrackTurnoutRightElementView";
 import { DrawOptions } from "../types/EditorTypes";
 import { BaseElement } from "./BaseElement";
 import { ElementFactory } from "./ElementFactory";
@@ -27,15 +27,15 @@ type LayoutTrackElement =
     DomainTrackElement;
 
 export type RouteTurnoutElement =
-    | TrackTurnoutLeftElement
-    | TrackTurnoutRightElement;
+    | TrackTurnoutLeftElementView
+    | TrackTurnoutRightElementView;
 
 export function isTurnoutElement(
     el: BaseElement | null | undefined
 ): el is RouteTurnoutElement {
     return (
-        el instanceof TrackTurnoutLeftElement ||
-        el instanceof TrackTurnoutRightElement
+        el instanceof TrackTurnoutLeftElementView ||
+        el instanceof TrackTurnoutRightElementView
     );
 }
 
@@ -57,7 +57,7 @@ export class Layout {
             new Layer("track", "Pálya"),
         ];
 
-        const track = new TrackStraightElement(10, 10)
+        const track = new TrackStraightElementView(10, 10)
         track.id = "track1";
         this.track.elements.push(track);
 
@@ -340,11 +340,11 @@ export class Layout {
         return { minX, minY, maxX, maxY };
     }
 
-    setBlockLocoAddress(selectedBlock: BlockElement, loco: Loco) {
+    setBlockLocoAddress(selectedBlock: BlockElementView, loco: Loco) {
         const elems = this.getAllElements();
         elems.forEach((elem: BaseElement) => {
-            if (elem instanceof BlockElement) {
-                const block = elem as BlockElement;
+            if (elem instanceof BlockElementView) {
+                const block = elem as BlockElementView;
                 if (block.locoAddress === loco.address) {
                     block.locoAddress = 0;
                 }
@@ -624,7 +624,7 @@ export class Layout {
         };
 
         for (const elem of trackElements) {
-            if (!(elem instanceof BlockElement)) {
+            if (!(elem instanceof BlockElementView)) {
                 continue;
             }
 

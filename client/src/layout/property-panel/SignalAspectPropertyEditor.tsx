@@ -2,7 +2,7 @@ import { Box, Group, NumberInput } from "@mantine/core";
 
 import type { BaseElement } from "../../models/editor/core/BaseElement";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
-import { TrackSignalElement } from "../../models/editor/elements/TrackSignalElement";
+import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import { createSignalPreview, type SignalPreviewColor } from "./previewFactories";
 import type { SelectedElementUpdateHandler } from "./propertyPanelTypes";
@@ -21,7 +21,7 @@ type SignalAspectRow = {
     | "valueRed"
     | "valueYellow"
     | "valueWhite";
-  send: (signal: TrackSignalElement) => void;
+  send: (signal: TrackSignalElementView) => void;
   minAspect?: number;
 };
 
@@ -58,7 +58,7 @@ export default function SignalAspectPropertyEditor({
   selectedElement,
   onUpdateSelectedElement,
 }: SignalAspectPropertyEditorProps) {
-  const signal = selectedElement as TrackSignalElement;
+  const signal = selectedElement as TrackSignalElementView;
 
   return (
     <Group>

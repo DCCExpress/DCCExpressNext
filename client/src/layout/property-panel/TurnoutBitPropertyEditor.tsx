@@ -3,7 +3,7 @@ import { Box, Group } from "@mantine/core";
 import BitToggleElement from "../../components/editor/BitToggleElement";
 import type { BaseElement } from "../../models/editor/core/BaseElement";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
-import { TrackTurnoutLeftElement } from "../../models/editor/elements/TrackTurnoutLeftElement";
+import { TrackTurnoutLeftElementView } from "../../models/editor/elements/TrackTurnoutLeftElementView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../../services/wsApi";
 import { createTurnoutPreview } from "./previewFactories";
@@ -32,7 +32,7 @@ export default function TurnoutBitPropertyEditor({
             width={40}
             height={40}
             onClick={() => {
-              const turnout = selectedElement as TrackTurnoutLeftElement;
+              const turnout = selectedElement as TrackTurnoutLeftElementView;
               wsApi.setTurnout(
                 turnout.turnoutAddress,
                 turnout.turnoutClosedValue
@@ -55,7 +55,7 @@ export default function TurnoutBitPropertyEditor({
             width={40}
             height={40}
             onClick={() => {
-              const turnout = selectedElement as TrackTurnoutLeftElement;
+              const turnout = selectedElement as TrackTurnoutLeftElementView;
               wsApi.setTurnout(
                 turnout.turnoutAddress,
                 !turnout.turnoutClosedValue

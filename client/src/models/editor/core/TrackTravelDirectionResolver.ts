@@ -1,4 +1,4 @@
-import { TrackDirectionElement } from "../elements/TrackDirectionElement";
+import { TrackDirectionElementView } from "../elements/TrackDirectionElementView";
 import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
 
 
@@ -33,8 +33,8 @@ export class TrackTravelDirectionResolver {
 
         networks.forEach((network, index) => {
             const markers = network.filter(
-                elem => elem instanceof TrackDirectionElement
-            ) as TrackDirectionElement[];
+                elem => elem instanceof TrackDirectionElementView
+            ) as TrackDirectionElementView[];
 
             if (markers.length === 0) {
                 throw new Error(
@@ -86,7 +86,7 @@ export class TrackTravelDirectionResolver {
      * Összegyűjti az összefüggő sín-hálózatokat.
      *
      * Kiindulási pontok:
-     * - minden TrackDirectionElement
+     * - minden TrackDirectionElementView
      * - minden TrackTurnoutElement
      *
      * Ez elég a route graph szempontjából releváns hálózatokhoz.
@@ -96,7 +96,7 @@ export class TrackTravelDirectionResolver {
 
         const seeds = elems.filter(
             elem =>
-                elem instanceof TrackDirectionElement ||
+                elem instanceof TrackDirectionElementView ||
                 elem instanceof TrackTurnoutElement
         );
 
@@ -228,7 +228,7 @@ export class TrackTravelDirectionResolver {
     // 3. IRÁNYTERJESZTÉS EGY TRACKDIRECTION MARKERBŐL
     // ============================================================
 
-    private propagateFromMarker(marker: TrackDirectionElement): void {
+    private propagateFromMarker(marker: TrackDirectionElementView): void {
         marker.travelDirection = "forward";
 
         const trackQueue: TrackElement[] = [marker];

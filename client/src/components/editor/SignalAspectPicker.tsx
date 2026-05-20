@@ -1,7 +1,7 @@
 import { Popover, SimpleGrid, Box, Text, Stack } from "@mantine/core";
 import { useState } from "react";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
-import { TrackSignalElement } from "../../models/editor/elements/TrackSignalElement";
+import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 
 type SignalAspect = "red" | "green" | "yellow" | "white";
 
@@ -12,12 +12,12 @@ type SignalAspectPickerProps = {
 
 const aspects: SignalAspect[] = ["red", "green", "yellow", "white"];
 
-  const signal2 = new TrackSignalElement(0, 0);
+  const signal2 = new TrackSignalElementView(0, 0);
   signal2.aspect = 2;
   
-  const signal3 = new TrackSignalElement(0, 0);
+  const signal3 = new TrackSignalElementView(0, 0);
   signal3.aspect = 3;
-  const signal4 = new TrackSignalElement(0, 0);
+  const signal4 = new TrackSignalElementView(0, 0);
   signal4.aspect = 4;
 
 

@@ -21,7 +21,7 @@ import {
 /**
  * Kliensoldali rajzolható/editoros nézet az egyenes sínhez.
  *
- * Most már ténylegesen a common TrackStraightElement domain modellből örököl,
+ * Most már ténylegesen a common TrackStraightElementView domain modellből örököl,
  * a kliensoldali canvas/editor képességeket pedig a TrackElementViewMixin adja hozzá.
  */
 export class TrackStraightElementView

@@ -41,24 +41,24 @@ import type {
 } from "../../models/editor/core/Layout";
 
 import {
-  TrackSensorElement,
-} from "../../models/editor/elements/TrackSensorElement";
+  TrackSensorElementView,
+} from "../../models/editor/elements/TrackSensorElementView";
 
 import {
-  TrackTurnoutLeftElement,
-} from "../../models/editor/elements/TrackTurnoutLeftElement";
+  TrackTurnoutLeftElementView,
+} from "../../models/editor/elements/TrackTurnoutLeftElementView";
 
 import {
-  TrackTurnoutRightElement,
-} from "../../models/editor/elements/TrackTurnoutRightElement";
+  TrackTurnoutRightElementView,
+} from "../../models/editor/elements/TrackTurnoutRightElementView";
 
 import {
-  TrackSignalElement,
-} from "../../models/editor/elements/TrackSignalElement";
+  TrackSignalElementView,
+} from "../../models/editor/elements/TrackSignalElementView";
 
 import {
-  BlockElement,
-} from "../../models/editor/elements/BlockElement";
+  BlockElementView,
+} from "../../models/editor/elements/BlockElementView";
 
 import {
   ExtendedRouteButtonElement,
@@ -153,7 +153,7 @@ export function useLayoutRuntimeWsBindings({
             }
 
             const sensor =
-              element as TrackSensorElement;
+              element as TrackSensorElementView;
 
             if (sensor.address === data.address) {
               sensor.on = data.on;
@@ -183,7 +183,7 @@ export function useLayoutRuntimeWsBindings({
               element.type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT
             ) {
               const turnout =
-                element as TrackTurnoutLeftElement;
+                element as TrackTurnoutLeftElementView;
 
               if (turnout.turnoutAddress === data.address) {
                 turnout.turnoutClosed = data.closed;
@@ -197,7 +197,7 @@ export function useLayoutRuntimeWsBindings({
               element.type === ELEMENT_TYPES.TRACK_TURNOUT_RIGHT
             ) {
               const turnout =
-                element as TrackTurnoutRightElement;
+                element as TrackTurnoutRightElementView;
 
               if (turnout.turnoutAddress === data.address) {
                 turnout.turnoutClosed = data.closed;
@@ -228,7 +228,7 @@ export function useLayoutRuntimeWsBindings({
           let changed = false;
 
           for (const element of elements) {
-            if (!(element instanceof TrackSignalElement)) {
+            if (!(element instanceof TrackSignalElementView)) {
               continue;
             }
 
@@ -265,7 +265,7 @@ export function useLayoutRuntimeWsBindings({
             }
 
             const blockElement =
-              element as BlockElement;
+              element as BlockElementView;
 
             blockElement.locoAddress =
               locosRef.current.find(
