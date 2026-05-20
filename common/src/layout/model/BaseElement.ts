@@ -75,7 +75,12 @@ export abstract class BaseElement {
     this.y = y;
   }
 
-  protected normalizeRotation(value: number): number {
+  /**
+   * Public, hogy a commonból származó View osztályok
+   * strukturálisan kompatibilisek maradjanak a régi kliens
+   * BaseElement szerződéssel az átmeneti refaktor alatt.
+   */
+  public normalizeRotation(value: number): number {
     let result = value % 360;
     if (result < 0) result += 360;
     return result;

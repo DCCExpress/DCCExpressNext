@@ -118,13 +118,13 @@ export abstract class BaseElement implements IBaseElement {
     }
 
 
-    protected normalizeRotation(value: number): number {
+    public normalizeRotation(value: number): number {
         let result = value % 360;
         if (result < 0) result += 360;
         return result;
     }
 
-    protected beginDraw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
+    public beginDraw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
         const x = options?.overrideX ?? this.x;
         const y = options?.overrideY ?? this.y;
         const scale = options?.scale ?? 1;
@@ -141,7 +141,7 @@ export abstract class BaseElement implements IBaseElement {
         }
     }
 
-    protected endDraw(ctx: CanvasRenderingContext2D): void {
+    public endDraw(ctx: CanvasRenderingContext2D): void {
         ctx.restore();
 
         // if(this.marked) {
@@ -195,7 +195,7 @@ export abstract class BaseElement implements IBaseElement {
         }
     }
 
-    protected drawOccupied(ctx: CanvasRenderingContext2D): void {
+    public drawOccupied(ctx: CanvasRenderingContext2D): void {
         ctx.save();
         //ctx.lineWidth = 1;
         ctx.fillStyle = "#403b82f6";
@@ -229,7 +229,7 @@ export abstract class BaseElement implements IBaseElement {
 
     }
 
-    protected drawEnabled(ctx: CanvasRenderingContext2D): void {
+    public drawEnabled(ctx: CanvasRenderingContext2D): void {
         return;
         if (!this.enabled) {
             ctx.save();

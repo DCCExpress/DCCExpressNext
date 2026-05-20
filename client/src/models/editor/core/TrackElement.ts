@@ -42,7 +42,7 @@ export abstract class TrackElement extends BaseElement implements ITrackElement 
         return TrackColors.free;
     }
 
-    protected drawSectionInfo(
+    public drawSectionInfo(
         ctx: CanvasRenderingContext2D,
         options?: DrawOptions
     ): void {
@@ -75,7 +75,7 @@ export abstract class TrackElement extends BaseElement implements ITrackElement 
         ctx.restore();
     }
 
-    protected getTravelDirectionArrow(): string {
+    public getTravelDirectionArrow(): string {
         if (this.travelDirection === "unknown") {
             return "?";
         }

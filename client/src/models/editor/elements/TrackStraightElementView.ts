@@ -1,39 +1,40 @@
-import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
-import { drawTextWithRoundedBackground } from "../../../graphics";
-import { generateId } from "../../../helpers";
-import { TrackElement } from "../core/TrackElement";
+import {
+  ELEMENT_TYPES,
+} from "../../../../../common/src/layout/elementTypes";
+import {
+  TrackStraightElement as CommonTrackStraightElement,
+} from "../../../../../common/src/layout/elements/TrackStraightElement";
+import {
+  drawTextWithRoundedBackground,
+} from "../../../graphics";
+import {
+  generateId,
+} from "../../../helpers";
+import {
+  TrackElementViewMixin,
+} from "../core/view/TrackElementViewMixin";
 import {
   DrawOptions,
-  ITrackElement as ITrackStraightElement,
+  ITrackStraightElement,
 } from "../types/EditorTypes";
 
 /**
  * Kliensoldali rajzolható/editoros nézet az egyenes sínhez.
  *
- * Fontos:
- * - a common oldali grafikamentes modell már létezik:
- *   common/src/layout/elements/TrackStraightElement.ts
- * - ez a View osztály most még a meglévő kliens TrackElement
- *   öröklési láncban marad, hogy a Layout / Canvas / PropertyPanel
- *   változtatás nélkül kompatibilis maradjon
- * - a következő nagy lépésben ezt a láncot lehet fokozatosan
- *   a common modellre ráültetni
+ * Most már ténylegesen a common TrackStraightElement domain modellből örököl,
+ * a kliensoldali canvas/editor képességeket pedig a TrackElementViewMixin adja hozzá.
  */
 export class TrackStraightElementView
-  extends TrackElement
+  extends TrackElementViewMixin(CommonTrackStraightElement)
   implements ITrackStraightElement {
   override type: typeof ELEMENT_TYPES.TRACK_STRAIGHT =
     ELEMENT_TYPES.TRACK_STRAIGHT;
 
   constructor(x: number, y: number) {
     super(x, y);
-
-    this.type = ELEMENT_TYPES.TRACK_STRAIGHT;
-    this.rotationStep = 45;
-    this.length = 200;
   }
 
-  draw(
+  override draw(
     ctx: CanvasRenderingContext2D,
     options?: DrawOptions
   ): void {
@@ -132,15 +133,18 @@ export class TrackStraightElementView
 
     track.id = data.id;
     track.name = data.name;
+    track.layerName = data.layerName;
     track.rotation = data.rotation;
+    track.rotationStep = data.rotationStep;
     track.address = data.address;
+    track.length = data.length;
     track.bg = data.bg;
     track.fg = data.fg;
 
     return track;
   }
 
-  override clone(): TrackStraightElementView {
+  clone(): TrackStraightElementView {
     const copy = new TrackStraightElementView(
       this.x,
       this.y
@@ -156,7 +160,7 @@ export class TrackStraightElementView
     return copy;
   }
 
-  getHelp(): string {
+  override getHelp(): string {
     return `
     <h3 style="margin-top:0;">Track element</h3>
     <p>This is a straight track section.</p>
