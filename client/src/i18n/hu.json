@@ -184,6 +184,31 @@
   "editor": {
     "cursorEsc": "Kurzor (Esc)",
     "cursorMode": "Kurzor mód",
-    "pickElement": "Elem kiválasztása"
+    "pickElement": "Elem kiválasztása",
+    "elements": {
+      "direction": "Irány",
+      "straight": "Egyenes",
+      "trackEnd": "Vágányvég",
+      "corner": "Sarok",
+      "curve": "Ív",
+      "crossing": "Keresztezés",
+      "turnoutLeft": "Bal váltó",
+      "turnoutRight": "Jobb váltó",
+      "turnoutY": "Y váltó",
+      "turnoutDouble": "Kettős váltó",
+      "signal2": "Jelző 2",
+      "signal3": "Jelző 3",
+      "signal4": "Jelző 4",
+      "sensor": "Érzékelő",
+      "label": "Címke",
+      "button": "Gomb",
+      "scriptButton": "Script gomb",
+      "route": "Útvonal",
+      "autoRoute": "Automata útvonal",
+      "audio": "Hang",
+      "clock": "Óra",
+      "block": "Blokk",
+      "tree": "Fa"
+    }
   }
 }

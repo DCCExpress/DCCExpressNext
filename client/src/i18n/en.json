@@ -182,6 +182,31 @@
   "editor": {
     "cursorEsc": "Cursor (Esc)",
     "cursorMode": "Cursor mode",
-    "pickElement": "Pick element"
+    "pickElement": "Pick element",
+    "elements": {
+      "direction": "Direction",
+      "straight": "Straight",
+      "trackEnd": "Track end",
+      "corner": "Corner",
+      "curve": "Curve",
+      "crossing": "Crossing",
+      "turnoutLeft": "Turnout left",
+      "turnoutRight": "Turnout right",
+      "turnoutY": "Turnout Y",
+      "turnoutDouble": "Turnout double",
+      "signal2": "Signal 2",
+      "signal3": "Signal 3",
+      "signal4": "Signal 4",
+      "sensor": "Sensor",
+      "label": "Label",
+      "button": "Button",
+      "scriptButton": "Script button",
+      "route": "Route",
+      "autoRoute": "Auto route",
+      "audio": "Audio",
+      "clock": "Clock",
+      "block": "Block",
+      "tree": "Tree"
+    }
   }
 }
