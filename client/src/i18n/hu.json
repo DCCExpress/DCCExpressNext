@@ -11,7 +11,11 @@
   "common": {
     "cancel": "Mégsem",
     "save": "Mentés",
-    "offline": "Nincs kapcsolat"
+    "offline": "Nincs kapcsolat",
+    "close": "Bezárás",
+    "remove": "Eltávolítás",
+    "removeAll": "Összes eltávolítása",
+    "error": "Hiba"
   },
   "locodialog": {
     "close": "Bezárás",
@@ -118,7 +122,11 @@
       "reverse": "Hátra",
       "stop": "Állj"
     },
-    "unnamed": "Névtelen mozdony"
+    "unnamed": "Névtelen mozdony",
+    "dccAddress": "DCC cím",
+    "maxSpeedShort": "Max seb.",
+    "address": "Cím",
+    "noSelectable": "Nincs választható mozdony."
   },
   "toolbar": {
     "themeToggle": "Téma váltása",
@@ -152,6 +160,30 @@
       "paused": "Szüneteltetve",
       "finishing": "Befejezés alatt",
       "error": "Hiba"
+    },
+    "list": {
+      "title": "Feladatlista",
+      "expand": "Feladatlista lenyitása",
+      "collapse": "Feladatlista összecsukása",
+      "count": "feladat",
+      "empty": "Nincs aktív vagy felvett feladat.",
+      "emptyNew": "Még nincs felvett feladat."
+    },
+    "table": {
+      "index": "#",
+      "task": "Feladat",
+      "loco": "Mozdony",
+      "speed": "Sebesség",
+      "route": "Útvonal",
+      "status": "Állapot",
+      "progress": "Folyamat",
+      "turnouts": "Váltók",
+      "controls": "Vezérlés"
     }
+  },
+  "editor": {
+    "cursorEsc": "Kurzor (Esc)",
+    "cursorMode": "Kurzor mód",
+    "pickElement": "Elem kiválasztása"
   }
 }

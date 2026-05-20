@@ -1,4 +1,5 @@
 import { Button, Card, Group, ScrollArea, Stack, Text } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { IconTrash, IconTrashFilled, IconX } from "@tabler/icons-react";
 
 import LocoImage from "./LocoImage";
@@ -25,6 +26,7 @@ export default function LocoPicker({
     onRemoveLoco,
     onRemoveAllLoco,
 }: LocoPickerProps) {
+    const { t } = useTranslation();
     if (!opened) return null;
 
     return (
@@ -69,7 +71,7 @@ export default function LocoPicker({
                             leftSection={<IconTrash size={14} />}
                             onClick={onRemoveLoco.bind(null, locos.find((l) => l.id === selectedLocoId)!)}
                         >
-                            Remove
+                            {t("common.remove")}
                         </Button>)}
                     {onRemoveAllLoco && (
                         <Button
@@ -79,7 +81,7 @@ export default function LocoPicker({
                             leftSection={<IconTrashFilled size={14} />}
                             onClick={onRemoveAllLoco}
                         >
-                            RemoveAll
+                            {t("common.removeAll")}
                         </Button>)}
                     <Button
                         size="xs"
@@ -87,7 +89,7 @@ export default function LocoPicker({
                         leftSection={<IconX size={14} />}
                         onClick={onClose}
                     >
-                        Bezárás
+                        {t("common.close")}
                     </Button>
                 </Group>
 
@@ -123,12 +125,12 @@ export default function LocoPicker({
                                     />
 
                                     <div>
-                                        <Text fw={600}>{loco.name || "Névtelen mozdony"}</Text>
+                                        <Text fw={600}>{loco.name || t("loco.unnamed")}</Text>
                                         <Text size="sm" c="dimmed">
-                                            DCC cím: {loco.address}
+                                            {t("loco.dccAddress")}: {loco.address}
                                         </Text>
                                         <Text size="sm" c="dimmed">
-                                            Max seb.: {loco.maxSpeed}
+                                            {t("loco.maxSpeedShort")}: {loco.maxSpeed}
                                         </Text>
                                     </div>
                                 </Group>
@@ -137,7 +139,7 @@ export default function LocoPicker({
 
                         {locos.length === 0 && (
                             <Text size="sm" c="dimmed">
-                                Nincs választható mozdony.
+                                {t("loco.noSelectable")}
                             </Text>
                         )}
                     </Stack>

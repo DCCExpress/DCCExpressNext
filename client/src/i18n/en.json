@@ -12,7 +12,11 @@
   "common": {
     "cancel": "Cancel",
     "save": "Save",
-    "offline": "Offline"
+    "offline": "Offline",
+    "close": "Close",
+    "remove": "Remove",
+    "removeAll": "Remove all",
+    "error": "Error"
   },
   "locodialog": {
     "close": "Close",
@@ -116,7 +120,11 @@
       "reverse": "Reverse",
       "stop": "Stop"
     },
-    "unnamed": "Unnamed locomotive"
+    "unnamed": "Unnamed locomotive",
+    "dccAddress": "DCC address",
+    "maxSpeedShort": "Max speed",
+    "address": "Address",
+    "noSelectable": "No selectable locomotive."
   },
   "toolbar": {
     "themeToggle": "Toggle theme",
@@ -150,6 +158,30 @@
       "paused": "Paused",
       "finishing": "Finishing",
       "error": "Error"
+    },
+    "list": {
+      "title": "Task list",
+      "expand": "Expand task list",
+      "collapse": "Collapse task list",
+      "count": "task",
+      "empty": "No active or queued task.",
+      "emptyNew": "No task has been added yet."
+    },
+    "table": {
+      "index": "#",
+      "task": "Task",
+      "loco": "Loco",
+      "speed": "Speed",
+      "route": "Route",
+      "status": "Status",
+      "progress": "Progress",
+      "turnouts": "Turnouts",
+      "controls": "Controls"
     }
+  },
+  "editor": {
+    "cursorEsc": "Cursor (Esc)",
+    "cursorMode": "Cursor mode",
+    "pickElement": "Pick element"
   }
 }

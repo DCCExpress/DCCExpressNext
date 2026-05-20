@@ -27,6 +27,7 @@ import TaskProgressBadge from "./TaskProgressBadge";
 import TaskActionIcons, {
   type RunTaskAction,
 } from "./TaskActionIcons";
+import { useTranslation } from "react-i18next";
 
 type TaskTablePanelProps = {
   tasks: TrainTask[];
@@ -45,6 +46,7 @@ export default function TaskTablePanel({
   onDeleteTask,
   onRunTaskAction,
 }: TaskTablePanelProps) {
+  const { t } = useTranslation();
   return (
     <Card
       withBorder
@@ -74,15 +76,15 @@ export default function TaskTablePanel({
           >
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>#</Table.Th>
-                <Table.Th>Task</Table.Th>
-                <Table.Th>Loco</Table.Th>
-                <Table.Th>Speed</Table.Th>
-                <Table.Th>Route</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Progress</Table.Th>
-                <Table.Th>Turnouts</Table.Th>
-                <Table.Th>Controls</Table.Th>
+                <Table.Th>{t("task.table.index")}</Table.Th>
+                <Table.Th>{t("task.table.task")}</Table.Th>
+                <Table.Th>{t("task.table.loco")}</Table.Th>
+                <Table.Th>{t("task.table.speed")}</Table.Th>
+                <Table.Th>{t("task.table.route")}</Table.Th>
+                <Table.Th>{t("task.table.status")}</Table.Th>
+                <Table.Th>{t("task.table.progress")}</Table.Th>
+                <Table.Th>{t("task.table.turnouts")}</Table.Th>
+                <Table.Th>{t("task.table.controls")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
 
@@ -128,7 +130,7 @@ export default function TaskTablePanel({
                           size="xs"
                           c="dimmed"
                         >
-                          Address {task.runtime.loco.address}
+                          {t("loco.address")} {task.runtime.loco.address}
                         </Text>
                       </Stack>
                     ) : (
@@ -192,7 +194,7 @@ export default function TaskTablePanel({
         </ScrollArea>
       ) : (
         <Text c="dimmed">
-          Még nincs felvett feladat.
+          {t("task.list.emptyNew")}
         </Text>
       )}
     </Card>
