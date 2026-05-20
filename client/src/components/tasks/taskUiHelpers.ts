@@ -1,3 +1,4 @@
+import i18n from "../../i18n";
 // client/src/components/tasks/taskUiHelpers.ts
 
 import type {
@@ -31,19 +32,19 @@ export function getTaskStatusLabel(
 ): string {
   switch (status) {
     case "queued":
-      return "Queued";
+      return i18n.t("task.status.queued");
     case "running":
-      return "Running";
+      return i18n.t("task.status.running");
     case "paused":
-      return "Paused";
+      return i18n.t("task.status.paused");
     case "finishing":
-      return "Finishing";
+      return i18n.t("task.status.finishing");
     case "aborted":
-      return "Aborted";
+      return i18n.t("task.status.aborted");
     case "completed":
-      return "Completed";
+      return i18n.t("task.status.completed");
     case "error":
-      return "Error";
+      return i18n.t("task.status.error");
   }
 }
 
@@ -51,51 +52,51 @@ export function getTaskProgressLabel(
   task: TrainTask
 ): string {
   if (task.status === "completed") {
-    return "Megérkezett";
+    return i18n.t("task.progress.arrived");
   }
 
   if (task.status === "aborted") {
-    return "Megszakítva";
+    return i18n.t("task.progress.aborted");
   }
 
   switch (task.runtime.simulation.phase) {
     case "waitingForLoco":
-      return "Mozdonyra vár";
+      return i18n.t("task.progress.waitingForLoco");
     case "waitingForRoute":
-      return "Útvonal foglalására vár";
+      return i18n.t("task.progress.waitingForRoute");
     case "waitingForBlockSensor": {
       const sensorAddress =
         task.runtime.simulation.waitingSensorAddress;
 
       return sensorAddress && sensorAddress > 0
-        ? `Sensor #${sensorAddress} felszabadulására vár`
-        : "A következő blokk felszabadulására vár";
+        ? i18n.t("task.progress.waitingForSensor", { sensorAddress })
+        : i18n.t("task.progress.waitingForNextBlock");
     }
     case "departing":
-      return "Indulási szakasz";
+      return i18n.t("task.progress.departing");
     case "transit":
-      return "Két blokk között halad";
+      return i18n.t("task.progress.transit");
   }
 
   if (task.runtime.inTransit) {
-    return "Két blokk között halad";
+    return i18n.t("task.progress.transit");
   }
 
   if (task.runtime.hasLeftFromBlock) {
-    return "Elhagyta az induló blokkot";
+    return i18n.t("task.progress.leftFromBlock");
   }
 
   switch (task.status) {
     case "queued":
-      return "Indításra vár";
+      return i18n.t("task.progress.queued");
     case "running":
-      return "Futás alatt";
+      return i18n.t("task.progress.running");
     case "paused":
-      return "Szüneteltetve";
+      return i18n.t("task.progress.paused");
     case "finishing":
-      return "Befejezés alatt";
+      return i18n.t("task.progress.finishing");
     case "error":
-      return "Hiba";
+      return i18n.t("task.progress.error");
   }
 }
 
