@@ -206,7 +206,7 @@ export class TrackTurnoutRightElementView
   }
 
   mouseDown(ev: MouseEvent): void {
-    noopMouseHandler(ev);
+    mouseDownTurnout(this, ev);
   }
 
   mouseUp(ev: MouseEvent): void {
