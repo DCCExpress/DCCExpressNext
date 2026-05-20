@@ -19,6 +19,15 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
   turnout1Address: number = 0;
   turnout2Address: number = 0;
 
+  /**
+   * Publikus konstruktor kell, hogy a kliensoldali
+   * TrackElementViewMixin(CommonTrackTurnoutDoubleElement)
+   * használni tudja ezt a common domain osztályt.
+   */
+  constructor(x: number, y: number) {
+    super(x, y);
+  }
+
   static fromJSON(
     data: TrackTurnoutDoubleElementDto
   ): TrackTurnoutDoubleElement {
