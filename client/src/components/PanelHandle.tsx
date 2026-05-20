@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useMantineTheme, useMantineColorScheme } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 type PanelHandleProps = {
   side: "left" | "right";
@@ -15,6 +16,7 @@ export default function PanelHandle({
   onToggle,
   style,
 }: PanelHandleProps) {
+  const { t } = useTranslation();
   const [hover, setHover] = useState(false);
 
   const theme = useMantineTheme();
@@ -55,11 +57,11 @@ export default function PanelHandle({
       title={
         collapsed
           ? isLeft
-            ? "Loco panel mutatása"
-            : "Property panel mutatása"
+            ? t("toolbar.showLocoPanel")
+            : t("toolbar.showPropertyPanel")
           : isLeft
-            ? "Loco panel elrejtése"
-            : "Property panel elrejtése"
+            ? t("toolbar.hideLocoPanel")
+            : t("toolbar.hidePropertyPanel")
       }
       style={{
         position: "absolute",

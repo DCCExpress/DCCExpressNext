@@ -1,4 +1,5 @@
 import { Card, Group, Modal, Stack } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import { TrackStraightElementView } from "../../models/editor/elements/TrackStraightElementView";
@@ -35,7 +36,7 @@ export default function ElementPickerDialog({
   onClose,
   onPick,
 }: ElementPickerDialogProps) {
-
+  const { t } = useTranslation();
 
   const track = new TrackStraightElementView(0, 0);
   const trackdirection = new TrackDirectionElementView(0, 0);
@@ -67,7 +68,7 @@ export default function ElementPickerDialog({
   signal4.aspect = 4;
 
   return (
-    <Modal size={"xl"} opened={opened} onClose={onClose} title="Elem kiválasztása" centered>
+    <Modal size={"xl"} opened={opened} onClose={onClose} title={t("editor.pickElement")} centered>
 
       <Stack p={2} gap="xs">
         <Card padding="xs" withBorder >

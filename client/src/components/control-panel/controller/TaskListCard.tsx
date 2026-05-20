@@ -18,6 +18,7 @@ import {
 import {
   taskManager,
 } from "../../../services/tasks/taskManagerSingleton";
+import { useTranslation } from "react-i18next";
 
 import CollapsiblePanelCard from "../../common/CollapsiblePanelCard";
 import TaskListItemCard from "./TaskListItemCard";
@@ -36,6 +37,7 @@ type TaskListCardProps = {
 export default function TaskListCard({
   snapshot,
 }: TaskListCardProps) {
+  const { t } = useTranslation();
   const runTaskAction = async (
     action: () => Promise<TaskActionResult>
   ): Promise<void> => {
@@ -44,7 +46,7 @@ export default function TaskListCard({
 
     if (!result.ok) {
       showErrorMessage(
-        "ERROR",
+        t("common.error"),
         result.error
       );
     }
@@ -52,15 +54,15 @@ export default function TaskListCard({
 
   return (
     <CollapsiblePanelCard
-      title="Task list"
+      title={t("task.list.title")}
       collapsedStorageKey={
         TASK_LIST_COLLAPSED_KEY
       }
-      expandTooltip="Expand task list"
-      collapseTooltip="Collapse task list"
+      expandTooltip={t("task.list.expand")}
+      collapseTooltip={t("task.list.collapse")}
       rightSection={
         <Badge variant="light">
-          {snapshot.tasks.length} task
+          {snapshot.tasks.length} {t("task.list.count")}
         </Badge>
       }
     >
@@ -74,7 +76,7 @@ export default function TaskListCard({
             size="sm"
             c="dimmed"
           >
-            Nincs aktív vagy felvett feladat.
+            {t("task.list.empty")}
           </Text>
         ) : (
           <Stack gap="sm">
