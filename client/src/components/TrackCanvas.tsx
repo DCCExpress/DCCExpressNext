@@ -698,7 +698,7 @@ export default function TrackCanvas({
       if (!hitElement) return false;
       if (
         !(hitElement instanceof ClickableBaseElement) &&
-        !(hitElement instanceof TrackTurnoutElement)
+        !isTurnoutElement(hitElement)
       ) {
         return false;
       }
@@ -724,7 +724,7 @@ export default function TrackCanvas({
       if (!hitElement) return false;
       if (
         !(hitElement instanceof ClickableBaseElement) &&
-        !(hitElement instanceof TrackTurnoutElement)
+        !isTurnoutElement(hitElement)
       ) {
         return false;
       }
