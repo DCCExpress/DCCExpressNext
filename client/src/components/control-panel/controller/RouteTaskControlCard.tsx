@@ -1,6 +1,8 @@
 // client/src/components/control-panel/controller/RouteTaskControlCard.tsx
 
 import {
+  useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -8,7 +10,7 @@ import {
   Badge,
   Button,
   Group,
-  TextInput,
+  Select,
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
@@ -36,6 +38,10 @@ import {
   taskManager,
 } from "../../../services/tasks/taskManagerSingleton";
 
+import {
+  useRouteGraph,
+} from "../../../hooks/useRouteGraph";
+
 import CollapsiblePanelCard from "../../common/CollapsiblePanelCard";
 
 const ROUTE_TASK_CONTROL_COLLAPSED_KEY =
@@ -51,11 +57,69 @@ export default function RouteTaskControlCard({
   onOpenTaskManager,
 }: RouteTaskControlCardProps) {
   const { t } = useTranslation();
+
+  const {
+    graph,
+    ensureLoaded,
+  } = useRouteGraph();
+
   const [fromBlockName, setFromBlockName] =
-    useState("A1");
+    useState<string | null>(null);
 
   const [toBlockName, setToBlockName] =
-    useState("C1");
+    useState<string | null>(null);
+
+  useEffect(() => {
+    void ensureLoaded().catch(error => {
+      console.error(
+        "[RouteTaskControl] Could not load route graph:",
+        error
+      );
+    });
+  }, []);
+
+  const blockOptions =
+    useMemo(() => {
+      const blockNames =
+        new Set<string>();
+
+      for (const node of graph?.nodes ?? []) {
+        for (const block of node.blocks) {
+          const name =
+            block.name.trim();
+
+          if (name.length > 0) {
+            blockNames.add(name);
+          }
+        }
+      }
+
+      return [...blockNames]
+        .sort((a, b) => a.localeCompare(b))
+        .map(name => ({
+          value: name,
+          label: name,
+        }));
+    }, [graph]);
+
+  useEffect(() => {
+    const availableBlockNames =
+      new Set(
+        blockOptions.map(option => option.value)
+      );
+
+    setFromBlockName(current =>
+      current && availableBlockNames.has(current)
+        ? current
+        : null
+    );
+
+    setToBlockName(current =>
+      current && availableBlockNames.has(current)
+        ? current
+        : null
+    );
+  }, [blockOptions]);
 
   const handleStartAllTasks = async (): Promise<void> => {
     const result =
@@ -104,10 +168,10 @@ export default function RouteTaskControlCard({
 
   const handleReserveRoute = (): void => {
     const from =
-      fromBlockName.trim();
+      fromBlockName?.trim() ?? "";
 
     const to =
-      toBlockName.trim();
+      toBlockName?.trim() ?? "";
 
     if (!from || !to) {
       return;
@@ -118,10 +182,10 @@ export default function RouteTaskControlCard({
 
   const handleReleaseRoute = (): void => {
     const from =
-      fromBlockName.trim();
+      fromBlockName?.trim() ?? "";
 
     const to =
-      toBlockName.trim();
+      toBlockName?.trim() ?? "";
 
     if (!from || !to) {
       return;
@@ -133,6 +197,14 @@ export default function RouteTaskControlCard({
   const handleClearAllBusy = (): void => {
     wsApi.clearAllRouteReservations();
   };
+
+  const routeSelectionDisabled =
+    blockOptions.length === 0;
+
+  const routeActionDisabled =
+    !fromBlockName ||
+    !toBlockName ||
+    routeSelectionDisabled;
 
   return (
     <CollapsiblePanelCard
@@ -152,34 +224,35 @@ export default function RouteTaskControlCard({
         align="end"
         gap="xs"
       >
-        <TextInput
+        <Select
           label={t("task.form.fromBlock")}
           value={fromBlockName}
-          onChange={event =>
-            setFromBlockName(
-              event.currentTarget.value
-            )
-          }
-          placeholder={t("routeTask.fromPlaceholder")}
-          w={120}
+          onChange={setFromBlockName}
+          data={blockOptions}
+          placeholder={t("task.form.fromPlaceholder")}
+          nothingFoundMessage={t("routesPanel.noBlocks")}
+          disabled={routeSelectionDisabled}
+          clearable
+          w={140}
         />
 
-        <TextInput
+        <Select
           label={t("task.form.toBlock")}
           value={toBlockName}
-          onChange={event =>
-            setToBlockName(
-              event.currentTarget.value
-            )
-          }
-          placeholder={t("routeTask.toPlaceholder")}
-          w={120}
+          onChange={setToBlockName}
+          data={blockOptions}
+          placeholder={t("task.form.toPlaceholder")}
+          nothingFoundMessage={t("routesPanel.noBlocks")}
+          disabled={routeSelectionDisabled}
+          clearable
+          w={140}
         />
 
         <Button
           color="orange"
           variant="light"
           onClick={handleReserveRoute}
+          disabled={routeActionDisabled}
         >
           {t("routeTask.setRoute")}
         </Button>
@@ -188,6 +261,7 @@ export default function RouteTaskControlCard({
           color="gray"
           variant="light"
           onClick={handleReleaseRoute}
+          disabled={routeActionDisabled}
         >
           {t("routeTask.releaseRoute")}
         </Button>
