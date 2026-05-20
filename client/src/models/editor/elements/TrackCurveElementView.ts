@@ -1,220 +1,169 @@
+import {
+  TrackCurveElement as CommonTrackCurveElement,
+} from "../../../../../common/src/layout/elements/TrackCurveElement";
+import {
+  ELEMENT_TYPES,
+} from "../../../../../common/src/layout/elementTypes";
+import {
+  drawTextWithRoundedBackground,
+} from "../../../graphics";
+import {
+  generateId,
+} from "../../../helpers";
+import {
+  TrackElementViewMixin,
+} from "../core/view/TrackElementViewMixin";
+import {
+  DrawOptions,
+  ITrackCurveElement,
+} from "../types/EditorTypes";
 
-import { drawTextWithRoundedBackground } from "../../../graphics";
-import { generateId } from "../../../helpers";
-import { TrackElement } from "../core/TrackElement";
-import { BaseElement } from "../core/BaseElement";
-import { getDirectionXy } from "../../../../../common/src/helpers";
-import { Point } from "../core/Rect";
+export class TrackCurveElementView
+  extends TrackElementViewMixin(CommonTrackCurveElement)
+  implements ITrackCurveElement {
+  override type: typeof ELEMENT_TYPES.TRACK_CURVE =
+    ELEMENT_TYPES.TRACK_CURVE;
 
-import { DrawOptions, ITrackCurveElement } from "../types/EditorTypes";
-import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
+  constructor(x: number, y: number) {
+    super(x, y);
+  }
 
-export class TrackCurveElementView extends TrackElement implements ITrackCurveElement {
+  override draw(
+    ctx: CanvasRenderingContext2D,
+    options?: DrawOptions
+  ): void {
+    if (!this.visible) return;
 
-    override type = ELEMENT_TYPES.TRACK_CURVE;
-    constructor(x: number, y: number) {
-        super(x, y);
-        this.type = ELEMENT_TYPES.TRACK_CURVE;
-        this.rotationStep = 45;
+    this.beginDraw(ctx, options);
+
+    if (!this.enabled) {
+      ctx.globalAlpha = this.alpha;
     }
 
+    ctx.lineWidth = this.TrackWidth7;
+    ctx.strokeStyle = this.TrackPrimaryColor;
 
+    this.drawCurvePath(ctx);
+    ctx.stroke();
 
-    draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
-        if (!this.visible) return;
+    ctx.lineWidth = this.TrackWidth3;
+    ctx.strokeStyle = this.stateColor;
 
-        this.beginDraw(ctx, options);
+    const w2 = this.GridSizeX / 3;
+    ctx.lineDashOffset = -w2 / 3;
+    ctx.setLineDash([w2, w2]);
 
-        if (!this.enabled) {
-            ctx.globalAlpha = this.alpha;
-        }
+    this.drawCurvePath(ctx);
+    ctx.stroke();
 
-        var w = this.GridSizeX / 2.0
-        var h = this.GridSizeY / 2.0
-        //ctx.save()
-
-        ctx.lineWidth = this.TrackWidth7;
-        ctx.strokeStyle = this.TrackPrimaryColor
-
-        if (this.rotation == 0) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.PositionY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 45) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX + this.GridSizeX / 2, this.PositionY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY + this.GridSizeY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 90) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX + this.GridSizeX, this.PositionY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 135) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 180) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.centerY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY + this.GridSizeY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 225) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.PositionY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 270) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.centerX, this.PositionY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 315) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.centerY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY);
-            ctx.stroke();
-        }
-
-        ctx.lineWidth = this.TrackWidth3;
-        ctx.strokeStyle = this.stateColor;
-
-        var w2 = this.GridSizeX / 3
-        ctx.lineDashOffset = -w2 / 3 //w3 / 2.0
-        ctx.setLineDash([w2, w2]);
-
-        if (this.rotation == 0) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.PositionY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 45) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX + this.GridSizeX / 2, this.PositionY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY + this.GridSizeY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 90) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX + this.GridSizeX, this.PositionY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 135) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 180) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.centerY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY + this.GridSizeY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 225) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.PositionY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 270) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.centerX, this.PositionY);
-            ctx.stroke();
-        }
-        else if (this.rotation == 315) {
-            ctx.beginPath();
-            ctx.moveTo(this.PositionX, this.centerY);
-            ctx.lineTo(this.centerX, this.centerY);
-            ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY);
-            ctx.stroke();
-        }
-
-        if (options?.showOccupancySensorAddress) {
-            drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.address.toString())
-        }
-
-        this.drawSectionInfo(ctx, options);
-        
-        this.endDraw(ctx);
-        super.drawSelection(ctx);
+    if (options?.showOccupancySensorAddress) {
+      drawTextWithRoundedBackground(
+        ctx,
+        this.posLeft,
+        this.posBottom - 10,
+        "#" + this.address.toString()
+      );
     }
 
-    override getNextItemXy(): Point {
-        return getDirectionXy(this.pos, this.rotation + 0)
+    this.drawSectionInfo(ctx, options);
+
+    this.endDraw(ctx);
+    super.drawSelection(ctx);
+  }
+
+  private drawCurvePath(
+    ctx: CanvasRenderingContext2D
+  ): void {
+    ctx.beginPath();
+
+    if (this.rotation == 0) {
+      ctx.moveTo(this.PositionX, this.PositionY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
+    } else if (this.rotation == 45) {
+      ctx.moveTo(this.PositionX + this.GridSizeX / 2, this.PositionY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.lineTo(
+        this.PositionX + this.GridSizeX,
+        this.PositionY + this.GridSizeY
+      );
+    } else if (this.rotation == 90) {
+      ctx.moveTo(this.PositionX + this.GridSizeX, this.PositionY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
+    } else if (this.rotation == 135) {
+      ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.lineTo(this.PositionX + this.GridSizeX, this.centerY);
+    } else if (this.rotation == 180) {
+      ctx.moveTo(this.PositionX, this.centerY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.lineTo(
+        this.PositionX + this.GridSizeX,
+        this.PositionY + this.GridSizeY
+      );
+    } else if (this.rotation == 225) {
+      ctx.moveTo(this.PositionX, this.PositionY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.lineTo(this.centerX, this.PositionY + this.GridSizeY);
+    } else if (this.rotation == 270) {
+      ctx.moveTo(this.PositionX, this.PositionY + this.GridSizeY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.lineTo(this.centerX, this.PositionY);
+    } else if (this.rotation == 315) {
+      ctx.moveTo(this.PositionX, this.centerY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.lineTo(this.PositionX + this.GridSizeX, this.PositionY);
     }
+  }
 
-    override getPrevItemXy(): Point {
-        return getDirectionXy(this.pos, this.rotation + 225)
-    }
+  override hitTest(px: number, py: number): boolean {
+    return this.x == px && this.y == py;
+  }
 
-    // getBounds(): Rect {
-    //     return {
-    //         x: this.x - this.GridSizeX,
-    //         y: this.y - this.GridSizeX,
-    //         width: this.GridSizeX,
-    //         height: this.GridSizeX,
-    //     };
-    // }
+  override toJSON(): ITrackCurveElement {
+    return {
+      ...super.toJSON(),
+      type: ELEMENT_TYPES.TRACK_CURVE,
+      address: this.address,
+      length: this.length,
+    };
+  }
 
-    hitTest(px: number, py: number): boolean {
-        //const b = this.getBounds();
-        //return px >= b.x && px <= b.x + b.width && py >= b.y && py <= b.y + b.height;
-        return this.x == px && this.y == py;
-    }
+  static fromJSON(
+    data: ITrackCurveElement
+  ): TrackCurveElementView {
+    const curve = new TrackCurveElementView(
+      data.x,
+      data.y
+    );
 
-    override toJSON(): ITrackCurveElement {
-        return {
-            ...super.toJSON(),
-            type: ELEMENT_TYPES.TRACK_CURVE,
-        };
-    }
+    curve.id = data.id;
+    curve.name = data.name;
+    curve.layerName = data.layerName;
+    curve.rotation = data.rotation;
+    curve.rotationStep = data.rotationStep;
+    curve.address = data.address;
+    curve.length = data.length;
+    curve.bg = data.bg;
+    curve.fg = data.fg;
 
-    static fromJSON(data: ITrackCurveElement): TrackCurveElementView{
-        const curve = new TrackCurveElementView(data.x, data.y);
-        curve.id = data.id;
-        curve.name = data.name;
-        curve.rotation = data.rotation;
-        curve.address = data.address;
-        curve.bg = data.bg;
-        curve.fg = data.fg;
-        return curve;        
-    }
+    return curve;
+  }
 
-    override clone(): TrackCurveElementView {
-        const copy = new TrackCurveElementView(this.x, this.y);
-        copy.id = generateId();
-        copy.rotation = this.rotation;
-        copy.rotationStep = this.rotationStep;
-        copy.selected = this.selected;
-        return copy;
-    }
+  clone(): TrackCurveElementView {
+    const copy = new TrackCurveElementView(
+      this.x,
+      this.y
+    );
 
+    copy.id = generateId();
+    copy.rotation = this.rotation;
+    copy.rotationStep = this.rotationStep;
+    copy.selected = this.selected;
+    copy.address = this.address;
+    copy.length = this.length;
+
+    return copy;
+  }
 }

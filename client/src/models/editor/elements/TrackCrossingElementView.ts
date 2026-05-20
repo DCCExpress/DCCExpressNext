@@ -1,143 +1,147 @@
+import {
+  TrackCrossingElement as CommonTrackCrossingElement,
+} from "../../../../../common/src/layout/elements/TrackCrossingElement";
+import {
+  ELEMENT_TYPES,
+} from "../../../../../common/src/layout/elementTypes";
+import {
+  drawTextWithRoundedBackground,
+} from "../../../graphics";
+import {
+  generateId,
+} from "../../../helpers";
+import {
+  TrackElementViewMixin,
+} from "../core/view/TrackElementViewMixin";
+import {
+  DrawOptions,
+  ITrackCrossingElement,
+} from "../types/EditorTypes";
 
-import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
-import { drawTextWithRoundedBackground } from "../../../graphics";
-import { generateId } from "../../../helpers";
-import { TrackElement } from "../core/TrackElement";
-import { DrawOptions, ITrackCrossingElement } from "../types/EditorTypes";
+export class TrackCrossingElementView
+  extends TrackElementViewMixin(CommonTrackCrossingElement)
+  implements ITrackCrossingElement {
+  override type: typeof ELEMENT_TYPES.TRACK_CROSSING =
+    ELEMENT_TYPES.TRACK_CROSSING;
 
-export class TrackCrossingElementView extends TrackElement implements ITrackCrossingElement {
+  constructor(x: number, y: number) {
+    super(x, y);
+  }
 
-    override type = ELEMENT_TYPES.TRACK_CROSSING;
-    constructor(x: number, y: number) {
-        super(x, y);
-        this.type = ELEMENT_TYPES.TRACK_CROSSING;
-        this.rotationStep = 45;
+  override draw(
+    ctx: CanvasRenderingContext2D,
+    options?: DrawOptions
+  ): void {
+    if (!this.visible) return;
+
+    this.beginDraw(ctx, options);
+
+    if (!this.enabled) {
+      ctx.globalAlpha = this.alpha;
     }
 
+    ctx.beginPath();
+    ctx.strokeStyle = this.TrackPrimaryColor;
+    ctx.lineWidth = this.TrackWidth7;
 
+    this.drawCrossingPath(ctx, 0);
+    ctx.stroke();
 
-    draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
-        if (!this.visible) return;
+    ctx.beginPath();
+    ctx.strokeStyle = this.stateColor;
+    ctx.lineWidth = this.TrackWidth3;
 
-        this.beginDraw(ctx, options);
+    const dx = this.width / 5;
+    this.drawCrossingPath(ctx, dx);
+    ctx.stroke();
 
-        {
-            if (!this.enabled) {
-                ctx.globalAlpha = this.alpha;
-            }
-            ctx.beginPath();
-            ctx.strokeStyle = this.TrackPrimaryColor
-            ctx.lineWidth = this.TrackWidth7;
-
-            if (this.rotation == 0 || this.rotation == 180) {
-                ctx.moveTo(this.posLeft, this.centerY)
-                ctx.lineTo(this.posRight, this.centerY)
-                ctx.moveTo(this.posLeft, this.posTop)
-                ctx.lineTo(this.posRight, this.posBottom)
-            }
-            else if (this.rotation == 45 || this.rotation == 225) {
-                ctx.moveTo(this.centerX, this.posTop)
-                ctx.lineTo(this.centerX, this.posBottom)
-                ctx.moveTo(this.posLeft, this.posTop)
-                ctx.lineTo(this.posRight, this.posBottom)
-            }
-            else if (this.rotation == 90 || this.rotation == 270) {
-                ctx.moveTo(this.centerX, this.posTop)
-                ctx.lineTo(this.centerX, this.posBottom)
-                ctx.moveTo(this.posRight, this.posTop)
-                ctx.lineTo(this.posLeft, this.posBottom)
-            }
-            else if (this.rotation == 135 || this.rotation == 315) {
-                ctx.moveTo(this.posLeft, this.centerY)
-                ctx.lineTo(this.posRight, this.centerY)
-                ctx.moveTo(this.posRight, this.posTop)
-                ctx.lineTo(this.posLeft, this.posBottom)
-            }
-            ctx.stroke()
-        }
-
-        {
-            ctx.beginPath();
-            ctx.strokeStyle = this.stateColor
-            ctx.lineWidth = this.TrackWidth3;
-
-            var dx = this.width / 5
-
-            if (this.rotation == 0 || this.rotation == 180) {
-                ctx.moveTo(this.posLeft + dx, this.centerY)
-                ctx.lineTo(this.posRight - dx, this.centerY)
-                ctx.moveTo(this.posLeft + dx, this.posTop + dx)
-                ctx.lineTo(this.posRight - dx, this.posBottom - dx)
-            }
-            else if (this.rotation == 45 || this.rotation == 225) {
-                ctx.moveTo(this.centerX, this.posTop + dx)
-                ctx.lineTo(this.centerX, this.posBottom - dx)
-                ctx.moveTo(this.posLeft + dx, this.posTop + dx)
-                ctx.lineTo(this.posRight - dx, this.posBottom - dx)
-            }
-            else if (this.rotation == 90 || this.rotation == 270) {
-                ctx.moveTo(this.centerX, this.posTop + dx)
-                ctx.lineTo(this.centerX, this.posBottom - dx)
-                ctx.moveTo(this.posRight - dx, this.posTop + dx)
-                ctx.lineTo(this.posLeft + dx, this.posBottom - dx)
-            }
-            else if (this.rotation == 135 || this.rotation == 315) {
-                ctx.moveTo(this.posLeft + dx, this.centerY)
-                ctx.lineTo(this.posRight - dx, this.centerY)
-                ctx.moveTo(this.posRight - dx, this.posTop + dx)
-                ctx.lineTo(this.posLeft + dx, this.posBottom - dx)
-            }
-            ctx.stroke()
-        }
-
-        if (options?.showOccupancySensorAddress) {
-            drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.address.toString())
-        }
-
-        this.endDraw(ctx);
-        super.drawSelection(ctx);
+    if (options?.showOccupancySensorAddress) {
+      drawTextWithRoundedBackground(
+        ctx,
+        this.posLeft,
+        this.posBottom - 10,
+        "#" + this.address.toString()
+      );
     }
 
-    // getBounds(): Rect {
-    //     return {
-    //         x: this.x - this.GridSizeX,
-    //         y: this.y - this.GridSizeX,
-    //         width: this.GridSizeX,
-    //         height: this.GridSizeX,
-    //     };
-    // }
+    this.endDraw(ctx);
+    super.drawSelection(ctx);
+  }
 
-    hitTest(px: number, py: number): boolean {
-        //const b = this.getBounds();
-        //return px >= b.x && px <= b.x + b.width && py >= b.y && py <= b.y + b.height;
-        return this.x == px && this.y == py;
+  private drawCrossingPath(
+    ctx: CanvasRenderingContext2D,
+    dx: number
+  ): void {
+    if (this.rotation == 0 || this.rotation == 180) {
+      ctx.moveTo(this.posLeft + dx, this.centerY);
+      ctx.lineTo(this.posRight - dx, this.centerY);
+      ctx.moveTo(this.posLeft + dx, this.posTop + dx);
+      ctx.lineTo(this.posRight - dx, this.posBottom - dx);
+    } else if (this.rotation == 45 || this.rotation == 225) {
+      ctx.moveTo(this.centerX, this.posTop + dx);
+      ctx.lineTo(this.centerX, this.posBottom - dx);
+      ctx.moveTo(this.posLeft + dx, this.posTop + dx);
+      ctx.lineTo(this.posRight - dx, this.posBottom - dx);
+    } else if (this.rotation == 90 || this.rotation == 270) {
+      ctx.moveTo(this.centerX, this.posTop + dx);
+      ctx.lineTo(this.centerX, this.posBottom - dx);
+      ctx.moveTo(this.posRight - dx, this.posTop + dx);
+      ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
+    } else if (this.rotation == 135 || this.rotation == 315) {
+      ctx.moveTo(this.posLeft + dx, this.centerY);
+      ctx.lineTo(this.posRight - dx, this.centerY);
+      ctx.moveTo(this.posRight - dx, this.posTop + dx);
+      ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
     }
+  }
 
-    override toJSON(): ITrackCrossingElement {
-        return {
-            ...super.toJSON(),
-            type: ELEMENT_TYPES.TRACK_CROSSING,
-        };
-    }
+  override hitTest(px: number, py: number): boolean {
+    return this.x == px && this.y == py;
+  }
 
-    static fromJSON(data: ITrackCrossingElement) : TrackCrossingElementView {
-        const e = new TrackCrossingElementView(data.x, data.y);
-        e.id = data.id;
-        e.name = data.name;
-        e.rotation = data.rotation;
-        e.address = data.address;
-        e.bg = data.bg;
-        e.fg = data.fg;
-        return e;
+  override toJSON(): ITrackCrossingElement {
+    return {
+      ...super.toJSON(),
+      type: ELEMENT_TYPES.TRACK_CROSSING,
+      address: this.address,
+      length: this.length,
+    };
+  }
 
-    }
-    override clone(): TrackCrossingElementView {
-        const copy = new TrackCrossingElementView(this.x, this.y);
-        copy.id = generateId();
-        copy.rotation = this.rotation;
-        copy.rotationStep = this.rotationStep;
-        copy.selected = this.selected;
-        return copy;
-    }
+  static fromJSON(
+    data: ITrackCrossingElement
+  ): TrackCrossingElementView {
+    const element = new TrackCrossingElementView(
+      data.x,
+      data.y
+    );
 
+    element.id = data.id;
+    element.name = data.name;
+    element.layerName = data.layerName;
+    element.rotation = data.rotation;
+    element.rotationStep = data.rotationStep;
+    element.address = data.address;
+    element.length = data.length;
+    element.bg = data.bg;
+    element.fg = data.fg;
+
+    return element;
+  }
+
+  clone(): TrackCrossingElementView {
+    const copy = new TrackCrossingElementView(
+      this.x,
+      this.y
+    );
+
+    copy.id = generateId();
+    copy.rotation = this.rotation;
+    copy.rotationStep = this.rotationStep;
+    copy.selected = this.selected;
+    copy.address = this.address;
+    copy.length = this.length;
+
+    return copy;
+  }
 }

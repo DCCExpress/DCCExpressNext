@@ -1,138 +1,157 @@
-import { drawTextWithRoundedBackground } from "../../../graphics";
-import { generateId } from "../../../helpers";
-import { TrackElement } from "../core/TrackElement";
-import { BaseElement } from "../core/BaseElement";
-import { sampleLayout } from "../sample/sampleLayout";
-import { DrawOptions, ITrackEndElement } from "../types/EditorTypes";
-import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
+import {
+  TrackEndElement as CommonTrackEndElement,
+} from "../../../../../common/src/layout/elements/TrackEndElement";
+import {
+  ELEMENT_TYPES,
+} from "../../../../../common/src/layout/elementTypes";
+import {
+  drawTextWithRoundedBackground,
+} from "../../../graphics";
+import {
+  generateId,
+} from "../../../helpers";
+import {
+  TrackElementViewMixin,
+} from "../core/view/TrackElementViewMixin";
+import {
+  DrawOptions,
+  ITrackEndElement,
+} from "../types/EditorTypes";
 
-export class TrackEndElementView extends TrackElement implements ITrackEndElement {
-    override type = ELEMENT_TYPES.TRACK_END
-    constructor(x: number, y: number) {
-        super(x, y);
-        this.rotationStep = 45;
+export class TrackEndElementView
+  extends TrackElementViewMixin(CommonTrackEndElement)
+  implements ITrackEndElement {
+  override type: typeof ELEMENT_TYPES.TRACK_END =
+    ELEMENT_TYPES.TRACK_END;
+
+  constructor(x: number, y: number) {
+    super(x, y);
+  }
+
+  override draw(
+    ctx: CanvasRenderingContext2D,
+    options?: DrawOptions
+  ): void {
+    if (!this.visible) return;
+
+    this.beginDraw(ctx, options);
+
+    if (!this.enabled) {
+      ctx.globalAlpha = this.alpha;
     }
 
-    draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
-        if (!this.visible) return;
+    const h = this.GridSizeY / 4.0;
 
-        this.beginDraw(ctx, options);
+    ctx.translate(this.centerX, this.centerY);
+    ctx.rotate(this.rotation * Math.PI / 180);
+    ctx.translate(-this.centerX, -this.centerY);
 
-        {
-            if (!this.enabled) {
-                ctx.globalAlpha = this.alpha;
-            }
+    ctx.lineWidth = this.TrackWidth7;
+    ctx.strokeStyle = this.TrackPrimaryColor;
 
-            var h = this.GridSizeY / 4.0
+    if (this.rotation % 90 == 0) {
+      ctx.beginPath();
+      ctx.moveTo(this.PositionX, this.centerY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.moveTo(this.centerX, this.centerY - h);
+      ctx.lineTo(this.centerX, this.centerY + h);
+      ctx.stroke();
+    } else {
+      const r = this.GridSizeX / 2;
+      const l = Math.sqrt(2 * r * r);
 
-
-            ctx.translate(this.centerX, this.centerY);
-            ctx.rotate(this.rotation * Math.PI / 180);
-            ctx.translate(-this.centerX, -this.centerY);
-
-            ctx.lineWidth = this.TrackWidth7;
-            ctx.strokeStyle = this.TrackPrimaryColor
-
-            if (this.rotation % 90 == 0) {
-                ctx.beginPath();
-                ctx.moveTo(this.PositionX, this.centerY);
-                ctx.lineTo(this.centerX, this.centerY);
-                ctx.moveTo(this.centerX, this.centerY - h);
-                ctx.lineTo(this.centerX, this.centerY + h);
-                ctx.stroke();
-            } else {
-                var r = this.GridSizeX / 2
-                var l = Math.sqrt(2 * r * r)
-
-                ctx.beginPath();
-                ctx.moveTo(this.centerX - l, this.centerY);
-                ctx.lineTo(this.centerX, this.centerY);
-                ctx.moveTo(this.centerX, this.centerY - h);
-                ctx.lineTo(this.centerX, this.centerY + h);
-                ctx.stroke();
-            }
-
-            ctx.lineWidth = this.TrackWidth3;
-            ctx.strokeStyle = this.stateColor;
-
-
-            const p = this.GridSizeX / 4;
-            if (this.rotation % 90 == 0) {
-                ctx.beginPath();
-                ctx.moveTo(this.PositionX + p, this.centerY);
-                ctx.lineTo(this.centerX - this.TrackWidth7 / 2, this.centerY);
-                ctx.stroke();
-            } else {
-                var r = this.GridSizeX / 2
-                var l = Math.sqrt(2 * r * r) - p
-
-                ctx.beginPath();
-                ctx.moveTo(this.centerX - l, this.centerY);
-                ctx.lineTo(this.centerX - this.TrackWidth7 / 2, this.centerY);
-                ctx.stroke();
-            }
-        }
-
-        // drawPolarLine(ctx, this.centerX, this.centerY, settings.GridSizeX / 4, this.angle , color, settings.TrackWidth3)
-        // // ctx.beginPath();
-
-        this.endDraw(ctx);
-
-        this.beginDraw(ctx)
-        if (options?.showOccupancySensorAddress) {
-            drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.address.toString())
-        }
-        this.endDraw(ctx);
-
-
-        super.drawSelection(ctx);
-        //super.draw(ctx)
+      ctx.beginPath();
+      ctx.moveTo(this.centerX - l, this.centerY);
+      ctx.lineTo(this.centerX, this.centerY);
+      ctx.moveTo(this.centerX, this.centerY - h);
+      ctx.lineTo(this.centerX, this.centerY + h);
+      ctx.stroke();
     }
 
-    // getBounds(): Rect {
-    //     return {
-    //         x: this.x - this.GridSizeX,
-    //         y: this.y - this.GridSizeX,
-    //         width: this.GridSizeX,
-    //         height: this.GridSizeX,
-    //     };
-    // }
+    ctx.lineWidth = this.TrackWidth3;
+    ctx.strokeStyle = this.stateColor;
 
-    hitTest(px: number, py: number): boolean {
-        //const b = this.getBounds();
-        //return px >= b.x && px <= b.x + b.width && py >= b.y && py <= b.y + b.height;
-        return this.x == px && this.y == py;
+    const p = this.GridSizeX / 4;
+
+    if (this.rotation % 90 == 0) {
+      ctx.beginPath();
+      ctx.moveTo(this.PositionX + p, this.centerY);
+      ctx.lineTo(this.centerX - this.TrackWidth7 / 2, this.centerY);
+      ctx.stroke();
+    } else {
+      const r = this.GridSizeX / 2;
+      const l = Math.sqrt(2 * r * r) - p;
+
+      ctx.beginPath();
+      ctx.moveTo(this.centerX - l, this.centerY);
+      ctx.lineTo(this.centerX - this.TrackWidth7 / 2, this.centerY);
+      ctx.stroke();
     }
 
-    override toJSON(): ITrackEndElement {
-        return {
-            ...super.toJSON(),
-            type: ELEMENT_TYPES.TRACK_END
-            // type: "trackend",
-            // trackType: this.trackType,
-            // length: this.length,
-        };
+    this.endDraw(ctx);
+
+    this.beginDraw(ctx);
+
+    if (options?.showOccupancySensorAddress) {
+      drawTextWithRoundedBackground(
+        ctx,
+        this.posLeft,
+        this.posBottom - 10,
+        "#" + this.address.toString()
+      );
     }
 
-        static fromJSON(data: ITrackEndElement): TrackEndElementView {
-            const track = new TrackEndElementView(data.x, data.y);
-            track.id = data.id;
-            track.name = data.name;
-            track.rotation = data.rotation;
-            track.address = data.address;
-            track.bg = data.bg;
-            track.fg = data.fg;
-            return track;
-        }
-    
+    this.endDraw(ctx);
+    super.drawSelection(ctx);
+  }
 
-    override clone(): TrackEndElementView {
-        const copy = new TrackEndElementView(this.x, this.y);
-        copy.id = generateId();
-        copy.rotation = this.rotation;
-        copy.rotationStep = this.rotationStep;
-        copy.selected = this.selected;
-        return copy;
-    }
+  override hitTest(px: number, py: number): boolean {
+    return this.x == px && this.y == py;
+  }
 
+  override toJSON(): ITrackEndElement {
+    return {
+      ...super.toJSON(),
+      type: ELEMENT_TYPES.TRACK_END,
+      address: this.address,
+      length: this.length,
+    };
+  }
+
+  static fromJSON(
+    data: ITrackEndElement
+  ): TrackEndElementView {
+    const track = new TrackEndElementView(
+      data.x,
+      data.y
+    );
+
+    track.id = data.id;
+    track.name = data.name;
+    track.layerName = data.layerName;
+    track.rotation = data.rotation;
+    track.rotationStep = data.rotationStep;
+    track.address = data.address;
+    track.length = data.length;
+    track.bg = data.bg;
+    track.fg = data.fg;
+
+    return track;
+  }
+
+  clone(): TrackEndElementView {
+    const copy = new TrackEndElementView(
+      this.x,
+      this.y
+    );
+
+    copy.id = generateId();
+    copy.rotation = this.rotation;
+    copy.rotationStep = this.rotationStep;
+    copy.selected = this.selected;
+    copy.address = this.address;
+    copy.length = this.length;
+
+    return copy;
+  }
 }
