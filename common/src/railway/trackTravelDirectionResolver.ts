@@ -3,8 +3,9 @@
 import {
   RailwayTopologyLayout,
   TopologyDirectionElement,
-  TopologyTrackElement,
-  TopologyTurnoutElement,
+  type TopologyTrackElement,
+  type TopologyTurnoutElement,
+  isTopologyTurnoutElement,
   type TravelDirection,
 } from "./topology.js";
 
@@ -249,7 +250,7 @@ export class TrackTravelDirectionResolver {
   private getConnectionPoints(
     element: TopologyTrackElement
   ): ConnectionPoint[] {
-    if (element instanceof TopologyTurnoutElement) {
+    if (isTopologyTurnoutElement(element)) {
       const connections = element.getConnections();
 
       return [
@@ -303,7 +304,7 @@ export class TrackTravelDirectionResolver {
       return null;
     }
 
-    if (element instanceof TopologyTurnoutElement) {
+    if (isTopologyTurnoutElement(element)) {
       if (direction === "forward") {
         return side === "entry"
           ? "backward"
@@ -331,7 +332,7 @@ export class TrackTravelDirectionResolver {
     side: ConnectionSide,
     desiredFlowSide: FlowSide
   ): TravelDirection {
-    if (element instanceof TopologyTurnoutElement) {
+    if (isTopologyTurnoutElement(element)) {
       if (desiredFlowSide === "forward") {
         return side === "entry"
           ? "reverse"

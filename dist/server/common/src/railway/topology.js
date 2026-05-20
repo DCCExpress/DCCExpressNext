@@ -1,235 +1,203 @@
 // common/src/railway/topology.ts
-import { ELEMENT_TYPES } from "../layout/elementTypes.js";
-export class TopologyPoint {
-    x;
-    y;
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    isEqual(other) {
-        return this.x === other.x && this.y === other.y;
-    }
-    key() {
-        return `${this.x}:${this.y}`;
-    }
-}
-const directions = [
-    { x: 1, y: 0 }, // 0°
-    { x: 1, y: 1 }, // 45°
-    { x: 0, y: 1 }, // 90°
-    { x: -1, y: 1 }, // 135°
-    { x: -1, y: 0 }, // 180°
-    { x: -1, y: -1 }, // 225°
-    { x: 0, y: -1 }, // 270°
-    { x: 1, y: -1 }, // 315°
-];
-export function getDirection(angle) {
-    const a = ((angle % 360) + 360) % 360;
-    const index = Math.round(a / 45) % directions.length;
-    return directions[index];
-}
+import { getDirection, getDirectionXy, } from "../helpers.js";
+import { ELEMENT_TYPES, } from "../layout/elementTypes.js";
+import { TrackStraightElement, } from "../layout/elements/TrackStraightElement.js";
+import { TrackDirectionElement, } from "../layout/elements/TrackDirectionElement.js";
+import { TrackEndElement, } from "../layout/elements/TrackEndElement.js";
+import { TrackCornerElement, } from "../layout/elements/TrackCornerElement.js";
+import { TrackCurveElement, } from "../layout/elements/TrackCurveElement.js";
+import { TrackCrossingElement, } from "../layout/elements/TrackCrossingElement.js";
+import { TrackTurnoutLeftElement, } from "../layout/elements/TrackTurnoutLeftElement.js";
+import { TrackTurnoutRightElement, } from "../layout/elements/TrackTurnoutRightElement.js";
+import { BlockElement, } from "../layout/elements/BlockElement.js";
+import { TrackSensorElement, } from "../layout/elements/TrackSensorElement.js";
+import { TrackSignalElement, } from "../layout/elements/TrackSignalElement.js";
+/**
+ * Régi export kompatibilitás.
+ */
+export { getDirection };
 export function getDirectionPoint(point, angle) {
-    const d = getDirection(angle);
-    return new TopologyPoint(point.x + d.x, point.y + d.y);
+    return getDirectionXy(point, angle);
 }
-export class TopologyBaseElement {
-    id;
-    type;
-    name;
-    layerName;
-    x;
-    y;
-    rotation;
-    trackName;
-    constructor(data) {
-        this.id =
-            typeof data.id === "string"
-                ? data.id
-                : "";
-        this.type =
-            typeof data.type === "string"
-                ? data.type
-                : "";
-        this.name =
-            typeof data.name === "string"
-                ? data.name
-                : "element";
-        this.layerName =
-            typeof data.layerName === "string"
-                ? data.layerName
-                : "";
-        this.x =
-            typeof data.x === "number"
-                ? data.x
-                : 0;
-        this.y =
-            typeof data.y === "number"
-                ? data.y
-                : 0;
-        this.rotation =
-            typeof data.rotation === "number"
-                ? data.rotation
-                : 0;
-        this.trackName =
-            typeof data.trackName === "string"
-                ? data.trackName
-                : "";
-    }
-    get pos() {
-        return new TopologyPoint(this.x, this.y);
-    }
+function numberValue(value, fallback) {
+    return typeof value === "number"
+        ? value
+        : fallback;
 }
-export class TopologyTrackElement extends TopologyBaseElement {
-    address;
-    section = 0;
-    isVisited = false;
-    isRoute = false;
-    travelDirection = "unknown";
+function stringValue(value, fallback) {
+    return typeof value === "string"
+        ? value
+        : fallback;
+}
+function rotationStepValue(value, fallback) {
+    return value === 0 || value === 45 || value === 90
+        ? value
+        : fallback;
+}
+function boolValue(value, fallback) {
+    return typeof value === "boolean"
+        ? value
+        : fallback;
+}
+function applyBaseData(element, data) {
+    element.id = stringValue(data.id, "");
+    element.name = stringValue(data.name, "element");
+    element.layerName = stringValue(data.layerName, element.layerName);
+    element.rotation = numberValue(data.rotation, element.rotation);
+    element.rotationStep = rotationStepValue(data.rotationStep, element.rotationStep);
+    element.bg = stringValue(data.bg, element.bg);
+    element.fg = stringValue(data.fg, element.fg);
+    element.trackName = stringValue(data.trackName, "");
+    return element;
+}
+function applyTrackData(element, data) {
+    applyBaseData(element, data);
+    element.address = numberValue(data.address, element.address);
+    element.length = numberValue(data.length, element.length);
+    return element;
+}
+/**
+ * A topology réteg most már a grafikamentes common domain elemekből származik.
+ * Ezek az adapterek csak:
+ * - toleráns SerializedLayoutElementDto beolvasást,
+ * - és a korábbi topology API kompatibilis metódusneveit
+ * adják hozzá.
+ */
+export class TopologyStraightElement extends TrackStraightElement {
     constructor(data) {
-        super(data);
-        this.address =
-            typeof data.address === "number"
-                ? data.address
-                : 0;
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
     }
     getNextItemPoint() {
-        switch (this.type) {
-            case ELEMENT_TYPES.TRACK_CORNER:
-                return getDirectionPoint(this.pos, this.rotation + 90);
-            case ELEMENT_TYPES.TRACK_CURVE:
-                return getDirectionPoint(this.pos, this.rotation);
-            default:
-                return getDirectionPoint(this.pos, this.rotation);
-        }
+        return this.getNextItemXy();
     }
     getPrevItemPoint() {
-        switch (this.type) {
-            case ELEMENT_TYPES.TRACK_CORNER:
-                return getDirectionPoint(this.pos, this.rotation - 180);
-            case ELEMENT_TYPES.TRACK_CURVE:
-                return getDirectionPoint(this.pos, this.rotation + 225);
-            default:
-                return getDirectionPoint(this.pos, this.rotation + 180);
-        }
+        return this.getPrevItemXy();
     }
 }
-export class TopologyTurnoutElement extends TopologyTrackElement {
-    turnoutAddress;
-    turnoutClosedValue;
+export class TopologyDirectionElement extends TrackDirectionElement {
     constructor(data) {
-        super(data);
-        this.turnoutAddress =
-            typeof data.turnoutAddress === "number"
-                ? data.turnoutAddress
-                : 0;
-        this.turnoutClosedValue =
-            typeof data.turnoutClosedValue === "boolean"
-                ? data.turnoutClosedValue
-                : false;
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
     }
-    getConnections() {
-        if (this.type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT) {
-            return {
-                straight: getDirectionPoint(this.pos, -this.rotation),
-                entry: getDirectionPoint(this.pos, -this.rotation + 180),
-                div: getDirectionPoint(this.pos, -this.rotation - 45),
-            };
-        }
-        return {
-            straight: getDirectionPoint(this.pos, this.rotation),
-            entry: getDirectionPoint(this.pos, this.rotation + 180),
-            div: getDirectionPoint(this.pos, this.rotation + 45),
-        };
+    getNextItemPoint() {
+        return this.getNextItemXy();
+    }
+    getPrevItemPoint() {
+        return this.getPrevItemXy();
     }
 }
-export class TopologyBlockElement extends TopologyTrackElement {
-    length;
-    sensorAddress;
-    blockType;
+export class TopologyEndElement extends TrackEndElement {
     constructor(data) {
-        super(data);
-        this.length =
-            typeof data.length === "number"
-                ? data.length
-                : 1;
-        this.sensorAddress =
-            typeof data.sensorAddress === "number"
-                ? data.sensorAddress
-                : 0;
-        this.blockType =
-            typeof data.blockType === "string"
-                ? data.blockType
-                : "normal";
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
     }
-    /**
-     * Ugyanaz a logika, mint a kliens BlockElement.getBounds()-ában:
-     * a blokk középpontja a sín cellája, vízszintesen 3x1,
-     * függőlegesen 1x3 mezőt fed.
-     */
-    getBounds() {
-        const w = 3;
-        const h = 1;
-        if (this.rotation === 0 || this.rotation === 180) {
-            return {
-                x: this.x - 1,
-                y: this.y,
-                width: w,
-                height: h,
-            };
-        }
-        return {
-            x: this.x,
-            y: this.y - 1,
-            width: h,
-            height: w,
-        };
+    getNextItemPoint() {
+        return this.getNextItemXy();
+    }
+    getPrevItemPoint() {
+        return this.getPrevItemXy();
     }
 }
-export class TopologySensorElement extends TopologyTrackElement {
+export class TopologyCornerElement extends TrackCornerElement {
     constructor(data) {
-        super(data);
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
+    }
+    getNextItemPoint() {
+        return this.getNextItemXy();
+    }
+    getPrevItemPoint() {
+        return this.getPrevItemXy();
     }
 }
-export class TopologySignalElement extends TopologyTrackElement {
-    aspect;
-    addressLength;
-    valueGreen;
-    valueRed;
-    valueYellow;
-    valueWhite;
+export class TopologyCurveElement extends TrackCurveElement {
     constructor(data) {
-        super(data);
-        this.aspect =
-            typeof data.aspect === "number"
-                ? data.aspect
-                : 2;
-        this.addressLength =
-            typeof data.addressLength === "number"
-                ? data.addressLength
-                : 1;
-        this.valueGreen =
-            typeof data.valueGreen === "number"
-                ? data.valueGreen
-                : 0;
-        this.valueRed =
-            typeof data.valueRed === "number"
-                ? data.valueRed
-                : 0;
-        this.valueYellow =
-            typeof data.valueYellow === "number"
-                ? data.valueYellow
-                : 0;
-        this.valueWhite =
-            typeof data.valueWhite === "number"
-                ? data.valueWhite
-                : 0;
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
+    }
+    getNextItemPoint() {
+        return this.getNextItemXy();
+    }
+    getPrevItemPoint() {
+        return this.getPrevItemXy();
     }
 }
-export class TopologyDirectionElement extends TopologyTrackElement {
+export class TopologyCrossingElement extends TrackCrossingElement {
     constructor(data) {
-        super(data);
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
     }
+    getNextItemPoint() {
+        return this.getNextItemXy();
+    }
+    getPrevItemPoint() {
+        return this.getPrevItemXy();
+    }
+}
+export class TopologyTurnoutLeftElement extends TrackTurnoutLeftElement {
+    constructor(data) {
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
+        this.turnoutAddress = numberValue(data.turnoutAddress, this.turnoutAddress);
+        this.turnoutClosedValue = boolValue(data.turnoutClosedValue, this.turnoutClosedValue);
+    }
+    getNextItemPoint() {
+        return this.getNextItemXy();
+    }
+    getPrevItemPoint() {
+        return this.getPrevItemXy();
+    }
+}
+export class TopologyTurnoutRightElement extends TrackTurnoutRightElement {
+    constructor(data) {
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
+        this.turnoutAddress = numberValue(data.turnoutAddress, this.turnoutAddress);
+        this.turnoutClosedValue = boolValue(data.turnoutClosedValue, this.turnoutClosedValue);
+    }
+    getNextItemPoint() {
+        return this.getNextItemXy();
+    }
+    getPrevItemPoint() {
+        return this.getPrevItemXy();
+    }
+}
+export class TopologyBlockElement extends BlockElement {
+    constructor(data) {
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
+        this.sensorAddress = numberValue(data.sensorAddress, this.sensorAddress);
+        this.locoAddress = numberValue(data.locoAddress, this.locoAddress);
+        this.blockType = stringValue(data.blockType, this.blockType);
+    }
+}
+export class TopologySensorElement extends TrackSensorElement {
+    constructor(data) {
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
+        this.radius = numberValue(data.radius, this.radius);
+        this.colorOn = stringValue(data.colorOn, this.colorOn);
+        this.colorOff = stringValue(data.colorOff, this.colorOff);
+        this.kind = numberValue(data.kind, this.kind);
+    }
+}
+export class TopologySignalElement extends TrackSignalElement {
+    constructor(data) {
+        super(numberValue(data.x, 0), numberValue(data.y, 0));
+        applyTrackData(this, data);
+        this.aspect = numberValue(data.aspect, this.aspect);
+        this.addressLength = numberValue(data.addressLength, this.addressLength);
+        this.dispalyAsSingleLamp = boolValue(data.dispalyAsSingleLamp, this.dispalyAsSingleLamp);
+        this.valueGreen = numberValue(data.valueGreen, this.valueGreen);
+        this.valueRed = numberValue(data.valueRed, this.valueRed);
+        this.valueYellow = numberValue(data.valueYellow, this.valueYellow);
+        this.valueWhite = numberValue(data.valueWhite, this.valueWhite);
+    }
+}
+export function isTopologyTurnoutElement(element) {
+    return (element instanceof TopologyTurnoutLeftElement ||
+        element instanceof TopologyTurnoutRightElement);
 }
 export class RailwayTopologyLayout {
     elements;
@@ -240,19 +208,16 @@ export class RailwayTopologyLayout {
         return this.elements;
     }
     getPhysicalTrackElements() {
-        return this.elements.filter((element) => {
-            return (element.type === ELEMENT_TYPES.TRACK_DIRECTION ||
-                element.type === ELEMENT_TYPES.TRACK_STRAIGHT ||
-                element.type === ELEMENT_TYPES.TRACK_END ||
-                element.type === ELEMENT_TYPES.TRACK_CORNER ||
-                element.type === ELEMENT_TYPES.TRACK_CURVE ||
-                element.type === ELEMENT_TYPES.TRACK_CROSSING ||
-                element.type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT ||
-                element.type === ELEMENT_TYPES.TRACK_TURNOUT_RIGHT);
-        });
+        return this.elements.filter((element) => element instanceof TopologyStraightElement ||
+            element instanceof TopologyDirectionElement ||
+            element instanceof TopologyEndElement ||
+            element instanceof TopologyCornerElement ||
+            element instanceof TopologyCurveElement ||
+            element instanceof TopologyCrossingElement ||
+            isTopologyTurnoutElement(element));
     }
     getTurnouts() {
-        return this.elements.filter((element) => element instanceof TopologyTurnoutElement);
+        return this.elements.filter(isTopologyTurnoutElement);
     }
     getBlocks() {
         return this.elements.filter((element) => element instanceof TopologyBlockElement);
@@ -267,7 +232,8 @@ export class RailwayTopologyLayout {
         return this.elements.filter((element) => element instanceof TopologyDirectionElement);
     }
     getPhysicalTrackAt(point) {
-        return this.getPhysicalTrackElements().find(element => element.x === point.x && element.y === point.y);
+        return this.getPhysicalTrackElements().find(element => element.x === point.x &&
+            element.y === point.y);
     }
     getElementById(id) {
         return this.elements.find(element => element.id === id);
@@ -292,14 +258,21 @@ export function buildRailwayTopologyFromLayout(layout) {
 function createTopologyElement(data) {
     switch (data.type) {
         case ELEMENT_TYPES.TRACK_STRAIGHT:
+            return new TopologyStraightElement(data);
+        case ELEMENT_TYPES.TRACK_DIRECTION:
+            return new TopologyDirectionElement(data);
         case ELEMENT_TYPES.TRACK_END:
+            return new TopologyEndElement(data);
         case ELEMENT_TYPES.TRACK_CORNER:
+            return new TopologyCornerElement(data);
         case ELEMENT_TYPES.TRACK_CURVE:
+            return new TopologyCurveElement(data);
         case ELEMENT_TYPES.TRACK_CROSSING:
-            return new TopologyTrackElement(data);
+            return new TopologyCrossingElement(data);
         case ELEMENT_TYPES.TRACK_TURNOUT_LEFT:
+            return new TopologyTurnoutLeftElement(data);
         case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT:
-            return new TopologyTurnoutElement(data);
+            return new TopologyTurnoutRightElement(data);
         case ELEMENT_TYPES.TRACK_BLOCK:
             return new TopologyBlockElement(data);
         case ELEMENT_TYPES.TRACK_SENSOR:
@@ -308,8 +281,6 @@ function createTopologyElement(data) {
         case ELEMENT_TYPES.TRACK_SIGNAL3:
         case ELEMENT_TYPES.TRACK_SIGNAL4:
             return new TopologySignalElement(data);
-        case ELEMENT_TYPES.TRACK_DIRECTION:
-            return new TopologyDirectionElement(data);
         default:
             return null;
     }

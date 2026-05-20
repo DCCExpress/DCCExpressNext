@@ -1,5 +1,5 @@
 // common/src/railway/trackTravelDirectionResolver.ts
-import { TopologyDirectionElement, TopologyTurnoutElement, } from "./topology.js";
+import { TopologyDirectionElement, isTopologyTurnoutElement, } from "./topology.js";
 export class TrackTravelDirectionResolver {
     topology;
     constructor(topology) {
@@ -118,7 +118,7 @@ export class TrackTravelDirectionResolver {
         return result;
     }
     getConnectionPoints(element) {
-        if (element instanceof TopologyTurnoutElement) {
+        if (isTopologyTurnoutElement(element)) {
             const connections = element.getConnections();
             return [
                 {
@@ -159,7 +159,7 @@ export class TrackTravelDirectionResolver {
         if (direction === "unknown") {
             return null;
         }
-        if (element instanceof TopologyTurnoutElement) {
+        if (isTopologyTurnoutElement(element)) {
             if (direction === "forward") {
                 return side === "entry"
                     ? "backward"
@@ -179,7 +179,7 @@ export class TrackTravelDirectionResolver {
             : "forward";
     }
     getTravelDirectionForFlowSide(element, side, desiredFlowSide) {
-        if (element instanceof TopologyTurnoutElement) {
+        if (isTopologyTurnoutElement(element)) {
             if (desiredFlowSide === "forward") {
                 return side === "entry"
                     ? "reverse"

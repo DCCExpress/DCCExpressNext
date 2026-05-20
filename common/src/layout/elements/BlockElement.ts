@@ -6,6 +6,9 @@ import {
 import type {
   BlockElementDto,
 } from "../layoutDto.js";
+import type {
+  IRect,
+} from "../../Rect.js";
 import {
   TrackElement,
 } from "../model/TrackElement.js";
@@ -27,6 +30,29 @@ export class BlockElement extends TrackElement {
     this.rotationStep = 90;
     this.w = 3;
     this.h = 1;
+  }
+
+  /**
+   * Domain oldalon is szükséges:
+   * a szerver route graph ebből állapítja meg,
+   * melyik fizikai sín elem esik a blokk vizuális területére.
+   */
+  override getBounds(): IRect {
+    if (this.rotation === 0 || this.rotation === 180) {
+      return {
+        x: this.x - 1,
+        y: this.y,
+        width: this.w,
+        height: this.h,
+      };
+    }
+
+    return {
+      x: this.x,
+      y: this.y - 1,
+      width: this.h,
+      height: this.w,
+    };
   }
 
   static fromJSON(data: BlockElementDto): BlockElement {

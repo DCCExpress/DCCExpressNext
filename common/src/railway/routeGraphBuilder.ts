@@ -13,11 +13,12 @@ import {
 import {
   RailwayTopologyLayout,
   TopologyBlockElement,
-  TopologyPoint,
+  type TopologyPoint,
   TopologySensorElement,
   TopologySignalElement,
-  TopologyTrackElement,
-  TopologyTurnoutElement,
+  type TopologyTrackElement,
+  type TopologyTurnoutElement,
+  isTopologyTurnoutElement,
   type TravelDirection,
 } from "./topology.js";
 import { TrackTravelDirectionResolver } from "./trackTravelDirectionResolver.js";
@@ -107,7 +108,7 @@ export class RouteGraphBuilder {
           continue;
         }
 
-        if (firstElem instanceof TopologyTurnoutElement) {
+        if (isTopologyTurnoutElement(firstElem)) {
           continue;
         }
 
@@ -125,23 +126,14 @@ export class RouteGraphBuilder {
       this.topology.getDirectionElements();
 
     for (const directionElement of directionElements) {
-      /**
-       * Ha ezt a pályahálózatot már a váltók felől
-       * megtalálta a discoverPhysicalSections(),
-       * akkor nem csinálunk vele semmit.
-       */
       if (directionElement.isVisited) {
         continue;
       }
 
-      /**
-       * Ez tipikusan a váltó nélküli pálya esete.
-       * Innen indulva az egész összefüggő sínrendszer
-       * egy fizikai szakaszként feltárható.
-       */
       this.createPhysicalSection(directionElement);
     }
   }
+
   private createPhysicalSection(
     firstElem: TopologyTrackElement
   ): void {
@@ -163,22 +155,6 @@ export class RouteGraphBuilder {
 
     this.graph.addNode(node);
     this.sectionNodes.set(sectionNumber, node);
-
-    // console.log(
-    //   `[ServerRouteGraph] Section S${sectionNumber}:`,
-    //   sectionElements.map(elem => ({
-    //     id: elem.id,
-    //     type: elem.type,
-    //     x: elem.x,
-    //     y: elem.y,
-    //     rotation: elem.rotation,
-    //   }))
-    // );
-
-    // console.log(
-    //   `[ServerRouteGraph] Section S${sectionNumber} blocks:`,
-    //   node.blocks.map(block => block.name)
-    // );
   }
 
   private walkTrackSection(
@@ -222,7 +198,7 @@ export class RouteGraphBuilder {
       return;
     }
 
-    if (next instanceof TopologyTurnoutElement) {
+    if (isTopologyTurnoutElement(next)) {
       return;
     }
 
@@ -407,15 +383,6 @@ export class RouteGraphBuilder {
     for (const turnout of this.turnouts) {
       const connections = turnout.getConnections();
 
-      // console.log(
-      //   `[ServerRouteGraph] Turnout ${turnout.turnoutAddress} ${turnout.type} @ ${turnout.x}:${turnout.y}`,
-      //   {
-      //     entry: connections.entry,
-      //     straight: connections.straight,
-      //     div: connections.div,
-      //   }
-      // );
-
       const sides: TurnoutSide[] = [
         "entry",
         "straight",
@@ -427,30 +394,12 @@ export class RouteGraphBuilder {
           this.topology.getPhysicalTrackAt(
             connections[side]
           );
-        // console.log(
-        //   `[ServerRouteGraph]   side=${side}`,
-        //   {
-        //     at: connections[side],
-        //     found: connectedElem
-        //       ? {
-        //         type: connectedElem.type,
-        //         x: connectedElem.x,
-        //         y: connectedElem.y,
-        //         section: connectedElem.section,
-        //         isTurnout:
-        //           connectedElem instanceof TopologyTurnoutElement,
-        //       }
-        //       : null,
-        //   }
-        // );
 
         if (!connectedElem) {
           continue;
         }
 
-        if (
-          connectedElem instanceof TopologyTurnoutElement
-        ) {
+        if (isTopologyTurnoutElement(connectedElem)) {
           continue;
         }
 
@@ -467,11 +416,6 @@ export class RouteGraphBuilder {
           continue;
         }
 
-        /**
-         * A szerveroldali direction resolver még nincs áthozva,
-         * ezért most unknown.
-         * A következő körben ezt is portoljuk.
-         */
         const locoDirection =
           this.getLocoDirectionFromSectionTowardsTurnout(
             connectedElem,
@@ -531,30 +475,11 @@ export class RouteGraphBuilder {
       const nextElem =
         this.topology.getPhysicalTrackAt(exitPos);
 
-      // console.log(
-      //   `[ServerRouteGraph]     turnout ${turnout.turnoutAddress} exit=${exit.exitSide}`,
-      //   {
-      //     exitPos,
-      //     found: nextElem
-      //       ? {
-      //         type: nextElem.type,
-      //         x: nextElem.x,
-      //         y: nextElem.y,
-      //         section: nextElem.section,
-      //         isTurnout:
-      //           nextElem instanceof TopologyTurnoutElement,
-      //       }
-      //       : null,
-      //   }
-      // );
-
       if (!nextElem) {
         continue;
       }
 
-      if (
-        !(nextElem instanceof TopologyTurnoutElement)
-      ) {
+      if (!isTopologyTurnoutElement(nextElem)) {
         this.finishRouteEdge(
           fromNode,
           nextElem,
@@ -652,13 +577,6 @@ export class RouteGraphBuilder {
     turnout: TopologyTurnoutElement,
     enteredSide: TurnoutSide
   ): TurnoutExit[] {
-    /**
-     * FONTOS:
-     * closed = logikai, képen látható állapot.
-     *
-     * true  = straight / closed
-     * false = diverging / thrown
-     */
     const straightState: TurnoutStateRequirement = {
       address: turnout.turnoutAddress,
       closed: true,
@@ -720,6 +638,7 @@ export class RouteGraphBuilder {
 
     return undefined;
   }
+
   private getLocoDirectionFromSectionTowardsTurnout(
     sectionElem: TopologyTrackElement,
     turnout: TopologyTurnoutElement
