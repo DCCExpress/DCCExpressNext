@@ -69,6 +69,27 @@ export type {
 } from "../layout/model/TrackElement.js";
 
 /**
+ * A korábbi topology adapterosztály-neveket kompatibilitásból
+ * megtartjuk export aliasokként.
+ *
+ * A topology réteg most már közvetlenül a valódi common domain
+ * modelleket használja; nincs külön Topology... leszármazott osztály.
+ */
+export {
+  TrackStraightElement as TopologyStraightElement,
+  TrackDirectionElement as TopologyDirectionElement,
+  TrackEndElement as TopologyEndElement,
+  TrackCornerElement as TopologyCornerElement,
+  TrackCurveElement as TopologyCurveElement,
+  TrackCrossingElement as TopologyCrossingElement,
+  TrackTurnoutLeftElement as TopologyTurnoutLeftElement,
+  TrackTurnoutRightElement as TopologyTurnoutRightElement,
+  BlockElement as TopologyBlockElement,
+  TrackSensorElement as TopologySensorElement,
+  TrackSignalElement as TopologySignalElement,
+};
+
+/**
  * A régi topology kód TopologyPoint néven használta.
  * A common domain modell Point osztálya ugyanazt a feladatot tudja,
  * ezért itt kompatibilitási típusnévként megtartjuk.
@@ -151,258 +172,229 @@ function applyTrackData<T extends TrackElement>(
   return element;
 }
 
-/**
- * A topology réteg most már a grafikamentes common domain elemekből származik.
- * Ezek az adapterek csak:
- * - toleráns SerializedLayoutElementDto beolvasást,
- * - és a korábbi topology API kompatibilis metódusneveit
- * adják hozzá.
- */
-
-export class TopologyStraightElement extends TrackStraightElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createStraightElement(
+  data: SerializedLayoutElementDto
+): TrackStraightElement {
+  return applyTrackData(
+    new TrackStraightElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-  }
-
-  getNextItemPoint(): Point {
-    return this.getNextItemXy();
-  }
-
-  getPrevItemPoint(): Point {
-    return this.getPrevItemXy();
-  }
+    ),
+    data
+  );
 }
 
-export class TopologyDirectionElement extends TrackDirectionElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createDirectionElement(
+  data: SerializedLayoutElementDto
+): TrackDirectionElement {
+  return applyTrackData(
+    new TrackDirectionElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-  }
-
-  getNextItemPoint(): Point {
-    return this.getNextItemXy();
-  }
-
-  getPrevItemPoint(): Point {
-    return this.getPrevItemXy();
-  }
+    ),
+    data
+  );
 }
 
-export class TopologyEndElement extends TrackEndElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createEndElement(
+  data: SerializedLayoutElementDto
+): TrackEndElement {
+  return applyTrackData(
+    new TrackEndElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-  }
-
-  getNextItemPoint(): Point {
-    return this.getNextItemXy();
-  }
-
-  getPrevItemPoint(): Point {
-    return this.getPrevItemXy();
-  }
+    ),
+    data
+  );
 }
 
-export class TopologyCornerElement extends TrackCornerElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createCornerElement(
+  data: SerializedLayoutElementDto
+): TrackCornerElement {
+  return applyTrackData(
+    new TrackCornerElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-  }
-
-  getNextItemPoint(): Point {
-    return this.getNextItemXy();
-  }
-
-  getPrevItemPoint(): Point {
-    return this.getPrevItemXy();
-  }
+    ),
+    data
+  );
 }
 
-export class TopologyCurveElement extends TrackCurveElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createCurveElement(
+  data: SerializedLayoutElementDto
+): TrackCurveElement {
+  return applyTrackData(
+    new TrackCurveElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-  }
-
-  getNextItemPoint(): Point {
-    return this.getNextItemXy();
-  }
-
-  getPrevItemPoint(): Point {
-    return this.getPrevItemXy();
-  }
+    ),
+    data
+  );
 }
 
-export class TopologyCrossingElement extends TrackCrossingElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createCrossingElement(
+  data: SerializedLayoutElementDto
+): TrackCrossingElement {
+  return applyTrackData(
+    new TrackCrossingElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-  }
-
-  getNextItemPoint(): Point {
-    return this.getNextItemXy();
-  }
-
-  getPrevItemPoint(): Point {
-    return this.getPrevItemXy();
-  }
+    ),
+    data
+  );
 }
 
-export class TopologyTurnoutLeftElement extends TrackTurnoutLeftElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createTurnoutLeftElement(
+  data: SerializedLayoutElementDto
+): TrackTurnoutLeftElement {
+  const element = applyTrackData(
+    new TrackTurnoutLeftElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-    this.turnoutAddress = numberValue(
-      data.turnoutAddress,
-      this.turnoutAddress
-    );
-    this.turnoutClosedValue = boolValue(
-      data.turnoutClosedValue,
-      this.turnoutClosedValue
-    );
-  }
+    ),
+    data
+  );
 
-  getNextItemPoint(): Point {
-    return this.getNextItemXy();
-  }
+  element.turnoutAddress = numberValue(
+    data.turnoutAddress,
+    element.turnoutAddress
+  );
 
-  getPrevItemPoint(): Point {
-    return this.getPrevItemXy();
-  }
+  element.turnoutClosedValue = boolValue(
+    data.turnoutClosedValue,
+    element.turnoutClosedValue
+  );
+
+  return element;
 }
 
-export class TopologyTurnoutRightElement extends TrackTurnoutRightElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createTurnoutRightElement(
+  data: SerializedLayoutElementDto
+): TrackTurnoutRightElement {
+  const element = applyTrackData(
+    new TrackTurnoutRightElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-    this.turnoutAddress = numberValue(
-      data.turnoutAddress,
-      this.turnoutAddress
-    );
-    this.turnoutClosedValue = boolValue(
-      data.turnoutClosedValue,
-      this.turnoutClosedValue
-    );
-  }
+    ),
+    data
+  );
 
-  getNextItemPoint(): Point {
-    return this.getNextItemXy();
-  }
+  element.turnoutAddress = numberValue(
+    data.turnoutAddress,
+    element.turnoutAddress
+  );
 
-  getPrevItemPoint(): Point {
-    return this.getPrevItemXy();
-  }
+  element.turnoutClosedValue = boolValue(
+    data.turnoutClosedValue,
+    element.turnoutClosedValue
+  );
+
+  return element;
 }
 
-export class TopologyBlockElement extends BlockElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createBlockElement(
+  data: SerializedLayoutElementDto
+): BlockElement {
+  const element = applyTrackData(
+    new BlockElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-    this.sensorAddress = numberValue(
-      data.sensorAddress,
-      this.sensorAddress
-    );
-    this.locoAddress = numberValue(
-      data.locoAddress,
-      this.locoAddress
-    );
-    this.blockType = stringValue(
-      data.blockType,
-      this.blockType
-    ) as typeof this.blockType;
-  }
+    ),
+    data
+  );
+
+  element.sensorAddress = numberValue(
+    data.sensorAddress,
+    element.sensorAddress
+  );
+
+  element.locoAddress = numberValue(
+    data.locoAddress,
+    element.locoAddress
+  );
+
+  element.blockType = stringValue(
+    data.blockType,
+    element.blockType
+  ) as typeof element.blockType;
+
+  return element;
 }
 
-export class TopologySensorElement extends TrackSensorElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createSensorElement(
+  data: SerializedLayoutElementDto
+): TrackSensorElement {
+  const element = applyTrackData(
+    new TrackSensorElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-    this.radius = numberValue(data.radius, this.radius);
-    this.colorOn = stringValue(data.colorOn, this.colorOn);
-    this.colorOff = stringValue(data.colorOff, this.colorOff);
-    this.kind = numberValue(data.kind, this.kind) as typeof this.kind;
-  }
+    ),
+    data
+  );
+
+  element.radius = numberValue(data.radius, element.radius);
+  element.colorOn = stringValue(data.colorOn, element.colorOn);
+  element.colorOff = stringValue(data.colorOff, element.colorOff);
+  element.kind = numberValue(data.kind, element.kind) as typeof element.kind;
+
+  return element;
 }
 
-export class TopologySignalElement extends TrackSignalElement {
-  constructor(data: SerializedLayoutElementDto) {
-    super(
+function createSignalElement(
+  data: SerializedLayoutElementDto
+): TrackSignalElement {
+  const element = applyTrackData(
+    new TrackSignalElement(
       numberValue(data.x, 0),
       numberValue(data.y, 0)
-    );
-    applyTrackData(this, data);
-    this.aspect = numberValue(data.aspect, this.aspect);
-    this.addressLength = numberValue(
-      data.addressLength,
-      this.addressLength
-    );
-    this.dispalyAsSingleLamp = boolValue(
-      data.dispalyAsSingleLamp,
-      this.dispalyAsSingleLamp
-    );
-    this.valueGreen = numberValue(data.valueGreen, this.valueGreen);
-    this.valueRed = numberValue(data.valueRed, this.valueRed);
-    this.valueYellow = numberValue(data.valueYellow, this.valueYellow);
-    this.valueWhite = numberValue(data.valueWhite, this.valueWhite);
-  }
+    ),
+    data
+  );
+
+  element.aspect = numberValue(data.aspect, element.aspect);
+  element.addressLength = numberValue(
+    data.addressLength,
+    element.addressLength
+  );
+
+  element.dispalyAsSingleLamp = boolValue(
+    data.dispalyAsSingleLamp,
+    element.dispalyAsSingleLamp
+  );
+
+  element.valueGreen = numberValue(data.valueGreen, element.valueGreen);
+  element.valueRed = numberValue(data.valueRed, element.valueRed);
+  element.valueYellow = numberValue(data.valueYellow, element.valueYellow);
+  element.valueWhite = numberValue(data.valueWhite, element.valueWhite);
+
+  return element;
 }
 
 export type TopologyTurnoutElement =
-  | TopologyTurnoutLeftElement
-  | TopologyTurnoutRightElement;
+  | TrackTurnoutLeftElement
+  | TrackTurnoutRightElement;
 
 export type TopologyTrackElement =
-  | TopologyStraightElement
-  | TopologyDirectionElement
-  | TopologyEndElement
-  | TopologyCornerElement
-  | TopologyCurveElement
-  | TopologyCrossingElement
+  | TrackStraightElement
+  | TrackDirectionElement
+  | TrackEndElement
+  | TrackCornerElement
+  | TrackCurveElement
+  | TrackCrossingElement
   | TopologyTurnoutElement;
 
 export type RailwayTopologyElement =
   | TopologyTrackElement
-  | TopologyBlockElement
-  | TopologySensorElement
-  | TopologySignalElement;
+  | BlockElement
+  | TrackSensorElement
+  | TrackSignalElement;
 
 export function isTopologyTurnoutElement(
   element: RailwayTopologyElement | undefined | null
 ): element is TopologyTurnoutElement {
   return (
-    element instanceof TopologyTurnoutLeftElement ||
-    element instanceof TopologyTurnoutRightElement
+    element instanceof TrackTurnoutLeftElement ||
+    element instanceof TrackTurnoutRightElement
   );
 }
 
@@ -418,12 +410,12 @@ export class RailwayTopologyLayout {
   getPhysicalTrackElements(): TopologyTrackElement[] {
     return this.elements.filter(
       (element): element is TopologyTrackElement =>
-        element instanceof TopologyStraightElement ||
-        element instanceof TopologyDirectionElement ||
-        element instanceof TopologyEndElement ||
-        element instanceof TopologyCornerElement ||
-        element instanceof TopologyCurveElement ||
-        element instanceof TopologyCrossingElement ||
+        element instanceof TrackStraightElement ||
+        element instanceof TrackDirectionElement ||
+        element instanceof TrackEndElement ||
+        element instanceof TrackCornerElement ||
+        element instanceof TrackCurveElement ||
+        element instanceof TrackCrossingElement ||
         isTopologyTurnoutElement(element)
     );
   }
@@ -432,31 +424,31 @@ export class RailwayTopologyLayout {
     return this.elements.filter(isTopologyTurnoutElement);
   }
 
-  getBlocks(): TopologyBlockElement[] {
+  getBlocks(): BlockElement[] {
     return this.elements.filter(
-      (element): element is TopologyBlockElement =>
-        element instanceof TopologyBlockElement
+      (element): element is BlockElement =>
+        element instanceof BlockElement
     );
   }
 
-  getSensors(): TopologySensorElement[] {
+  getSensors(): TrackSensorElement[] {
     return this.elements.filter(
-      (element): element is TopologySensorElement =>
-        element instanceof TopologySensorElement
+      (element): element is TrackSensorElement =>
+        element instanceof TrackSensorElement
     );
   }
 
-  getSignals(): TopologySignalElement[] {
+  getSignals(): TrackSignalElement[] {
     return this.elements.filter(
-      (element): element is TopologySignalElement =>
-        element instanceof TopologySignalElement
+      (element): element is TrackSignalElement =>
+        element instanceof TrackSignalElement
     );
   }
 
-  getDirectionElements(): TopologyDirectionElement[] {
+  getDirectionElements(): TrackDirectionElement[] {
     return this.elements.filter(
-      (element): element is TopologyDirectionElement =>
-        element instanceof TopologyDirectionElement
+      (element): element is TrackDirectionElement =>
+        element instanceof TrackDirectionElement
     );
   }
 
@@ -506,39 +498,39 @@ function createTopologyElement(
 ): RailwayTopologyElement | null {
   switch (data.type) {
     case ELEMENT_TYPES.TRACK_STRAIGHT:
-      return new TopologyStraightElement(data);
+      return createStraightElement(data);
 
     case ELEMENT_TYPES.TRACK_DIRECTION:
-      return new TopologyDirectionElement(data);
+      return createDirectionElement(data);
 
     case ELEMENT_TYPES.TRACK_END:
-      return new TopologyEndElement(data);
+      return createEndElement(data);
 
     case ELEMENT_TYPES.TRACK_CORNER:
-      return new TopologyCornerElement(data);
+      return createCornerElement(data);
 
     case ELEMENT_TYPES.TRACK_CURVE:
-      return new TopologyCurveElement(data);
+      return createCurveElement(data);
 
     case ELEMENT_TYPES.TRACK_CROSSING:
-      return new TopologyCrossingElement(data);
+      return createCrossingElement(data);
 
     case ELEMENT_TYPES.TRACK_TURNOUT_LEFT:
-      return new TopologyTurnoutLeftElement(data);
+      return createTurnoutLeftElement(data);
 
     case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT:
-      return new TopologyTurnoutRightElement(data);
+      return createTurnoutRightElement(data);
 
     case ELEMENT_TYPES.TRACK_BLOCK:
-      return new TopologyBlockElement(data);
+      return createBlockElement(data);
 
     case ELEMENT_TYPES.TRACK_SENSOR:
-      return new TopologySensorElement(data);
+      return createSensorElement(data);
 
     case ELEMENT_TYPES.TRACK_SIGNAL2:
     case ELEMENT_TYPES.TRACK_SIGNAL3:
     case ELEMENT_TYPES.TRACK_SIGNAL4:
-      return new TopologySignalElement(data);
+      return createSignalElement(data);
 
     default:
       return null;

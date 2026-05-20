@@ -12,10 +12,10 @@ import {
 
 import {
   RailwayTopologyLayout,
-  TopologyBlockElement,
+  type TopologyBlockElement,
   type TopologyPoint,
-  TopologySensorElement,
-  TopologySignalElement,
+  type TopologySensorElement,
+  type TopologySignalElement,
   type TopologyTrackElement,
   type TopologyTurnoutElement,
   isTopologyTurnoutElement,
@@ -167,8 +167,8 @@ export class RouteGraphBuilder {
 
     sectionElements.push(obj);
 
-    const nextPos = obj.getNextItemPoint();
-    const prevPos = obj.getPrevItemPoint();
+    const nextPos = obj.getNextItemXy();
+    const prevPos = obj.getPrevItemXy();
 
     this.walkTrackSectionDirection(
       obj,
@@ -203,8 +203,8 @@ export class RouteGraphBuilder {
     }
 
     const isConnectedBack =
-      current.pos.isEqual(next.getNextItemPoint()) ||
-      current.pos.isEqual(next.getPrevItemPoint());
+      current.pos.isEqual(next.getNextItemXy()) ||
+      current.pos.isEqual(next.getPrevItemXy());
 
     if (!isConnectedBack) {
       return;
@@ -648,10 +648,10 @@ export class RouteGraphBuilder {
     }
 
     const towardsNext =
-      sectionElem.getNextItemPoint().isEqual(turnout.pos);
+      sectionElem.getNextItemXy().isEqual(turnout.pos);
 
     const towardsPrev =
-      sectionElem.getPrevItemPoint().isEqual(turnout.pos);
+      sectionElem.getPrevItemXy().isEqual(turnout.pos);
 
     if (towardsNext) {
       return sectionElem.travelDirection;

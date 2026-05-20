@@ -272,11 +272,11 @@ export class TrackTravelDirectionResolver {
     return [
       {
         side: "next",
-        point: element.getNextItemPoint(),
+        point: element.getNextItemXy(),
       },
       {
         side: "prev",
-        point: element.getPrevItemPoint(),
+        point: element.getPrevItemXy(),
       },
     ];
   }

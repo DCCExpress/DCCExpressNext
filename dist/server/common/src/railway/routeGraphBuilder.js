@@ -86,8 +86,8 @@ export class RouteGraphBuilder {
         obj.isVisited = true;
         obj.section = section;
         sectionElements.push(obj);
-        const nextPos = obj.getNextItemPoint();
-        const prevPos = obj.getPrevItemPoint();
+        const nextPos = obj.getNextItemXy();
+        const prevPos = obj.getPrevItemXy();
         this.walkTrackSectionDirection(obj, nextPos, section, sectionElements);
         this.walkTrackSectionDirection(obj, prevPos, section, sectionElements);
     }
@@ -99,8 +99,8 @@ export class RouteGraphBuilder {
         if (isTopologyTurnoutElement(next)) {
             return;
         }
-        const isConnectedBack = current.pos.isEqual(next.getNextItemPoint()) ||
-            current.pos.isEqual(next.getPrevItemPoint());
+        const isConnectedBack = current.pos.isEqual(next.getNextItemXy()) ||
+            current.pos.isEqual(next.getPrevItemXy());
         if (!isConnectedBack) {
             return;
         }
@@ -320,8 +320,8 @@ export class RouteGraphBuilder {
         if (sectionElem.travelDirection === "unknown") {
             return "unknown";
         }
-        const towardsNext = sectionElem.getNextItemPoint().isEqual(turnout.pos);
-        const towardsPrev = sectionElem.getPrevItemPoint().isEqual(turnout.pos);
+        const towardsNext = sectionElem.getNextItemXy().isEqual(turnout.pos);
+        const towardsPrev = sectionElem.getPrevItemXy().isEqual(turnout.pos);
         if (towardsNext) {
             return sectionElem.travelDirection;
         }
