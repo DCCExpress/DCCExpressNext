@@ -15,7 +15,7 @@ import {
   RouteButtonElementView,
   type RouteTurnoutItem,
 } from "../../models/editor/elements/RouteButtonElementView";
-import { TrackTurnoutElement } from "../../models/editor/elements/TrackTurnoutElement";
+import { TrackTurnoutElementView } from "../../models/editor/elements/TrackTurnoutElementView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import type {
   LayoutSetter,
@@ -158,7 +158,7 @@ export default function RouteTurnoutSelectionPropertyEditor({
                   onClick={() => {
                     const elem = layout.getElementById(item.turnoutId);
 
-                    if (elem instanceof TrackTurnoutElement) {
+                    if (elem instanceof TrackTurnoutElementView) {
                       elem.toggle();
                       item.closed =
                         elem.turnoutClosed === elem.turnoutClosedValue;

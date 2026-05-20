@@ -1,5 +1,5 @@
 import { TrackDirectionElementView } from "../elements/TrackDirectionElementView";
-import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
+import { TrackTurnoutElementView } from "../elements/TrackTurnoutElementView";
 
 
 import { Layout } from "./Layout";
@@ -9,7 +9,7 @@ import { TrackElement, TravelDirection } from "./TrackElement";
 type TurnoutSide = "entry" | "straight" | "div";
 
 type TurnoutPropagationState = {
-    turnout: TrackTurnoutElement;
+    turnout: TrackTurnoutElementView;
     enteredSide: TurnoutSide;
 
     /**
@@ -87,7 +87,7 @@ export class TrackTravelDirectionResolver {
      *
      * Kiindulási pontok:
      * - minden TrackDirectionElementView
-     * - minden TrackTurnoutElement
+     * - minden TrackTurnoutElementView
      *
      * Ez elég a route graph szempontjából releváns hálózatokhoz.
      */
@@ -97,7 +97,7 @@ export class TrackTravelDirectionResolver {
         const seeds = elems.filter(
             elem =>
                 elem instanceof TrackDirectionElementView ||
-                elem instanceof TrackTurnoutElement
+                elem instanceof TrackTurnoutElementView
         );
 
         const visited = new Set<string>();
@@ -151,7 +151,7 @@ export class TrackTravelDirectionResolver {
      * Megadja egy pályaelem közvetlenül kapcsolódó szomszédait.
      */
     private getConnectedNeighbors(elem: TrackElement): TrackElement[] {
-        if (elem instanceof TrackTurnoutElement) {
+        if (elem instanceof TrackTurnoutElementView) {
             return this.getTurnoutNeighbors(elem);
         }
 
@@ -185,7 +185,7 @@ export class TrackTravelDirectionResolver {
          * Track -> turnout kapcsolat.
          * Ha a targetPos-on váltó van, akkor fizikailag kapcsolódunk hozzá.
          */
-        if (neighbor instanceof TrackTurnoutElement) {
+        if (neighbor instanceof TrackTurnoutElementView) {
             result.push(neighbor);
             return;
         }
@@ -203,7 +203,7 @@ export class TrackTravelDirectionResolver {
         }
     }
 
-    private getTurnoutNeighbors(turnout: TrackTurnoutElement): TrackElement[] {
+    private getTurnoutNeighbors(turnout: TrackTurnoutElementView): TrackElement[] {
         const result: TrackElement[] = [];
         const connections = turnout.getConnections();
 
@@ -319,7 +319,7 @@ export class TrackTravelDirectionResolver {
         // ------------------------------------------------------------
         // TRACK -> TURNOUT
         // ------------------------------------------------------------
-        if (nextElem instanceof TrackTurnoutElement) {
+        if (nextElem instanceof TrackTurnoutElementView) {
             const enteredSide = this.getTurnoutSideConnectedToElement(
                 nextElem,
                 track
@@ -496,7 +496,7 @@ export class TrackTravelDirectionResolver {
             // --------------------------------------------------------
             // TURNOUT -> TURNOUT
             // --------------------------------------------------------
-            if (targetElem instanceof TrackTurnoutElement) {
+            if (targetElem instanceof TrackTurnoutElementView) {
                 const targetEnteredSide =
                     this.getTurnoutSideConnectedToElement(
                         targetElem,
@@ -566,7 +566,7 @@ export class TrackTravelDirectionResolver {
     }
 
     private getTurnoutSideConnectedToElement(
-        turnout: TrackTurnoutElement,
+        turnout: TrackTurnoutElementView,
         other: TrackElement
     ): TurnoutSide | undefined {
         const connections = turnout.getConnections();

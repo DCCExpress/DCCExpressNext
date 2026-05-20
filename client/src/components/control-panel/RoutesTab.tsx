@@ -29,7 +29,7 @@ import {
   showWarningMessage,
 } from "../../helpers";
 import { useRouteGraph } from "../../hooks/useRouteGraph";
-import { TrackTurnoutElement } from "../../models/editor/elements/TrackTurnoutElement";
+import { TrackTurnoutElementView } from "../../models/editor/elements/TrackTurnoutElementView";
 type RoutesTabProps = {
   routes?: string | undefined;
   layout: Layout,
@@ -93,7 +93,7 @@ export default function RoutesTab(p: RoutesTabProps) {
           "turnoutAddress" in el &&
           "turnoutClosedValue" in el &&
           el.turnoutAddress === turnoutState.address
-      ) as TrackTurnoutElement | undefined;
+      ) as TrackTurnoutElementView | undefined;
 
       if (!turnout) {
         throw new Error(

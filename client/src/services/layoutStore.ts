@@ -3,7 +3,7 @@
 import { BaseElement } from "../models/editor/core/BaseElement";
 import { Layout } from "../models/editor/core/Layout";
 import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
-import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
+import { TrackTurnoutElementView } from "../models/editor/elements/TrackTurnoutElementView";
 import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
 import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
@@ -70,7 +70,7 @@ class LayoutStore {
   //   if (!turnout) return undefined;
 
   //   // Nálad itt lehet más mezőnév, ezt igazítsuk a konkrét váltó osztályhoz
-  //   return (turnout as TrackTurnoutElement).isClosed;
+  //   return (turnout as TrackTurnoutElementView).isClosed;
   // }
 
   // setTurnoutStateByAddress(address: number, closed: boolean): boolean {
@@ -189,7 +189,7 @@ class LayoutStore {
   //     for (const turnoutState of solution.turnoutStates) {
   //       const turnout = this.findTurnoutByAddress(
   //         turnoutState.address
-  //       ) as TrackTurnoutElement | undefined;
+  //       ) as TrackTurnoutElementView | undefined;
 
   //       if (!turnout) {
   //         continue;
@@ -280,7 +280,7 @@ class LayoutStore {
   //   for (const address of turnoutAddresses) {
   //     const turnout = this.findTurnoutByAddress(
   //       address
-  //     ) as TrackTurnoutElement | undefined;
+  //     ) as TrackTurnoutElementView | undefined;
 
   //     if (!turnout) {
   //       continue;
@@ -306,7 +306,7 @@ class LayoutStore {
     for (const address of turnoutAddresses) {
       const turnout = this.findTurnoutByAddress(
         address
-      ) as TrackTurnoutElement | undefined;
+      ) as TrackTurnoutElementView | undefined;
 
       if (!turnout) {
         continue;
