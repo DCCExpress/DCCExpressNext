@@ -3,7 +3,6 @@ import { showWarningMessage } from "../../../helpers";
 import { BlockElement } from "../elements/BlockElement";
 import { RouteButtonElement } from "../elements/RouteButtonElement";
 import { TrackStraightElement } from "../elements/TrackStraightElement";
-import { TrackTurnoutElement } from "../elements/TrackTurnoutElement";
 import { TrackTurnoutLeftElement } from "../elements/TrackTurnoutLeftElement";
 import { TrackTurnoutRightElement } from "../elements/TrackTurnoutRightElement";
 import { DrawOptions } from "../types/EditorTypes";
@@ -21,13 +20,16 @@ import { Layer, LayerId } from "./Layer";
 import { Point } from "./Rect";
 import { TrackElement } from "./TrackElement";
 
-export function isTurnoutElement(el: BaseElement | null | undefined) {
+export type RouteTurnoutElement =
+    | TrackTurnoutLeftElement
+    | TrackTurnoutRightElement;
+
+export function isTurnoutElement(
+    el: BaseElement | null | undefined
+): el is RouteTurnoutElement {
     return (
-        el instanceof TrackTurnoutElement ||
         el instanceof TrackTurnoutLeftElement ||
-        el instanceof TrackTurnoutRightElement //||
-        //el instanceof TrackTurnoutTwoWayElement ||
-        //el instanceof TrackTurnoutDoubleElement
+        el instanceof TrackTurnoutRightElement
     );
 }
 
@@ -433,9 +435,12 @@ export class Layout {
             let active = true;
 
             rb.routeTurnouts.forEach(t => {
-                const turnout = this.getElementById(t.turnoutId) as TrackTurnoutElement;
+                const turnout = this.getElementById(t.turnoutId);
 
-                if (turnout && turnout.turnoutClosed === t.closed) {
+                if (
+                    isTurnoutElement(turnout) &&
+                    turnout.turnoutClosed === t.closed
+                ) {
                     // oké
                 } else {
                     active = false;
@@ -447,9 +452,11 @@ export class Layout {
             if (active && rb.routeTurnouts.length > 0) {
                 const turnout = this.getElementById(
                     rb.routeTurnouts[0]!.turnoutId
-                ) as TrackTurnoutElement;
+                );
 
-                this.startWalk(turnout);
+                if (isTurnoutElement(turnout)) {
+                    this.startWalk(turnout);
+                }
             }
         });
 
@@ -544,7 +551,7 @@ export class Layout {
         var p2 = obj.getPrevItemXy()
 
         var next = this.getObjectXy(p1) as TrackElement;
-        if (next && !(next instanceof TrackTurnoutElement)) {
+        if (next && !isTurnoutElement(next)) {
             if (!next.isVisited && (obj.pos.isEqual(next.getNextItemXy()) || obj.pos.isEqual(next.getPrevItemXy()))) {
                 next.isRoute = true
                 this.walkTrack(next, section)
@@ -552,7 +559,7 @@ export class Layout {
         }
 
         var prev = this.getObjectXy(p2) as TrackElement;
-        if (prev && !(prev instanceof TrackTurnoutElement)) {
+        if (prev && !isTurnoutElement(prev)) {
             if (!prev.isVisited && (obj.pos.isEqual(prev.getNextItemXy()) || obj.pos.isEqual(prev.getPrevItemXy()))) {
                 prev.isRoute = true
                 this.walkTrack(prev, section)

@@ -27,7 +27,6 @@ import { ClickableBaseElement } from "../models/editor/core/ClickableBaseElement
 import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../services/wsApi";
-import { TrackTurnoutElement } from "../models/editor/elements/TrackTurnoutElement";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { ButtonScriptElement } from "../models/editor/elements/ButtonScriptElement";
 import { LabelElement } from "../models/editor/elements/LabelElement";
@@ -434,7 +433,7 @@ export default function TrackCanvas({
   const setRouteTurnoutsMarked = (rb: RouteButtonElement) => {
     const elems = layoutRef.current.getAllElements();
     for (const elem of elems) {
-      if (elem instanceof TrackTurnoutElement) {
+      if (isTurnoutElement(elem)) {
         const found = rb.routeTurnouts.find((e) => e.turnoutId === elem.id);
         if (found) {
           elem.marked = true;
@@ -588,14 +587,11 @@ export default function TrackCanvas({
       await sleep(1000);
       try {
         for (const ri of rb.routeTurnouts) {
-          const t = elems.find((elem) => ri.turnoutId === elem.id) as TrackTurnoutElement;
+          const t = elems.find(
+            elem => ri.turnoutId === elem.id
+          );
 
-          if (
-            t instanceof TrackTurnoutLeftElement ||
-            t instanceof TrackTurnoutRightElement ||
-            t instanceof TrackTurnoutTwoWayElement ||
-            t instanceof TrackTurnoutDoubleElement
-          ) {
+          if (isTurnoutElement(t)) {
             wsApi.setTurnout(
               t.turnoutAddress,
               ri.closed // === t.turnoutClosedValue
@@ -782,8 +778,7 @@ export default function TrackCanvas({
             if (currentElement instanceof RouteButtonElement) {
               if (isTurnoutElement(hitElement)) {
                 const rb = currentElement as RouteButtonElement;
-                const t = hitElement as TrackTurnoutElement;
-                const closed = t.turnoutClosed; // == t.turnoutClosedValue;
+                const closed = hitElement.turnoutClosed;
                 rb.addOrUpdateTurnout(hitElement.id, closed);
                 setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElement);
                 onInvalidate();

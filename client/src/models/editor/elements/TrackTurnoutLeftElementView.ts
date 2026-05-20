@@ -206,16 +206,6 @@ export class TrackTurnoutLeftElementView
     return element;
   }
 
-  /**
-   * Régi elgépelés kompatibilitás:
-   * ElementFactory jelenleg még formJSON()-t hív balos váltónál.
-   */
-  static formJSON(
-    data: ITrackTurnoutLeftElement
-  ): TrackTurnoutLeftElementView {
-    return this.fromJSON(data);
-  }
-
   clone(): TrackTurnoutLeftElementView {
     const copy = new TrackTurnoutLeftElementView(
       this.x,

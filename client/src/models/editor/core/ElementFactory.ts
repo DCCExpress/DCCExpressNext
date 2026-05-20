@@ -51,7 +51,7 @@ export class ElementFactory {
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_LEFT: {
-        return TrackTurnoutLeftElement.formJSON(data);
+        return TrackTurnoutLeftElement.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT: {
