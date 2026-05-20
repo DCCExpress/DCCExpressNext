@@ -11,7 +11,13 @@
   "UI": "UI",
   "common": {
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "offline": "Offline",
+    "close": "Close",
+    "remove": "Remove",
+    "removeAll": "Remove all",
+    "error": "Error",
+    "success": "Successful"
   },
   "locodialog": {
     "close": "Close",
@@ -108,5 +114,191 @@
         }
       }
     }
+  },
+  "loco": {
+    "direction": {
+      "forward": "Forward",
+      "reverse": "Reverse",
+      "stop": "Stop"
+    },
+    "unnamed": "Unnamed locomotive",
+    "dccAddress": "DCC address",
+    "maxSpeedShort": "Max speed",
+    "address": "Address",
+    "noSelectable": "No selectable locomotive."
+  },
+  "toolbar": {
+    "themeToggle": "Toggle theme",
+    "showLocoPanel": "Show loco panel",
+    "hideLocoPanel": "Hide loco panel",
+    "showPropertyPanel": "Show property panel",
+    "hidePropertyPanel": "Hide property panel"
+  },
+  "task": {
+    "status": {
+      "queued": "Queued",
+      "running": "Running",
+      "paused": "Paused",
+      "finishing": "Finishing",
+      "aborted": "Aborted",
+      "completed": "Completed",
+      "error": "Error"
+    },
+    "progress": {
+      "arrived": "Arrived",
+      "aborted": "Aborted",
+      "waitingForLoco": "Waiting for locomotive",
+      "waitingForRoute": "Waiting for route reservation",
+      "waitingForSensor": "Waiting for sensor #{{sensorAddress}} to clear",
+      "waitingForNextBlock": "Waiting for next block to clear",
+      "departing": "Departure phase",
+      "transit": "Moving between two blocks",
+      "leftFromBlock": "Left the departure block",
+      "queued": "Waiting to start",
+      "running": "Running",
+      "paused": "Paused",
+      "finishing": "Finishing",
+      "error": "Error"
+    },
+    "list": {
+      "title": "Task list",
+      "expand": "Expand task list",
+      "collapse": "Collapse task list",
+      "count": "task",
+      "empty": "No active or queued task.",
+      "emptyNew": "No task has been added yet."
+    },
+    "table": {
+      "index": "#",
+      "task": "Task",
+      "loco": "Loco",
+      "speed": "Speed",
+      "route": "Route",
+      "status": "Status",
+      "progress": "Progress",
+      "turnouts": "Turnouts",
+      "controls": "Controls"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "start": "Start",
+      "pause": "Pause",
+      "finish": "Finish",
+      "abort": "Abort",
+      "resume": "Resume",
+      "startAgain": "Start again",
+      "editDisabled": "Running, paused or finishing tasks cannot be edited"
+    },
+    "form": {
+      "name": "Task name",
+      "namePlaceholder": "e.g. B1 → C1",
+      "fromBlock": "From block",
+      "fromPlaceholder": "From block",
+      "toBlock": "To block",
+      "toPlaceholder": "To block",
+      "targetSpeed": "Target speed"
+    },
+    "add": {
+      "title": "New task",
+      "notAddable": "Task cannot be added",
+      "selectedRoute": "Selected runnable block transition",
+      "submit": "Add"
+    },
+    "edit": {
+      "title": "Edit task",
+      "notEditable": "Task cannot be edited"
+    },
+    "delete": {
+      "title": "Delete task",
+      "confirm": "Are you sure you want to delete this task?"
+    }
+  },
+  "editor": {
+    "cursorEsc": "Cursor (Esc)",
+    "cursorMode": "Cursor mode",
+    "pickElement": "Pick element",
+    "elements": {
+      "direction": "Direction",
+      "straight": "Straight",
+      "trackEnd": "Track end",
+      "corner": "Corner",
+      "curve": "Curve",
+      "crossing": "Crossing",
+      "turnoutLeft": "Turnout left",
+      "turnoutRight": "Turnout right",
+      "turnoutY": "Turnout Y",
+      "turnoutDouble": "Turnout double",
+      "signal2": "Signal 2",
+      "signal3": "Signal 3",
+      "signal4": "Signal 4",
+      "sensor": "Sensor",
+      "label": "Label",
+      "button": "Button",
+      "scriptButton": "Script button",
+      "route": "Route",
+      "autoRoute": "Auto route",
+      "audio": "Audio",
+      "clock": "Clock",
+      "block": "Block",
+      "tree": "Tree"
+    },
+    "top": {
+      "editMode": "Edit mode (E)",
+      "fitLayout": "Fit layout (F)",
+      "cursorEsc": "Cursor (Esc)",
+      "cursorMode": "Cursor mode",
+      "elements": "Elements",
+      "element": "Element",
+      "deleteDel": "Delete (Del)",
+      "undo": "Undo (Ctrl+Z)",
+      "undoShort": "Undo",
+      "redo": "Redo (Ctrl+Y / Ctrl+Shift+Z)",
+      "redoShort": "Redo"
+    }
+  },
+  "fastClock": {
+    "title": "Fast Clock",
+    "expand": "Expand fast clock",
+    "collapse": "Collapse fast clock",
+    "running": "RUNNING",
+    "paused": "PAUSED",
+    "pause": "Pause",
+    "run": "Run",
+    "reset": "Reset",
+    "speedMultiplier": "Speed multiplier",
+    "minimum": "Minimum 1×",
+    "setSpeed": "Set speed",
+    "serverDisconnected": "Server disconnected. The fast clock display is frozen.",
+    "serverSynced": "Server-synced over WebSocket, rendered smoothly in the client.",
+    "errors": {
+      "actionFailed": "Fast clock action failed.",
+      "minSpeed": "Speed multiplier minimum is 1×."
+    },
+    "status": {
+      "serverDisconnected": "Fast Clock server disconnected"
+    },
+    "runningLower": "running",
+    "pausedLower": "paused",
+    "pauseAction": "Pause fast clock",
+    "runAction": "Run fast clock",
+    "resetAction": "Reset fast clock"
+  },
+  "routeTask": {
+    "title": "Route & Task control",
+    "expand": "Expand route and task controls",
+    "collapse": "Collapse route and task controls",
+    "fromPlaceholder": "A1",
+    "toPlaceholder": "C1",
+    "setRoute": "Set route",
+    "releaseRoute": "Release route",
+    "clearAllBusy": "Clear all busy",
+    "taskManager": "Task Manager...",
+    "startAll": "Start all tasks",
+    "finishAll": "Finish all tasks",
+    "abortAll": "Abort all tasks",
+    "allStarted": "All tasks started.",
+    "allFinishing": "All tasks marked for finish.",
+    "allAborted": "All active tasks aborted."
   }
 }
