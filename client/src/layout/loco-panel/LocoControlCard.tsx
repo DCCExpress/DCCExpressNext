@@ -1,4 +1,5 @@
 import { Badge, Card, Stack, Text, Title, useMantineColorScheme, useMantineTheme } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import type {
   Direction,
   Loco,
@@ -37,6 +38,7 @@ export default function LocoControlCard({
   onStop,
   onEmergencyToggle,
 }: LocoControlCardProps) {
+  const { t } = useTranslation();
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
 
@@ -71,7 +73,7 @@ export default function LocoControlCard({
       <Stack gap="xs" align="center">
         <Text fw={700} ta="center">
           #{loco.address}{" "}
-          {loco.name || "Névtelen mozdony"}
+          {loco.name || t("loco.unnamed")}
         </Text>
 
         <Badge
@@ -112,7 +114,7 @@ export default function LocoControlCard({
 
         {!alive && (
           <Badge color="red" variant="light">
-            OFFLINE
+            {t("common.offline")}
           </Badge>
         )}
 

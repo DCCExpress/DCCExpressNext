@@ -11,7 +11,12 @@
   "UI": "UI",
   "common": {
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "offline": "Offline",
+    "close": "Close",
+    "remove": "Remove",
+    "removeAll": "Remove all",
+    "error": "Error"
   },
   "locodialog": {
     "close": "Close",
@@ -107,6 +112,101 @@
           "description": "An operational block intended for yard or shunting movements."
         }
       }
+    }
+  },
+  "loco": {
+    "direction": {
+      "forward": "Forward",
+      "reverse": "Reverse",
+      "stop": "Stop"
+    },
+    "unnamed": "Unnamed locomotive",
+    "dccAddress": "DCC address",
+    "maxSpeedShort": "Max speed",
+    "address": "Address",
+    "noSelectable": "No selectable locomotive."
+  },
+  "toolbar": {
+    "themeToggle": "Toggle theme",
+    "showLocoPanel": "Show loco panel",
+    "hideLocoPanel": "Hide loco panel",
+    "showPropertyPanel": "Show property panel",
+    "hidePropertyPanel": "Hide property panel"
+  },
+  "task": {
+    "status": {
+      "queued": "Queued",
+      "running": "Running",
+      "paused": "Paused",
+      "finishing": "Finishing",
+      "aborted": "Aborted",
+      "completed": "Completed",
+      "error": "Error"
+    },
+    "progress": {
+      "arrived": "Arrived",
+      "aborted": "Aborted",
+      "waitingForLoco": "Waiting for locomotive",
+      "waitingForRoute": "Waiting for route reservation",
+      "waitingForSensor": "Waiting for sensor #{{sensorAddress}} to clear",
+      "waitingForNextBlock": "Waiting for next block to clear",
+      "departing": "Departure phase",
+      "transit": "Moving between two blocks",
+      "leftFromBlock": "Left the departure block",
+      "queued": "Waiting to start",
+      "running": "Running",
+      "paused": "Paused",
+      "finishing": "Finishing",
+      "error": "Error"
+    },
+    "list": {
+      "title": "Task list",
+      "expand": "Expand task list",
+      "collapse": "Collapse task list",
+      "count": "task",
+      "empty": "No active or queued task.",
+      "emptyNew": "No task has been added yet."
+    },
+    "table": {
+      "index": "#",
+      "task": "Task",
+      "loco": "Loco",
+      "speed": "Speed",
+      "route": "Route",
+      "status": "Status",
+      "progress": "Progress",
+      "turnouts": "Turnouts",
+      "controls": "Controls"
+    }
+  },
+  "editor": {
+    "cursorEsc": "Cursor (Esc)",
+    "cursorMode": "Cursor mode",
+    "pickElement": "Pick element",
+    "elements": {
+      "direction": "Direction",
+      "straight": "Straight",
+      "trackEnd": "Track end",
+      "corner": "Corner",
+      "curve": "Curve",
+      "crossing": "Crossing",
+      "turnoutLeft": "Turnout left",
+      "turnoutRight": "Turnout right",
+      "turnoutY": "Turnout Y",
+      "turnoutDouble": "Turnout double",
+      "signal2": "Signal 2",
+      "signal3": "Signal 3",
+      "signal4": "Signal 4",
+      "sensor": "Sensor",
+      "label": "Label",
+      "button": "Button",
+      "scriptButton": "Script button",
+      "route": "Route",
+      "autoRoute": "Auto route",
+      "audio": "Audio",
+      "clock": "Clock",
+      "block": "Block",
+      "tree": "Tree"
     }
   }
 }
