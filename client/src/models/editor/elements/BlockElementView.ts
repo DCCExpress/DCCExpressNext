@@ -1,4 +1,36 @@
 import {
+  beginElementDraw,
+  degreesToRadians,
+  drawElementBounds,
+  drawElementIconPath,
+  drawElementMarked,
+  drawElementNeighbors,
+  drawElementOccupied,
+  drawElementSelection,
+  endElementDraw,
+  getBaseEditableProperties,
+  getBaseHelp,
+  getCenterX,
+  getCenterY,
+  getGridSizeX,
+  getGridSizeY,
+  getHeight,
+  getPosBottom,
+  getPosLeft,
+  getPosRight,
+  getPosTop,
+  getPositionX,
+  getPositionY,
+  getWidth,
+  noopFromJSON,
+  noopMouseHandler,
+} from "../core/view/support/BaseElementViewSupport";
+import {
+  drawTrackSectionInfo,
+  getTrackStateColor,
+  getTrackTravelDirectionArrow,
+} from "../core/view/support/TrackElementViewSupport";
+import {
   BlockElement as CommonBlockElement,
 } from "../../../../../common/src/layout/elements/BlockElement";
 import {
@@ -13,9 +45,6 @@ import {
   getCanvasImage,
 } from "../rendering/ImageCache";
 import {
-  TrackElementViewMixin,
-} from "../core/view/TrackElementViewMixin";
-import {
   DrawOptions,
   IBlockElement,
 } from "../types/EditorTypes";
@@ -25,9 +54,139 @@ import {
 import i18n from "../../../i18n";
 
 export class BlockElementView
-  extends TrackElementViewMixin(CommonBlockElement)
+  extends CommonBlockElement
   implements IBlockElement {
-  override type: typeof ELEMENT_TYPES.TRACK_BLOCK =
+  get stateColor(): string {
+    return getTrackStateColor(this);
+  }
+
+  drawSectionInfo(
+    ctx: CanvasRenderingContext2D,
+    options?: DrawOptions
+  ): void {
+    drawTrackSectionInfo(this, ctx, options);
+  }
+
+  getTravelDirectionArrow(): string {
+    return getTrackTravelDirectionArrow(this);
+  }
+
+
+  selected: boolean = false;
+  marked: boolean = false;
+  enabled: boolean = true;
+  alpha: number = 0.5;
+  debug: boolean = false;
+
+  get GridSizeX(): number {
+    return getGridSizeX();
+  }
+
+  get GridSizeY(): number {
+    return getGridSizeY();
+  }
+
+  get PositionX(): number {
+    return getPositionX(this);
+  }
+
+  get PositionY(): number {
+    return getPositionY(this);
+  }
+
+  get width(): number {
+    return getWidth(this);
+  }
+
+  get height(): number {
+    return getHeight(this);
+  }
+
+  get TrackWidth7(): number {
+    return 7;
+  }
+
+  get TrackWidth3(): number {
+    return 3;
+  }
+
+  get TrackPrimaryColor(): string {
+    return "black";
+  }
+
+  beginDraw(
+    ctx: CanvasRenderingContext2D,
+    options?: DrawOptions
+  ): void {
+    beginElementDraw(this, ctx, options);
+  }
+
+  endDraw(ctx: CanvasRenderingContext2D): void {
+    endElementDraw(this, ctx);
+  }
+
+  drawIconPath(
+    ctx: CanvasRenderingContext2D,
+    path: string,
+    x: number,
+    y: number,
+    size: number,
+    color = "black",
+    strokeWidth = 2
+  ): void {
+    drawElementIconPath(
+      ctx,
+      path,
+      x,
+      y,
+      size,
+      color,
+      strokeWidth
+    );
+  }
+
+  drawMarked(ctx: CanvasRenderingContext2D): void {
+    drawElementMarked(this, ctx);
+  }
+
+  drawOccupied(ctx: CanvasRenderingContext2D): void {
+    drawElementOccupied(this, ctx);
+  }
+
+  drawSelection(ctx: CanvasRenderingContext2D): void {
+    drawElementSelection(this, ctx);
+  }
+
+  drawEnabled(_ctx: CanvasRenderingContext2D): void {
+    return;
+  }
+
+  mouseDown(ev: MouseEvent): void {
+    noopMouseHandler(ev);
+  }
+
+  mouseUp(ev: MouseEvent): void {
+    noopMouseHandler(ev);
+  }
+
+  fromJSON(data: any): void {
+    noopFromJSON(data);
+  }
+
+  degreesToRadians(degrees: number): number {
+    return degreesToRadians(degrees);
+  }
+
+  drawBounds(ctx: CanvasRenderingContext2D): void {
+    drawElementBounds(this, ctx);
+  }
+
+  drawNeighbors(ctx: CanvasRenderingContext2D): void {
+    drawElementNeighbors(this, ctx);
+  }
+
+
+  type: typeof ELEMENT_TYPES.TRACK_BLOCK =
     ELEMENT_TYPES.TRACK_BLOCK;
 
   /**
@@ -47,7 +206,7 @@ export class BlockElementView
     super(x, y);
   }
 
-  override draw(
+  draw(
     ctx: CanvasRenderingContext2D,
     options?: DrawOptions
   ): void {
@@ -285,27 +444,27 @@ export class BlockElementView
     ctx.restore();
   }
 
-  override get posLeft(): number {
+  get posLeft(): number {
     return (this.x - 1) * this.GridSizeX;
   }
 
-  override get posRight(): number {
+  get posRight(): number {
     return (this.x - 1) * this.GridSizeX + this.w * this.GridSizeX;
   }
 
-  override get posTop(): number {
+  get posTop(): number {
     return this.y * this.GridSizeY;
   }
 
-  override get posBottom(): number {
+  get posBottom(): number {
     return this.y * this.GridSizeY + this.h * this.GridSizeY;
   }
 
-  override get centerX(): number {
+  get centerX(): number {
     return this.x * this.GridSizeX + this.GridSizeX / 2;
   }
 
-  override get centerY(): number {
+  get centerY(): number {
     return this.y * this.GridSizeY + this.GridSizeY / 2;
   }
 
@@ -362,7 +521,7 @@ export class BlockElementView
     return element;
   }
 
-  override toJSON(): IBlockElement {
+  toJSON(): IBlockElement {
     return {
       ...super.toJSON(),
       type: ELEMENT_TYPES.TRACK_BLOCK,
@@ -374,9 +533,9 @@ export class BlockElementView
     };
   }
 
-  override getEditableProperties(): IEditableProperty[] {
+  getEditableProperties(): IEditableProperty[] {
     return [
-      ...super.getEditableProperties(),
+      ...getBaseEditableProperties(),
       {
         label: "Block type",
         key: "blockType",
@@ -406,7 +565,7 @@ export class BlockElementView
     ];
   }
 
-  override getHelp(): string {
+  getHelp(): string {
     return `
       <h3 style="margin-top:0;">
         ${i18n.t("help.block.title")}
