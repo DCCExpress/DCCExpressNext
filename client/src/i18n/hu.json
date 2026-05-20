@@ -10,7 +10,8 @@
   "Trains": "Vonatok",
   "common": {
     "cancel": "Mégsem",
-    "save": "Mentés"
+    "save": "Mentés",
+    "offline": "Nincs kapcsolat"
   },
   "locodialog": {
     "close": "Bezárás",
@@ -109,6 +110,48 @@
           "description": "Üzemi, rendezői vagy tolatási mozgásokhoz használt blokk."
         }
       }
+    }
+  },
+  "loco": {
+    "direction": {
+      "forward": "Előre",
+      "reverse": "Hátra",
+      "stop": "Állj"
+    },
+    "unnamed": "Névtelen mozdony"
+  },
+  "toolbar": {
+    "themeToggle": "Téma váltása",
+    "showLocoPanel": "Mozdony panel mutatása",
+    "hideLocoPanel": "Mozdony panel elrejtése",
+    "showPropertyPanel": "Tulajdonság panel mutatása",
+    "hidePropertyPanel": "Tulajdonság panel elrejtése"
+  },
+  "task": {
+    "status": {
+      "queued": "Sorban",
+      "running": "Fut",
+      "paused": "Szünetel",
+      "finishing": "Befejezés alatt",
+      "aborted": "Megszakítva",
+      "completed": "Befejezve",
+      "error": "Hiba"
+    },
+    "progress": {
+      "arrived": "Megérkezett",
+      "aborted": "Megszakítva",
+      "waitingForLoco": "Mozdonyra vár",
+      "waitingForRoute": "Útvonal foglalására vár",
+      "waitingForSensor": "Érzékelő #{{sensorAddress}} felszabadulására vár",
+      "waitingForNextBlock": "A következő blokk felszabadulására vár",
+      "departing": "Indulási szakasz",
+      "transit": "Két blokk között halad",
+      "leftFromBlock": "Elhagyta az induló blokkot",
+      "queued": "Indításra vár",
+      "running": "Futás alatt",
+      "paused": "Szüneteltetve",
+      "finishing": "Befejezés alatt",
+      "error": "Hiba"
     }
   }
 }
