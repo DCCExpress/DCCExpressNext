@@ -1,5 +1,6 @@
 import { ActionIcon, Group, Tooltip } from "@mantine/core";
 import { IconPointer, IconShape } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import { EditorTool } from "../../models/editor/types/EditorTypes";
 
 type EditorToolbarProps = {
@@ -13,28 +14,29 @@ export default function EditorToolbar({
   onCursorClick,
   onElementsClick,
 }: EditorToolbarProps) {
+  const { t } = useTranslation();
   const isCursorActive = tool.mode === "cursor";
   const isDrawActive = tool.mode === "draw";
 
   return (
     <Group gap="xs">
-      <Tooltip label="Kurzor (Esc)">
+      <Tooltip label={t("editor.cursorEsc")}>
         <ActionIcon
           size="lg"
           variant={isCursorActive ? "filled" : "light"}
           onClick={onCursorClick}
-          aria-label="Kurzor mód"
+          aria-label={t("editor.cursorMode")}
         >
           <IconPointer size={18} />
         </ActionIcon>
       </Tooltip>
 
-      <Tooltip label="Elem kiválasztása">
+      <Tooltip label={t("editor.pickElement")}>
         <ActionIcon
           size="lg"
           variant={isDrawActive ? "filled" : "light"}
           onClick={onElementsClick}
-          aria-label="Elem kiválasztása"
+          aria-label={t("editor.pickElement")}
         >
           <IconShape size={18} />
         </ActionIcon>
