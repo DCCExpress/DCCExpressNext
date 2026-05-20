@@ -10,6 +10,7 @@ import {
   Group,
   TextInput,
 } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import {
   IconCheck,
@@ -49,6 +50,7 @@ export default function RouteTaskControlCard({
   snapshot,
   onOpenTaskManager,
 }: RouteTaskControlCardProps) {
+  const { t } = useTranslation();
   const [fromBlockName, setFromBlockName] =
     useState("A1");
 
@@ -60,13 +62,13 @@ export default function RouteTaskControlCard({
       await taskManager.startAllTasks();
 
     if (!result.ok) {
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
     showOkMessage(
-      "SUCCESSFUL",
-      "All tasks started."
+      t("common.success"),
+      t("routeTask.allStarted")
     );
   };
 
@@ -75,13 +77,13 @@ export default function RouteTaskControlCard({
       await taskManager.finishAllTasks();
 
     if (!result.ok) {
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
     showOkMessage(
-      "SUCCESSFUL",
-      "All tasks marked for finish."
+      t("common.success"),
+      t("routeTask.allFinishing")
     );
   };
 
@@ -90,13 +92,13 @@ export default function RouteTaskControlCard({
       await taskManager.abortAllTasks();
 
     if (!result.ok) {
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
     showOkMessage(
-      "SUCCESSFUL",
-      "All active tasks aborted."
+      t("common.success"),
+      t("routeTask.allAborted")
     );
   };
 
@@ -134,15 +136,15 @@ export default function RouteTaskControlCard({
 
   return (
     <CollapsiblePanelCard
-      title="Route & Task control"
+      title={t("routeTask.title")}
       collapsedStorageKey={
         ROUTE_TASK_CONTROL_COLLAPSED_KEY
       }
-      expandTooltip="Expand route and task controls"
-      collapseTooltip="Collapse route and task controls"
+      expandTooltip={t("routeTask.expand")}
+      collapseTooltip={t("routeTask.collapse")}
       rightSection={
         <Badge variant="light">
-          {snapshot.tasks.length} task
+          {snapshot.tasks.length} {t("task.list.count")}
         </Badge>
       }
     >
@@ -151,26 +153,26 @@ export default function RouteTaskControlCard({
         gap="xs"
       >
         <TextInput
-          label="From block"
+          label={t("task.form.fromBlock")}
           value={fromBlockName}
           onChange={event =>
             setFromBlockName(
               event.currentTarget.value
             )
           }
-          placeholder="A1"
+          placeholder={t("routeTask.fromPlaceholder")}
           w={120}
         />
 
         <TextInput
-          label="To block"
+          label={t("task.form.toBlock")}
           value={toBlockName}
           onChange={event =>
             setToBlockName(
               event.currentTarget.value
             )
           }
-          placeholder="C1"
+          placeholder={t("routeTask.toPlaceholder")}
           w={120}
         />
 

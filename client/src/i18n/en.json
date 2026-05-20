@@ -16,7 +16,8 @@
     "close": "Close",
     "remove": "Remove",
     "removeAll": "Remove all",
-    "error": "Error"
+    "error": "Error",
+    "success": "Successful"
   },
   "locodialog": {
     "close": "Close",
@@ -232,5 +233,41 @@
       "redo": "Redo (Ctrl+Y / Ctrl+Shift+Z)",
       "redoShort": "Redo"
     }
+  },
+  "fastClock": {
+    "title": "Fast Clock",
+    "expand": "Expand fast clock",
+    "collapse": "Collapse fast clock",
+    "running": "RUNNING",
+    "paused": "PAUSED",
+    "pause": "Pause",
+    "run": "Run",
+    "reset": "Reset",
+    "speedMultiplier": "Speed multiplier",
+    "minimum": "Minimum 1×",
+    "setSpeed": "Set speed",
+    "serverDisconnected": "Server disconnected. The fast clock display is frozen.",
+    "serverSynced": "Server-synced over WebSocket, rendered smoothly in the client.",
+    "errors": {
+      "actionFailed": "Fast clock action failed.",
+      "minSpeed": "Speed multiplier minimum is 1×."
+    }
+  },
+  "routeTask": {
+    "title": "Route & Task control",
+    "expand": "Expand route and task controls",
+    "collapse": "Collapse route and task controls",
+    "fromPlaceholder": "A1",
+    "toPlaceholder": "C1",
+    "setRoute": "Set route",
+    "releaseRoute": "Release route",
+    "clearAllBusy": "Clear all busy",
+    "taskManager": "Task Manager...",
+    "startAll": "Start all tasks",
+    "finishAll": "Finish all tasks",
+    "abortAll": "Abort all tasks",
+    "allStarted": "All tasks started.",
+    "allFinishing": "All tasks marked for finish.",
+    "allAborted": "All active tasks aborted."
   }
 }

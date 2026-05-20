@@ -15,7 +15,8 @@
     "close": "Bezárás",
     "remove": "Eltávolítás",
     "removeAll": "Összes eltávolítása",
-    "error": "Hiba"
+    "error": "Hiba",
+    "success": "Sikeres"
   },
   "locodialog": {
     "close": "Bezárás",
@@ -234,5 +235,41 @@
       "redo": "Ismétlés (Ctrl+Y / Ctrl+Shift+Z)",
       "redoShort": "Ismétlés"
     }
+  },
+  "fastClock": {
+    "title": "Gyorsóra",
+    "expand": "Gyorsóra lenyitása",
+    "collapse": "Gyorsóra összecsukása",
+    "running": "FUT",
+    "paused": "SZÜNET",
+    "pause": "Szünet",
+    "run": "Indítás",
+    "reset": "Nullázás",
+    "speedMultiplier": "Sebességszorzó",
+    "minimum": "Minimum 1×",
+    "setSpeed": "Sebesség beállítása",
+    "serverDisconnected": "Szerverkapcsolat megszakadt. A gyorsóra kijelzés befagyott.",
+    "serverSynced": "WebSocketen szinkronizált a szerverrel, kliensoldalon simítva jelenik meg.",
+    "errors": {
+      "actionFailed": "Gyorsóra művelet sikertelen.",
+      "minSpeed": "A sebességszorzó minimum 1×."
+    }
+  },
+  "routeTask": {
+    "title": "Útvonal és feladat vezérlés",
+    "expand": "Útvonal és feladat vezérlés lenyitása",
+    "collapse": "Útvonal és feladat vezérlés összecsukása",
+    "fromPlaceholder": "A1",
+    "toPlaceholder": "C1",
+    "setRoute": "Útvonal beállítása",
+    "releaseRoute": "Útvonal elengedése",
+    "clearAllBusy": "Összes foglalás törlése",
+    "taskManager": "Feladatkezelő...",
+    "startAll": "Összes feladat indítása",
+    "finishAll": "Összes feladat befejezése",
+    "abortAll": "Összes feladat megszakítása",
+    "allStarted": "Minden feladat elindult.",
+    "allFinishing": "Minden feladat befejezésre jelölve.",
+    "allAborted": "Minden aktív feladat megszakítva."
   }
 }
