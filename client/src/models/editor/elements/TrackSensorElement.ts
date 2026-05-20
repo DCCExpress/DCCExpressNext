@@ -10,4 +10,5 @@
 export {
   TrackSensorElementView as TrackSensorElement,
   TrackSensorElementView,
+  SensorTypes,
 } from "./TrackSensorElementView";

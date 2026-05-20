@@ -10,4 +10,5 @@
 export {
   TrackSignalElementView as TrackSignalElement,
   TrackSignalElementView,
+  SignalStates,
 } from "./TrackSignalElementView";
