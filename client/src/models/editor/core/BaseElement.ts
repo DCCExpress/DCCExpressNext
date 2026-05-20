@@ -1,381 +1,313 @@
-import { ELEMENT_TYPES, ElementType } from "../../../../../common/src/layout/elementTypes";
-import { drawTextWithRoundedBackground } from "../../../graphics";
-import { generateId } from "../../../helpers";
-import { IEditableProperty } from "../elements/PropertyDescriptor";
-import { sampleLayout } from "../sample/sampleLayout";
-import { DrawOptions, IBaseElement, RotationStep } from "../types/EditorTypes";
-import { getDirectionXy } from "../../../../../common/src/helpers";
-import { LayerId } from "./Layer";
-import { IRect, Point } from "./Rect";
+import {
+  BaseElement as CommonBaseElement,
+} from "../../../../../common/src/layout/model/BaseElement";
+import {
+  sampleLayout,
+} from "../sample/sampleLayout";
+import {
+  type DrawOptions,
+  type IBaseElement,
+} from "../types/EditorTypes";
+import type {
+  IEditableProperty,
+} from "../elements/PropertyDescriptor";
 
+/**
+ * Kliensoldali editor/UI alap elem.
+ *
+ * A domain alapállapot és a grafikamentes geometriai logika már
+ * a common BaseElementből jön:
+ * - id / type / name / layerName
+ * - x / y / w / h
+ * - rotation / rotationStep
+ * - locked / visible / bg / fg / occupied / isVisited / trackName
+ * - rotate / move / setPosition
+ * - normalizeRotation()
+ * - getBounds() / hitTest()
+ * - pos / next / prev / neighbor pontok
+ *
+ * Itt már csak a kliensoldali editor és canvas felület marad.
+ */
+export abstract class BaseElement
+  extends CommonBaseElement
+  implements IBaseElement {
+  selected: boolean = false;
+  marked: boolean = false;
+  enabled: boolean = true;
+  alpha: number = 0.5;
+  debug: boolean = false;
 
-export abstract class BaseElement implements IBaseElement {
-    id: string = "";
-    type: ElementType = ELEMENT_TYPES.GENERAL;
-    name: string = "element";
-    layerName: LayerId = "track";
-    // Ezek grid poziciók és méretek
-    x: number;
-    y: number;
-    w: number = 1;
-    h: number = 1;
-    rotation: number = 0;
-    rotationStep: RotationStep = 0;
-    selected: boolean = false;
-    marked: boolean = false; // benne van egy kiválaszási listában...
-    enabled: boolean = true;
-    locked: boolean = false;
-    visible: boolean = true;
-    bg: string = "black";
-    fg: string = "white";
-    occupied: boolean = false;
-    alpha: number = 0.5;
-    isVisited: boolean = false; // 
-    debug: boolean = false;
-    //length: number = 1;
+  constructor(x: number, y: number) {
+    super(x, y);
+  }
 
-    trackName: string = "";
+  get GridSizeX(): number {
+    return sampleLayout.settings.gridSize;
+  }
 
-    constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
+  get GridSizeY(): number {
+    return sampleLayout.settings.gridSize;
+  }
 
+  get PositionX(): number {
+    return this.x * this.GridSizeX;
+  }
+
+  get PositionY(): number {
+    return this.y * this.GridSizeY;
+  }
+
+  get posLeft(): number {
+    return this.x * this.GridSizeX;
+  }
+
+  get posRight(): number {
+    return this.x * this.GridSizeX + this.w * this.GridSizeX;
+  }
+
+  get posTop(): number {
+    return this.y * this.GridSizeY;
+  }
+
+  get posBottom(): number {
+    return this.y * this.GridSizeY + this.h * this.GridSizeY;
+  }
+
+  get centerX(): number {
+    return this.x * this.GridSizeX + this.w * this.GridSizeX / 2;
+  }
+
+  get centerY(): number {
+    return this.y * this.GridSizeY + this.h * this.GridSizeY / 2;
+  }
+
+  get width(): number {
+    return this.posRight - this.posLeft;
+  }
+
+  get height(): number {
+    return this.posBottom - this.posTop;
+  }
+
+  get TrackWidth7(): number {
+    return 7;
+  }
+
+  get TrackWidth3(): number {
+    return 3;
+  }
+
+  get TrackPrimaryColor(): string {
+    return "black";
+  }
+
+  beginDraw(
+    ctx: CanvasRenderingContext2D,
+    options?: DrawOptions
+  ): void {
+    const scale = options?.scale ?? 1;
+    const offsetX = options?.offsetX ?? 0;
+    const offsetY = options?.offsetY ?? 0;
+
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+
+    if (options?.ghost) {
+      ctx.globalAlpha = 0.5;
+    }
+  }
+
+  endDraw(ctx: CanvasRenderingContext2D): void {
+    ctx.restore();
+
+    if (this.debug) {
+      this.drawNeighbors(ctx);
+    }
+  }
+
+  drawIconPath(
+    ctx: CanvasRenderingContext2D,
+    path: string,
+    x: number,
+    y: number,
+    size: number,
+    color = "black",
+    strokeWidth = 2
+  ): void {
+    ctx.save();
+
+    const scale = size / 24;
+
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = strokeWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    const p = new Path2D(path);
+    ctx.stroke(p);
+
+    ctx.restore();
+  }
+
+  drawMarked(ctx: CanvasRenderingContext2D): void {
+    if (!this.marked) {
+      return;
     }
 
-    rotateRight(): void {
-        if (this.locked) return;
-        this.rotation = this.normalizeRotation(this.rotation + this.rotationStep);
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#f6b83b";
+    ctx.fillStyle = "#f6b83b33";
+    ctx.strokeRect(
+      this.posLeft,
+      this.posTop,
+      this.width,
+      this.height
+    );
+    ctx.fillRect(
+      this.posLeft,
+      this.posTop,
+      this.width,
+      this.height
+    );
+    ctx.restore();
+  }
+
+  drawOccupied(ctx: CanvasRenderingContext2D): void {
+    ctx.save();
+    ctx.fillStyle = "#403b82f6";
+    ctx.fillRect(
+      this.posLeft,
+      this.posTop,
+      this.width,
+      this.height
+    );
+    ctx.restore();
+  }
+
+  drawSelection(ctx: CanvasRenderingContext2D): void {
+    this.drawEnabled(ctx);
+
+    if (!this.selected) {
+      return;
     }
 
-    rotateLeft(): void {
-        if (this.locked) return;
-        this.rotation = this.normalizeRotation(this.rotation - this.rotationStep);
+    this.beginDraw(ctx);
+
+    ctx.beginPath();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "red";
+    ctx.strokeRect(
+      this.posLeft,
+      this.posTop,
+      this.width,
+      this.height
+    );
+
+    this.endDraw(ctx);
+  }
+
+  drawEnabled(_ctx: CanvasRenderingContext2D): void {
+    // A régi BaseElementben ez jelenleg szándékosan no-op volt.
+    // Meghagyjuk ugyanazzal a futó viselkedéssel.
+  }
+
+  mouseDown(_ev: MouseEvent): void {
+    // Default: no-op.
+  }
+
+  mouseUp(_ev: MouseEvent): void {
+    // Default: no-op.
+  }
+
+  /**
+   * Kompatibilitási példánymetódus.
+   *
+   * A valódi deszerializálás továbbra is a konkrét elemek
+   * static fromJSON(...) metódusain keresztül történik.
+   */
+  fromJSON(_data: IBaseElement): void {
+    // Default: no-op.
+  }
+
+  draw(
+    _ctx: CanvasRenderingContext2D,
+    _options?: DrawOptions
+  ): void {
+    // Default: no-op.
+  }
+
+  degreesToRadians(degrees: number): number {
+    return degrees * Math.PI / 180;
+  }
+
+  drawBounds(ctx: CanvasRenderingContext2D): void {
+    const bounds = this.getBounds();
+
+    ctx.strokeStyle = "lime";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 2]);
+    ctx.strokeRect(
+      bounds.x * this.GridSizeX,
+      bounds.y * this.GridSizeX,
+      bounds.width * this.GridSizeX,
+      bounds.height * this.GridSizeX
+    );
+
+    ctx.strokeStyle = "blue";
+    ctx.strokeRect(
+      bounds.x * this.GridSizeX,
+      bounds.y * this.GridSizeX,
+      this.GridSizeX,
+      this.GridSizeX
+    );
+  }
+
+  abstract clone(): BaseElement;
+
+  drawNeighbors(ctx: CanvasRenderingContext2D): void {
+    ctx.save();
+
+    const neighbors = [
+      this.getNextItemXy(),
+      this.getPrevItemXy(),
+    ];
+
+    ctx.fillStyle = "blue";
+
+    for (const point of neighbors) {
+      ctx.beginPath();
+      ctx.arc(
+        point.x * this.GridSizeX + this.GridSizeX / 2,
+        point.y * this.GridSizeY + this.GridSizeY / 2,
+        5,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
     }
 
-    setRotation(rotation: number): void {
-        if (this.locked) return;
-        this.rotation = this.normalizeRotation(rotation);
-    }
-
-    moveBy(dx: number, dy: number): void {
-        if (this.locked) return;
-        this.x += dx;
-        this.y += dy;
-    }
-
-    setPosition(x: number, y: number): void {
-        if (this.locked) return;
-        this.x = x;
-        this.y = y;
-    }
-
-    get GridSizeX(): number { return sampleLayout.settings.gridSize; }
-    get GridSizeY(): number { return sampleLayout.settings.gridSize; }
-
-    public get PositionX(): number {
-        return this.x * this.GridSizeX
-    }
-
-    public get PositionY(): number {
-        return this.y * this.GridSizeY
-    }
-
-    get posLeft(): number {
-        return this.x * this.GridSizeX
-    }
-    get posRight(): number {
-        return this.x * this.GridSizeX + this.w * this.GridSizeX
-    }
-    get posTop(): number {
-        return this.y * this.GridSizeY
-    }
-    get posBottom(): number {
-        return this.y * this.GridSizeY + this.h * this.GridSizeY
-    }
-    public get centerX(): number {
-        return this.x * this.GridSizeX + this.w * this.GridSizeX / 2
-    }
-    public get centerY(): number {
-        return this.y * this.GridSizeY + this.h * this.GridSizeY / 2
-    }
-    get width(): number {
-        return this.posRight - this.posLeft
-    }
-    get height(): number {
-        return this.posBottom - this.posTop
-    }
-
-    get TrackWidth7(): number {
-        return 7;
-    }
-
-    get TrackWidth3(): number {
-        return 3;
-    }
-
-    get TrackPrimaryColor(): string {
-        return "black";
-    }
-
-
-    public normalizeRotation(value: number): number {
-        let result = value % 360;
-        if (result < 0) result += 360;
-        return result;
-    }
-
-    public beginDraw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
-        const x = options?.overrideX ?? this.x;
-        const y = options?.overrideY ?? this.y;
-        const scale = options?.scale ?? 1;
-        const offsetX = options?.offsetX ?? 0;
-        const offsetY = options?.offsetY ?? 0;
-
-        ctx.save();
-        ctx.translate(offsetX, offsetY);
-        //ctx.rotate((this.rotation * Math.PI) / 180);
-        ctx.scale(scale, scale);
-
-        if (options?.ghost) {
-            ctx.globalAlpha = 0.5;
-        }
-    }
-
-    public endDraw(ctx: CanvasRenderingContext2D): void {
-        ctx.restore();
-
-        // if(this.marked) {
-        //     this.drawMarked(ctx);
-        // }
-
-
-        if (this.debug) {
-            this.drawNeighbors(ctx);
-        }
-
-    }
-
-    drawIconPath(
-        ctx: CanvasRenderingContext2D,
-        path: string,
-        x: number,
-        y: number,
-        size: number,
-        color = "black",
-        strokeWidth = 2
-    ) {
-        ctx.save();
-
-        // Tabler ikonok alap viewBox-a általában 24x24
-        const scale = size / 24;
-
-        ctx.translate(x, y);
-        ctx.scale(scale, scale);
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = strokeWidth;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-
-        const p = new Path2D(path);
-        ctx.stroke(p);
-
-        ctx.restore();
-    }
-
-    public drawMarked(ctx: CanvasRenderingContext2D): void {
-        if (this.marked) {
-            ctx.save();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "#f6b83b";
-            ctx.fillStyle = "#f6b83b33";
-            ctx.strokeRect(this.posLeft, this.posTop, this.width, this.height);
-            ctx.fillRect(this.posLeft, this.posTop, this.width, this.height);
-            ctx.restore();
-        }
-    }
-
-    public drawOccupied(ctx: CanvasRenderingContext2D): void {
-        ctx.save();
-        //ctx.lineWidth = 1;
-        ctx.fillStyle = "#403b82f6";
-        //ctx.setLineDash([4, 3]);
-        ctx.fillRect(this.posLeft, this.posTop, this.width, this.height);
-        ctx.restore();
-    }
-
-    drawSelection(ctx: CanvasRenderingContext2D): void {
-
-        this.drawEnabled(ctx);
-
-        if (this.selected) {
-
-            this.beginDraw(ctx);
-            // ctx.translate(this.centerX, this.centerY);
-            // ctx.rotate(this.degreesToRadians(this.rotation));
-            // ctx.rotate(0);
-            // ctx.translate(-this.centerX, -this.centerY);
-            var w2 = this.GridSizeX / 2.0
-            var h2 = this.GridSizeY / 2.0
-            ctx.beginPath();
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = "red";
-
-            ctx.strokeRect(this.posLeft, this.posTop, this.width, this.height);
-
-            this.endDraw(ctx);
-        }
-
-
-    }
-
-    public drawEnabled(ctx: CanvasRenderingContext2D): void {
-        return;
-        if (!this.enabled) {
-            ctx.save();
-            ctx.fillStyle = "#6e6e6e67";
-            ctx.fillRect(this.posLeft, this.posTop, this.width, this.height);
-            ctx.restore();
-        }
-    }
-
-
-    mouseDown(ev: MouseEvent) {
-    }
-
-    mouseUp(ev: MouseEvent) {
-    }
-
-    toJSON(): IBaseElement {
-        return {
-            id: this.id,
-            type: this.type,
-            name: this.name,
-            layerName: this.layerName,
-            x: this.x,
-            y: this.y,
-            rotation: this.rotation,
-            rotationStep: this.rotationStep,
-            bg: this.bg,
-            fg: this.fg,
-        };
-    }
-
-    fromJSON(data: IBaseElement) {
-
-    }
-
-    draw(ctx: CanvasRenderingContext2D, options?: DrawOptions) {
-        // if (this.debug) {
-        //     this.drawNeighbors(ctx);
-        // }
-
-    }
-
-
-    // getBounds(): Rect {
-    //     return {
-    //         x: this.posLeft,
-    //         y: this.posTop,
-    //         width: 100,
-    //         height: 100,
-    //     };
-    //     // return {
-    //     //     x: this.x - this.GridSizeX,
-    //     //     y: this.y - this.GridSizeX,
-    //     //     width: this.GridSizeX,
-    //     //     height: this.GridSizeX,
-    //     // };
-    // }
-
-    degreesToRadians(degrees: number) {
-        return degrees * Math.PI / 180;
-    }
-
-
-    getBounds(): IRect {
-        return {
-            x: this.x, //this.posLeft,
-            y: this.y,
-            width: this.w,
-            height: this.h
-        }
-    }
-
-    drawBounds(ctx: CanvasRenderingContext2D) {
-        const b = this.getBounds();
-
-        //ctx.save();
-
-        ctx.strokeStyle = "lime";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 2]); // szaggatott, jól látszik debughoz
-        ctx.strokeRect(b.x * this.GridSizeX, b.y * this.GridSizeX, b.width * this.GridSizeX, b.height * this.GridSizeX);
-
-        ctx.strokeStyle = "blue";
-        ctx.strokeRect(b.x * this.GridSizeX, b.y * this.GridSizeX, this.GridSizeX, this.GridSizeX);
-
-        //ctx.restore();
-    }
-    hitTest(px: number, py: number): boolean {
-        const r = this.getBounds();
-        const x2 = r.x + r.width;
-        const y2 = r.y + r.height;
-        return px >= r.x && py >= r.y && px < x2 && py < y2;
-
-        return this.x == px && this.y == py;
-    }
-
-    abstract clone(): BaseElement;
-
-    get pos(): Point {
-        var p = new Point(this.x, this.y)
-        return p;
-    }
-
-    getNextItemXy(): Point {
-        return getDirectionXy(this.pos, this.rotation);
-    }
-
-    getPrevItemXy(): Point {
-        return getDirectionXy(this.pos, this.rotation + 180);
-    }
-
-    getNeigbordsXy(): Point[] {
-        var points: Point[] = [];
-        points.push(this.getNextItemXy());
-        points.push(this.getPrevItemXy());
-        return points;
-    }
-
-    drawNeighbors(ctx: CanvasRenderingContext2D) {
-        ctx.save();
-
-        //var neighbors = this.getNeigbordsXy();
-
-        const neighbors: Point[] = [];
-        neighbors.push(this.getNextItemXy());
-        neighbors.push(this.getPrevItemXy());
-
-        ctx.fillStyle = "blue";
-        neighbors.forEach(p => {
-            ctx.beginPath();
-            ctx.arc(p.x * this.GridSizeX + this.GridSizeX / 2, p.y * this.GridSizeY + this.GridSizeY / 2, 5, 0, Math.PI * 2);
-            ctx.fill();
-        });
-        ctx.restore();
-    }
-
-    getEditableProperties(): IEditableProperty[] {
-        return [
-            { label: "Name", key: "name", type: "string", readonly: false },
-            // { label: "Forgatás", key: "rotation", type: "number", readonly: true },
-        ];
-    }
-
-    getHelp(): string {
-        return `
+    ctx.restore();
+  }
+
+  getEditableProperties(): IEditableProperty[] {
+    return [
+      {
+        label: "Name",
+        key: "name",
+        type: "string",
+        readonly: false,
+      },
+    ];
+  }
+
+  getHelp(): string {
+    return `
     <h3 style="margin-top:0;">Base element</h3>
       `;
-    }
+  }
 }
