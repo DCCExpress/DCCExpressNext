@@ -1,285 +1,237 @@
+import {
+  TrackTurnoutLeftElement as CommonTrackTurnoutLeftElement,
+} from "../../../../../common/src/layout/elements/TrackTurnoutLeftElement";
+import {
+  ELEMENT_TYPES,
+} from "../../../../../common/src/layout/elementTypes";
+import {
+  generateId,
+} from "../../../helpers";
+import {
+  TrackTurnoutElementViewMixin,
+} from "../core/view/TrackTurnoutElementViewMixin";
+import type {
+  ITrackTurnoutLeftElement,
+} from "../types/EditorTypes";
 
-import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
-import { generateId } from "../../../helpers";
-import { getDirectionXy } from "../../../../../common/src/helpers";
-import { Point } from "../core/Rect";
-import { ITrackTurnoutLeftElement } from "../types/EditorTypes";
-import { TrackTurnoutElement } from "./TrackTurnoutElement";
+export class TrackTurnoutLeftElementView
+  extends TrackTurnoutElementViewMixin(CommonTrackTurnoutLeftElement)
+  implements ITrackTurnoutLeftElement {
+  override type: typeof ELEMENT_TYPES.TRACK_TURNOUT_LEFT =
+    ELEMENT_TYPES.TRACK_TURNOUT_LEFT;
 
-export class TrackTurnoutLeftElementView extends TrackTurnoutElement implements ITrackTurnoutLeftElement {
-    override type: typeof ELEMENT_TYPES.TRACK_TURNOUT_LEFT = ELEMENT_TYPES.TRACK_TURNOUT_LEFT;
+  constructor(x: number, y: number) {
+    super(x, y);
+  }
 
-    // constructor(x: number, y: number) {
-    //     super(x, y);
-    //     this.rotationStep = 45;
-    // }
+  override drawTurnout(
+    ctx: CanvasRenderingContext2D,
+    closed: boolean
+  ): void {
+    ctx.beginPath();
 
-    // override draw2(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
-    //     if (!this.visible) return;
+    ctx.strokeStyle = this.TrackPrimaryColor;
+    ctx.lineWidth = this.TrackWidth7;
 
-    //     this.beginDraw(ctx, options);
+    ctx.translate(this.centerX, this.centerY);
+    ctx.scale(1, -1);
+    ctx.translate(-this.centerX, -this.centerY);
 
-    //     if (this.marked) {
-    //         this.drawSelectionBox(ctx);
-    //     }
-
-    //     this.drawTurnout(ctx, this.isClosed);
-    //     this.endDraw(ctx);
-
-    //     this.beginDraw(ctx);
-    //     if (options?.showTurnoutAddress) {
-    //         drawTextWithRoundedBackground(ctx, this.posLeft, this.posBottom - 10, "#" + this.turnoutAddress.toString())
-    //     }
-    //     this.endDraw(ctx);
-
-    //     super.drawSelection(ctx);
-    // }
-
-    public drawTurnout(ctx: CanvasRenderingContext2D, t1Closed: boolean): void {
-
-        ctx.beginPath();
-
-        ctx.strokeStyle = this.TrackPrimaryColor
-        ctx.lineWidth = this.TrackWidth7;
-
-        ctx.translate(this.centerX, this.centerY);
-        ctx.scale(1, -1)
-        ctx.translate(-this.centerX, -this.centerY);
-
-        if (this.rotation == 0) {
-            ctx.moveTo(this.posLeft, this.centerY)
-            ctx.lineTo(this.posRight, this.centerY)
-            ctx.moveTo(this.centerX, this.centerY)
-            ctx.lineTo(this.posRight, this.posBottom)
-        }
-        else if (this.rotation == 45) {
-            ctx.moveTo(this.posLeft, this.posTop)
-            ctx.lineTo(this.posRight, this.posBottom)
-            ctx.moveTo(this.centerX, this.centerY)
-            ctx.lineTo(this.centerX, this.posBottom)
-        }
-        else if (this.rotation == 90) {
-            ctx.moveTo(this.centerX, this.posTop)
-            ctx.lineTo(this.centerX, this.posBottom)
-            ctx.moveTo(this.centerX, this.centerY)
-            ctx.lineTo(this.posLeft, this.posBottom)
-        }
-        else if (this.rotation == 135) {
-            ctx.moveTo(this.posRight, this.posTop)
-            ctx.lineTo(this.posLeft, this.posBottom)
-            ctx.moveTo(this.centerX, this.centerY)
-            ctx.lineTo(this.posLeft, this.centerY)
-        }
-        else if (this.rotation == 180) {
-            ctx.moveTo(this.posLeft, this.centerY)
-            ctx.lineTo(this.posRight, this.centerY)
-            ctx.moveTo(this.centerX, this.centerY)
-            ctx.lineTo(this.posLeft, this.posTop)
-        }
-        else if (this.rotation == 225) {
-            ctx.moveTo(this.posLeft, this.posTop)
-            ctx.lineTo(this.posRight, this.posBottom)
-            ctx.moveTo(this.centerX, this.centerY)
-            ctx.lineTo(this.centerX, this.posTop)
-        }
-        else if (this.rotation == 270) {
-            ctx.moveTo(this.centerX, this.posTop)
-            ctx.lineTo(this.centerX, this.posBottom)
-            ctx.moveTo(this.centerX, this.centerY)
-            ctx.lineTo(this.posRight, this.posTop)
-        }
-        else if (this.rotation == 315) {
-            ctx.moveTo(this.posRight, this.posTop)
-            ctx.lineTo(this.posLeft, this.posBottom)
-            ctx.moveTo(this.centerX, this.centerY)
-            ctx.lineTo(this.posRight, this.centerY)
-        }
-        ctx.stroke();
-
-
-        // var color = this.TrackLightColor
-        // switch (this.state) {
-        //     case RailStates.selected: color = this.TrackSelectedColor
-        //         break;
-        //     case RailStates.occupied: color = this.TrackDangerColor
-        //         break;
-        // }
-
-
-        ctx.lineWidth = this.TrackWidth3;
-        ctx.strokeStyle = this.stateColor;
-
-        // CLOSED
-        if (t1Closed) {
-            ctx.beginPath();
-
-
-            var dx = this.width / 5
-            if (this.rotation == 0) {
-                ctx.moveTo(this.posLeft + dx, this.centerY)
-                ctx.lineTo(this.posRight - dx, this.centerY)
-            }
-            else if (this.rotation == 45) {
-                ctx.moveTo(this.posLeft + dx, this.posTop + dx)
-                ctx.lineTo(this.posRight - dx, this.posBottom - dx)
-            }
-            else if (this.rotation == 90) {
-                ctx.moveTo(this.centerX, this.posTop + dx)
-                ctx.lineTo(this.centerX, this.posBottom - dx)
-            }
-            else if (this.rotation == 135) {
-                ctx.moveTo(this.posRight - dx, this.posTop + dx)
-                ctx.lineTo(this.posLeft + dx, this.posBottom - dx)
-            }
-            else if (this.rotation == 180) {
-                ctx.moveTo(this.posLeft + dx, this.centerY)
-                ctx.lineTo(this.posRight - dx, this.centerY)
-            }
-            else if (this.rotation == 225) {
-                ctx.moveTo(this.posLeft + dx, this.posTop + dx)
-                ctx.lineTo(this.posRight - dx, this.posBottom - dx)
-            }
-            else if (this.rotation == 270) {
-                ctx.moveTo(this.centerX, this.posTop + dx)
-                ctx.lineTo(this.centerX, this.posBottom - dx)
-            }
-            else if (this.rotation == 315) {
-                ctx.moveTo(this.posRight - dx, this.posTop + dx)
-                ctx.lineTo(this.posLeft + dx, this.posBottom - dx)
-            }
-
-
-            ctx.stroke();
-        } else {
-            ctx.beginPath();
-
-            ctx.lineWidth = this.TrackWidth3;
-            ctx.strokeStyle = this.stateColor;
-
-            var dx = this.width / 5
-            var dx2 = this.width / 5
-
-            if (this.rotation == 0) {
-                ctx.moveTo(this.posLeft + dx, this.centerY)
-                ctx.lineTo(this.centerX, this.centerY)
-                ctx.lineTo(this.posRight - dx2, this.posBottom - dx2)
-            }
-            else if (this.rotation == 45) {
-                ctx.moveTo(this.posLeft + dx, this.posTop + dx)
-                ctx.lineTo(this.centerX, this.centerY)
-                ctx.lineTo(this.centerX, this.posBottom - dx2)
-            }
-            else if (this.rotation == 90) {
-                ctx.moveTo(this.centerX, this.posTop + dx)
-                ctx.lineTo(this.centerX, this.centerY)
-                ctx.lineTo(this.posLeft + dx2, this.posBottom - dx2)
-            }
-            else if (this.rotation == 135) {
-                ctx.moveTo(this.posRight - dx2, this.posTop + dx2)
-                ctx.lineTo(this.centerX, this.centerY)
-                ctx.lineTo(this.posLeft + dx, this.centerY)
-            }
-            else if (this.rotation == 180) {
-                ctx.moveTo(this.posLeft + dx2, this.posTop + dx2)
-                ctx.lineTo(this.centerX, this.centerY)
-                ctx.lineTo(this.posRight - dx, this.centerY)
-            }
-            else if (this.rotation == 225) {
-                ctx.moveTo(this.centerX, this.posTop + dx)
-                ctx.lineTo(this.centerX, this.centerY)
-                ctx.lineTo(this.posRight - dx2, this.posBottom - dx2)
-            }
-            else if (this.rotation == 270) {
-                ctx.moveTo(this.posRight - dx2, this.posTop + dx2)
-                ctx.lineTo(this.centerX, this.centerY)
-                ctx.lineTo(this.centerX, this.posBottom - dx)
-            }
-            else if (this.rotation == 315) {
-                ctx.moveTo(this.posRight - dx, this.centerY)
-                ctx.lineTo(this.centerX, this.centerY)
-                ctx.lineTo(this.posLeft + dx2, this.posBottom - dx2)
-            }
-            ctx.stroke();
-        }
-
-        ctx.beginPath();
-        ctx.lineWidth = 1
-        ctx.strokeStyle = "black"
-        ctx.fillStyle = this.locked ? this.turnoutLockedColor : this.turnoutUnLockedColor
-        ctx.arc(this.centerX, this.centerY, 3, 0, 2 * Math.PI)
-        ctx.fill()
-        ctx.stroke()
-
+    if (this.rotation == 0) {
+      ctx.moveTo(this.posLeft, this.centerY);
+      ctx.lineTo(this.posRight, this.centerY);
+      ctx.moveTo(this.centerX, this.centerY);
+      ctx.lineTo(this.posRight, this.posBottom);
+    } else if (this.rotation == 45) {
+      ctx.moveTo(this.posLeft, this.posTop);
+      ctx.lineTo(this.posRight, this.posBottom);
+      ctx.moveTo(this.centerX, this.centerY);
+      ctx.lineTo(this.centerX, this.posBottom);
+    } else if (this.rotation == 90) {
+      ctx.moveTo(this.centerX, this.posTop);
+      ctx.lineTo(this.centerX, this.posBottom);
+      ctx.moveTo(this.centerX, this.centerY);
+      ctx.lineTo(this.posLeft, this.posBottom);
+    } else if (this.rotation == 135) {
+      ctx.moveTo(this.posRight, this.posTop);
+      ctx.lineTo(this.posLeft, this.posBottom);
+      ctx.moveTo(this.centerX, this.centerY);
+      ctx.lineTo(this.posLeft, this.centerY);
+    } else if (this.rotation == 180) {
+      ctx.moveTo(this.posLeft, this.centerY);
+      ctx.lineTo(this.posRight, this.centerY);
+      ctx.moveTo(this.centerX, this.centerY);
+      ctx.lineTo(this.posLeft, this.posTop);
+    } else if (this.rotation == 225) {
+      ctx.moveTo(this.posLeft, this.posTop);
+      ctx.lineTo(this.posRight, this.posBottom);
+      ctx.moveTo(this.centerX, this.centerY);
+      ctx.lineTo(this.centerX, this.posTop);
+    } else if (this.rotation == 270) {
+      ctx.moveTo(this.centerX, this.posTop);
+      ctx.lineTo(this.centerX, this.posBottom);
+      ctx.moveTo(this.centerX, this.centerY);
+      ctx.lineTo(this.posRight, this.posTop);
+    } else if (this.rotation == 315) {
+      ctx.moveTo(this.posRight, this.posTop);
+      ctx.lineTo(this.posLeft, this.posBottom);
+      ctx.moveTo(this.centerX, this.centerY);
+      ctx.lineTo(this.posRight, this.centerY);
     }
 
-    override toJSON(): ITrackTurnoutLeftElement {
-        return {
-            ...super.toJSON(),
-            type: ELEMENT_TYPES.TRACK_TURNOUT_LEFT,
-            address: this.address,
-            turnoutAddress: this.turnoutAddress,
-            turnoutClosedValue: this.turnoutClosedValue
-        };
+    ctx.stroke();
+
+    ctx.lineWidth = this.TrackWidth3;
+    ctx.strokeStyle = this.stateColor;
+
+    if (closed) {
+      ctx.beginPath();
+
+      const dx = this.width / 5;
+
+      if (this.rotation == 0) {
+        ctx.moveTo(this.posLeft + dx, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.centerY);
+      } else if (this.rotation == 45) {
+        ctx.moveTo(this.posLeft + dx, this.posTop + dx);
+        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
+      } else if (this.rotation == 90) {
+        ctx.moveTo(this.centerX, this.posTop + dx);
+        ctx.lineTo(this.centerX, this.posBottom - dx);
+      } else if (this.rotation == 135) {
+        ctx.moveTo(this.posRight - dx, this.posTop + dx);
+        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
+      } else if (this.rotation == 180) {
+        ctx.moveTo(this.posLeft + dx, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.centerY);
+      } else if (this.rotation == 225) {
+        ctx.moveTo(this.posLeft + dx, this.posTop + dx);
+        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
+      } else if (this.rotation == 270) {
+        ctx.moveTo(this.centerX, this.posTop + dx);
+        ctx.lineTo(this.centerX, this.posBottom - dx);
+      } else if (this.rotation == 315) {
+        ctx.moveTo(this.posRight - dx, this.posTop + dx);
+        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
+      }
+
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+
+      const dx = this.width / 5;
+      const dx2 = this.width / 5;
+
+      if (this.rotation == 0) {
+        ctx.moveTo(this.posLeft + dx, this.centerY);
+        ctx.lineTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx2, this.posBottom - dx2);
+      } else if (this.rotation == 45) {
+        ctx.moveTo(this.posLeft + dx, this.posTop + dx);
+        ctx.lineTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posBottom - dx2);
+      } else if (this.rotation == 90) {
+        ctx.moveTo(this.centerX, this.posTop + dx);
+        ctx.lineTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx2, this.posBottom - dx2);
+      } else if (this.rotation == 135) {
+        ctx.moveTo(this.posRight - dx2, this.posTop + dx2);
+        ctx.lineTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.centerY);
+      } else if (this.rotation == 180) {
+        ctx.moveTo(this.posLeft + dx2, this.posTop + dx2);
+        ctx.lineTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.centerY);
+      } else if (this.rotation == 225) {
+        ctx.moveTo(this.centerX, this.posTop + dx);
+        ctx.lineTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx2, this.posBottom - dx2);
+      } else if (this.rotation == 270) {
+        ctx.moveTo(this.posRight - dx2, this.posTop + dx2);
+        ctx.lineTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posBottom - dx);
+      } else if (this.rotation == 315) {
+        ctx.moveTo(this.posRight - dx, this.centerY);
+        ctx.lineTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx2, this.posBottom - dx2);
+      }
+
+      ctx.stroke();
     }
 
-    static formJSON(data: ITrackTurnoutLeftElement): TrackTurnoutLeftElementView {
-        const e = new TrackTurnoutLeftElementView(data.x, data.y);
-        e.id = data.id;
-        e.name = data.name;
-        e.rotation = data.rotation;
-        e.address = data.address;
-        e.turnoutAddress = data.turnoutAddress ?? 0;
-        e.turnoutClosedValue = data.turnoutClosedValue;
-        e.bg = data.bg;
-        e.fg = data.fg;
-        return e;
-    }
+    ctx.beginPath();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "black";
+    ctx.fillStyle =
+      this.locked
+        ? this.turnoutLockedColor
+        : this.turnoutUnLockedColor;
 
-    override clone(): TrackTurnoutLeftElementView {
-        const copy = new TrackTurnoutLeftElementView(this.x, this.y);
-        copy.id = generateId();
-        copy.rotation = this.rotation;
-        copy.rotationStep = this.rotationStep;
-        copy.selected = this.selected;
-        copy.address = this.address;
-        copy.turnoutAddress = this.turnoutAddress;
-        copy.turnoutClosed = this.turnoutClosed;
-        copy.turnoutClosedValue = this.turnoutClosedValue;
+    ctx.arc(this.centerX, this.centerY, 3, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+  }
 
-        return copy;
-    }
+  override toJSON(): ITrackTurnoutLeftElement {
+    return {
+      ...super.toJSON(),
+      type: ELEMENT_TYPES.TRACK_TURNOUT_LEFT,
+      address: this.address,
+      length: this.length,
+      turnoutAddress: this.turnoutAddress,
+      turnoutClosedValue: this.turnoutClosedValue,
+    };
+  }
 
-    getNextItemXy(): Point {
-        if (this.isClosed) {
-            return getDirectionXy(this.pos, -this.rotation)
-        }
-        return getDirectionXy(this.pos, -this.rotation - 45)
-    }
+  static fromJSON(
+    data: ITrackTurnoutLeftElement
+  ): TrackTurnoutLeftElementView {
+    const element = new TrackTurnoutLeftElementView(
+      data.x,
+      data.y
+    );
 
-    getPrevItemXy(): Point {
-        return getDirectionXy(this.pos, -this.rotation + 180)
-    }
+    element.id = data.id;
+    element.name = data.name;
+    element.layerName = data.layerName;
+    element.rotation = data.rotation;
+    element.rotationStep = data.rotationStep;
+    element.address = data.address;
+    element.length = data.length;
+    element.turnoutAddress = data.turnoutAddress ?? 0;
+    element.turnoutClosedValue = data.turnoutClosedValue;
+    element.bg = data.bg;
+    element.fg = data.fg;
 
-    getConnections(): { entry: Point, straight: Point, div: Point } {
-        return {
-            straight: getDirectionXy(this.pos, -this.rotation),
-            entry: getDirectionXy(this.pos, -this.rotation + 180),
-            div: getDirectionXy(this.pos, -this.rotation - 45)
-        }
-    }
+    return element;
+  }
 
-    getNeigbordsXy(): Point[] {
-        var points: Point[] = [];
-        points.push(getDirectionXy(this.pos, -this.rotation))
-        points.push(getDirectionXy(this.pos, -this.rotation - 45))
-        points.push(getDirectionXy(this.pos, -this.rotation + 180))
-        return points;
-    }
-    // override getEditableProperties(): IEditableProperty[] {
-    //     return [
-    //         ...super.getEditableProperties(),
-    //         { label: "Turnout Address", key: "turnoutAddress", type: "number", readonly: false, validate: (v) => { return true } },
-    //         { label: "Closed Value", key: "turnoutClosedValue", type: "bittoggle", readonly: false, validate: (v) => { return true } },
-    //     ];
-    // }
+  /**
+   * Régi elgépelés kompatibilitás:
+   * ElementFactory jelenleg még formJSON()-t hív balos váltónál.
+   */
+  static formJSON(
+    data: ITrackTurnoutLeftElement
+  ): TrackTurnoutLeftElementView {
+    return this.fromJSON(data);
+  }
+
+  clone(): TrackTurnoutLeftElementView {
+    const copy = new TrackTurnoutLeftElementView(
+      this.x,
+      this.y
+    );
+
+    copy.id = generateId();
+    copy.rotation = this.rotation;
+    copy.rotationStep = this.rotationStep;
+    copy.selected = this.selected;
+    copy.address = this.address;
+    copy.length = this.length;
+    copy.turnoutAddress = this.turnoutAddress;
+    copy.turnoutClosed = this.turnoutClosed;
+    copy.turnoutClosedValue = this.turnoutClosedValue;
+
+    return copy;
+  }
 }
