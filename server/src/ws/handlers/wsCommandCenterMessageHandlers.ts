@@ -33,6 +33,20 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
         .then(success => {
           log("Set loco result:", success);
 
+          if (success) {
+            const syncedLocoForSetLoco =
+              commandCenter.getLocoInfo(locoAddress);
+
+            if (syncedLocoForSetLoco) {
+              broadcast({
+                type: "locoState",
+                data: {
+                  loco: syncedLocoForSetLoco,
+                },
+              });
+            }
+          }
+
           if (!success) {
             broadcast({
               type: "error",
@@ -62,6 +76,20 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
         .then(success => {
           log("Set loco function result:", success);
 
+          if (success) {
+            const syncedLocoForFunction =
+              commandCenter.getLocoInfo(locoAddress);
+
+            if (syncedLocoForFunction) {
+              broadcast({
+                type: "locoState",
+                data: {
+                  loco: syncedLocoForFunction,
+                },
+              });
+            }
+          }
+
           if (!success) {
             broadcast({
               type: "error",
@@ -74,7 +102,6 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
 
       return true;
     }
-
     case "getLoco": {
       const {
         locoAddress,
@@ -84,6 +111,21 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
         .getLoco(locoAddress)
         .then(loco => {
           log("getLoco result:", loco);
+
+          const syncedLoco =
+            commandCenter.getLocoInfo(locoAddress) ??
+            loco;
+
+          if (!syncedLoco) {
+            return;
+          }
+
+          sendToClient(ws, {
+            type: "locoState",
+            data: {
+              loco: syncedLoco,
+            },
+          });
         })
         .catch(err => {
           logError("Failed to get loco:", err);
@@ -98,6 +140,7 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
 
       return true;
     }
+
 
     case "setTurnout": {
       const {

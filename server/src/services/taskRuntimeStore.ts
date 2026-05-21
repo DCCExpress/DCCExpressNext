@@ -1400,37 +1400,77 @@ class TaskRuntimeStore {
       snapshot: this.getSnapshot(),
     };
   }
+  private broadcastSyncedLocoState(
+    locoAddress: number
+  ): void {
+    const commandCenter =
+      this.getSimulatorCommandCenter?.() ?? null;
 
-  private releaseTaskLoco(task: TrainTask): void {
-    const locoAddress =
-      task.runtime.loco?.address ?? null;
+    const loco =
+      commandCenter?.getLocoInfo(locoAddress);
 
-    if (locoAddress === null) {
+    if (!loco) {
       return;
     }
 
-    try {
-      locoReservationStore.release(
-        locoAddress,
-        task.id
-      );
+    this.broadcast?.({
+      type: "locoState",
+      data: {
+        loco,
+      },
+    });
+  }
+  private releaseTaskLoco(task: TrainTask): void {
+    const releasedAddresses =
+      new Set<number>();
 
+    const locoAddress =
+      task.runtime.loco?.address ?? null;
+
+    if (locoAddress !== null) {
+      try {
+        locoReservationStore.release(
+          locoAddress,
+          task.id
+        );
+
+        releasedAddresses.add(locoAddress);
+      } catch (error) {
+        console.warn(
+          `[TaskRuntimeStore] Task loco release failed for #${locoAddress}:`,
+          error
+        );
+      }
+    }
+
+    /**
+     * Biztonsági takarítás:
+     * ha a task.runtime.loco már null, de a foglalás ownerId alapján
+     * még bent maradt, akkor is engedjük el.
+     */
+    for (const released of locoReservationStore.releaseByOwner(task.id)) {
+      releasedAddresses.add(released.locoAddress);
+    }
+
+    for (const releasedAddress of releasedAddresses) {
       this.broadcast?.({
         type: "locoReservationChanged",
         data: {
-          locoAddress,
+          locoAddress: releasedAddress,
           reservation: null,
         },
       });
-    } catch (error) {
-      console.warn(
-        `[TaskRuntimeStore] Task loco release failed for #${locoAddress}:`,
-        error
-      );
+
+      /**
+       * A LocoPanel a LocoState.reservation mezőből dolgozik.
+       * Release után ezért kötelező friss locoState is.
+       */
+      this.broadcastSyncedLocoState(releasedAddress);
     }
 
     task.runtime.loco = null;
   }
+
 }
 
 
