@@ -1,17 +1,29 @@
 import {
   Divider,
   Group,
+  Modal,
+  ScrollArea,
+  Stack,
+  Table,
+  Text,
 } from "@mantine/core";
 
 import {
   IconEdit,
+  IconListDetails,
   IconPlayerPlayFilled,
+  IconPlayerSkipForward,
   IconPlayerStopFilled,
 } from "@tabler/icons-react";
 
 import {
+  useEffect,
   useState,
 } from "react";
+
+import type {
+  TaskManagerSnapshot,
+} from "../../../common/src/task";
 
 import StatusActionIcon from "../components/common/StatusActionIcon";
 import StatusBadge from "../components/common/StatusBadge";
@@ -23,6 +35,7 @@ import { useScriptStatus } from "../hooks/useScriptStatus";
 import { useWsStatus } from "../hooks/useWsStatus";
 import { scriptEngine } from "../services/scriptEngine";
 import { wsApi } from "../services/wsApi";
+import { wsClient } from "../services/wsClient";
 import { getWsColor } from "./TopMenuBar";
 
 import "../styles/global.css";
@@ -48,6 +61,18 @@ export default function StatusBar() {
     setScriptEditorOpened,
   ] =
     useState(false);
+
+  const [
+    taskDialogOpened,
+    setTaskDialogOpened,
+  ] =
+    useState(false);
+
+  const [
+    taskSnapshot,
+    setTaskSnapshot,
+  ] =
+    useState<TaskManagerSnapshot | null>(null);
 
   const wsConnected =
     wsStatus === "connected";
@@ -83,6 +108,42 @@ export default function StatusBar() {
             ? "blue"
             : "gray";
 
+  const runningTaskCount =
+    taskSnapshot?.tasks.filter(
+      task =>
+        task.status === "running" ||
+        task.status === "finishing"
+    ).length ?? 0;
+
+  const activeTaskCount =
+    taskSnapshot?.tasks.filter(
+      task =>
+        task.status === "running" ||
+        task.status === "paused" ||
+        task.status === "finishing"
+    ).length ?? 0;
+
+  const taskBadgeColor =
+    runningTaskCount > 0
+      ? "green"
+      : activeTaskCount > 0
+        ? "orange"
+        : "gray";
+
+  useEffect(() => {
+    const unsubscribe =
+      wsClient.on(
+        "taskManagerSnapshotChanged",
+        data => {
+          setTaskSnapshot(data);
+        }
+      );
+
+    wsApi.getTaskRuntimeState();
+
+    return unsubscribe;
+  }, []);
+
   const handleStartScript = (): void => {
     scriptEngine.runCurrent({
       source: "control-panel",
@@ -98,6 +159,23 @@ export default function StatusBar() {
     handleStartScript();
   };
 
+  const handleOpenTasks = (): void => {
+    setTaskDialogOpened(true);
+    wsApi.getTaskRuntimeState();
+  };
+
+  const handleStartTasks = (): void => {
+    wsApi.startAllTasks();
+  };
+
+  const handleCompleteTasks = (): void => {
+    wsApi.finishAllTasks();
+  };
+
+  const handleStopTasks = (): void => {
+    wsApi.abortAllTasks();
+  };
+
   return (
     <>
       <Group
@@ -105,7 +183,7 @@ export default function StatusBar() {
         px="md"
         justify="space-between"
       >
-        <Group gap="md">
+        <Group gap="md" wrap="nowrap">
           <StatusBadge
             color={getWsColor(wsStatus)}
           >
@@ -204,6 +282,47 @@ export default function StatusBar() {
 
           <Divider orientation="vertical" />
 
+          <StatusBadge color={taskBadgeColor}>
+            TASK {activeTaskCount}
+          </StatusBadge>
+
+          <StatusActionIcon
+            tooltip="Open tasks"
+            color="blue"
+            onClick={handleOpenTasks}
+          >
+            <IconListDetails size={14} />
+          </StatusActionIcon>
+
+          <StatusActionIcon
+            tooltip="Start all tasks"
+            color="green"
+            disabled={!wsConnected}
+            onClick={handleStartTasks}
+          >
+            <IconPlayerPlayFilled size={14} />
+          </StatusActionIcon>
+
+          <StatusActionIcon
+            tooltip="Complete all tasks"
+            color="blue"
+            disabled={!wsConnected || runningTaskCount === 0}
+            onClick={handleCompleteTasks}
+          >
+            <IconPlayerSkipForward size={14} />
+          </StatusActionIcon>
+
+          <StatusActionIcon
+            tooltip="Stop all tasks"
+            color="red"
+            disabled={!wsConnected || activeTaskCount === 0}
+            onClick={handleStopTasks}
+          >
+            <IconPlayerStopFilled size={14} />
+          </StatusActionIcon>
+
+          <Divider orientation="vertical" />
+
           <FastClockStatus />
 
           <Divider orientation="vertical" />
@@ -235,6 +354,112 @@ export default function StatusBar() {
         }}
         title="Script editor"
       />
+
+      <Modal
+        opened={taskDialogOpened}
+        onClose={() => {
+          setTaskDialogOpened(false);
+        }}
+        title="Tasks"
+        size="xl"
+        centered
+      >
+        <Stack gap="sm">
+          <Group gap="xs">
+            <StatusActionIcon
+              tooltip="Refresh tasks"
+              color="blue"
+              onClick={() => {
+                wsApi.getTaskRuntimeState();
+              }}
+            >
+              <IconListDetails size={14} />
+            </StatusActionIcon>
+
+            <StatusActionIcon
+              tooltip="Start all tasks"
+              color="green"
+              onClick={handleStartTasks}
+            >
+              <IconPlayerPlayFilled size={14} />
+            </StatusActionIcon>
+
+            <StatusActionIcon
+              tooltip="Complete all tasks"
+              color="blue"
+              disabled={runningTaskCount === 0}
+              onClick={handleCompleteTasks}
+            >
+              <IconPlayerSkipForward size={14} />
+            </StatusActionIcon>
+
+            <StatusActionIcon
+              tooltip="Stop all tasks"
+              color="red"
+              disabled={activeTaskCount === 0}
+              onClick={handleStopTasks}
+            >
+              <IconPlayerStopFilled size={14} />
+            </StatusActionIcon>
+          </Group>
+
+          {!taskSnapshot ? (
+            <Text size="sm" c="dimmed">
+              No task snapshot yet.
+            </Text>
+          ) : taskSnapshot.tasks.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              No tasks.
+            </Text>
+          ) : (
+            <ScrollArea h={360}>
+              <Table
+                striped
+                highlightOnHover
+                withTableBorder
+                withColumnBorders
+                stickyHeader
+              >
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Name</Table.Th>
+                    <Table.Th>Status</Table.Th>
+                    <Table.Th>From</Table.Th>
+                    <Table.Th>To</Table.Th>
+                    <Table.Th>Speed</Table.Th>
+                    <Table.Th>Phase</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+
+                <Table.Tbody>
+                  {taskSnapshot.tasks.map(task => (
+                    <Table.Tr key={task.id}>
+                      <Table.Td>
+                        {task.name}
+                      </Table.Td>
+                      <Table.Td>
+                        {task.status}
+                      </Table.Td>
+                      <Table.Td>
+                        {task.transition.fromBlock.name}
+                      </Table.Td>
+                      <Table.Td>
+                        {task.transition.toBlock.name}
+                      </Table.Td>
+                      <Table.Td>
+                        {task.targetSpeed}
+                      </Table.Td>
+                      <Table.Td>
+                        {task.runtime.simulation.phase}
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </ScrollArea>
+          )}
+        </Stack>
+      </Modal>
     </>
   );
 }

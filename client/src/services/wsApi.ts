@@ -278,6 +278,20 @@ releaseLocoReservation(
       taskIdOrName,
     });
   }
+  finishAllTasks(): boolean {
+    return this.send("finishAllTasks", {});
+  }
+
+
+
+  abortAllTasks(): boolean {
+    return this.send("abortAllTasks", {});
+  }
+
+
+  startAllTasks(): boolean {
+    return this.send("startAllTasks", {});
+  }
 
   getTaskRuntimeState(): boolean {
     return this.send(

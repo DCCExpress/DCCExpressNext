@@ -143,6 +143,7 @@ export type ClientWsPayloadMap = {
   abortTask: TaskIdOrNameCommandPayload;
   pauseTask: TaskIdOrNameCommandPayload;
   resumeTask: TaskIdOrNameCommandPayload;
+  startAllTasks: EmptyClientWsCommandPayload;
   finishAllTasks: EmptyClientWsCommandPayload;
   abortAllTasks: EmptyClientWsCommandPayload;
   getTaskRuntimeState: EmptyClientWsCommandPayload;

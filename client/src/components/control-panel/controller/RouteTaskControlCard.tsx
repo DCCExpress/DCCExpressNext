@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import {
   IconCheck,
   IconPlayerPlay,
+  IconPlayerSkipForward,
   IconPlayerStop,
   IconRoute,
 } from "@tabler/icons-react";
@@ -305,7 +306,7 @@ export default function RouteTaskControlCard({
           size="xs"
           variant="light"
           color="orange"
-          leftSection={<IconCheck size={16} />}
+          leftSection={<IconPlayerSkipForward size={16} />}
           onClick={() => {
             void handleFinishAllTasks();
           }}

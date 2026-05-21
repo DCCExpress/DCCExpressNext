@@ -30,7 +30,7 @@ export default function App() {
 
   return (
     <MantineProvider>
-      <Notifications position="bottom-center" autoClose={2000} />
+      <Notifications position="bottom-left" autoClose={2000} />
 
       {page === "home" && (
         <HomePage

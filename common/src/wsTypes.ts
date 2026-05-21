@@ -111,6 +111,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "abortTask",
   "pauseTask",
   "resumeTask",
+  "startAllTasks",
   "finishAllTasks",
   "abortAllTasks",
   "getTaskRuntimeState",

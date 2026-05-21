@@ -143,6 +143,10 @@ export const handleTaskMessage: WsMessageHandler = async ({
       return true;
     }
 
+    case "startAllTasks":
+      await taskRuntimeStore.startAllTasks();
+      return true;
+
     case "finishAllTasks":
       await taskRuntimeStore.finishAllTasks();
       return true;
