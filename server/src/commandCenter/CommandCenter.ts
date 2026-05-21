@@ -25,6 +25,11 @@ import {
   onLocosChanged,
 } from "../services/locoChangeNotifier.js";
 
+
+import {
+  locoReservationStore,
+} from "../services/locoReservationStore.js";
+
 import {
   broadcastAll,
 } from "../ws/wsServer.js";
@@ -111,12 +116,17 @@ export abstract class CommandCenter {
     this.locos.clear();
 
     for (const loco of locos) {
-      this.locos.set(loco.address, {
+      const locoState: LocoState = {
         ...loco,
         speed: 0,
         direction: "forward",
         functions: {},
-      });
+      };
+
+      this.locos.set(
+        loco.address,
+        this.syncLocoReservation(locoState)
+      );
     }
   }
 
@@ -241,6 +251,24 @@ export abstract class CommandCenter {
     fn: number,
     active: boolean
   ): Promise<boolean>;
+  protected syncLocoReservation(
+    loco: LocoState
+  ): LocoState {
+    const reservation =
+      locoReservationStore.getReservation(
+        loco.address
+      );
+
+    if (reservation) {
+      loco.reservation = reservation;
+    } else {
+      delete loco.reservation;
+    }
+
+    return loco;
+  }
+
+
 
   protected getOrCreateLoco(
     address: number
@@ -259,7 +287,7 @@ export abstract class CommandCenter {
       this.locos.set(address, loco);
     }
 
-    return loco;
+    return this.syncLocoReservation(loco);
   }
 
   abstract getLoco(
@@ -267,7 +295,9 @@ export abstract class CommandCenter {
   ): Promise<LocoState | null>;
 
   getLocos(): LocoState[] {
-    return Array.from(this.locos.values());
+    return Array.from(this.locos.values()).map(
+      loco => this.syncLocoReservation(loco)
+    );
   }
 
   abstract setTrackPower(
@@ -299,7 +329,12 @@ export abstract class CommandCenter {
   getLocoInfo(
     address: number
   ): LocoState | undefined {
-    return this.locos.get(address);
+    const loco =
+      this.locos.get(address);
+
+    return loco
+      ? this.syncLocoReservation(loco)
+      : undefined;
   }
 
   getTurnoutInfo(
