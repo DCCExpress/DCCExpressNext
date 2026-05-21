@@ -38,6 +38,7 @@ import {
 import {
   TaskRouteRuntimeCoordinator,
 } from "./tasks/taskRouteRuntimeCoordinator.js";
+import { locoReservationStore } from "./locoReservationStore.js";
 
 type BroadcastFn = (
   message: TypedServerWsMessage
@@ -611,7 +612,7 @@ class TaskRuntimeStore {
       previous.toBlockId !== progress.toBlockId ||
       previous.toBlockName !== progress.toBlockName ||
       (previous.waitingSensorAddress ?? null) !==
-        (progress.waitingSensorAddress ?? null);
+      (progress.waitingSensorAddress ?? null);
 
     if (!changed) {
       return this.actionOk();
@@ -721,6 +722,7 @@ class TaskRuntimeStore {
       };
 
       this.routeCoordinator?.releaseTaskRoute(task.id);
+      this.releaseTaskLoco(task);
 
       this.broadcast?.({
         type: "taskCompleted",
@@ -791,6 +793,7 @@ class TaskRuntimeStore {
     };
 
     this.routeCoordinator?.releaseTaskRoute(task.id);
+    this.releaseTaskLoco(task);
     this.broadcastSnapshot();
 
     return this.actionOk();
@@ -881,6 +884,8 @@ class TaskRuntimeStore {
     if (task.status === "finishing") {
       task.status = "completed";
 
+      this.releaseTaskLoco(task);
+
       this.broadcast?.({
         type: "taskCompleted",
         data: {
@@ -916,6 +921,7 @@ class TaskRuntimeStore {
       },
     });
 
+    this.releaseTaskLoco(task);
     task.runtime = createEmptyTrainTaskRuntimeState();
 
     this.broadcastSnapshot();
@@ -1066,7 +1072,50 @@ class TaskRuntimeStore {
       return false;
     }
 
-    task.runtime.loco = loco;
+    const existingReservation =
+      locoReservationStore.getReservation(loco.address);
+
+    if (
+      existingReservation &&
+      existingReservation.ownerId !== task.id
+    ) {
+      await this.updateTaskSimulationProgress(
+        task.id,
+        {
+          phase: "waitingForLoco",
+          legIndex: 0,
+          legCount: 0,
+          fromBlockId: task.fromBlockId,
+          fromBlockName: task.transition.fromBlock.name,
+          toBlockId: null,
+          toBlockName: null,
+          waitingSensorAddress: null,
+        }
+      );
+
+      return false;
+    }
+
+    const reservation =
+      locoReservationStore.reserve({
+        locoAddress: loco.address,
+        ownerId: task.id,
+        ownerType: "task",
+        ownerName: task.name,
+        reason: "Task is controlling this locomotive",
+      });
+
+    task.runtime.loco = {
+      ...loco,
+    };
+
+    this.broadcast?.({
+      type: "locoReservationChanged",
+      data: {
+        locoAddress: loco.address,
+        reservation,
+      },
+    });
 
     return true;
   }
@@ -1258,6 +1307,37 @@ class TaskRuntimeStore {
       error,
       snapshot: this.getSnapshot(),
     };
+  }
+
+  private releaseTaskLoco(task: TrainTask): void {
+    const locoAddress =
+      task.runtime.loco?.address ?? null;
+
+    if (locoAddress === null) {
+      return;
+    }
+
+    try {
+      locoReservationStore.release(
+        locoAddress,
+        task.id
+      );
+
+      this.broadcast?.({
+        type: "locoReservationChanged",
+        data: {
+          locoAddress,
+          reservation: null,
+        },
+      });
+    } catch (error) {
+      console.warn(
+        `[TaskRuntimeStore] Task loco release failed for #${locoAddress}:`,
+        error
+      );
+    }
+
+    task.runtime.loco = null;
   }
 }
 
