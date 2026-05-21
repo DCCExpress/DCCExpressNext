@@ -20,14 +20,6 @@ type LocoPanelProps = {
   locos?: Loco[];
 };
 
-type LocoStateWithOptionalReservation = {
-  address: number;
-  speed: number;
-  direction: Direction;
-  functions?: Record<number, boolean>;
-  reservation?: LocoReservation;
-};
-
 const SELECTED_LOCO_STORAGE_KEY =
   "dcc-express.loco-panel.selected-loco-id";
 
@@ -60,6 +52,12 @@ export default function LocoPanel({
   const [activeFunctions, setActiveFunctions] =
     useState<Record<number, boolean>>({});
 
+  /**
+   * Fontos:
+   * Ez nem külön kliensoldali foglaltság-cache.
+   * A LocoPanel ezt kizárólag a szervertől érkező
+   * LocoState.reservation mezőből állítja.
+   */
   const [reservation, setReservation] =
     useState<LocoReservation | null>(null);
 
@@ -118,6 +116,11 @@ export default function LocoPanel({
     currentAddressRef.current =
       currentLoco?.address ?? null;
 
+    /**
+     * Mozdonyváltáskor nem külön reservation mapből dolgozunk.
+     * Újrakérjük a szervertől az adott mozdony LocoState-jét,
+     * amelynek már tartalmaznia kell a reservation mezőt is.
+     */
     setReservation(null);
 
     if (currentLoco) {
@@ -128,8 +131,7 @@ export default function LocoPanel({
   useEffect(() => {
     const unsubscribe =
       wsClient.on("locoState", data => {
-        const loco =
-          data.loco as LocoStateWithOptionalReservation | undefined;
+        const loco = data.loco;
 
         if (!loco) {
           showErrorMessage(
@@ -152,25 +154,13 @@ export default function LocoPanel({
           loco.functions ?? {}
         );
 
-        /*
-         * Fontos:
-         * A command center / simulator sok locoState üzenetet küldhet,
-         * és ezek többsége nem tartalmaz reservation mezőt.
-         *
-         * exact optional domain szempontból:
-         * - ha a reservation mező NINCS benne, akkor nem frissítjük a foglaltságot
-         * - ha benne van null/undefined értékkel, akkor töröljük
-         * - ha benne van objektummal, akkor beállítjuk
-         *
-         * Eddig a `loco.reservation ?? null` minden sima locoState-nél
-         * lenullázta a panel foglaltságát. Ezért pont a mozgó vonatnál
-         * tűnt el a "Foglalt" jelzés, mert arról jött a legtöbb locoState.
+        /**
+         * Egy igazság van:
+         * a foglaltság a LocoState.reservation része.
          */
-        if ("reservation" in loco) {
-          setReservation(
-            loco.reservation ?? null
-          );
-        }
+        setReservation(
+          loco.reservation ?? null
+        );
       });
 
     return unsubscribe;
@@ -179,6 +169,12 @@ export default function LocoPanel({
   useEffect(() => {
     const unsubscribe =
       wsClient.on("locoReservationChanged", data => {
+        /**
+         * Ez az event kompatibilitási/trigger event.
+         * Nem ebből állítjuk közvetlenül a UI reservation state-et,
+         * hanem újrakérjük a szervertől az adott mozdony egységes
+         * LocoState állapotát.
+         */
         if (
           data.locoAddress !==
           currentAddressRef.current
@@ -186,14 +182,11 @@ export default function LocoPanel({
           return;
         }
 
-        setReservation(data.reservation ?? null);
+        wsApi.getLoco(data.locoAddress);
       });
 
     return unsubscribe;
   }, []);
-
-  const controlsDisabled =
-    !!reservation;
 
   const handleSelectLoco = (
     loco: Loco
@@ -209,7 +202,7 @@ export default function LocoPanel({
   const setLocoSpeed = (
     nextSpeed: number
   ) => {
-    if (!currentLoco || controlsDisabled) {
+    if (!currentLoco) {
       return;
     }
 
@@ -225,7 +218,7 @@ export default function LocoPanel({
   const setLocoSpeedByPercent = (
     percent: number
   ) => {
-    if (!currentLoco || controlsDisabled) {
+    if (!currentLoco) {
       return;
     }
 
@@ -247,7 +240,7 @@ export default function LocoPanel({
   };
 
   const handleForward = () => {
-    if (!currentLoco || controlsDisabled) {
+    if (!currentLoco) {
       return;
     }
 
@@ -261,7 +254,7 @@ export default function LocoPanel({
   };
 
   const handleReverse = () => {
-    if (!currentLoco || controlsDisabled) {
+    if (!currentLoco) {
       return;
     }
 
@@ -275,7 +268,7 @@ export default function LocoPanel({
   };
 
   const handleStop = () => {
-    if (!currentLoco || controlsDisabled) {
+    if (!currentLoco) {
       return;
     }
 
@@ -339,7 +332,7 @@ export default function LocoPanel({
                   powerInfo?.emergencyStop ?? false
                 }
                 reservation={reservation}
-                controlsDisabled={controlsDisabled}
+                controlsDisabled={false}
                 onOpenPicker={() =>
                   setPickerOpened(true)
                 }
@@ -358,7 +351,7 @@ export default function LocoPanel({
               <LocoFunctionGrid
                 loco={currentLoco}
                 activeFunctions={activeFunctions}
-                disabled={controlsDisabled}
+                disabled={false}
                 onActiveFunctionsChange={
                   setActiveFunctions
                 }
