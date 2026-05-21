@@ -81,7 +81,7 @@ export default function LocoControlCard({
           {loco.name || t("loco.unnamed")}
         </Text>
 
-        {reservation && (
+        {(reservation) && (
           <Badge
             color="orange"
             variant="light"
