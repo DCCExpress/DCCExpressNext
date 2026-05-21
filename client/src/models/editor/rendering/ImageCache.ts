@@ -21,7 +21,7 @@ export function subscribeCanvasImageCache(
   };
 }
 
-export function getCanvasImage(
+export function getCanvasImage2(
   imageSrc: string
 ): HTMLImageElement {
   let img = imageCache.get(imageSrc);
@@ -43,4 +43,35 @@ export function getCanvasImage(
   }
 
   return img;
+}
+
+const MAX_IMAGES = 50;
+
+export function getCanvasImage(imageSrc: string): HTMLImageElement {
+  let img = imageCache.get(imageSrc);
+
+  if (img) {
+    imageCache.delete(imageSrc);
+    imageCache.set(imageSrc, img);
+    return img;
+  }
+
+  img = new Image();
+
+  img.onload = () => notifyImageCacheListeners();
+  img.onerror = () => notifyImageCacheListeners();
+  img.src = imageSrc;
+
+  imageCache.set(imageSrc, img);
+
+  while (imageCache.size > MAX_IMAGES) {
+    const oldestKey = imageCache.keys().next().value;
+    if (!oldestKey) break;
+    imageCache.delete(oldestKey);
+  }
+
+  return img;
+}
+export function clearCanvasImageCache(): void {
+  imageCache.clear();
 }

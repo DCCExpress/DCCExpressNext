@@ -140,7 +140,7 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "sensorChanged",
         data => {
-          console.log("bejött sensor:", data);
+          //console.log("bejött sensor:", data);
 
           const elements =
             layoutRef.current.getAllElements();
@@ -171,7 +171,7 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "turnoutChanged",
         data => {
-          console.log("turnoutChanged:", data);
+          //console.log("turnoutChanged:", data);
 
           const elements =
             layoutRef.current.getAllElements();
@@ -220,7 +220,7 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "accessoryChanged",
         data => {
-          console.log("accessoryChanged:", data);
+          //console.log("accessoryChanged:", data);
 
           const elements =
             layoutRef.current.getAllElements();
@@ -251,7 +251,7 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "blockStateChanged",
         data => {
-          console.log("blockStateChanged:", data);
+          //console.log("blockStateChanged:", data);
 
           for (const [blockId, blockState] of Object.entries(data)) {
             const element =
