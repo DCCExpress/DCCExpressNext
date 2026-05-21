@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type {
   Direction,
   Loco,
+  LocoReservation,
 } from "../../../../common/src/types";
 import LocoImage from "../../components/loco/LocoImage";
 import LocoDirectionControls from "./LocoDirectionControls";
@@ -15,6 +16,8 @@ type LocoControlCardProps = {
   direction: Direction;
   alive: boolean;
   emergencyStop: boolean;
+  reservation?: LocoReservation | null;
+  controlsDisabled?: boolean;
   onOpenPicker: () => void;
   onSpeedChange: (speed: number) => void;
   onSpeedPercentChange: (percent: number) => void;
@@ -30,6 +33,8 @@ export default function LocoControlCard({
   direction,
   alive,
   emergencyStop,
+  reservation = null,
+  controlsDisabled = false,
   onOpenPicker,
   onSpeedChange,
   onSpeedPercentChange,
@@ -76,6 +81,22 @@ export default function LocoControlCard({
           {loco.name || t("loco.unnamed")}
         </Text>
 
+        {reservation && (
+          <Badge
+            color="orange"
+            variant="light"
+            radius="sm"
+            maw="100%"
+            style={{
+              textTransform: "none",
+              whiteSpace: "normal",
+              textAlign: "center",
+            }}
+          >
+            Foglalt: {reservation.ownerName ?? reservation.ownerId}
+          </Badge>
+        )}
+
         <Badge
           radius={4}
           m={4}
@@ -121,6 +142,7 @@ export default function LocoControlCard({
         <LocoSpeedControls
           speed={speed}
           maxSpeed={loco.maxSpeed || 100}
+          disabled={controlsDisabled}
           onSpeedChange={onSpeedChange}
           onSpeedPercentChange={
             onSpeedPercentChange
@@ -130,6 +152,7 @@ export default function LocoControlCard({
         <LocoDirectionControls
           speed={speed}
           direction={direction}
+          disabled={controlsDisabled}
           onForward={onForward}
           onReverse={onReverse}
           onStop={onStop}

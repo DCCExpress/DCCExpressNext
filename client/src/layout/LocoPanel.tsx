@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import type {
   Direction,
   Loco,
+  LocoReservation,
 } from "../../../common/src/types";
 
 import LocoPicker from "../components/loco/LocoPicker";
@@ -50,6 +51,9 @@ export default function LocoPanel({
 
   const [activeFunctions, setActiveFunctions] =
     useState<Record<number, boolean>>({});
+
+  const [reservation, setReservation] =
+    useState<LocoReservation | null>(null);
 
   const { powerInfo, alive } =
     useCommandCenter();
@@ -106,6 +110,8 @@ export default function LocoPanel({
     currentAddressRef.current =
       currentLoco?.address ?? null;
 
+    setReservation(null);
+
     if (currentLoco) {
       wsApi.getLoco(currentLoco.address);
     }
@@ -136,10 +142,32 @@ export default function LocoPanel({
         setActiveFunctions(
           loco.functions ?? {}
         );
+        setReservation(
+          loco.reservation ?? null
+        );
       });
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    const unsubscribe =
+      wsClient.on("locoReservationChanged", data => {
+        if (
+          data.locoAddress !==
+          currentAddressRef.current
+        ) {
+          return;
+        }
+
+        setReservation(data.reservation ?? null);
+      });
+
+    return unsubscribe;
+  }, []);
+
+  const controlsDisabled =
+    !!reservation;
 
   const handleSelectLoco = (
     loco: Loco
@@ -149,12 +177,13 @@ export default function LocoPanel({
     setSpeed(0);
     setDirection("forward");
     setActiveFunctions({});
+    setReservation(null);
   };
 
   const setLocoSpeed = (
     nextSpeed: number
   ) => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -170,7 +199,7 @@ export default function LocoPanel({
   const setLocoSpeedByPercent = (
     percent: number
   ) => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -192,7 +221,7 @@ export default function LocoPanel({
   };
 
   const handleForward = () => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -206,7 +235,7 @@ export default function LocoPanel({
   };
 
   const handleReverse = () => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -220,7 +249,7 @@ export default function LocoPanel({
   };
 
   const handleStop = () => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -283,6 +312,8 @@ export default function LocoPanel({
                 emergencyStop={
                   powerInfo?.emergencyStop ?? false
                 }
+                reservation={reservation}
+                controlsDisabled={controlsDisabled}
                 onOpenPicker={() =>
                   setPickerOpened(true)
                 }
@@ -301,6 +332,7 @@ export default function LocoPanel({
               <LocoFunctionGrid
                 loco={currentLoco}
                 activeFunctions={activeFunctions}
+                disabled={controlsDisabled}
                 onActiveFunctionsChange={
                   setActiveFunctions
                 }

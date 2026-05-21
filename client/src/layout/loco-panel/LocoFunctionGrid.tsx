@@ -11,6 +11,7 @@ import LocoFunctionButton from "./LocoFunctionButton";
 type LocoFunctionGridProps = {
   loco: Loco;
   activeFunctions: Record<number, boolean>;
+  disabled?: boolean;
   onActiveFunctionsChange: Dispatch<
     SetStateAction<Record<number, boolean>>
   >;
@@ -19,6 +20,7 @@ type LocoFunctionGridProps = {
 export default function LocoFunctionGrid({
   loco,
   activeFunctions,
+  disabled = false,
   onActiveFunctionsChange,
 }: LocoFunctionGridProps) {
   return (
@@ -62,6 +64,7 @@ export default function LocoFunctionGrid({
                     activeFunctions={
                       activeFunctions
                     }
+                    disabled={disabled}
                     onActiveFunctionsChange={
                       onActiveFunctionsChange
                     }

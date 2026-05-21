@@ -12,6 +12,7 @@ import type {
 type LocoDirectionControlsProps = {
   speed: number;
   direction: Direction;
+  disabled?: boolean;
   onForward: () => void;
   onReverse: () => void;
   onStop: () => void;
@@ -20,6 +21,7 @@ type LocoDirectionControlsProps = {
 export default function LocoDirectionControls({
   speed,
   direction,
+  disabled = false,
   onForward,
   onReverse,
   onStop,
@@ -35,6 +37,7 @@ export default function LocoDirectionControls({
             ? "filled"
             : "light"
         }
+        disabled={disabled}
         leftSection={
           <IconPlayerTrackPrev size={14} />
         }
@@ -47,6 +50,7 @@ export default function LocoDirectionControls({
         size="xs"
         variant={speed > 0 ? "light" : "filled"}
         color="yellow"
+        disabled={disabled}
         leftSection={
           <IconPlayerStop size={14} />
         }
@@ -62,6 +66,7 @@ export default function LocoDirectionControls({
             ? "filled"
             : "light"
         }
+        disabled={disabled}
         rightSection={
           <IconPlayerTrackNext size={14} />
         }

@@ -14,6 +14,7 @@ type LocoFunctionButtonProps = {
   fn: LocoFunction | undefined;
   active: boolean;
   activeFunctions: Record<number, boolean>;
+  disabled?: boolean;
   onActiveFunctionsChange: Dispatch<
     SetStateAction<Record<number, boolean>>
   >;
@@ -25,13 +26,14 @@ export default function LocoFunctionButton({
   fn,
   active,
   activeFunctions,
+  disabled = false,
   onActiveFunctionsChange,
 }: LocoFunctionButtonProps) {
   const hasName =
     !!fn?.name?.trim();
 
   const releaseMomentaryFunction = () => {
-    if (!fn?.momentary) {
+    if (disabled || !fn?.momentary) {
       return;
     }
 
@@ -52,6 +54,7 @@ export default function LocoFunctionButton({
       size="xs"
       variant={active ? "filled" : "light"}
       color={active ? "blue" : "gray"}
+      disabled={disabled}
       style={{
         height: 48,
         padding: 2,
@@ -76,6 +79,10 @@ export default function LocoFunctionButton({
       }}
       onPointerDown={event => {
         event.preventDefault();
+
+        if (disabled) {
+          return;
+        }
 
         if (fn?.momentary) {
           wsApi.setLocoFunction(

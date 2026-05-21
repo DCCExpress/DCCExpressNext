@@ -3,6 +3,7 @@ import { Button, SimpleGrid, Slider } from "@mantine/core";
 type LocoSpeedControlsProps = {
   speed: number;
   maxSpeed: number;
+  disabled?: boolean;
   onSpeedChange: (speed: number) => void;
   onSpeedPercentChange: (percent: number) => void;
 };
@@ -19,6 +20,7 @@ const SPEED_PRESETS = [
 export default function LocoSpeedControls({
   speed,
   maxSpeed,
+  disabled = false,
   onSpeedChange,
   onSpeedPercentChange,
 }: LocoSpeedControlsProps) {
@@ -31,6 +33,7 @@ export default function LocoSpeedControls({
           value={speed}
           onChange={onSpeedChange}
           label={null}
+          disabled={disabled}
         />
       </div>
 
@@ -45,6 +48,7 @@ export default function LocoSpeedControls({
             key={preset}
             size="xs"
             variant="light"
+            disabled={disabled}
             onClick={() =>
               onSpeedPercentChange(preset)
             }
