@@ -29,6 +29,11 @@ import {
 } from "../utility.js";
 import { locoReservationStore } from "../services/locoReservationStore.js";
 
+
+import {
+  runtimeVariableService,
+} from "../services/runtimeVariableService.js";
+
 type SendToClient = (
   ws: WebSocket,
   message: TypedServerWsMessage
@@ -70,6 +75,12 @@ export function sendInitialWebSocketSnapshots({
   sendToClient(ws, {
     type: "fastClockChanged",
     data: fastClockRuntimeStore.getSnapshot(),
+  });
+
+
+  sendToClient(ws, {
+    type: "runtimeVariablesSnapshot",
+    data: runtimeVariableService.getSnapshot(),
   });
 
   if (!commandCenter) {

@@ -9,6 +9,11 @@ import type {
   ScriptRunSource,
 } from "./scriptTypes.js";
 
+
+import type {
+  SetRuntimeVariablePayload,
+} from "./runtimeVariables.js";
+
 /**
  * Kliens -> szerver WebSocket parancsok payload DTO-i.
  *
@@ -145,5 +150,8 @@ export type ClientWsPayloadMap = {
   resumeTask: TaskIdOrNameCommandPayload;
 finishAllTasks: EmptyClientWsCommandPayload;
   abortAllTasks: EmptyClientWsCommandPayload;
+  setRuntimeVariable: SetRuntimeVariablePayload;
+  getRuntimeVariables: EmptyClientWsCommandPayload;
+
   getTaskRuntimeState: EmptyClientWsCommandPayload;
 };

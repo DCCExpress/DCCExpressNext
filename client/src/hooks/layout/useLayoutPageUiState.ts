@@ -8,11 +8,8 @@ import {
 } from "react";
 
 import {
-  isTouchDevice,
-} from "../../helpers";
-
-const EDIT_MODE_KEY =
-  "dcc-express.editor.editMode";
+  useRuntimeVariable,
+} from "../useRuntimeVariable";
 
 const LOCO_PANEL_COLLAPSED_KEY =
   "dcc-express.editor.locoPanelCollapsed";
@@ -63,17 +60,17 @@ function writeStoredBoolean(
 }
 
 export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
-  const [editMode, setEditMode] =
-    useState<boolean>(() => {
-      if (isTouchDevice()) {
-        return false;
-      }
-
-      return readStoredBoolean(
-        EDIT_MODE_KEY,
-        false
-      );
-    });
+  /**
+   * Server-authoritative shared runtime state.
+   *
+   * A kliens csak kérést küld, a tényleges érték akkor frissül,
+   * amikor a szerver runtimeVariableChanged üzenettel visszaigazolja.
+   */
+  const [
+    editMode,
+    setEditMode,
+  ] =
+    useRuntimeVariable("editor.editMode");
 
   const [
     locoPanelCollapsed,
@@ -96,13 +93,6 @@ export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
         false
       )
     );
-
-  useEffect(() => {
-    writeStoredBoolean(
-      EDIT_MODE_KEY,
-      editMode
-    );
-  }, [editMode]);
 
   useEffect(() => {
     writeStoredBoolean(

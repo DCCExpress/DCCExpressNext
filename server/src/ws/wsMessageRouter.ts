@@ -29,8 +29,14 @@ import {
 } from "./handlers/wsTaskMessageHandlers.js";
 import { handleLocoReservationMessage } from "./handlers/wsLocoReservationMessageHandlers.js";
 
+
+import {
+  handleRuntimeVariableMessage,
+} from "./handlers/wsRuntimeVariableMessageHandlers.js";
+
 const handlers = [
-  handleLockMessage,
+  
+  handleRuntimeVariableMessage,handleLockMessage,
   handleRouteMessage,
   handleLocoReservationMessage,
   handleCommandCenterMessage,

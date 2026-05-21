@@ -11,6 +11,7 @@ import type {
 
 import {
   isClientWsMessageType,
+  isRuntimeVariableKey,
 } from "../../../common/src/types.js";
 
 export type IncomingClientWsMessageParseResult =
@@ -165,6 +166,7 @@ function parsePayload<
     case "finishAllTasks":
     case "abortAllTasks":
     case "getTaskRuntimeState":
+    case "getRuntimeVariables":
       return parseEmptyPayload(type, data);
 
     case "writeDccExDirectCommand": {
@@ -510,6 +512,32 @@ function parsePayload<
         } as ClientWsPayloadMap[TType],
       };
     }
+    case "setRuntimeVariable": {
+      if (!isRecord(data)) {
+        return invalidPayload(type, "data must be an object.");
+      }
+
+      if (!isRuntimeVariableKey(data.key)) {
+        return invalidPayload(type, "key must be a known runtime variable.");
+      }
+
+      if (
+        data.key === "editor.editMode" &&
+        typeof data.value !== "boolean"
+      ) {
+        return invalidPayload(type, "editor.editMode value must be boolean.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          key: data.key,
+          value: data.value,
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
+
 
     default:
       return invalidPayload(

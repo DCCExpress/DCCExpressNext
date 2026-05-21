@@ -28,6 +28,11 @@ import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
 
+
+import {
+  runtimeVariableService,
+} from "../services/runtimeVariableService.js";
+
 type BroadcastMessage = (
   message: TypedServerWsMessage
 ) => void;
@@ -45,6 +50,11 @@ export function configureWebSocketRuntimes({
   getCommandCenter,
   getLogicalTurnoutState,
 }: WsRuntimeConfigurationParams): void {
+
+  runtimeVariableService.setBroadcast(message => {
+    broadcast(message);
+  });
+
   scriptRuntimeStore.configure({
     broadcast: message => {
       broadcast(message);

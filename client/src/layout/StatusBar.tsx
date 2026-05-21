@@ -296,9 +296,9 @@ export default function StatusBar() {
 
           <Divider orientation="vertical" />
 
-          <StatusBadge color={taskBadgeColor}>
+          {/* <StatusBadge color={taskBadgeColor}>
             TASK {activeTaskCount}
-          </StatusBadge>
+          </StatusBadge> */}
 
           <StatusActionIcon
             tooltip="Open tasks"

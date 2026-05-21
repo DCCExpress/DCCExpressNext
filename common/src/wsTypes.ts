@@ -50,6 +50,13 @@ import type {
   Z21TurnoutInfoPayload,
 } from "./commandCenterTelemetry.js";
 
+
+import type {
+  RuntimeVariableChangedPayload,
+  RuntimeVariableRejectedPayload,
+  RuntimeVariablesSnapshotPayload,
+} from "./runtimeVariables.js";
+
 /**
  * Általános, szerveroldalon és bejövő kliensüzeneteknél is
  * használható WebSocket message alap.
@@ -113,6 +120,8 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "resumeTask",
 "finishAllTasks",
   "abortAllTasks",
+  "setRuntimeVariable",
+  "getRuntimeVariables",
   "getTaskRuntimeState",
 ] as const satisfies readonly ClientWsMessageType[];
 
@@ -249,6 +258,10 @@ export type ServerWsPayloadMap = {
 
   taskCompleted: TaskLifecycleEventPayload;
   taskCycleCompleted: TaskLifecycleEventPayload;
+
+  runtimeVariableChanged: RuntimeVariableChangedPayload;
+  runtimeVariableRejected: RuntimeVariableRejectedPayload;
+  runtimeVariablesSnapshot: RuntimeVariablesSnapshotPayload;
 
   fastClockChanged: FastClockSnapshot;
 

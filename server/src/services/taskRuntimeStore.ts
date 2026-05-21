@@ -1472,6 +1472,15 @@ class TaskRuntimeStore {
     task.runtime.loco = null;
   }
 
+
+  hasActiveTasks(): boolean {
+    return this.tasks.some(task =>
+      task.status === "running" ||
+      task.status === "paused" ||
+      task.status === "finishing"
+    );
+  }
+
 }
 
 
