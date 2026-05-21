@@ -5,6 +5,7 @@ import type {
   ClientWsMessageUnion,
   ClientWsPayloadMap,
   Direction,
+  ReservationOwnerType,
   ScriptRunSource,
 } from "../../../common/src/types.js";
 
@@ -14,23 +15,23 @@ import {
 
 export type IncomingClientWsMessageParseResult =
   | {
-      ok: true;
-      message: ClientWsMessageUnion;
-    }
+    ok: true;
+    message: ClientWsMessageUnion;
+  }
   | {
-      ok: false;
-      reason: string;
-    };
+    ok: false;
+    reason: string;
+  };
 
 type PayloadParseResult<TType extends ClientWsMessageType> =
   | {
-      ok: true;
-      data: ClientWsPayloadMap[TType];
-    }
+    ok: true;
+    data: ClientWsPayloadMap[TType];
+  }
   | {
-      ok: false;
-      reason: string;
-    };
+    ok: false;
+    reason: string;
+  };
 
 type UnknownRecord =
   Record<string, unknown>;
@@ -77,6 +78,16 @@ function invalidPayload(
     ok: false,
     reason: `Invalid ${type} payload: ${detail}`,
   };
+}
+
+function isReservationOwnerType(
+  value: unknown
+): value is ReservationOwnerType {
+  return (
+    value === "task" ||
+    value === "client" ||
+    value === "system"
+  );
 }
 
 function parseEmptyPayload<
@@ -247,6 +258,77 @@ function parsePayload<
       };
     }
 
+    case "reserveLoco": {
+      if (!isRecord(data)) {
+        return invalidPayload(type, "data must be an object.");
+      }
+
+      if (typeof data.locoAddress !== "number") {
+        return invalidPayload(type, "locoAddress must be number.");
+      }
+
+      if (typeof data.ownerId !== "string") {
+        return invalidPayload(type, "ownerId must be string.");
+      }
+
+      if (!isReservationOwnerType(data.ownerType)) {
+        return invalidPayload(
+          type,
+          "ownerType must be task, client or system."
+        );
+      }
+
+      if (
+        data.ownerName !== undefined &&
+        typeof data.ownerName !== "string"
+      ) {
+        return invalidPayload(type, "ownerName must be string when present.");
+      }
+
+      if (
+        data.reason !== undefined &&
+        typeof data.reason !== "string"
+      ) {
+        return invalidPayload(type, "reason must be string when present.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          locoAddress: data.locoAddress,
+          ownerId: data.ownerId,
+          ownerType: data.ownerType,
+          ...(typeof data.ownerName === "string"
+            ? { ownerName: data.ownerName }
+            : {}),
+          ...(typeof data.reason === "string"
+            ? { reason: data.reason }
+            : {}),
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
+    case "releaseLocoReservation": {
+      if (!isRecord(data)) {
+        return invalidPayload(type, "data must be an object.");
+      }
+
+      if (typeof data.locoAddress !== "number") {
+        return invalidPayload(type, "locoAddress must be number.");
+      }
+
+      if (typeof data.ownerId !== "string") {
+        return invalidPayload(type, "ownerId must be string.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          locoAddress: data.locoAddress,
+          ownerId: data.ownerId,
+        } as ClientWsPayloadMap[TType],
+      };
+    }
     case "setTurnout": {
       if (!isRecord(data)) {
         return invalidPayload(type, "data must be an object.");
@@ -399,8 +481,8 @@ function parsePayload<
         data: {
           ...(typeof data.script === "string"
             ? {
-                script: data.script,
-              }
+              script: data.script,
+            }
             : {}),
           source: data.source,
           elementId: data.elementId,

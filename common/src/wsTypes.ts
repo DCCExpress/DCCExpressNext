@@ -30,6 +30,7 @@ import type {
 import type {
   AccessoryChangedPayload,
   BlockStateChangedPayload,
+  LocoReservationChangedPayload,
   LocoStateChangedPayload,
   SensorChangedPayload,
   TurnoutChangedPayload,
@@ -87,6 +88,8 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "setLoco",
   "getLoco",
   "setLocoFunction",
+  "reserveLoco",
+  "releaseLocoReservation",
   "setTurnout",
   "setSensor",
   "setBasicAccessory",
@@ -141,6 +144,12 @@ export type SetLocoMessage =
 
 export type SetLocoFunctionMessage =
   TypedClientWsMessage<"setLocoFunction">;
+
+export type ReserveLocoMessage =
+  TypedClientWsMessage<"reserveLoco">;
+
+export type ReleaseLocoReservationMessage =
+  TypedClientWsMessage<"releaseLocoReservation">;
 
 export type SetTurnoutMessage =
   TypedClientWsMessage<"setTurnout">;
@@ -204,6 +213,8 @@ export type ServerWsPayloadMap = {
 
   locoState: LocoStateChangedPayload;
 
+  locoReservationChanged: LocoReservationChangedPayload;
+
   turnoutChanged: TurnoutChangedPayload;
 
   accessoryChanged: AccessoryChangedPayload;
@@ -217,7 +228,7 @@ export type ServerWsPayloadMap = {
   routeReservationRejected: RouteReservationRejectedPayload;
 
   routeReservationReleaseRejected:
-    RouteReservationReleaseRejectedPayload;
+  RouteReservationReleaseRejectedPayload;
 
   routeReservationReleased: RouteReservationReleasedPayload;
 

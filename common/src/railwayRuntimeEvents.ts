@@ -2,6 +2,7 @@
 
 import type {
   BlockState,
+  LocoReservation,
   LocoState,
 } from "./domainTypes.js";
 
@@ -11,6 +12,11 @@ import type {
  * Ezek az élő állapotfrissítések a command center,
  * a szimulátor és a kliens közös contractjai.
  */
+export type LocoReservationChangedPayload = {
+  locoAddress: number;
+  reservation: LocoReservation | null;
+};
+
 export type LocoStateChangedPayload = {
   loco: LocoState;
 };

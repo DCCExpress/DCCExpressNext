@@ -2,6 +2,7 @@
 
 import type {
   Direction,
+  ReservationOwnerType
 } from "./domainTypes.js";
 
 import type {
@@ -43,6 +44,19 @@ export type SetLocoFunctionCommandPayload = {
   locoAddress: number;
   functionNumber: number;
   active: boolean;
+};
+
+export type ReserveLocoCommandPayload = {
+  locoAddress: number;
+  ownerId: string;
+  ownerType: ReservationOwnerType;
+  ownerName?: string;
+  reason?: string;
+};
+
+export type ReleaseLocoReservationCommandPayload = {
+  locoAddress: number;
+  ownerId: string;
 };
 
 export type SetTurnoutCommandPayload = {
@@ -100,6 +114,8 @@ export type ClientWsPayloadMap = {
   setLoco: SetLocoCommandPayload;
   getLoco: GetLocoCommandPayload;
   setLocoFunction: SetLocoFunctionCommandPayload;
+  reserveLoco: ReserveLocoCommandPayload;
+  releaseLocoReservation: ReleaseLocoReservationCommandPayload;
 
   setTurnout: SetTurnoutCommandPayload;
   setSensor: SetSensorCommandPayload;

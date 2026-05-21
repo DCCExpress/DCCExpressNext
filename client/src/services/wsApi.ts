@@ -4,6 +4,7 @@ import type {
   ClientWsMessageType,
   ClientWsPayloadMap,
   Direction,
+  ReservationOwnerType,
   ScriptRunSource,
   TypedClientWsMessage,
 } from "../../../common/src/types";
@@ -104,6 +105,36 @@ class WebSocketApi {
       active,
     });
   }
+
+  reserveLoco(
+  locoAddress: number,
+  ownerId: string,
+  ownerType: ReservationOwnerType,
+  ownerName?: string,
+  reason?: string
+): boolean {
+  return this.send("reserveLoco", {
+    locoAddress,
+    ownerId,
+    ownerType,
+    ...(ownerName !== undefined
+      ? { ownerName }
+      : {}),
+    ...(reason !== undefined
+      ? { reason }
+      : {}),
+  });
+}
+
+releaseLocoReservation(
+  locoAddress: number,
+  ownerId: string
+): boolean {
+  return this.send("releaseLocoReservation", {
+    locoAddress,
+    ownerId,
+  });
+}
 
   setTurnout(
     address: number,

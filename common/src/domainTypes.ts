@@ -39,11 +39,24 @@ export type Loco = {
   functions: LocoFunction[];
 };
 
+
+export type ReservationOwnerType = "task" | "client" | "system";
+
+export type LocoReservation = {
+  locoAddress: number;
+  ownerId: string;
+  ownerType: ReservationOwnerType;
+  ownerName?: string;
+  reason?: string;
+  reservedAt: number;
+};
+
 export type LocoState = {
   address: number;
   speed: number;
   direction: Direction;
   functions: Record<number, boolean>;
+  reservation?: LocoReservation;
 };
 
 export type BlockState = {

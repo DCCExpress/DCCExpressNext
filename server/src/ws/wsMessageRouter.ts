@@ -27,10 +27,12 @@ import {
 import {
   handleTaskMessage,
 } from "./handlers/wsTaskMessageHandlers.js";
+import { handleLocoReservationMessage } from "./handlers/wsLocoReservationMessageHandlers.js";
 
 const handlers = [
   handleLockMessage,
   handleRouteMessage,
+  handleLocoReservationMessage,
   handleCommandCenterMessage,
   handleScriptMessage,
   handleTaskMessage,
