@@ -778,6 +778,13 @@ class TaskRuntimeStore {
       );
     }
 
+    await this.stopTaskLoco(task);
+
+
+    this.parkTaskLocoInKnownBlock(task);
+
+
+
     task.status = "aborted";
     task.abortedAt = Date.now();
     task.runtime.inTransit = false;
@@ -1219,6 +1226,91 @@ class TaskRuntimeStore {
       }
     );
   }
+  private async stopTaskLoco(
+    task: TrainTask
+  ): Promise<void> {
+    const locoAddress =
+      task.runtime.loco?.address ?? null;
+
+    if (locoAddress === null) {
+      return;
+    }
+
+    const commandCenter =
+      this.getSimulatorCommandCenter?.() ?? null;
+
+    if (!commandCenter) {
+      return;
+    }
+
+    const direction =
+      commandCenter.getLocoInfo(locoAddress)?.direction ??
+      "forward";
+
+    try {
+      await commandCenter.setLoco(
+        locoAddress,
+        0,
+        direction
+      );
+    } catch (error) {
+      console.warn(
+        `[TaskRuntimeStore] Failed to stop loco #${locoAddress} while stopping task:`,
+        error
+      );
+    }
+  }
+
+  private parkTaskLocoInKnownBlock(
+    task: TrainTask
+  ): void {
+    const locoId =
+      task.runtime.loco?.id ?? null;
+
+    if (!locoId) {
+      return;
+    }
+
+    const commandCenter =
+      this.getSimulatorCommandCenter?.() ?? null;
+
+    if (!commandCenter) {
+      return;
+    }
+
+    const topology =
+      railwayTopologyStore.getTopology();
+
+    const blocks =
+      topology?.getBlocks() ?? [];
+
+    for (const block of blocks) {
+      const blockState =
+        this.getBlockState?.(block.id) ?? null;
+
+      if (blockState?.locoId === locoId) {
+        return;
+      }
+    }
+
+    const simulation =
+      task.runtime.simulation;
+
+    const fallbackBlockId =
+      simulation.fromBlockId ??
+      task.fromBlockId;
+
+    if (!fallbackBlockId) {
+      return;
+    }
+
+    commandCenter.setBlock({
+      blockId: fallbackBlockId,
+      locoId,
+    });
+  }
+
+
 
   private releaseTaskRoute(
     taskId: string

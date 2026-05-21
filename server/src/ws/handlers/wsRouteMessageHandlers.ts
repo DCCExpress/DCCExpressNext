@@ -9,6 +9,11 @@ import {
   locoReservationStore,
 } from "../../services/locoReservationStore.js";
 
+
+import {
+  taskRuntimeStore,
+} from "../../services/taskRuntimeStore.js";
+
 import {
   railwayTopologyStore,
 } from "../../services/railwayTopologyStore.js";
@@ -233,6 +238,8 @@ export const handleRouteMessage: WsMessageHandler = async ({
     }
 
     case "clearAllRouteReservations": {
+      await taskRuntimeStore.abortAllTasks();
+
       routeGraphRuntimeStore.clearAllBusy();
 
       const releasedLocoReservations =
