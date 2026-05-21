@@ -20,6 +20,14 @@ type LocoPanelProps = {
   locos?: Loco[];
 };
 
+type LocoStateWithOptionalReservation = {
+  address: number;
+  speed: number;
+  direction: Direction;
+  functions?: Record<number, boolean>;
+  reservation?: LocoReservation;
+};
+
 const SELECTED_LOCO_STORAGE_KEY =
   "dcc-express.loco-panel.selected-loco-id";
 
@@ -120,7 +128,8 @@ export default function LocoPanel({
   useEffect(() => {
     const unsubscribe =
       wsClient.on("locoState", data => {
-        const loco = data.loco;
+        const loco =
+          data.loco as LocoStateWithOptionalReservation | undefined;
 
         if (!loco) {
           showErrorMessage(
@@ -142,9 +151,26 @@ export default function LocoPanel({
         setActiveFunctions(
           loco.functions ?? {}
         );
-        setReservation(
-          loco.reservation ?? null
-        );
+
+        /*
+         * Fontos:
+         * A command center / simulator sok locoState üzenetet küldhet,
+         * és ezek többsége nem tartalmaz reservation mezőt.
+         *
+         * exact optional domain szempontból:
+         * - ha a reservation mező NINCS benne, akkor nem frissítjük a foglaltságot
+         * - ha benne van null/undefined értékkel, akkor töröljük
+         * - ha benne van objektummal, akkor beállítjuk
+         *
+         * Eddig a `loco.reservation ?? null` minden sima locoState-nél
+         * lenullázta a panel foglaltságát. Ezért pont a mozgó vonatnál
+         * tűnt el a "Foglalt" jelzés, mert arról jött a legtöbb locoState.
+         */
+        if ("reservation" in loco) {
+          setReservation(
+            loco.reservation ?? null
+          );
+        }
       });
 
     return unsubscribe;
