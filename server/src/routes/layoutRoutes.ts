@@ -311,7 +311,9 @@ layoutRoutes.put("/runtime", async (req, res) => {
     res.status(500).json({
       success: false,
       message:
-        "Nem sikerült frissíteni a szerveroldali runtime layoutot.",
+        error instanceof Error
+          ? error.message
+          : "Nem sikerült frissíteni a szerveroldali runtime layoutot.",
     });
   }
 });

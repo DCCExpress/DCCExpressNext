@@ -73,11 +73,25 @@ export async function refreshLayoutRuntime(
   });
 
   if (!response.ok) {
-    throw new Error(
-      "Nem sikerült frissíteni a szerveroldali runtime layoutot."
-    );
+    let message =
+      "Nem sikerült frissíteni a szerveroldali runtime layoutot.";
+
+    try {
+      const data = await response.json() as {
+        message?: unknown;
+      };
+
+      if (typeof data.message === "string") {
+        message = data.message;
+      }
+    } catch {
+      // Ha a szerver nem JSON-t küldött, marad a fallback üzenet.
+    }
+
+    throw new Error(message);
   }
 }
+
 
 export async function getScript(): Promise<SingleScriptFile> {
   const res = await fetch("/api/script");

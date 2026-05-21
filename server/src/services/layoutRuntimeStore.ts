@@ -67,16 +67,45 @@ class LayoutRuntimeStore {
       "[LayoutRuntimeStore] Runtime topology and route graph refreshed without persisting layout."
     );
   }
+  private validateRuntimeGraphPrerequisites(): void {
+    const topology =
+      railwayTopologyStore.getTopology();
 
+    if (!topology) {
+      return;
+    }
+
+    const physicalTracks =
+      topology.getPhysicalTrackElements();
+
+    if (physicalTracks.length === 0) {
+      return;
+    }
+
+    const directionElements =
+      topology.getDirectionElements();
+
+    if (directionElements.length > 0) {
+      return;
+    }
+
+    throw new Error(
+      "A runtime route graph nem építhető fel: hiányzik a Track direction elem. " +
+        "Tegyél le legalább egy TrackDirection elemet a pályára, hogy a rendszer tudja a haladási irányokat."
+    );
+  }
   private rebuildDerivedRuntime(
     layout: ServerLayoutDto | null
   ): void {
     railwayTopologyStore.rebuildFromLayout(layout);
 
+    this.validateRuntimeGraphPrerequisites();
+
     routeGraphRuntimeStore.rebuildFromTopology(
       railwayTopologyStore.getTopology()
     );
   }
+
 
   private async readLayoutFromDisk(): Promise<ServerLayoutDto | null> {
     const filePath = this.resolveFilePath();
