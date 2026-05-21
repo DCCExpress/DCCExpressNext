@@ -1,7 +1,7 @@
 [
   {
     "id": "task-1778944172947-2me56yvd",
-    "name": "task1",
+    "name": "A1 => C1",
     "targetSpeed": 40,
     "fromBlockId": "97aa3af-3ac9-4483-815a-d1ead989",
     "toBlockId": "389fdf2-889e-44bc-8013-d8aa373d",
@@ -9,7 +9,7 @@
   },
   {
     "id": "task-1779104540061-9e296679",
-    "name": "Task1",
+    "name": "C1 => A2",
     "targetSpeed": 30,
     "fromBlockId": "389fdf2-889e-44bc-8013-d8aa373d",
     "toBlockId": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
@@ -17,7 +17,7 @@
   },
   {
     "id": "task-1779126598190-a670cb1c",
-    "name": "a2 => c3",
+    "name": "A2 => C3",
     "targetSpeed": 40,
     "fromBlockId": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
     "toBlockId": "5bac967-d1d9-42dc-a6e0-7eb4292c",
@@ -25,7 +25,7 @@
   },
   {
     "id": "task-1779126639092-4dcc1421",
-    "name": "c3 <= c1",
+    "name": "C3 => C1",
     "targetSpeed": 40,
     "fromBlockId": "5bac967-d1d9-42dc-a6e0-7eb4292c",
     "toBlockId": "97aa3af-3ac9-4483-815a-d1ead989",

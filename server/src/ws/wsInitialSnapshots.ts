@@ -27,6 +27,7 @@ import {
 import {
   log,
 } from "../utility.js";
+import { locoReservationStore } from "../services/locoReservationStore.js";
 
 type SendToClient = (
   ws: WebSocket,
@@ -107,6 +108,15 @@ export function sendInitialWebSocketSnapshots({
     });
   }
 
+  for (const reservation of locoReservationStore.getAll()) {
+    sendToClient(ws, {
+      type: "locoReservationChanged",
+      data: {
+        locoAddress: reservation.locoAddress,
+        reservation,
+      },
+    });
+  }
   const turnouts =
     commandCenter.getTurnouts();
 

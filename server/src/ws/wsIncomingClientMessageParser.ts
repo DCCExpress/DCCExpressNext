@@ -162,7 +162,6 @@ function parsePayload<
     case "getRouteReservations":
     case "stopScript":
     case "getScriptRuntimeState":
-    case "startAllTasks":
     case "finishAllTasks":
     case "abortAllTasks":
     case "getTaskRuntimeState":

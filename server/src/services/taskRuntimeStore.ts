@@ -627,7 +627,7 @@ class TaskRuntimeStore {
     this.broadcastSnapshot();
 
     return this.actionOk();
-  }
+  }
 
   async startAllTasks(): Promise<TaskManagerActionResult> {
     await this.initialize();
@@ -651,6 +651,7 @@ class TaskRuntimeStore {
 
     return this.actionOk();
   }
+
 
   async finishTask(
     taskIdOrName: string

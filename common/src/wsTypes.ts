@@ -111,8 +111,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "abortTask",
   "pauseTask",
   "resumeTask",
-  "startAllTasks",
-  "finishAllTasks",
+"finishAllTasks",
   "abortAllTasks",
   "getTaskRuntimeState",
 ] as const satisfies readonly ClientWsMessageType[];

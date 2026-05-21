@@ -288,11 +288,20 @@ releaseLocoReservation(
     return this.send("abortAllTasks", {});
   }
 
-
-  startAllTasks(): boolean {
-    return this.send("startAllTasks", {});
+  finishTask(
+    taskIdOrName: string
+  ): boolean {
+    return this.send("finishTask", {
+      taskIdOrName,
+    });
   }
-
+  abortTask(
+    taskIdOrName: string
+  ): boolean {
+    return this.send("abortTask", {
+      taskIdOrName,
+    });
+  }
   getTaskRuntimeState(): boolean {
     return this.send(
       "getTaskRuntimeState",

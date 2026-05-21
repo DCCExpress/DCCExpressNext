@@ -163,18 +163,32 @@ export default function StatusBar() {
     setTaskDialogOpened(true);
     wsApi.getTaskRuntimeState();
   };
-
   const handleStartTasks = (): void => {
-    wsApi.startAllTasks();
-  };
+    if (!taskSnapshot) {
+      return;
+    }
 
+    for (const task of taskSnapshot.tasks) {
+      if (
+        task.status === "queued" ||
+        task.status === "aborted" ||
+        task.status === "completed"
+      ) {
+        wsApi.startTask(task.id);
+        continue;
+      }
+
+      if (task.status === "paused") {
+        wsApi.resumeTask(task.id);
+      }
+    }
+  };;
   const handleCompleteTasks = (): void => {
     wsApi.finishAllTasks();
-  };
-
+  };;
   const handleStopTasks = (): void => {
     wsApi.abortAllTasks();
-  };
+  };;
 
   return (
     <>
@@ -297,7 +311,7 @@ export default function StatusBar() {
           <StatusActionIcon
             tooltip="Start all tasks"
             color="green"
-            disabled={!wsConnected}
+            disabled={!wsConnected || taskSnapshot?.tasks.length === 0}
             onClick={handleStartTasks}
           >
             <IconPlayerPlayFilled size={14} />
@@ -306,7 +320,13 @@ export default function StatusBar() {
           <StatusActionIcon
             tooltip="Complete all tasks"
             color="blue"
-            disabled={!wsConnected || runningTaskCount === 0}
+            disabled={
+              !wsConnected ||
+              !taskSnapshot?.tasks.some(task =>
+                task.status === "running" ||
+                task.status === "paused"
+              )
+            }
             onClick={handleCompleteTasks}
           >
             <IconPlayerSkipForward size={14} />
@@ -315,7 +335,14 @@ export default function StatusBar() {
           <StatusActionIcon
             tooltip="Stop all tasks"
             color="red"
-            disabled={!wsConnected || activeTaskCount === 0}
+            disabled={
+              !wsConnected ||
+              !taskSnapshot?.tasks.some(task =>
+                task.status === "running" ||
+                task.status === "paused" ||
+                task.status === "finishing"
+              )
+            }
             onClick={handleStopTasks}
           >
             <IconPlayerStopFilled size={14} />
@@ -387,7 +414,12 @@ export default function StatusBar() {
             <StatusActionIcon
               tooltip="Complete all tasks"
               color="blue"
-              disabled={runningTaskCount === 0}
+              disabled={
+                !taskSnapshot?.tasks.some(task =>
+                  task.status === "running" ||
+                  task.status === "paused"
+                )
+              }
               onClick={handleCompleteTasks}
             >
               <IconPlayerSkipForward size={14} />
@@ -396,7 +428,13 @@ export default function StatusBar() {
             <StatusActionIcon
               tooltip="Stop all tasks"
               color="red"
-              disabled={activeTaskCount === 0}
+              disabled={
+                !taskSnapshot?.tasks.some(task =>
+                  task.status === "running" ||
+                  task.status === "paused" ||
+                  task.status === "finishing"
+                )
+              }
               onClick={handleStopTasks}
             >
               <IconPlayerStopFilled size={14} />
