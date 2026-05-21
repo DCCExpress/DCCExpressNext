@@ -4,6 +4,11 @@ import {
   routeGraphRuntimeStore,
 } from "../../services/routeGraphRuntimeStore.js";
 
+
+import {
+  locoReservationStore,
+} from "../../services/locoReservationStore.js";
+
 import {
   railwayTopologyStore,
 } from "../../services/railwayTopologyStore.js";
@@ -230,10 +235,37 @@ export const handleRouteMessage: WsMessageHandler = async ({
     case "clearAllRouteReservations": {
       routeGraphRuntimeStore.clearAllBusy();
 
+      const releasedLocoReservations =
+        locoReservationStore.releaseAll();
+
       broadcast({
         type: "allRouteReservationsCleared",
         data: {},
       });
+
+      for (const released of releasedLocoReservations) {
+        broadcast({
+          type: "locoReservationChanged",
+          data: {
+            locoAddress: released.locoAddress,
+            reservation: null,
+          },
+        });
+
+        const loco =
+          commandCenter.getLocoInfo(
+            released.locoAddress
+          );
+
+        if (loco) {
+          broadcast({
+            type: "locoState",
+            data: {
+              loco,
+            },
+          });
+        }
+      }
 
       return true;
     }
