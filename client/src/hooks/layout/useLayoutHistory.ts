@@ -61,7 +61,7 @@ export function useLayoutHistory({
     []
   );
 
-  const pushHistorySnapshot = useCallback((): void => {
+  const pushHistorySnapshot22 = useCallback((): void => {
     const snapshot =
       createLayoutSnapshot(layoutRef.current);
 
@@ -87,6 +87,35 @@ export function useLayoutHistory({
     layoutRef,
     maxHistory,
   ]);
+
+  const MAX_HISTORY_SNAPSHOT_SIZE = 2 * 1024 * 1024; // 2 MB
+
+  const pushHistorySnapshot = useCallback((): void => {
+    const snapshot = createLayoutSnapshot(layoutRef.current);
+
+    if (snapshot.length > MAX_HISTORY_SNAPSHOT_SIZE) {
+      console.warn(
+        `[History] Snapshot too large, skipped: ${(snapshot.length / 1024 / 1024).toFixed(2)} MB`
+      );
+      return;
+    }
+
+    setUndoStack(prev => {
+      const last = prev[prev.length - 1];
+
+      if (last === snapshot) {
+        return prev;
+      }
+
+      const next = [...prev, snapshot];
+
+      return next.length > maxHistory
+        ? next.slice(next.length - maxHistory)
+        : next;
+    });
+
+    setRedoStack([]);
+  }, [createLayoutSnapshot, layoutRef, maxHistory]);
 
   const undo = useCallback((): void => {
     setUndoStack(prevUndo => {

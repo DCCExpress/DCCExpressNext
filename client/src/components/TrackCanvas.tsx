@@ -1528,8 +1528,8 @@ export default function TrackCanvas({
       canvas.removeEventListener("mouseleave", handleMouseLeave);
       canvas.removeEventListener("contextmenu", handleContextMenu);
 
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseup", handleMouseUp);
 
       canvas.removeEventListener("pointerdown", handlePointerDown);
       canvas.removeEventListener("pointermove", handlePointerMove);
