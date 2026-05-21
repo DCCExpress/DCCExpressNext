@@ -36,19 +36,17 @@ export class CommandCenterSimulator extends CommandCenter {
       this.aliveTask = null;
     }
 
-    this.aliveTask = setInterval(() => {
-      const msg: TypedServerWsMessage<"commandCenterInfo"> = {
-        type: "commandCenterInfo",
-        data: {
-          alive: this.alive,
-          power: this.power,
-          type: "simulator",
-        },
-        uuid: this.lockOwnerUUID,
-      };
+    const msg: TypedServerWsMessage<"commandCenterInfo"> = {
+      type: "commandCenterInfo",
+      data: {
+        alive: this.alive,
+        power: this.power,
+        type: "simulator",
+      },
+      uuid: this.lockOwnerUUID,
+    };
 
-      broadcastAll(msg);
-    }, 1000);
+    broadcastAll(msg);
 
     return Promise.resolve(true);
   }

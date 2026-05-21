@@ -10,6 +10,8 @@ import { getScript, saveScript } from "../api/http";
 import { wsApi } from "./wsApi";
 import { wsClient } from "./wsClient";
 
+const MAX_SCRIPT_LOG_ITEMS = 500;
+
 export type ScriptContext = {
   source?: ScriptRunSource;
   element?: BaseElementView | null;
@@ -169,7 +171,7 @@ class ScriptEngine {
               message:
                 `Script rejected: ${data.reason}`,
             },
-          ],
+          ].slice(-MAX_SCRIPT_LOG_ITEMS),
         });
 
         this.emit();
@@ -354,6 +356,12 @@ content: string;
   private mapServerState(
     state: ScriptStateDto
   ): ScriptState {
+    const mappedLogs = (state.logs ?? []).map(log => ({
+      time: new Date(log.time),
+      source: log.source,
+      message: log.message,
+    })).slice(-MAX_SCRIPT_LOG_ITEMS);
+
     return {
       id: state.id,
       status: state.status,
@@ -371,11 +379,7 @@ content: string;
         ? { error: state.error }
         : {}),
 
-      logs: (state.logs ?? []).map(log => ({
-        time: new Date(log.time),
-        source: log.source,
-        message: log.message,
-      })),
+      logs: mappedLogs,
     };
   }
 }

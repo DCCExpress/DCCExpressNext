@@ -27,16 +27,23 @@ import {
 import {
   handleTaskMessage,
 } from "./handlers/wsTaskMessageHandlers.js";
-import { handleLocoReservationMessage } from "./handlers/wsLocoReservationMessageHandlers.js";
 
+import {
+  handleLocoReservationMessage,
+} from "./handlers/wsLocoReservationMessageHandlers.js";
 
 import {
   handleRuntimeVariableMessage,
 } from "./handlers/wsRuntimeVariableMessageHandlers.js";
 
+import {
+  handleEditorEditModeMessage,
+} from "./handlers/wsEditorEditModeMessageHandlers.js";
+
 const handlers = [
-  
-  handleRuntimeVariableMessage,handleLockMessage,
+  handleRuntimeVariableMessage,
+  handleEditorEditModeMessage,
+  handleLockMessage,
   handleRouteMessage,
   handleLocoReservationMessage,
   handleCommandCenterMessage,

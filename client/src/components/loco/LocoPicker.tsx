@@ -40,6 +40,12 @@ export default function LocoPicker({
                 alignItems: "flex-start",
                 justifyContent: "center",
                 padding: 12,
+                
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                    WebkitTouchCallout: "none",
+                
+                
             }}
             onMouseDown={onClose}
         >

@@ -636,8 +636,8 @@ export default function TrackCanvas({
 
         if (!fromBlock || !toBlock) {
           showWarningMessage(
-          t("common.error"),
-          t("routesPanel.configuredBlocksMissing")
+            t("common.error"),
+            t("routesPanel.configuredBlocksMissing")
           );
           return;
         }
@@ -1248,6 +1248,39 @@ export default function TrackCanvas({
       // }
 
       if (!editModeRef.current) {
+
+        if (!editModeRef.current && hitElement instanceof AudioButtonElementView) {
+          hitElement.press(() => {
+            invalidate();
+          });
+
+          try {
+            canvas.setPointerCapture(ev.pointerId);
+          } catch {
+            // ignore
+          }
+
+          return;
+        }
+
+        if (!editModeRef.current && hitElement instanceof BlockElementView) {
+          ev.preventDefault();
+          ev.stopPropagation();
+
+          setSelectedBlock(hitElement);
+
+          window.setTimeout(() => {
+            setLocoPickerOpen(true);
+          }, 100);
+          try {
+            canvas.setPointerCapture(ev.pointerId);
+          } catch {
+            // ignore
+          }
+
+          return;
+        }
+
         if (hitElement instanceof TrackSignalElementView) {
           if (signalAspectPopoverRef.current.opened) {
             reopenSignalAspectPopover(hitElement, ev.clientX, ev.clientY);

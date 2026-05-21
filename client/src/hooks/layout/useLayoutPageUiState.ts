@@ -8,8 +8,19 @@ import {
 } from "react";
 
 import {
-  useRuntimeVariable,
-} from "../useRuntimeVariable";
+  showWarningMessage,
+} from "../../helpers";
+
+import {
+  wsApi,
+} from "../../services/wsApi";
+
+import {
+  wsClient,
+} from "../../services/wsClient";
+
+const EDIT_MODE_KEY =
+  "dcc-express.editor.editMode";
 
 const LOCO_PANEL_COLLAPSED_KEY =
   "dcc-express.editor.locoPanelCollapsed";
@@ -60,17 +71,16 @@ function writeStoredBoolean(
 }
 
 export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
-  /**
-   * Server-authoritative shared runtime state.
-   *
-   * A kliens csak kérést küld, a tényleges érték akkor frissül,
-   * amikor a szerver runtimeVariableChanged üzenettel visszaigazolja.
-   */
   const [
     editMode,
     setEditMode,
   ] =
-    useRuntimeVariable("editor.editMode");
+    useState<boolean>(() =>
+      readStoredBoolean(
+        EDIT_MODE_KEY,
+        false
+      )
+    );
 
   const [
     locoPanelCollapsed,
@@ -93,6 +103,52 @@ export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
         false
       )
     );
+
+  useEffect(() => {
+    writeStoredBoolean(
+      EDIT_MODE_KEY,
+      editMode
+    );
+
+    wsApi.setEditorEditMode(editMode);
+
+    return () => {
+      if (editMode) {
+        wsApi.setEditorEditMode(false);
+      }
+    };
+  }, [editMode]);
+
+  useEffect(() => {
+    const unsubscribeEditModeRejected =
+      wsClient.on(
+        "editorEditModeRejected",
+        data => {
+          showWarningMessage(
+            "Editor mode",
+            data.reason
+          );
+
+          setEditMode(false);
+        }
+      );
+
+    const unsubscribeTaskRejected =
+      wsClient.on(
+        "taskRejected",
+        data => {
+          showWarningMessage(
+            "Task",
+            data.reason
+          );
+        }
+      );
+
+    return () => {
+      unsubscribeEditModeRejected();
+      unsubscribeTaskRejected();
+    };
+  }, []);
 
   useEffect(() => {
     writeStoredBoolean(

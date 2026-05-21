@@ -50,7 +50,6 @@ import type {
   Z21TurnoutInfoPayload,
 } from "./commandCenterTelemetry.js";
 
-
 import type {
   RuntimeVariableChangedPayload,
   RuntimeVariableRejectedPayload,
@@ -118,10 +117,11 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "abortTask",
   "pauseTask",
   "resumeTask",
-"finishAllTasks",
+  "finishAllTasks",
   "abortAllTasks",
   "setRuntimeVariable",
   "getRuntimeVariables",
+  "setEditorEditMode",
   "getTaskRuntimeState",
 ] as const satisfies readonly ClientWsMessageType[];
 
@@ -200,6 +200,11 @@ export type RouteReservationRejectedMessage = {
   data: RouteReservationRejectedPayload;
 };
 
+export type EditorEditModeRejectedPayload = {
+  reason: string;
+  editingClients: string[];
+};
+
 /**
  * Szerver -> kliens WebSocket események payload térképe.
  */
@@ -262,6 +267,8 @@ export type ServerWsPayloadMap = {
   runtimeVariableChanged: RuntimeVariableChangedPayload;
   runtimeVariableRejected: RuntimeVariableRejectedPayload;
   runtimeVariablesSnapshot: RuntimeVariablesSnapshotPayload;
+
+  editorEditModeRejected: EditorEditModeRejectedPayload;
 
   fastClockChanged: FastClockSnapshot;
 

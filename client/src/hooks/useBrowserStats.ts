@@ -36,8 +36,11 @@ export function useBrowserStats(updateMs = 1000): BrowserStats {
     let currentFps: number | null = null;
     let rafId = 0;
     let intervalId: number | undefined;
+    let isCleanedUp = false;
 
     const loop = () => {
+      if (isCleanedUp) return;
+
       frameCount++;
 
       const now = performance.now();
@@ -55,6 +58,8 @@ export function useBrowserStats(updateMs = 1000): BrowserStats {
     rafId = requestAnimationFrame(loop);
 
     intervalId = window.setInterval(() => {
+      if (isCleanedUp) return;
+
       const perf = performance as PerformanceWithMemory;
       const memory = perf.memory;
 
@@ -68,6 +73,7 @@ export function useBrowserStats(updateMs = 1000): BrowserStats {
     }, updateMs);
 
     return () => {
+      isCleanedUp = true;
       cancelAnimationFrame(rafId);
 
       if (intervalId !== undefined) {

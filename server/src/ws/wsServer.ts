@@ -11,11 +11,13 @@ import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
 
-
-
 import {
   readCommandCenter,
 } from "../routes/commandCenterRoutes.js";
+
+import {
+  editorEditModeStore,
+} from "../services/editorEditModeStore.js";
 
 import {
   log,
@@ -212,6 +214,8 @@ export function setupWebSocketServer(
 
     ws.on("close", () => {
       log("WebSocket client disconnected");
+
+      editorEditModeStore.removeClient(clientUUID);
 
       const currentCommandCenter =
         getCurrentCommandCenter();

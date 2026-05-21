@@ -2,13 +2,12 @@
 
 import type {
   Direction,
-  ReservationOwnerType
+  ReservationOwnerType,
 } from "./domainTypes.js";
 
 import type {
   ScriptRunSource,
 } from "./scriptTypes.js";
-
 
 import type {
   SetRuntimeVariablePayload,
@@ -102,6 +101,10 @@ export type TaskIdOrNameCommandPayload = {
   taskIdOrName: string;
 };
 
+export type SetEditorEditModeCommandPayload = {
+  editMode: boolean;
+};
+
 /**
  * Kliens -> szerver parancstérkép.
  *
@@ -148,10 +151,13 @@ export type ClientWsPayloadMap = {
   abortTask: TaskIdOrNameCommandPayload;
   pauseTask: TaskIdOrNameCommandPayload;
   resumeTask: TaskIdOrNameCommandPayload;
-finishAllTasks: EmptyClientWsCommandPayload;
+  finishAllTasks: EmptyClientWsCommandPayload;
   abortAllTasks: EmptyClientWsCommandPayload;
+
   setRuntimeVariable: SetRuntimeVariablePayload;
   getRuntimeVariables: EmptyClientWsCommandPayload;
+
+  setEditorEditMode: SetEditorEditModeCommandPayload;
 
   getTaskRuntimeState: EmptyClientWsCommandPayload;
 };

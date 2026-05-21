@@ -1,5 +1,7 @@
 class AudioManager {
   private activeAudios: Map<string, HTMLAudioElement> = new Map();
+  private audioTimeouts: Map<string, number> = new Map();
+  private readonly maxAudioDuration = 600000;
 
   private normalizeFileName(fileName: string): string {
     if (!fileName) return "";
@@ -33,11 +35,13 @@ class AudioManager {
 
     audio.onended = () => {
       this.activeAudios.delete(url);
+      this.clearAudioTimeout(url);
       options?.onEnded?.();
     };
 
     audio.onerror = () => {
       this.activeAudios.delete(url);
+      this.clearAudioTimeout(url);
 
       const error = new Error(`Audio load/play error: ${url}`);
       console.error("[AudioManager]", error);
@@ -47,12 +51,19 @@ class AudioManager {
 
     audio.play().catch((error) => {
       this.activeAudios.delete(url);
+      this.clearAudioTimeout(url);
       console.error("[AudioManager] Audio play error:", error);
 
       options?.onError?.(error);
     });
 
     this.activeAudios.set(url, audio);
+
+    const timeoutId = window.setTimeout(() => {
+      this.stop(url);
+    }, this.maxAudioDuration);
+
+    this.audioTimeouts.set(url, timeoutId);
 
     return audio;
   }
@@ -66,6 +77,7 @@ class AudioManager {
     audio.pause();
     audio.currentTime = 0;
     this.activeAudios.delete(url);
+    this.clearAudioTimeout(url);
   }
 
   stopAll() {
@@ -75,6 +87,20 @@ class AudioManager {
     }
 
     this.activeAudios.clear();
+
+    for (const timeoutId of this.audioTimeouts.values()) {
+      clearTimeout(timeoutId);
+    }
+
+    this.audioTimeouts.clear();
+  }
+
+  private clearAudioTimeout(url: string) {
+    const timeoutId = this.audioTimeouts.get(url);
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+      this.audioTimeouts.delete(url);
+    }
   }
 }
 

@@ -92,19 +92,19 @@ const TICK_MS = 250;
  * Mennyi ideig álljon a köztes blokkban,
  * mielőtt "elhagyja" azt.
  */
-const DEPARTURE_DELAY_MS = 1200;
+const DEPARTURE_DELAY_MS = 3000;
 
 /**
  * Egy útvonalszegmenshez tartozó szimulált haladási idő.
  * Ha két blokk között több szakasz van, arányosan nő az idő.
  */
-const BASE_TRANSIT_PER_SEGMENT_MS = 1400;
+const BASE_TRANSIT_PER_SEGMENT_MS = 5000;
 
 /**
  * Legyen minimális menetidő két blokk között,
  * hogy ne villanjon át túl gyorsan.
  */
-const MIN_TRANSIT_PER_LEG_MS = 2800;
+const MIN_TRANSIT_PER_LEG_MS = 5000;
 
 class TrainSimulatorRuntimeStore {
   private params: TrainSimulatorConfigureParams | null = null;

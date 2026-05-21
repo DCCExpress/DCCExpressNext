@@ -63,6 +63,8 @@ class ScriptStoppedError extends Error {
     }
 }
 
+const MAX_SCRIPT_LOG_ITEMS = 500;
+
 class ServerScriptSession {
     private state: ScriptStateDto;
 
@@ -711,7 +713,7 @@ return (async () => {
             logs: [
                 ...this.state.logs,
                 entry,
-            ],
+            ].slice(-MAX_SCRIPT_LOG_ITEMS),
         };
 
         this.emit();

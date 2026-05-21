@@ -107,34 +107,34 @@ class WebSocketApi {
   }
 
   reserveLoco(
-  locoAddress: number,
-  ownerId: string,
-  ownerType: ReservationOwnerType,
-  ownerName?: string,
-  reason?: string
-): boolean {
-  return this.send("reserveLoco", {
-    locoAddress,
-    ownerId,
-    ownerType,
-    ...(ownerName !== undefined
-      ? { ownerName }
-      : {}),
-    ...(reason !== undefined
-      ? { reason }
-      : {}),
-  });
-}
+    locoAddress: number,
+    ownerId: string,
+    ownerType: ReservationOwnerType,
+    ownerName?: string,
+    reason?: string
+  ): boolean {
+    return this.send("reserveLoco", {
+      locoAddress,
+      ownerId,
+      ownerType,
+      ...(ownerName !== undefined
+        ? { ownerName }
+        : {}),
+      ...(reason !== undefined
+        ? { reason }
+        : {}),
+    });
+  }
 
-releaseLocoReservation(
-  locoAddress: number,
-  ownerId: string
-): boolean {
-  return this.send("releaseLocoReservation", {
-    locoAddress,
-    ownerId,
-  });
-}
+  releaseLocoReservation(
+    locoAddress: number,
+    ownerId: string
+  ): boolean {
+    return this.send("releaseLocoReservation", {
+      locoAddress,
+      ownerId,
+    });
+  }
 
   setTurnout(
     address: number,
@@ -236,8 +236,8 @@ releaseLocoReservation(
     return this.send("runScript", {
       ...(typeof script === "string"
         ? {
-            script,
-          }
+          script,
+        }
         : {}),
       source: context?.source ?? "unknown",
       elementId: context?.elementId ?? null,
@@ -278,11 +278,10 @@ releaseLocoReservation(
       taskIdOrName,
     });
   }
+
   finishAllTasks(): boolean {
     return this.send("finishAllTasks", {});
   }
-
-
 
   abortAllTasks(): boolean {
     return this.send("abortAllTasks", {});
@@ -295,6 +294,7 @@ releaseLocoReservation(
       taskIdOrName,
     });
   }
+
   abortTask(
     taskIdOrName: string
   ): boolean {
@@ -302,6 +302,13 @@ releaseLocoReservation(
       taskIdOrName,
     });
   }
+
+  setEditorEditMode(editMode: boolean): boolean {
+    return this.send("setEditorEditMode", {
+      editMode,
+    });
+  }
+
   getTaskRuntimeState(): boolean {
     return this.send(
       "getTaskRuntimeState",

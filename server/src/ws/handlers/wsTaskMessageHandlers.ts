@@ -1,12 +1,29 @@
 // server/src/ws/handlers/wsTaskMessageHandlers.ts
 
 import {
+  editorEditModeStore,
+} from "../../services/editorEditModeStore.js";
+
+import {
   taskRuntimeStore,
 } from "../../services/taskRuntimeStore.js";
 
 import type {
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
+
+function rejectTaskStart(
+  sendToClient: Parameters<WsMessageHandler>[0]["sendToClient"],
+  ws: Parameters<WsMessageHandler>[0]["ws"],
+  reason: string
+): void {
+  sendToClient(ws, {
+    type: "taskRejected",
+    data: {
+      reason,
+    },
+  });
+}
 
 export const handleTaskMessage: WsMessageHandler = async ({
   ws,
@@ -22,6 +39,26 @@ export const handleTaskMessage: WsMessageHandler = async ({
 
         if (!taskIdOrName) {
           throw new Error("Missing taskIdOrName.");
+        }
+
+        if (taskRuntimeStore.hasActiveTasks()) {
+          rejectTaskStart(
+            sendToClient,
+            ws,
+            "Nem lehet taskot indítani, mert már futó, szüneteltetett vagy befejezés alatt álló task van."
+          );
+
+          return true;
+        }
+
+        if (editorEditModeStore.hasEditingClients()) {
+          rejectTaskStart(
+            sendToClient,
+            ws,
+            "Nem lehet taskot indítani, mert legalább egy kliens szerkesztő módban van."
+          );
+
+          return true;
         }
 
         const result =
@@ -142,7 +179,8 @@ export const handleTaskMessage: WsMessageHandler = async ({
 
       return true;
     }
-case "finishAllTasks":
+
+    case "finishAllTasks":
       await taskRuntimeStore.finishAllTasks();
       return true;
 
