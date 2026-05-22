@@ -1,5 +1,6 @@
 import { CommandCenterType, ICommandCenter } from "../../../common/src/types";
 import { showErrorMessage, showOkMessage } from "../helpers";
+import i18n from "../i18n";
 
 
 export class CommandCenter implements ICommandCenter {
@@ -64,8 +65,11 @@ export async function loadCommandCenters(): Promise<ICommandCenter> {
   const response = await fetch("/api/command-centers");
 
   if (!response.ok) {
-    showErrorMessage("COMMAND CENTER", "Could not load command center!")
-    throw new Error("Nem sikerült betölteni a parancsközpontokat.");
+    showErrorMessage(
+      i18n.t("commandCenter.title"),
+      i18n.t("commandCenter.messages.loadFailed")
+    );
+    throw new Error(i18n.t("commandCenter.messages.loadFailed"));
   }
 
   return (await response.json()) as ICommandCenter;
@@ -81,8 +85,14 @@ export async function saveCommandCenters(items: ICommandCenter): Promise<void> {
   });
 
   if (response.ok) {
-    showOkMessage("OK", "Parancsközpont mentve!")
+    showOkMessage(
+      i18n.t("common.success"),
+      i18n.t("commandCenter.messages.saveOk")
+    );
   } else {
-    showErrorMessage("Error", "Nem sikerült elmenteni a parancsközpontokat.");
+    showErrorMessage(
+      i18n.t("common.error"),
+      i18n.t("commandCenter.messages.saveFailed")
+    );
   }
 }

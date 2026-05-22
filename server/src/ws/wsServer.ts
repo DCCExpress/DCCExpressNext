@@ -124,7 +124,7 @@ export function setupWebSocketServer(
         conf
       );
 
-      initializeCommandCenter(conf);
+      await initializeCommandCenter(conf);
 
       await scriptRuntimeStore.initialize();
       await scriptRuntimeStore.autoStartIfEnabled();

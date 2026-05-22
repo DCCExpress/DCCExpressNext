@@ -4,6 +4,7 @@ import type {
 import {
   showWarningMessage,
 } from "../../../helpers";
+import i18n from "../../../i18n";
 import {
   BlockElementView,
 } from "../elements/BlockElementView";
@@ -107,7 +108,7 @@ export class LayoutView
 
         showWarningMessage(
           current.name,
-          " A váltó törlésre került, ezért a hozzá tartozó útvonal gombból is eltávolításra került."
+          i18n.t("editor.messages.routeTurnoutRemoved")
         );
 
         break;

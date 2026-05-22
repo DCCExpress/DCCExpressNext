@@ -17,6 +17,7 @@
     "remove": "Remove",
     "removeAll": "Remove all",
     "error": "Error",
+    "warning": "Warning",
     "success": "Successful",
     "loading": "Loading..."
   },
@@ -157,10 +158,14 @@
       "stop": "Stop"
     },
     "unnamed": "Unnamed locomotive",
+    "stateTitle": "Loco state",
     "dccAddress": "DCC address",
     "maxSpeedShort": "Max speed",
     "address": "Address",
-    "noSelectable": "No selectable locomotive."
+    "noSelectable": "No selectable locomotive.",
+    "errors": {
+      "stateConvertFailed": "Could not convert locoState!"
+    }
   },
   "toolbar": {
     "themeToggle": "Toggle theme",
@@ -247,7 +252,23 @@
     "detectorCmds": "Detector cmds",
     "needsUnlock": "Needs unlock",
     "yes": "YES",
-    "no": "NO"
+    "no": "NO",
+    "messages": {
+      "loadFailed": "Could not load command center!",
+      "loadFailedWithError": "Failed to load command center: {{error}}",
+      "saveOk": "Command center saved!",
+      "saveFailed": "Could not save command centers."
+    }
+  },
+  "layout": {
+    "runtimeTitle": "Runtime layout",
+    "messages": {
+      "loadLocosFailed": "Failed to load locomotives: {{error}}",
+      "loadLayoutFailed": "Failed to load layout: {{error}}",
+      "saved": "LayoutView saved!",
+      "runtimeRefreshed": "Server runtime layout refreshed.",
+      "runtimeRefreshFailed": "Could not refresh server runtime layout."
+    }
   },
   "programmer": {
     "title": "Decoder Programmer",
@@ -377,7 +398,9 @@
     "refreshSegments": "Refresh segments",
     "selectBlock": "Select block",
     "noRouteGraph": "No route graph available.",
-    "noBlocks": "No blocks available in the generated route graph."
+    "noBlocks": "No blocks available in the generated route graph.",
+    "releasePartiallyRetained": "{{from}} -> {{to}} released, but some elements are still reserved.",
+    "released": "{{from}} -> {{to}} released."
   },
   "propertyPanel": {
     "title": "Properties"
@@ -387,6 +410,7 @@
     "thrown": "thrown"
   },
   "task": {
+    "title": "Task",
     "status": {
       "queued": "Queued",
       "running": "Running",
@@ -464,9 +488,36 @@
     "delete": {
       "title": "Delete task",
       "confirm": "Are you sure you want to delete this task?"
+    },
+    "manager": {
+      "title": "Task Manager",
+      "alerts": {
+        "noGraphTitle": "No route graph",
+        "noGraph": "Generate the graph first before adding tasks.",
+        "noLayoutTitle": "No active layout",
+        "noLayout": "The layout store does not currently contain a layout.",
+        "actionFailedTitle": "Action cannot be completed"
+      },
+      "errors": {
+        "selectBlocks": "Select departure and destination blocks.",
+        "invalidTargetSpeed": "Enter a valid target speed."
+      },
+      "messages": {
+        "updated": "Task updated.",
+        "saved": "Tasks saved.",
+        "loaded_one": "{{count}} task loaded.",
+        "loaded_other": "{{count}} tasks loaded.",
+        "waiting": "Task waiting",
+        "completed": "Task completed",
+        "startedWaitingForLoco": "The task has started, but there is no locomotive in the departure block yet. Waiting...",
+        "completedWithoutActiveRun": "The task was completed without an active run.",
+        "finishedInDestinationBlock": "The task finished in the destination block.",
+        "cycleCompletedWaitingForLoco": "The task cycle completed and is waiting for a locomotive in the departure block again."
+      }
     }
   },
   "editor": {
+    "mode": "Editor mode",
     "cursorEsc": "Cursor (Esc)",
     "cursorMode": "Cursor mode",
     "pickElement": "Pick element",
@@ -507,6 +558,18 @@
       "undoShort": "Undo",
       "redo": "Redo (Ctrl+Y / Ctrl+Shift+Z)",
       "redoShort": "Redo"
+    },
+    "messages": {
+      "alreadyHasElement": "There is already an element here!",
+      "routeTurnoutRemoved": "The turnout was deleted, so it was also removed from the related route button."
+    }
+  },
+  "runtimeVariable": {
+    "title": "Runtime variable"
+  },
+  "audio": {
+    "messages": {
+      "fileNameMissing": "Audio file name is missing."
     }
   },
   "fastClock": {

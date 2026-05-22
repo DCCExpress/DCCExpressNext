@@ -469,6 +469,7 @@ class TaskRuntimeStore {
           taskId: task.id,
           taskName: task.name,
           blockId: task.fromBlockId,
+          messageKey: "task.manager.messages.startedWaitingForLoco",
           message:
             "A task elindult, de az induló blokkban még nincs mozdony. Várakozás...",
         },
@@ -733,6 +734,7 @@ class TaskRuntimeStore {
           fromBlockId: task.fromBlockId,
           toBlockId: task.toBlockId,
           completedAt: task.completedAt,
+          messageKey: "task.manager.messages.completedWithoutActiveRun",
           message:
             "A task aktív menet nélkül befejezve.",
         },
@@ -902,6 +904,7 @@ class TaskRuntimeStore {
           fromBlockId: task.fromBlockId,
           toBlockId: task.toBlockId,
           completedAt: task.completedAt,
+          messageKey: "task.manager.messages.finishedInDestinationBlock",
           message:
             "A task a célblokkban befejeződött.",
         },
@@ -924,6 +927,7 @@ class TaskRuntimeStore {
         fromBlockId: task.fromBlockId,
         toBlockId: task.toBlockId,
         completedAt: task.completedAt,
+        messageKey: "task.manager.messages.cycleCompletedWaitingForLoco",
         message:
           "A task ciklusa lefutott, újra várakozik az induló blokk mozdonyára.",
       },

@@ -135,8 +135,8 @@ export default function LocoPanel({
 
         if (!loco) {
           showErrorMessage(
-            "LocoState",
-            "Nem sikerült a locoState konvertálása!"
+            t("loco.stateTitle"),
+            t("loco.errors.stateConvertFailed")
           );
           return;
         }
@@ -164,7 +164,7 @@ export default function LocoPanel({
       });
 
     return unsubscribe;
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const unsubscribe =

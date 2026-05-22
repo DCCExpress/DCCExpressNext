@@ -862,7 +862,10 @@ export default function TrackCanvas({
 
         const exists = currentLayout.getLayeredElement(cursor, grid.x, grid.y);
         if (exists) {
-          showErrorMessage("Error", "Already has an element!");
+          showErrorMessage(
+            t("common.error"),
+            t("editor.messages.alreadyHasElement")
+          );
           return;
         }
 

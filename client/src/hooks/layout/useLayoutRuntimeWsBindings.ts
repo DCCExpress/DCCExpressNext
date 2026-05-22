@@ -6,6 +6,7 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import type {
   Loco,
@@ -78,6 +79,8 @@ export function useLayoutRuntimeWsBindings({
   locosRef,
   setInvalidateCounter,
 }: UseLayoutRuntimeWsBindingsParams): void {
+  const { t } = useTranslation();
+
   useEffect(() => {
     const invalidateLayout = (): void => {
       setInvalidateCounter(prev => prev + 1);
@@ -283,7 +286,7 @@ export function useLayoutRuntimeWsBindings({
         data => {
           if (data.lockOwner !== wsApi.clientUuid) {
             showWarningMessage(
-              "Warning",
+              t("common.warning"),
               data.reason
             );
           }
@@ -295,7 +298,7 @@ export function useLayoutRuntimeWsBindings({
         "routeReservationRejected",
         data => {
           showWarningMessage(
-            "Route reservation",
+            t("routesPanel.routeRequest"),
             data.reason
           );
         }
@@ -346,16 +349,22 @@ export function useLayoutRuntimeWsBindings({
 
           if (partiallyRetained) {
             showWarningMessage(
-              "Route release",
-              `${data.fromBlockName} → ${data.toBlockName} feloldva, de egyes elemek továbbra is foglaltak.`
+              t("routesPanel.releaseRequest"),
+              t("routesPanel.releasePartiallyRetained", {
+                from: data.fromBlockName,
+                to: data.toBlockName,
+              })
             );
 
             return;
           }
 
           showOkMessage(
-            "Route release",
-            `${data.fromBlockName} → ${data.toBlockName} felszabadult.`
+            t("routesPanel.releaseRequest"),
+            t("routesPanel.released", {
+              from: data.fromBlockName,
+              to: data.toBlockName,
+            })
           );
         }
       );
@@ -365,7 +374,7 @@ export function useLayoutRuntimeWsBindings({
         "routeReservationReleaseRejected",
         data => {
           showWarningMessage(
-            "Route release",
+            t("routesPanel.releaseRequest"),
             data.reason
           );
         }
@@ -376,8 +385,10 @@ export function useLayoutRuntimeWsBindings({
         "taskWaitingForLoco",
         data => {
           showWarningMessage(
-            "Task waiting",
-            `${data.taskName}: ${data.message}`
+            t("task.manager.messages.waiting"),
+            `${data.taskName}: ${data.messageKey
+              ? t(data.messageKey)
+              : data.message}`
           );
         }
       );
@@ -387,8 +398,10 @@ export function useLayoutRuntimeWsBindings({
         "taskCycleCompleted",
         data => {
           showOkMessage(
-            "Task completed",
-            `${data.taskName}: ${data.message}`
+            t("task.manager.messages.completed"),
+            `${data.taskName}: ${data.messageKey
+              ? t(data.messageKey)
+              : data.message}`
           );
         }
       );
@@ -411,5 +424,6 @@ export function useLayoutRuntimeWsBindings({
     layoutRef,
     locosRef,
     setInvalidateCounter,
+    t,
   ]);
 }

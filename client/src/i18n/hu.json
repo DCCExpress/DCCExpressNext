@@ -17,6 +17,7 @@
     "remove": "Eltávolítás",
     "removeAll": "Összes eltávolítása",
     "error": "Hiba",
+    "warning": "Figyelmeztetés",
     "success": "Sikeres",
     "loading": "Betöltés..."
   },
@@ -157,10 +158,14 @@
       "stop": "Állj"
     },
     "unnamed": "Névtelen mozdony",
+    "stateTitle": "Mozdonyállapot",
     "dccAddress": "DCC cím",
     "maxSpeedShort": "Max seb.",
     "address": "Cím",
-    "noSelectable": "Nincs választható mozdony."
+    "noSelectable": "Nincs választható mozdony.",
+    "errors": {
+      "stateConvertFailed": "Nem sikerült a locoState konvertálása!"
+    }
   },
   "toolbar": {
     "themeToggle": "Téma váltása",
@@ -247,7 +252,23 @@
     "detectorCmds": "Detektor parancsok",
     "needsUnlock": "Feloldókód kell",
     "yes": "IGEN",
-    "no": "NEM"
+    "no": "NEM",
+    "messages": {
+      "loadFailed": "Nem sikerült betölteni a parancsközpontot!",
+      "loadFailedWithError": "Nem sikerült betölteni a parancsközpontot: {{error}}",
+      "saveOk": "Parancsközpont mentve!",
+      "saveFailed": "Nem sikerült elmenteni a parancsközpontokat."
+    }
+  },
+  "layout": {
+    "runtimeTitle": "Runtime layout",
+    "messages": {
+      "loadLocosFailed": "Nem sikerült betölteni a mozdonyokat: {{error}}",
+      "loadLayoutFailed": "Nem sikerült betölteni a layoutot: {{error}}",
+      "saved": "LayoutView mentve!",
+      "runtimeRefreshed": "A szerver runtime layout frissült.",
+      "runtimeRefreshFailed": "Nem sikerült frissíteni a szerver runtime layoutot."
+    }
   },
   "programmer": {
     "title": "Dekóder programozó",
@@ -377,7 +398,9 @@
     "refreshSegments": "Szegmensek frissítése",
     "selectBlock": "Válassz blokkot",
     "noRouteGraph": "Nincs elérhető útvonalgráf.",
-    "noBlocks": "Nincsenek blokkok a generált útvonalgráfban."
+    "noBlocks": "Nincsenek blokkok a generált útvonalgráfban.",
+    "releasePartiallyRetained": "{{from}} -> {{to}} feloldva, de egyes elemek továbbra is foglaltak.",
+    "released": "{{from}} -> {{to}} felszabadult."
   },
   "propertyPanel": {
     "title": "Tulajdonságok"
@@ -387,6 +410,7 @@
     "thrown": "kitérő"
   },
   "task": {
+    "title": "Feladat",
     "status": {
       "queued": "Sorban",
       "running": "Fut",
@@ -464,9 +488,36 @@
     "delete": {
       "title": "Feladat törlése",
       "confirm": "Biztosan törlöd ezt a feladatot?"
+    },
+    "manager": {
+      "title": "Task Manager",
+      "alerts": {
+        "noGraphTitle": "Nincs útvonalgráf",
+        "noGraph": "Előbb generálni kell a gráfot, hogy feladatot lehessen felvenni.",
+        "noLayoutTitle": "Nincs aktív layout",
+        "noLayout": "A layout store jelenleg nem tartalmaz pályát.",
+        "actionFailedTitle": "Művelet nem hajtható végre"
+      },
+      "errors": {
+        "selectBlocks": "Válassz induló és cél blokkot.",
+        "invalidTargetSpeed": "Adj meg érvényes célsebességet."
+      },
+      "messages": {
+        "updated": "Feladat frissítve.",
+        "saved": "Feladatok mentve.",
+        "loaded_one": "{{count}} feladat betöltve.",
+        "loaded_other": "{{count}} feladat betöltve.",
+        "waiting": "Feladat várakozik",
+        "completed": "Feladat befejezve",
+        "startedWaitingForLoco": "A task elindult, de az induló blokkban még nincs mozdony. Várakozás...",
+        "completedWithoutActiveRun": "A task aktív menet nélkül befejezve.",
+        "finishedInDestinationBlock": "A task a célblokkban befejeződött.",
+        "cycleCompletedWaitingForLoco": "A task ciklusa lefutott, újra várakozik az induló blokk mozdonyára."
+      }
     }
   },
   "editor": {
+    "mode": "Szerkesztési mód",
     "cursorEsc": "Kurzor (Esc)",
     "cursorMode": "Kurzor mód",
     "pickElement": "Elem kiválasztása",
@@ -507,6 +558,18 @@
       "undoShort": "Visszavonás",
       "redo": "Ismétlés (Ctrl+Y / Ctrl+Shift+Z)",
       "redoShort": "Ismétlés"
+    },
+    "messages": {
+      "alreadyHasElement": "Itt már van elem!",
+      "routeTurnoutRemoved": "A váltó törlésre került, ezért a hozzá tartozó útvonal gombból is eltávolításra került."
+    }
+  },
+  "runtimeVariable": {
+    "title": "Runtime változó"
+  },
+  "audio": {
+    "messages": {
+      "fileNameMissing": "Hiányzik az audio fájlnév."
     }
   },
   "fastClock": {

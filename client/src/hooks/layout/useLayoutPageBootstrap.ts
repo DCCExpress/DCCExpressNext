@@ -7,6 +7,7 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   getLayout,
@@ -100,6 +101,8 @@ export function useLayoutPageBootstrap({
   setRedoStack,
   setInvalidateCounter,
 }: UseLayoutPageBootstrapParams): UseLayoutPageBootstrapResult {
+  const { t } = useTranslation();
+
   const loadLocos = useCallback(async (): Promise<void> => {
     try {
       const data =
@@ -114,13 +117,15 @@ export function useLayoutPageBootstrap({
       );
 
       showErrorMessage(
-        "Error",
-        "Failed to load locomotives: " + error
+        t("common.error"),
+        t("layout.messages.loadLocosFailed", {
+          error: String(error),
+        })
       );
 
       setLocos([]);
     }
-  }, [setLocos]);
+  }, [setLocos, t]);
 
   const requestInitialRuntimeSync = useCallback((): void => {
     if (!layoutLoadedRef.current) {
@@ -174,8 +179,10 @@ export function useLayoutPageBootstrap({
       console.error(error);
 
       showErrorMessage(
-        "Error",
-        "Failed to load layout: " + error
+        t("common.error"),
+        t("layout.messages.loadLayoutFailed", {
+          error: String(error),
+        })
       );
     }
   }, [
@@ -185,6 +192,7 @@ export function useLayoutPageBootstrap({
     setLayout,
     setRedoStack,
     setUndoStack,
+    t,
   ]);
 
   const saveLayoutToServer = useCallback(async (): Promise<void> => {
@@ -194,9 +202,9 @@ export function useLayoutPageBootstrap({
 
     showOkMessage(
       "",
-      "LayoutView saved!"
+      t("layout.messages.saved")
     );
-  }, [layoutRef]);
+  }, [layoutRef, t]);
 
   const refreshServerRuntimeLayout = useCallback(async (): Promise<void> => {
     try {
@@ -216,18 +224,18 @@ export function useLayoutPageBootstrap({
       setInvalidateCounter(prev => prev + 1);
 
       showOkMessage(
-        "Runtime layout",
-        "Server runtime layout refreshed."
+        t("layout.runtimeTitle"),
+        t("layout.messages.runtimeRefreshed")
       );
     } catch (error) {
       showErrorMessage(
-        "Runtime layout",
+        t("layout.runtimeTitle"),
         error instanceof Error
           ? error.message
-          : "Could not refresh server runtime layout."
+          : t("layout.messages.runtimeRefreshFailed")
       );
     }
-  }, [layoutRef, setInvalidateCounter]);
+  }, [layoutRef, setInvalidateCounter, t]);
 
   const loadCommandCentersFromServer = useCallback(async (): Promise<void> => {
     try {
@@ -252,11 +260,13 @@ export function useLayoutPageBootstrap({
       );
 
       showErrorMessage(
-        "Error",
-        "Failed to load command center: " + error
+        t("common.error"),
+        t("commandCenter.messages.loadFailedWithError", {
+          error: String(error),
+        })
       );
     }
-  }, [setCommandCenter]);
+  }, [setCommandCenter, t]);
 
   const loadScriptFromServer = useCallback((): void => {
     scriptEngine.loadScript();

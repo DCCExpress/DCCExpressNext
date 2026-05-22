@@ -6,6 +6,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   showWarningMessage,
@@ -71,6 +72,8 @@ function writeStoredBoolean(
 }
 
 export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
+  const { t } = useTranslation();
+
   const [
     editMode,
     setEditMode,
@@ -125,7 +128,7 @@ export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
         "editorEditModeRejected",
         data => {
           showWarningMessage(
-            "Editor mode",
+            t("editor.mode"),
             data.reason
           );
 
@@ -138,7 +141,7 @@ export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
         "taskRejected",
         data => {
           showWarningMessage(
-            "Task",
+            t("task.title"),
             data.reason
           );
         }
@@ -148,7 +151,7 @@ export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
       unsubscribeEditModeRejected();
       unsubscribeTaskRejected();
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     writeStoredBoolean(

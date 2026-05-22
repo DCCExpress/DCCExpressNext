@@ -59,7 +59,7 @@ export function getCurrentCommandCenter(): CommandCenter | null {
   return commandCenter;
 }
 
-export function initializeCommandCenter(
+export function initializeCommandCenter2(
   conf: CommandCenterConfig | null
 ): void {
   if (commandCenter) {
@@ -187,6 +187,86 @@ export function initializeCommandCenter(
     }
   });
 }
+function createCommandCenter(
+  conf: CommandCenterConfig | null
+): CommandCenter {
+  switch (conf?.type) {
+    case "simulator":
+      log("Creating command center:", conf.type);
+      return new CommandCenterSimulator("Simulator");
+
+    case "z21":
+      log("Creating command center:", "Z21");
+      return new Z21CommandCenter(
+        "Z21",
+        conf.z21.host!,
+        conf.z21.port!,
+        message => {
+          broadcast?.(message);
+        }
+      );
+
+    case "dcc-ex-tcp":
+      log("Creating command center:", "DCC-EX TCP");
+      return new DccExTcpCommandCenter(
+        conf.name || "DCC-EX TCP",
+        conf.dccexTcp.host || "127.0.0.1",
+        conf.dccexTcp.port || 2560,
+        conf.dccexTcp.init || ""
+      );
+
+    case "dcc-ex-serial":
+      log("Creating command center:", "DCC-EX Serial");
+      return new DccExSerialCommandCenter(
+        conf.name || "DCC-EX Serial",
+        conf.dccexSerial.serialPort || "COM3",
+        conf.dccexSerial.baudRate || 115200,
+        conf.dccexSerial.init || ""
+      );
+
+    default:
+      log("Creating default command center: simulator");
+      return new CommandCenterSimulator("Simulator");
+  }
+}
+
+export async function initializeCommandCenter(
+  conf: CommandCenterConfig | null
+): Promise<void> {
+  if (commandCenter) {
+    await commandCenter.stop();
+    log("Previous command center stopped");
+  }
+
+  commandCenter = createCommandCenter(conf);
+
+  commandCenter.onRuntimeStateLoaded((blocks, turnouts) => {
+    console.log("[Server] Restored runtime state, rebroadcasting...");
+
+    broadcast?.({
+      type: "blockStateChanged",
+      data: Object.fromEntries(blocks),
+    });
+
+    for (const [, turnout] of turnouts) {
+      broadcast?.({
+        type: "turnoutChanged",
+        data: turnout,
+      });
+    }
+  });
+
+  await commandCenter.loadRuntimeState();
+
+  const started =
+    await commandCenter.start();
+
+  log(
+    "Command center started:",
+    conf?.type ?? "simulator",
+    started
+  );
+}
 
 export function getLogicalTurnoutState(
   address: number
@@ -237,7 +317,7 @@ export function registerCommandCenterConfigLoadedCallback(): void {
   setCommandCenterConfigLoadedCallback(
     (conf: CommandCenterConfig | null) => {
       log("Command center config loaded:", conf);
-      initializeCommandCenter(conf);
+      void initializeCommandCenter(conf);
     }
   );
 }

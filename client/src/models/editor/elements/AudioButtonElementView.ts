@@ -1,5 +1,6 @@
 import { ELEMENT_TYPES } from "../../../../../common/src/layout/elementTypes";
 import { errorToString, generateId, showErrorMessage, showWarningMessage } from "../../../helpers";
+import i18n from "../../../i18n";
 import { audioManager } from "../../../services/audioManager";
 import { BaseElementView } from "../core/BaseElementView";
 import {
@@ -30,7 +31,10 @@ export class AudioButtonElementView
     play() {
         if (!this.fileName) {
             console.warn("[AudioButtonElementView] audio fileName does not exist");
-            showErrorMessage("Error", "[AudioButtonElementView] audio fileName does not exist")
+            showErrorMessage(
+                i18n.t("common.error"),
+                i18n.t("audio.messages.fileNameMissing")
+            )
             return;
         }
 
@@ -40,7 +44,10 @@ export class AudioButtonElementView
     press(onChanged?: () => void) {
         if (!this.fileName) {
             console.warn("[AudioButtonElementView] audio fileName does not exist");
-            showWarningMessage("Warning", "[AudioButtonElementView] audio fileName does not exist")
+            showWarningMessage(
+                i18n.t("common.warning"),
+                i18n.t("audio.messages.fileNameMissing")
+            )
             return;
         }
 
@@ -55,7 +62,10 @@ export class AudioButtonElementView
 
             onError: (error) => {
                 this.active = false;
-                showErrorMessage("ERROR", errorToString(error))
+                showErrorMessage(
+                    i18n.t("common.error"),
+                    errorToString(error)
+                )
                 onChanged?.();
             },
         });

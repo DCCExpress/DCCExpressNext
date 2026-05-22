@@ -198,24 +198,34 @@ export abstract class CommandCenter {
     });
   }
 
-  public getBlocks(): void {
-    this.loadRuntimeState()
-      .then(() => {
-        log("GET BLOCKS:", this.blocks);
-
-        broadcastAll({
-          type: "blockStateChanged",
-          data: Object.fromEntries(this.blocks),
-          uuid: null,
-        });
-      })
-      .catch(err => {
-        log(
-          "Failed to load runtime state in getBlocks:",
-          err
-        );
-      });
+  public broadcastBlocks(): void {
+    broadcastAll({
+      type: "blockStateChanged",
+      data: Object.fromEntries(this.blocks),
+      uuid: null,
+    });
   }
+  public getBlocks(): void {
+    this.broadcastBlocks();
+  }
+  // public getBlocks(): void {
+  //   this.loadRuntimeState()
+  //     .then(() => {
+  //       log("GET BLOCKS:", this.blocks);
+
+  //       broadcastAll({
+  //         type: "blockStateChanged",
+  //         data: Object.fromEntries(this.blocks),
+  //         uuid: null,
+  //       });
+  //     })
+  //     .catch(err => {
+  //       log(
+  //         "Failed to load runtime state in getBlocks:",
+  //         err
+  //       );
+  //     });
+  // }
 
   getBlockState(blockId: string): BlockState | null {
     const block =

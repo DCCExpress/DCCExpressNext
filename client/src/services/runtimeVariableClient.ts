@@ -9,6 +9,7 @@ import {
 import {
   showErrorMessage,
 } from "../helpers";
+import i18n from "../i18n";
 
 import {
   wsApi,
@@ -61,7 +62,7 @@ class RuntimeVariableClient {
       "runtimeVariableRejected",
       data => {
         showErrorMessage(
-          "Runtime variable",
+          i18n.t("runtimeVariable.title"),
           data.reason
         );
       }

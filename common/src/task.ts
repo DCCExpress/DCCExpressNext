@@ -153,6 +153,7 @@ export type TaskWaitingForLocoPayload = {
   taskId: string;
   taskName: string;
   blockId: string;
+  messageKey?: string;
   message: string;
 };
 
@@ -162,5 +163,6 @@ export type TaskLifecycleEventPayload = {
   fromBlockId: string;
   toBlockId: string;
   completedAt: number;
+  messageKey?: string;
   message: string;
 };

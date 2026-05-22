@@ -10,6 +10,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import AppModal from "./AppModal";
 
@@ -55,6 +56,8 @@ export default function TaskManagerDialog({
   opened,
   onClose,
 }: TaskManagerDialogProps) {
+  const { t } = useTranslation();
+
   const snapshot =
     useTaskManager();
 
@@ -240,7 +243,7 @@ export default function TaskManagerDialog({
     setActionError(null);
 
     if (!fromBlockId || !toBlockId) {
-      setFormError("Válassz induló és cél blokkot.");
+      setFormError(t("task.manager.errors.selectBlocks"));
       return;
     }
 
@@ -248,7 +251,7 @@ export default function TaskManagerDialog({
       typeof targetSpeed !== "number" ||
       targetSpeed < 0
     ) {
-      setFormError("Adj meg érvényes célsebességet.");
+      setFormError(t("task.manager.errors.invalidTargetSpeed"));
       return;
     }
 
@@ -316,7 +319,7 @@ export default function TaskManagerDialog({
     setActionError(null);
 
     if (!editFromBlockId || !editToBlockId) {
-      setEditError("Válassz induló és cél blokkot.");
+      setEditError(t("task.manager.errors.selectBlocks"));
       return;
     }
 
@@ -324,7 +327,7 @@ export default function TaskManagerDialog({
       typeof editTargetSpeed !== "number" ||
       editTargetSpeed < 0
     ) {
-      setEditError("Adj meg érvényes célsebességet.");
+      setEditError(t("task.manager.errors.invalidTargetSpeed"));
       return;
     }
 
@@ -347,7 +350,10 @@ export default function TaskManagerDialog({
     setEditTask(null);
     setEditError(null);
 
-    showOkMessage("SUCCESSFUL", "Task updated.");
+    showOkMessage(
+      t("common.success"),
+      t("task.manager.messages.updated")
+    );
   };
 
   const handleStartAllTasks = async () => {
@@ -358,11 +364,14 @@ export default function TaskManagerDialog({
 
     if (!result.ok) {
       setActionError(result.error);
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
-    showOkMessage("SUCCESSFUL", "All tasks started.");
+    showOkMessage(
+      t("common.success"),
+      t("routeTask.allStarted")
+    );
   };
 
   const handleFinishAllTasks = async () => {
@@ -373,11 +382,14 @@ export default function TaskManagerDialog({
 
     if (!result.ok) {
       setActionError(result.error);
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
-    showOkMessage("SUCCESSFUL", "All tasks marked for finish.");
+    showOkMessage(
+      t("common.success"),
+      t("routeTask.allFinishing")
+    );
   };
 
   const handleAbortAllTasks = async () => {
@@ -388,11 +400,14 @@ export default function TaskManagerDialog({
 
     if (!result.ok) {
       setActionError(result.error);
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
-    showOkMessage("SUCCESSFUL", "All active tasks aborted.");
+    showOkMessage(
+      t("common.success"),
+      t("routeTask.allAborted")
+    );
   };
 
   const handleSaveTasks = async () => {
@@ -403,11 +418,14 @@ export default function TaskManagerDialog({
 
     if (!result.ok) {
       setActionError(result.error);
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
-    showOkMessage("SUCCESSFUL", "Tasks saved.");
+    showOkMessage(
+      t("common.success"),
+      t("task.manager.messages.saved")
+    );
   };
 
   const handleLoadTasks = async () => {
@@ -418,18 +436,20 @@ export default function TaskManagerDialog({
 
     if (!result.ok) {
       setActionError(result.error);
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
     showOkMessage(
-      "SUCCESSFUL",
-      `${result.loadedCount} task loaded.`
+      t("common.success"),
+      t("task.manager.messages.loaded", {
+        count: result.loadedCount,
+      })
     );
 
     if (result.skippedCount > 0) {
       showWarningMessage(
-        "Warning",
+        t("common.warning"),
         result.warnings.join("\n")
       );
     }
@@ -445,7 +465,7 @@ export default function TaskManagerDialog({
 
     if (!result.ok) {
       setActionError(result.error);
-      showErrorMessage("ERROR", result.error);
+      showErrorMessage(t("common.error"), result.error);
       return;
     }
 
@@ -511,7 +531,7 @@ export default function TaskManagerDialog({
       <AppModal
         opened={opened}
         onClose={onClose}
-        title="Task Manager"
+        title={t("task.manager.title")}
         size="calc(92vw - 64px)"
         centered
         draggable
@@ -526,26 +546,25 @@ export default function TaskManagerDialog({
           {!snapshot.hasGraph && (
             <Alert
               color="red"
-              title="Nincs útvonalgráf"
+              title={t("task.manager.alerts.noGraphTitle")}
             >
-              Előbb generálni kell a gráfot, hogy feladatot lehessen
-              felvenni.
+              {t("task.manager.alerts.noGraph")}
             </Alert>
           )}
 
           {!snapshot.hasLayout && (
             <Alert
               color="yellow"
-              title="Nincs aktív layout"
+              title={t("task.manager.alerts.noLayoutTitle")}
             >
-              A layout store jelenleg nem tartalmaz pályát.
+              {t("task.manager.alerts.noLayout")}
             </Alert>
           )}
 
           {formError && (
             <Alert
               color="red"
-              title="Feladat nem vehető fel"
+              title={t("task.add.notAddable")}
             >
               {formError}
             </Alert>
@@ -554,7 +573,7 @@ export default function TaskManagerDialog({
           {actionError && (
             <Alert
               color="red"
-              title="Művelet nem hajtható végre"
+              title={t("task.manager.alerts.actionFailedTitle")}
             >
               {actionError}
             </Alert>
