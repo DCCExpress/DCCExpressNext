@@ -229,9 +229,10 @@ export class Z21CommandCenter extends CommandCenter {
 //        await this.getRBusGroup(0);
 //        await this.getRBusGroup(1);
 
+        await this.init();
         await this.resubscribeLocos();
 
-        this.init();
+        
     }
 
 

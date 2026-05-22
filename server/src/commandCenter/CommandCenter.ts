@@ -408,10 +408,28 @@ export abstract class CommandCenter {
     const locos =
       await readLocos();
 
-    for (const loco of locos) {
-      log("getLoco:", loco.address);
-      void this.getLoco(loco.address);
-    }
+    this.setLocos(locos);
+
+    await Promise.all(
+      locos.map(async loco => {
+        log("getLoco:", loco.address);
+
+        try {
+          await this.getLoco(loco.address);
+        } catch (error) {
+          log(
+            "Failed to query loco during init:",
+            loco.address,
+            error
+          );
+        }
+      })
+    );
+
+    // for (const loco of locos) {
+    //   log("getLoco:", loco.address);
+    //   void this.getLoco(loco.address);
+    // }
   }
 
   private runtimeStateLoadedCallback?: RuntimeStateLoadedCallback;

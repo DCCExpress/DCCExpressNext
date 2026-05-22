@@ -13,7 +13,7 @@ import type {
 } from "./BaseElementViewSupport";
 
 export const TrackColors = {
-  free: "gray",
+  free: "#e6e6e6",
   selected: "yellow",
   occupied: "red",
   transit: "#fd2020",

@@ -159,6 +159,14 @@ export function initializeCommandCenter(
     default:
       commandCenter =
         new CommandCenterSimulator("Simulator");
+      commandCenter
+        .start()
+        .then(() => {
+          log("Command center started: simulator");
+        })
+        .catch(err => {
+          console.error("Failed to start command center:", err);
+        });
 
       break;
   }

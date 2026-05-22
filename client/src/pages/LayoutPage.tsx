@@ -17,6 +17,8 @@ import { type EditorTool } from "../models/editor/types/EditorTypes";
 import { layoutStore } from "../services/layoutStore";
 import { routeGraphStore } from "../services/routeGraphStore";
 import { useTranslation } from "react-i18next";
+import { wsClient } from "../services/wsClient";
+import { wsApi } from "../services/wsApi";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -142,8 +144,10 @@ export default function LayoutPage({
   }, [layout]);
 
   useEffect(() => {
-    locosRef.current =
-      locos;
+    locosRef.current = locos;
+    if (layoutLoadedRef.current && wsClient.isConnected()) {
+      wsApi.getBlocks();
+    }
   }, [locos]);
 
   const {

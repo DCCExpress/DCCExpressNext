@@ -25,9 +25,10 @@ export class CommandCenterSimulator extends CommandCenter {
 
   private power = false;
 
-  start(): Promise<boolean> {
+  async start(): Promise<boolean> {
     log("Starting command center simulator...");
 
+    await this.init();
     this.alive = true;
     this.power = true;
 

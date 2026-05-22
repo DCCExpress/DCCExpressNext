@@ -96,6 +96,17 @@ export function sendInitialWebSocketSnapshots({
 
   commandCenter.clientConnected();
 
+  const powerInfo = commandCenter.getPowerInfo();
+  sendToClient(ws, {
+  type: "commandCenterInfo",
+  data: {
+    alive: true,
+    name: commandCenter.getName(),
+    connectionString: commandCenter.getConnectionString(),
+    power: powerInfo.trackVoltageOn,
+  },
+});
+
   sendToClient(ws, {
     type: "commandCenterLockChanged",
     data: {
