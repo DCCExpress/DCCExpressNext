@@ -37,6 +37,7 @@ import {
   getAllLayoutElements,
   getDistance,
   getMidpoint,
+  getTrackCanvasCursor,
   handleTrackCanvasKeyDown,
   handleTrackCanvasWheel,
   getSelectionRect,
@@ -802,27 +803,11 @@ export default function TrackCanvas({
         return;
       }
 
-      if (!editModeRef.current) {
-        if (hoveredElement instanceof TrackTurnoutLeftElementView ||
-          hoveredElement instanceof TrackTurnoutRightElementView ||
-          hoveredElement instanceof TrackTurnoutTwoWayElementView ||
-          hoveredElement instanceof TrackTurnoutDoubleElementView ||
-          hoveredElement instanceof TrackSignalElementView ||
-          hoveredElement instanceof ClickableBaseElementView ||
-          hoveredElement instanceof AudioButtonElementView ||
-          hoveredElement instanceof BlockElementView
-
-        ) {
-          canvas.style.cursor = "pointer";
-        } else {
-          canvas.style.cursor = "default";
-        }
-
-      } else if (currentTool.mode === "draw") {
-        canvas.style.cursor = "crosshair";
-      } else {
-        canvas.style.cursor = "default";
-      }
+      canvas.style.cursor = getTrackCanvasCursor(
+        editModeRef.current,
+        currentTool,
+        hoveredElement
+      );
     };
     const stopInteraction = () => {
 
