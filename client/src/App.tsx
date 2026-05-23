@@ -8,7 +8,8 @@ import { Notifications } from "@mantine/notifications";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
-import { getDefaultWsUrl, wsApi } from "./services/wsApi";
+import { getDefaultWsUrl } from "./services/defaultWsUrl";
+import { wsApi } from "./services/wsApi";
 import { LayoutContextProvider } from "./context/LayoutContextProvider";
 
 export type AppPage = "home" | "layout" | "programmer";
