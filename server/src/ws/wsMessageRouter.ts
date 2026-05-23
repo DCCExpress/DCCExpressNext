@@ -9,6 +9,10 @@ import type {
 } from "./handlers/wsHandlerTypes.js";
 
 import {
+  handleLayoutMessage,
+} from "./handlers/wsLayoutMessageHandlers.js";
+
+import {
   handleLockMessage,
 } from "./handlers/wsLockMessageHandlers.js";
 
@@ -41,6 +45,7 @@ import {
 } from "./handlers/wsEditorEditModeMessageHandlers.js";
 
 const handlers = [
+  handleLayoutMessage,
   handleRuntimeVariableMessage,
   handleEditorEditModeMessage,
   handleLockMessage,
