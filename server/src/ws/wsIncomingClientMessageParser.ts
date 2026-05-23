@@ -97,7 +97,15 @@ function isTaskManagerCommandAction(
     value === "update" ||
     value === "delete" ||
     value === "save" ||
-    value === "reload"
+    value === "reload" ||
+    value === "start" ||
+    value === "pause" ||
+    value === "resume" ||
+    value === "finish" ||
+    value === "abort" ||
+    value === "startAll" ||
+    value === "finishAll" ||
+    value === "abortAll"
   );
 }
 
@@ -360,8 +368,19 @@ function parsePayload<TType extends ClientWsMessageType>(
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isTaskManagerCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
 
-      if ((data.action === "update" || data.action === "delete") && typeof data.taskId !== "string") {
-        return invalidPayload(type, "taskId must be string for update and delete.");
+      if (
+        (
+          data.action === "update" ||
+          data.action === "delete" ||
+          data.action === "start" ||
+          data.action === "pause" ||
+          data.action === "resume" ||
+          data.action === "finish" ||
+          data.action === "abort"
+        ) &&
+        typeof data.taskId !== "string"
+      ) {
+        return invalidPayload(type, "taskId must be string for this action.");
       }
 
       if ((data.action === "add" || data.action === "update") && !isRecord(data.input)) {
