@@ -32,7 +32,10 @@ class LayoutRuntimeStore {
     this.layout = await this.readLayoutFromDisk();
     this.initialized = true;
 
-    this.rebuildDerivedRuntime(this.layout);
+    this.tryRebuildDerivedRuntime(
+      this.layout,
+      "initialize"
+    );
 
     console.log(
       "[LayoutRuntimeStore] Initialized:",
@@ -52,11 +55,15 @@ class LayoutRuntimeStore {
     this.layout = layout;
     this.initialized = true;
 
-    this.rebuildDerivedRuntime(layout);
     await this.writeLayoutToDisk(layout);
 
+    this.tryRebuildDerivedRuntime(
+      layout,
+      "replaceLayout"
+    );
+
     console.log(
-      "[LayoutRuntimeStore] Runtime layout replaced and persisted."
+      "[LayoutRuntimeStore] Layout persisted. Runtime graph was refreshed when possible."
     );
   }
 
@@ -67,6 +74,25 @@ class LayoutRuntimeStore {
       "[LayoutRuntimeStore] Runtime topology and route graph refreshed without persisting layout."
     );
   }
+
+  private tryRebuildDerivedRuntime(
+    layout: ServerLayoutDto | null,
+    reason: string
+  ): void {
+    try {
+      this.rebuildDerivedRuntime(layout);
+    } catch (error) {
+      routeGraphRuntimeStore.rebuildFromTopology(null);
+
+      console.warn(
+        `[LayoutRuntimeStore] Runtime graph not ready during ${reason}:`,
+        error instanceof Error
+          ? error.message
+          : error
+      );
+    }
+  }
+
   private validateRuntimeGraphPrerequisites(): void {
     const topology =
       railwayTopologyStore.getTopology();
@@ -94,6 +120,7 @@ class LayoutRuntimeStore {
         "Tegyél le legalább egy TrackDirection elemet a pályára, hogy a rendszer tudja a haladási irányokat."
     );
   }
+
   private rebuildDerivedRuntime(
     layout: ServerLayoutDto | null
   ): void {
@@ -105,7 +132,6 @@ class LayoutRuntimeStore {
       railwayTopologyStore.getTopology()
     );
   }
-
 
   private async readLayoutFromDisk(): Promise<ServerLayoutDto | null> {
     const filePath = this.resolveFilePath();
