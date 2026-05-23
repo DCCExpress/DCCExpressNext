@@ -9,37 +9,24 @@ import type {
 } from "../../../common/src/fastClock";
 
 import {
-  generateId,
-} from "../helpers";
-
-import {
-  wsApi,
-} from "../services/wsApi";
+  requestWsCommand,
+} from "./wsRequest";
 
 async function sendFastClockCommand(
   action: FastClockCommandAction,
   speed?: number
 ): Promise<FastClockSnapshot> {
-  const requestId = generateId();
-
-  const response = await wsApi.request(
+  const response = await requestWsCommand(
     "fastClockCommand",
     {
-      requestId,
       action,
       ...(speed !== undefined
         ? { speed }
         : {}),
     },
     "fastClockResponse",
-    data => data.requestId === requestId
+    "Fast clock WebSocket command failed."
   );
-
-  if (!response.ok) {
-    throw new Error(
-      response.message ?? "Fast clock WebSocket command failed."
-    );
-  }
 
   if (!response.snapshot) {
     throw new Error("Fast clock response did not contain a snapshot.");
