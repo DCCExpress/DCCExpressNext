@@ -11,6 +11,7 @@ import type {
 } from "./layout/layoutDto.js";
 
 import type {
+  ScriptDocumentDto,
   ScriptRunSource,
 } from "./scriptTypes.js";
 
@@ -118,6 +119,16 @@ export type LocosCommandPayload = {
   locos?: Loco[];
 };
 
+export type ScriptDocumentCommandAction =
+  | "load"
+  | "save";
+
+export type ScriptDocumentCommandPayload = {
+  requestId: string;
+  action: ScriptDocumentCommandAction;
+  document?: Partial<ScriptDocumentDto>;
+};
+
 export type RunScriptCommandPayload = {
   script?: string;
   source: ScriptRunSource;
@@ -171,6 +182,7 @@ export type ClientWsPayloadMap = {
 
   layoutCommand: LayoutCommandPayload;
   locosCommand: LocosCommandPayload;
+  scriptDocumentCommand: ScriptDocumentCommandPayload;
 
   runScript: RunScriptCommandPayload;
   stopScript: EmptyClientWsCommandPayload;
