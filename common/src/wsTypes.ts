@@ -5,6 +5,14 @@ import type {
 } from "./clientWsCommands.js";
 
 import type {
+  SerializedLayoutDto,
+} from "./layout/layoutDto.js";
+
+import type {
+  RouteGraphResponseDto,
+} from "./railway/routeGraphDto.js";
+
+import type {
   ScriptDocumentDto,
   ScriptStateDto,
 } from "./scriptTypes.js";
@@ -109,6 +117,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "releaseRouteReservation",
   "clearAllRouteReservations",
   "getRouteReservations",
+  "layoutCommand",
   "runScript",
   "stopScript",
   "getScriptRuntimeState",
@@ -205,6 +214,15 @@ export type EditorEditModeRejectedPayload = {
   editingClients: string[];
 };
 
+export type LayoutResponsePayload = {
+  requestId: string;
+  action: "load" | "save" | "refreshRuntime" | "getRouteGraph";
+  ok: boolean;
+  message?: string;
+  layout?: SerializedLayoutDto;
+  routeGraph?: RouteGraphResponseDto;
+};
+
 /**
  * Szerver -> kliens WebSocket események payload térképe.
  */
@@ -247,6 +265,8 @@ export type ServerWsPayloadMap = {
   routeReservationReleased: RouteReservationReleasedPayload;
 
   allRouteReservationsCleared: {};
+
+  layoutResponse: LayoutResponsePayload;
 
   scriptRejected: {
     reason: string;
