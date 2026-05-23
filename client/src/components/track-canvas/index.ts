@@ -5,6 +5,7 @@ export * from "./TrackCanvasBlockLocoPicker";
 export * from "./TrackCanvasSignalAspectPopover";
 export * from "./trackCanvasDraw";
 export * from "./trackCanvasGeometry";
+export * from "./trackCanvasKeyboard";
 export * from "./trackCanvasLayoutBounds";
 export * from "./trackCanvasRouteActions";
 export * from "./trackCanvasSelection";
