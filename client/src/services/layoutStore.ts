@@ -8,6 +8,7 @@ import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurn
 import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
 import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
+import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 
 type LayoutListener = (layout: LayoutView | null) => void;
 
@@ -126,6 +127,11 @@ class LayoutStore {
 
       if (elem instanceof BlockElementView && elem.runtimeTransitLocoAddress !== 0) {
         elem.runtimeTransitLocoAddress = 0;
+        changed = true;
+      }
+
+      if (elem instanceof ExtendedRouteButtonElementView && elem.active) {
+        elem.active = false;
         changed = true;
       }
     }
