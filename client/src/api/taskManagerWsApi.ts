@@ -54,6 +54,22 @@ async function sendTaskManagerCommand(
   return response;
 }
 
+async function getActionResult(
+  action: TaskManagerCommandAction,
+  taskId?: string
+): Promise<TaskManagerActionResult> {
+  const response = await sendTaskManagerCommand(
+    action,
+    taskId !== undefined ? { taskId } : {}
+  );
+
+  if (!response.actionResult) {
+    throw new Error("Task manager response did not contain an action result.");
+  }
+
+  return response.actionResult;
+}
+
 export async function getTaskManagerSnapshotWs(): Promise<TaskManagerSnapshot> {
   const response = await sendTaskManagerCommand("snapshot");
 
@@ -97,25 +113,11 @@ export async function updateTrainTaskWs(
 export async function deleteTrainTaskWs(
   taskId: string
 ): Promise<TaskManagerActionResult> {
-  const response = await sendTaskManagerCommand("delete", {
-    taskId,
-  });
-
-  if (!response.actionResult) {
-    throw new Error("Task manager response did not contain an action result.");
-  }
-
-  return response.actionResult;
+  return getActionResult("delete", taskId);
 }
 
 export async function saveTrainTasksWs(): Promise<TaskManagerActionResult> {
-  const response = await sendTaskManagerCommand("save");
-
-  if (!response.actionResult) {
-    throw new Error("Task manager response did not contain an action result.");
-  }
-
-  return response.actionResult;
+  return getActionResult("save");
 }
 
 export async function reloadTrainTasksWs(): Promise<LoadTrainTasksResult> {
@@ -126,4 +128,46 @@ export async function reloadTrainTasksWs(): Promise<LoadTrainTasksResult> {
   }
 
   return response.loadResult;
+}
+
+export async function startTrainTaskWs(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return getActionResult("start", taskId);
+}
+
+export async function pauseTrainTaskWs(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return getActionResult("pause", taskId);
+}
+
+export async function resumeTrainTaskWs(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return getActionResult("resume", taskId);
+}
+
+export async function finishTrainTaskWs(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return getActionResult("finish", taskId);
+}
+
+export async function abortTrainTaskWs(
+  taskId: string
+): Promise<TaskManagerActionResult> {
+  return getActionResult("abort", taskId);
+}
+
+export async function startAllTrainTasksWs(): Promise<TaskManagerActionResult> {
+  return getActionResult("startAll");
+}
+
+export async function finishAllTrainTasksWs(): Promise<TaskManagerActionResult> {
+  return getActionResult("finishAll");
+}
+
+export async function abortAllTrainTasksWs(): Promise<TaskManagerActionResult> {
+  return getActionResult("abortAll");
 }
