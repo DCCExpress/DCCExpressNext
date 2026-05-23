@@ -19,7 +19,6 @@ import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnou
 import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
 import { wsApi } from "../services/wsApi";
 import "../styles/TrackCanvas.css";
-import LocoPicker from "./loco/LocoPicker";
 
 import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
 import { useTranslation } from "react-i18next";
@@ -30,6 +29,7 @@ import {
   createCursorElement,
   createSignalAspectPreviews,
   drawScene,
+  TrackCanvasBlockLocoPicker,
   TrackCanvasSignalAspectPopover,
   executeExtendedRouteButton,
   executeRouteButton,
@@ -1474,33 +1474,11 @@ export default function TrackCanvas({
         onClose={closeSignalAspectPopover}
       />
 
-      <LocoPicker
+      <TrackCanvasBlockLocoPicker
         opened={locoPickerOpen}
         locos={locos}
-        selectedLocoId={
-          selectedBlock?.locoAddress ? locos.find((l) => l.address === selectedBlock.locoAddress)?.id || "" : ""
-        }
+        selectedBlock={selectedBlock}
         onClose={() => setLocoPickerOpen(false)}
-        onSelect={(loco) => {
-          if (selectedBlock) {
-            wsApi.setBlock(selectedBlock.id, loco.id);
-            setLocoPickerOpen(false);
-          };
-        }}
-        onRemoveLoco={(loco) => {
-          if (selectedBlock) {
-            const id = locos.find((l) => l.address === selectedBlock.locoAddress)?.id || "";
-
-            wsApi.setBlockRemove(selectedBlock.id, id);
-            setLocoPickerOpen(false);
-          }
-        }}
-        onRemoveAllLoco={() => {
-          if (selectedBlock) {
-            wsApi.setBlocksReset();
-            setLocoPickerOpen(false);
-          }
-        }}
       />
     </>
   );
