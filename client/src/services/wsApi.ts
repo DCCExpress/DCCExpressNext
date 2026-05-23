@@ -391,6 +391,10 @@ class WebSocketApi {
     });
   }
 
+  startAllTasks(): boolean {
+    return this.send("startAllTasks", {});
+  }
+
   pauseTask(
     taskIdOrName: string
   ): boolean {
