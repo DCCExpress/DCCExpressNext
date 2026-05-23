@@ -25,14 +25,20 @@ import {
 } from "../services/fastClockRuntimeStore.js";
 
 import {
-  log,
-} from "../utility.js";
-import { locoReservationStore } from "../services/locoReservationStore.js";
+  locoReservationStore,
+} from "../services/locoReservationStore.js";
 
+import {
+  routeGraphRuntimeStore,
+} from "../services/routeGraphRuntimeStore.js";
 
 import {
   runtimeVariableService,
 } from "../services/runtimeVariableService.js";
+
+import {
+  log,
+} from "../utility.js";
 
 type SendToClient = (
   ws: WebSocket,
@@ -44,6 +50,31 @@ type InitialSnapshotParams = {
   commandCenter: CommandCenter | null;
   sendToClient: SendToClient;
 };
+
+function sendRouteReservationSnapshots(
+  ws: WebSocket,
+  sendToClient: SendToClient
+): void {
+  const reservations =
+    routeGraphRuntimeStore.getActiveReservations();
+
+  for (const reservation of reservations) {
+    sendToClient(ws, {
+      type: "routeReservationChanged",
+      data: {
+        busy: true,
+        sectionNames: reservation.sectionNames,
+        elementIds:
+          routeGraphRuntimeStore.getElementIdsForSections(
+            reservation.sectionNames
+          ),
+        turnoutAddresses: reservation.turnoutAddresses,
+        fromBlockName: reservation.fromBlockName,
+        toBlockName: reservation.toBlockName,
+      },
+    });
+  }
+}
 
 export function sendInitialWebSocketSnapshots({
   ws,
@@ -77,11 +108,15 @@ export function sendInitialWebSocketSnapshots({
     data: fastClockRuntimeStore.getSnapshot(),
   });
 
-
   sendToClient(ws, {
     type: "runtimeVariablesSnapshot",
     data: runtimeVariableService.getSnapshot(),
   });
+
+  sendRouteReservationSnapshots(
+    ws,
+    sendToClient
+  );
 
   if (!commandCenter) {
     sendToClient(ws, {
@@ -97,15 +132,16 @@ export function sendInitialWebSocketSnapshots({
   commandCenter.clientConnected();
 
   const powerInfo = commandCenter.getPowerInfo();
+
   sendToClient(ws, {
-  type: "commandCenterInfo",
-  data: {
-    alive: true,
-    name: commandCenter.getName(),
-    connectionString: commandCenter.getConnectionString(),
-    power: powerInfo.trackVoltageOn,
-  },
-});
+    type: "commandCenterInfo",
+    data: {
+      alive: true,
+      name: commandCenter.getName(),
+      connectionString: commandCenter.getConnectionString(),
+      power: powerInfo.trackVoltageOn,
+    },
+  });
 
   sendToClient(ws, {
     type: "commandCenterLockChanged",
@@ -139,6 +175,7 @@ export function sendInitialWebSocketSnapshots({
       },
     });
   }
+
   const turnouts =
     commandCenter.getTurnouts();
 
