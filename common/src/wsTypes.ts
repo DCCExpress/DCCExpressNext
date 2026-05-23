@@ -5,6 +5,7 @@ import type {
 } from "./clientWsCommands.js";
 
 import type {
+  ICommandCenter,
   Loco,
 } from "./domainTypes.js";
 
@@ -68,20 +69,12 @@ import type {
   RuntimeVariablesSnapshotPayload,
 } from "./runtimeVariables.js";
 
-/**
- * Általános, szerveroldalon és bejövő kliensüzeneteknél is
- * használható WebSocket message alap.
- */
 export type WsMessage<T = any> = {
   type: string;
   data?: T;
   uuid: string | null;
 };
 
-/**
- * Lazább kliensüzenet-alap.
- * A konkrét, típusos küldést a TypedClientWsMessage végzi.
- */
 export type ClientWsMessage<T = any> = {
   type: string;
   data?: T;
@@ -92,9 +85,6 @@ export type {
   ClientWsPayloadMap,
 };
 
-/**
- * Kliens -> szerver parancs message type.
- */
 export type ClientWsMessageType =
   keyof ClientWsPayloadMap;
 
@@ -124,6 +114,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "layoutCommand",
   "locosCommand",
   "scriptDocumentCommand",
+  "commandCenterConfigCommand",
   "runScript",
   "stopScript",
   "getScriptRuntimeState",
@@ -187,9 +178,6 @@ export type ReserveRouteMessage =
 export type ClearAllRouteReservationsMessage =
   TypedClientWsMessage<"clearAllRouteReservations">;
 
-/**
- * Megtartott, konkrét server event aliasok.
- */
 export type TurnoutChangedMessage = {
   type: "turnoutChanged";
   data: TurnoutChangedPayload;
@@ -246,9 +234,14 @@ export type ScriptDocumentResponsePayload = {
   document?: ScriptDocumentDto;
 };
 
-/**
- * Szerver -> kliens WebSocket események payload térképe.
- */
+export type CommandCenterConfigResponsePayload = {
+  requestId: string;
+  action: "load" | "save";
+  ok: boolean;
+  message?: string;
+  config?: ICommandCenter | null;
+};
+
 export type ServerWsPayloadMap = {
   "ws:welcome": {
     message: string;
@@ -292,6 +285,7 @@ export type ServerWsPayloadMap = {
   layoutResponse: LayoutResponsePayload;
   locosResponse: LocosResponsePayload;
   scriptDocumentResponse: ScriptDocumentResponsePayload;
+  commandCenterConfigResponse: CommandCenterConfigResponsePayload;
 
   scriptRejected: {
     reason: string;
