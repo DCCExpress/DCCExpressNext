@@ -17,15 +17,12 @@ import type {
 } from "./scriptTypes.js";
 
 import type {
+  TrainTaskCreateInput,
+} from "./task.js";
+
+import type {
   SetRuntimeVariablePayload,
 } from "./runtimeVariables.js";
-
-/**
- * Kliens -> szerver WebSocket parancsok payload DTO-i.
- *
- * A wsTypes.ts innentől nem tárol domain payload definíciókat,
- * hanem csak a WebSocket envelope-okat és message mapeket rakja össze.
- */
 
 export type EmptyClientWsCommandPayload = {};
 
@@ -140,6 +137,21 @@ export type CommandCenterConfigCommandPayload = {
   config?: Partial<ICommandCenter>;
 };
 
+export type TaskManagerCommandAction =
+  | "snapshot"
+  | "add"
+  | "update"
+  | "delete"
+  | "save"
+  | "reload";
+
+export type TaskManagerCommandPayload = {
+  requestId: string;
+  action: TaskManagerCommandAction;
+  taskId?: string;
+  input?: TrainTaskCreateInput;
+};
+
 export type RunScriptCommandPayload = {
   script?: string;
   source: ScriptRunSource;
@@ -154,14 +166,6 @@ export type SetEditorEditModeCommandPayload = {
   editMode: boolean;
 };
 
-/**
- * Kliens -> szerver parancstérkép.
- *
- * Ebből épül:
- * - ClientWsMessageType
- * - TypedClientWsMessage
- * - ClientWsMessageUnion
- */
 export type ClientWsPayloadMap = {
   setTrackPower: SetTrackPowerCommandPayload;
   setProgrammingPower: SetProgrammingPowerCommandPayload;
@@ -195,6 +199,7 @@ export type ClientWsPayloadMap = {
   locosCommand: LocosCommandPayload;
   scriptDocumentCommand: ScriptDocumentCommandPayload;
   commandCenterConfigCommand: CommandCenterConfigCommandPayload;
+  taskManagerCommand: TaskManagerCommandPayload;
 
   runScript: RunScriptCommandPayload;
   stopScript: EmptyClientWsCommandPayload;
