@@ -1,6 +1,9 @@
 // server/src/ws/handlers/wsTaskManagerMessageHandlers.ts
 
 import type {
+  AddTrainTaskResult,
+  LoadTrainTasksResult,
+  TaskManagerActionResult,
   TaskManagerResponsePayload,
 } from "../../../../common/src/types.js";
 
@@ -20,6 +23,51 @@ function sendTaskManagerResponse(
     type: "taskManagerResponse",
     data: payload,
   });
+}
+
+function createAddTaskResponse(
+  requestId: string,
+  action: "add",
+  result: AddTrainTaskResult
+): TaskManagerResponsePayload {
+  return {
+    requestId,
+    action,
+    ok: result.ok,
+    ...(result.ok ? {} : { message: result.error }),
+    addResult: result,
+    ...(result.snapshot ? { snapshot: result.snapshot } : {}),
+  };
+}
+
+function createActionResponse(
+  requestId: string,
+  action: "update" | "delete" | "save",
+  result: TaskManagerActionResult
+): TaskManagerResponsePayload {
+  return {
+    requestId,
+    action,
+    ok: result.ok,
+    ...(result.ok ? {} : { message: result.error }),
+    actionResult: result,
+    ...(result.snapshot ? { snapshot: result.snapshot } : {}),
+  };
+}
+
+function createReloadResponse(
+  requestId: string,
+  action: "reload",
+  result: LoadTrainTasksResult
+): TaskManagerResponsePayload {
+  return {
+    requestId,
+    action,
+    ok: result.ok,
+    ...(result.ok ? {} : { message: result.error }),
+    loadResult: result,
+    ...(result.snapshot ? { snapshot: result.snapshot } : {}),
+  };
 }
 
 export const handleTaskManagerMessage: WsMessageHandler = async context => {
@@ -49,14 +97,14 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
           context.msg.data.input!
         );
 
-        sendTaskManagerResponse(context, {
-          requestId,
-          action,
-          ok: result.ok,
-          message: result.ok ? undefined : result.error,
-          addResult: result,
-          snapshot: result.snapshot,
-        });
+        sendTaskManagerResponse(
+          context,
+          createAddTaskResponse(
+            requestId,
+            action,
+            result
+          )
+        );
 
         return true;
       }
@@ -67,14 +115,14 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
           context.msg.data.input!
         );
 
-        sendTaskManagerResponse(context, {
-          requestId,
-          action,
-          ok: result.ok,
-          message: result.ok ? undefined : result.error,
-          actionResult: result,
-          snapshot: result.snapshot,
-        });
+        sendTaskManagerResponse(
+          context,
+          createActionResponse(
+            requestId,
+            action,
+            result
+          )
+        );
 
         return true;
       }
@@ -84,14 +132,14 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
           context.msg.data.taskId ?? ""
         );
 
-        sendTaskManagerResponse(context, {
-          requestId,
-          action,
-          ok: result.ok,
-          message: result.ok ? undefined : result.error,
-          actionResult: result,
-          snapshot: result.snapshot,
-        });
+        sendTaskManagerResponse(
+          context,
+          createActionResponse(
+            requestId,
+            action,
+            result
+          )
+        );
 
         return true;
       }
@@ -99,14 +147,14 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
       case "save": {
         const result = await taskRuntimeStore.saveTasks();
 
-        sendTaskManagerResponse(context, {
-          requestId,
-          action,
-          ok: result.ok,
-          message: result.ok ? undefined : result.error,
-          actionResult: result,
-          snapshot: result.snapshot,
-        });
+        sendTaskManagerResponse(
+          context,
+          createActionResponse(
+            requestId,
+            action,
+            result
+          )
+        );
 
         return true;
       }
@@ -114,14 +162,14 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
       case "reload": {
         const result = await taskRuntimeStore.reloadTasks();
 
-        sendTaskManagerResponse(context, {
-          requestId,
-          action,
-          ok: result.ok,
-          message: result.ok ? undefined : result.error,
-          loadResult: result,
-          snapshot: result.snapshot,
-        });
+        sendTaskManagerResponse(
+          context,
+          createReloadResponse(
+            requestId,
+            action,
+            result
+          )
+        );
 
         return true;
       }
