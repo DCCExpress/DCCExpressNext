@@ -5,24 +5,6 @@ import { notifyLocosChanged } from "../services/locoChangeNotifier.js";
 import { Loco } from "../../../common/src/types.js";
 import { dataDir } from "../paths.js";
 
-// type LocoFunction = {
-//   id: string;
-//   number: number;
-//   name: string;
-//   icon: string;
-//   momentary: boolean;
-// };
-
-// type Loco = {
-//   id: string;
-//   name: string;
-//   address: number;
-//   maxSpeed: number;
-//   invert: boolean;
-//   image?: string;
-//   functions: LocoFunction[];
-// };
-
 export const locoRoutes = Router();
 
 function resolveFilePath() {
@@ -41,14 +23,13 @@ export async function readLocos(): Promise<Loco[]> {
   }
 }
 
-async function writeLocos(locos: Loco[]) {
+export async function writeLocos(locos: Loco[]): Promise<void> {
   const candidate1 = resolveFilePath();
   try {
     await fs.mkdir(path.dirname(candidate1), { recursive: true });
     await fs.writeFile(candidate1, JSON.stringify(locos, null, 2), "utf8");
   } catch {
     console.log("WRITELOCOS:", "Nem sikerült elmenteni a mozdonyokat.");
-
   }
 }
 
