@@ -6,6 +6,7 @@ import type {
   ClientWsPayloadMap,
   Direction,
   LayoutCommandAction,
+  LocosCommandAction,
   ReservationOwnerType,
   ScriptRunSource,
 } from "../../../common/src/types.js";
@@ -66,6 +67,10 @@ function isLayoutCommandAction(value: unknown): value is LayoutCommandAction {
     value === "refreshRuntime" ||
     value === "getRouteGraph"
   );
+}
+
+function isLocosCommandAction(value: unknown): value is LocosCommandAction {
+  return value === "load" || value === "save";
 }
 
 function invalidPayload(type: ClientWsMessageType, detail: string): {
@@ -251,6 +256,25 @@ function parsePayload<TType extends ClientWsMessageType>(
           requestId: data.requestId,
           action: data.action,
           ...(isRecord(data.layout) ? { layout: data.layout } : {}),
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
+    case "locosCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isLocosCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+
+      if (data.action === "save" && !Array.isArray(data.locos)) {
+        return invalidPayload(type, "locos must be an array for save.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          ...(Array.isArray(data.locos) ? { locos: data.locos } : {}),
         } as ClientWsPayloadMap[TType],
       };
     }
