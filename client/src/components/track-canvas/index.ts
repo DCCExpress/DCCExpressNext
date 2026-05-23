@@ -11,6 +11,7 @@ export * from "./trackCanvasGeometry";
 export * from "./trackCanvasInteractionStop";
 export * from "./trackCanvasKeyboard";
 export * from "./trackCanvasLayoutBounds";
+export * from "./trackCanvasMouseMove";
 export * from "./trackCanvasRouteActions";
 export * from "./trackCanvasSelection";
 export * from "./trackCanvasSignalAspect";
