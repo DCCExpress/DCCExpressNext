@@ -8,6 +8,7 @@ import type {
   LayoutCommandAction,
   LocosCommandAction,
   ReservationOwnerType,
+  ScriptDocumentCommandAction,
   ScriptRunSource,
 } from "../../../common/src/types.js";
 
@@ -70,6 +71,12 @@ function isLayoutCommandAction(value: unknown): value is LayoutCommandAction {
 }
 
 function isLocosCommandAction(value: unknown): value is LocosCommandAction {
+  return value === "load" || value === "save";
+}
+
+function isScriptDocumentCommandAction(
+  value: unknown
+): value is ScriptDocumentCommandAction {
   return value === "load" || value === "save";
 }
 
@@ -275,6 +282,35 @@ function parsePayload<TType extends ClientWsMessageType>(
           requestId: data.requestId,
           action: data.action,
           ...(Array.isArray(data.locos) ? { locos: data.locos } : {}),
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
+    case "scriptDocumentCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isScriptDocumentCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+
+      if (data.action === "save" && !isRecord(data.document)) {
+        return invalidPayload(type, "document must be an object for save.");
+      }
+
+      if (isRecord(data.document)) {
+        if (data.document.content !== undefined && typeof data.document.content !== "string") {
+          return invalidPayload(type, "document.content must be string when present.");
+        }
+
+        if (data.document.autoStart !== undefined && typeof data.document.autoStart !== "boolean") {
+          return invalidPayload(type, "document.autoStart must be boolean when present.");
+        }
+      }
+
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          ...(isRecord(data.document) ? { document: data.document } : {}),
         } as ClientWsPayloadMap[TType],
       };
     }
