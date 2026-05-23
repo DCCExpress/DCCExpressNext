@@ -6,12 +6,11 @@ import path from "node:path";
 const root = process.cwd();
 const filePath = path.join(root, "client/src/components/TrackCanvas.tsx");
 
-let source = fs.readFileSync(filePath, "utf8");
+const originalSource = fs
+  .readFileSync(filePath, "utf8")
+  .replaceAll("\r\n", "\n");
 
-// Windows checkouts may use CRLF line endings. The codemod works on LF to keep
-// block matching deterministic, then writes LF back. Prettier/formatting can
-// normalize it later if needed.
-source = source.replaceAll("\r\n", "\n");
+let source = originalSource;
 
 function replaceOnce(input, search, replacement) {
   if (!input.includes(search)) {
@@ -21,12 +20,124 @@ function replaceOnce(input, search, replacement) {
   return input.replace(search, replacement);
 }
 
-function removeBlock(input, startNeedle, endNeedle, label) {
-  const start = input.indexOf(startNeedle);
-  const end = input.indexOf(endNeedle, start + startNeedle.length);
+function findFunctionStart(input, functionName) {
+  const pattern = new RegExp(`function\\s+${functionName}\\s*\\(`, "m");
+  const match = pattern.exec(input);
+  return match?.index ?? -1;
+}
+
+function findMatchingBrace(input, openBraceIndex) {
+  let depth = 0;
+  let inString = null;
+  let escaped = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let index = openBraceIndex; index < input.length; index++) {
+    const char = input[index];
+    const next = input[index + 1];
+
+    if (inLineComment) {
+      if (char === "\n") {
+        inLineComment = false;
+      }
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (char === "*" && next === "/") {
+        inBlockComment = false;
+        index++;
+      }
+      continue;
+    }
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (char === inString) {
+        inString = null;
+      }
+
+      continue;
+    }
+
+    if (char === "/" && next === "/") {
+      inLineComment = true;
+      index++;
+      continue;
+    }
+
+    if (char === "/" && next === "*") {
+      inBlockComment = true;
+      index++;
+      continue;
+    }
+
+    if (char === '"' || char === "'" || char === "`") {
+      inString = char;
+      continue;
+    }
+
+    if (char === "{") {
+      depth++;
+      continue;
+    }
+
+    if (char === "}") {
+      depth--;
+
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+}
+
+function removeFunction(input, functionName) {
+  const start = findFunctionStart(input, functionName);
+
+  if (start === -1) {
+    throw new Error(`Could not locate function ${functionName}.`);
+  }
+
+  const openBrace = input.indexOf("{", start);
+
+  if (openBrace === -1) {
+    throw new Error(`Could not locate opening brace for ${functionName}.`);
+  }
+
+  const closeBrace = findMatchingBrace(input, openBrace);
+
+  if (closeBrace === -1) {
+    throw new Error(`Could not locate closing brace for ${functionName}.`);
+  }
+
+  let end = closeBrace + 1;
+
+  while (input[end] === "\n") {
+    end++;
+  }
+
+  return input.slice(0, start) + input.slice(end);
+}
+
+function removeLocalTypeBlock(input) {
+  const start = input.indexOf("type TrackCanvasProps = {");
+  const end = input.indexOf("export default function TrackCanvas(", start);
 
   if (start === -1 || end === -1 || end <= start) {
-    throw new Error(`Could not locate ${label}.`);
+    throw new Error("Could not locate TrackCanvas local type/helper block.");
   }
 
   return input.slice(0, start) + input.slice(end);
@@ -75,99 +186,29 @@ source = replaceOnce(
 } from "./track-canvas";`
 );
 
-source = removeBlock(
-  source,
-  "type TrackCanvasProps = {",
-  "export default function TrackCanvas(",
-  "TrackCanvas local type/helper block"
-);
+source = removeLocalTypeBlock(source);
 
-source = "export default function TrackCanvas(" + source.split("export default function TrackCanvas(").slice(1).join("export default function TrackCanvas(");
-source = source.replace(
-  `import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";`,
-  `import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";`
-);
+const helperFunctions = [
+  "drawScene",
+  "drawBackground",
+  "drawGrid",
+  "drawInfo",
+  "screenToGrid",
+  "clamp",
+  "drawSelectionRect",
+  "normalizeSelectionRect",
+  "getSelectionRect",
+  "getAllLayoutElements",
+  "applySelectionRect",
+  "getLayoutBounds",
+  "fitLayoutToView",
+  "getDistance",
+  "getMidpoint",
+];
 
-// The previous block removal starts at the first type definition and keeps the
-// component, but we need to prepend imports that were before the type block.
-const importEndMarker = `} from "./track-canvas";`;
-const originalWithImports = fs.readFileSync(filePath, "utf8").replaceAll("\r\n", "\n");
-let imports = originalWithImports.slice(0, originalWithImports.indexOf("type TrackCanvasProps = {"));
-imports = imports.replace(
-  'import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";',
-  'import { useEffect, useRef, useState } from "react";'
-);
-imports = imports.replace(
-  'import { DrawOptions, EditorTool } from "../models/editor/types/EditorTypes";',
-  'import { EditorTool } from "../models/editor/types/EditorTypes";'
-);
-imports = imports.replace(
-  'import { createCursorElement } from "./track-canvas/createCursorElement";',
-  `import {
-  applySelectionRect,
-  clamp,
-  createCursorElement,
-  createSignalAspectPreviews,
-  drawScene,
-  fitLayoutToView,
-  getAllLayoutElements,
-  getDistance,
-  getMidpoint,
-  getSelectionRect,
-  loadSavedViewState,
-  saveViewState,
-  screenToGrid,
-  type CanvasSize,
-  type DragState,
-  type PanState,
-  type PinchState,
-  type PointerPanState,
-  type SelectionRect,
-  type SelectionState,
-  type SignalAspectPopoverState,
-  type TouchPoint,
-  type TrackCanvasProps,
-  type ViewState,
-} from "./track-canvas";`
-);
-
-source = imports + source;
-
-source = removeBlock(
-  source,
-  "function drawScene(\n",
-  "function screenToGrid(\n",
-  "draw helper block"
-);
-
-source = removeBlock(
-  source,
-  "function screenToGrid(\n",
-  "function drawSelectionRect(\n",
-  "geometry helper block"
-);
-
-source = removeBlock(
-  source,
-  "function drawSelectionRect(\n",
-  "function getLayoutBounds(\n",
-  "selection helper block"
-);
-
-source = removeBlock(
-  source,
-  "function getLayoutBounds(\n",
-  "function getDistance(\n",
-  "layout bounds helper block"
-);
-
-const finalDistanceStart = source.indexOf("function getDistance(\n");
-
-if (finalDistanceStart === -1) {
-  throw new Error("Could not locate final touch geometry helper block.");
+for (const functionName of helperFunctions) {
+  source = removeFunction(source, functionName);
 }
-
-source = source.slice(0, finalDistanceStart).trimEnd() + "\n";
 
 source = source.replace(
   `    const green = new TrackSignalElementView(0, 0);
@@ -200,6 +241,8 @@ source = source.replace(
       }`,
   `      previews`
 );
+
+source = source.trimEnd() + "\n";
 
 fs.writeFileSync(filePath, source, "utf8");
 
