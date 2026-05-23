@@ -630,6 +630,7 @@ class TaskRuntimeStore {
         this.releaseTaskResources(task);
         task.status = "aborted";
         task.abortedAt = Date.now();
+        task.error = undefined;
         task.runtime = createEmptyTrainTaskRuntimeState();
       }
     }
