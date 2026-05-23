@@ -371,11 +371,13 @@ export default function StatusBar({
 
           <FastClockStatus />
 
+          <Divider orientation="vertical" />
+
           <StatusActionIcon
             tooltip={
               rightPanelMode === "loco"
-                ? "Right panel: locomotive control"
-                : "Right panel: properties"
+                ? "Right panel: loco panel"
+                : "Right panel: property panel"
             }
             color={
               rightPanelMode === "loco"
