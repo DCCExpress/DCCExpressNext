@@ -6,7 +6,7 @@ import type {
   ScriptStateDto,
   ScriptStatus,
 } from "../../../common/src/types";
-import { getScript, saveScript } from "../api/http";
+import { getScript, saveScript } from "../api/domainApi";
 import { wsApi } from "./wsApi";
 import { wsClient } from "./wsClient";
 
