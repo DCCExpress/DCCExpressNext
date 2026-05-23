@@ -37,11 +37,13 @@ type CommandCenterContextValue = {
   z21SystemState: Z21SystemState | null;
 };
 
-const CommandCenterContext = createContext<CommandCenterContextValue>({
+const emptyLockState: CommandCenterLockState = {
   locked: false,
   lockOwner: null,
   reason: null,
+};
 
+const emptyCommandCenterInfo: CommandCenterInfoState = {
   alive: false,
   type: null,
   name: null,
@@ -49,7 +51,11 @@ const CommandCenterContext = createContext<CommandCenterContextValue>({
   port: null,
   serialPort: null,
   connectionString: null,
+};
 
+const CommandCenterContext = createContext<CommandCenterContextValue>({
+  ...emptyLockState,
+  ...emptyCommandCenterInfo,
   powerInfo: null,
   z21SystemState: null,
 });
@@ -59,37 +65,26 @@ export function CommandCenterProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [lockState, setLockState] = useState<CommandCenterLockState>({
-    locked: false,
-    lockOwner: null,
-    reason: null,
-  });
+  const [lockState, setLockState] = useState<CommandCenterLockState>(emptyLockState);
 
   const [commandCenterInfo, setCommandCenterInfo] =
-    useState<CommandCenterInfoState>({
-      alive: false,
-      type: null,
-      name: null,
-      ip: null,
-      port: null,
-      serialPort: null,
-      connectionString: null,
-    });
+    useState<CommandCenterInfoState>(emptyCommandCenterInfo);
 
   const [powerInfo, setPowerInfo] = useState<PowerInfo | null>(null);
   const [z21SystemState, setZ21SystemState] =
     useState<Z21SystemState | null>(null);
 
-  // useEffect(() => {
-  //   if(commandCenterInfo.alive) {
-  //     alert("ONLINE")
-  //   }
-  //   else {
-  //     alert("OFFLINE")
-  //   }
-  // }, [commandCenterInfo.alive])
-
   useEffect(() => {
+    const clearRuntimeState = (): void => {
+      setCommandCenterInfo(prev => ({
+        ...prev,
+        alive: false,
+      }));
+
+      setPowerInfo(null);
+      setZ21SystemState(null);
+      setLockState(emptyLockState);
+    };
 
     const unsubscribeWsStatus = wsClient.subscribeStatus((status) => {
       if (
@@ -98,19 +93,7 @@ export function CommandCenterProvider({
         status === "connecting" ||
         status === "error"
       ) {
-        setCommandCenterInfo((prev) => ({
-          ...prev,
-          alive: false,
-        }));
-
-        setPowerInfo(null);
-        setZ21SystemState(null);
-
-        setLockState({
-          locked: false,
-          lockOwner: null,
-          reason: null,
-        });
+        clearRuntimeState();
       }
     });
 
@@ -128,8 +111,13 @@ export function CommandCenterProvider({
     const unsubscribeCommandCenterInfo = wsClient.on(
       "commandCenterInfo",
       (data) => {
+        if (!data.alive) {
+          clearRuntimeState();
+          return;
+        }
+
         setCommandCenterInfo((prev) => ({
-          alive: data.alive,
+          alive: true,
           type: data.type ?? prev.type ?? null,
           name: data.name ?? prev.name ?? null,
           ip: data.ip ?? prev.ip ?? null,
