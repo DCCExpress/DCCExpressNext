@@ -166,9 +166,20 @@ function addCurrentLegTransitOverlay(
   }
 }
 
-export function createTaskManagerOverlayState(
-  tasks: TrainTask[]
-): TaskManagerOverlayState {
+function hasPreparedRouteOverlay(
+  task: TrainTask
+): boolean {
+  const phase =
+    task.runtime.simulation.phase;
+
+  return (
+    phase === "departing" ||
+    phase === "transit" ||
+    phase === "waitingForBlockSensor"
+  );
+}
+
+export function createTaskManagerOverlayState(tasks: TrainTask[]): TaskManagerOverlayState {
   const activeTasks =
     tasks.filter(task =>
       task.status === "running" ||
@@ -195,28 +206,21 @@ export function createTaskManagerOverlayState(
     const solution =
       task.transition.solution;
 
-    /**
-     * A foglalás továbbra is a teljes előkészített route-ra értendő.
-     * Ez marad narancs.
-     */
-    for (const node of solution.nodes) {
-      reservedSectionNames.add(node.name);
-    }
+    if (hasPreparedRouteOverlay(task)) {
+      for (const node of solution.nodes) {
+        reservedSectionNames.add(node.name);
+      }
 
-    for (const turnoutState of solution.turnoutStates) {
-      activeTurnoutAddresses.add(
-        turnoutState.address
-      );
+      for (const turnoutState of solution.turnoutStates) {
+        activeTurnoutAddresses.add(
+          turnoutState.address
+        );
+      }
     }
 
     activeBlockIds.add(task.fromBlockId);
     activeBlockIds.add(task.toBlockId);
 
-    /**
-     * Transit overlay:
-     * nem az egész route-ot színezzük bordóra,
-     * hanem csak azt, ahol a mozdony ténylegesen van.
-     */
     if (!task.runtime.loco) {
       continue;
     }
@@ -235,7 +239,6 @@ export function createTaskManagerOverlayState(
 
     if (
       phase === "departing" ||
-      phase === "waitingForRoute" ||
       phase === "waitingForBlockSensor"
     ) {
       addStandingBlockTransitOverlay(
