@@ -9,14 +9,10 @@ import { EditorTool } from "../models/editor/types/EditorTypes";
 
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { useEditorSettings } from "../context/EditorSettingsContext";
-import { ClickableBaseElementView } from "../models/editor/core/ClickableBaseElementView";
 import { AudioButtonElementView } from "../models/editor/elements/AudioButtonElementView";
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
-import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 import { RouteButtonElementView } from "../models/editor/elements/RouteButtonElementView";
 import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
-import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";
-import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
 import { wsApi } from "../services/wsApi";
 import "../styles/TrackCanvas.css";
 
@@ -24,7 +20,6 @@ import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
 import { useTranslation } from "react-i18next";
 import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
 import {
-  applySelectionRect,
   clamp,
   createCursorElement,
   closeTrackCanvasSignalAspectPopover,
@@ -37,7 +32,6 @@ import {
   getAllLayoutElements,
   getDistance,
   getMidpoint,
-  getTrackCanvasCursor,
   handleTrackCanvasKeyDown,
   handleTrackCanvasMouseDown,
   handleTrackCanvasMouseMove,
@@ -55,7 +49,6 @@ import {
   type PanState,
   type PinchState,
   type PointerPanState,
-  type SelectionRect,
   type SelectionState,
   type SignalAspectPopoverState,
   type TouchPoint,
@@ -159,7 +152,6 @@ export default function TrackCanvas({
     setDrawVersion((prev) => prev + 1);
   };
 
-
   const commandCenter = useCommandCenter();
   const commandCenterRef = useRef(commandCenter);
 
@@ -247,7 +239,6 @@ export default function TrackCanvas({
     }
 
     invalidate();
-
 
   }, [selectedElement, layout]);
 
@@ -349,9 +340,7 @@ export default function TrackCanvas({
     }
 
 
-
   }, [turnoutSelectionMode])
-
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -371,13 +360,11 @@ export default function TrackCanvas({
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
 
-
     //if(turnoutSelectionModeRef.current){
     if (selectedElementRef.current instanceof RouteButtonElementView) {
       setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElementView);
     }
     //}
-
 
     drawScene(
       ctx,
@@ -401,7 +388,6 @@ export default function TrackCanvas({
     //}, [canvasSize, editMode, colorScheme, mouseGrid, tool, hoverGrid, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
     // Mouse grid és hover grid nélkül, mert az csak a hover effekt miatt van, és az nem igényel teljes újradraw-t
   }, [canvasSize, editMode, colorScheme, tool, currentCursor, layout, drawVersion, invalidateCounter, selectedElement, settings, turnoutSelectionMode]);
-
 
 
   useEffect(() => {
@@ -931,7 +917,6 @@ export default function TrackCanvas({
     };
   }, []);
 
-
   // =======================================================
   // popover
   // =======================================================
@@ -955,7 +940,6 @@ export default function TrackCanvas({
   };
 
   const handleLocoSelected = (locoId: string) => { };
-
 
   return (
     <>
