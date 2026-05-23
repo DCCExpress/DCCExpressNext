@@ -16,6 +16,10 @@ import type {
 } from "../../../../../common/src/types";
 
 import type {
+  RightPanelMode,
+} from "../../../hooks/layout/useLayoutPageUiState";
+
+import type {
   BaseElementView,
 } from "../../../models/editor/core/BaseElementView";
 
@@ -57,6 +61,8 @@ type LayoutPageWorkspaceProps = {
   propertyPanelCollapsed: boolean;
   setPropertyPanelCollapsed: BooleanSetter;
 
+  rightPanelMode: RightPanelMode;
+
   locos: Loco[];
 
   editMode: boolean;
@@ -96,6 +102,8 @@ export default function LayoutPageWorkspace({
 
   propertyPanelCollapsed,
   setPropertyPanelCollapsed,
+
+  rightPanelMode,
 
   locos,
 
@@ -261,27 +269,31 @@ export default function LayoutPageWorkspace({
                 p="xs"
                 h="100%"
               >
-                <RightPropertyPanel
-                  selectedElement={
-                    selectedElement
-                  }
-                  invalidate={invalidateCounter}
-                  onUpdateSelectedElement={
-                    onUpdateSelectedElement
-                  }
-                  editMode={editMode}
-                  opened={!propertyPanelCollapsed}
-                  turnoutSelectionMode={
-                    turnoutSelection
-                  }
-                  setTurnoutSelectionMode={
-                    setTurnoutSelection
-                  }
-                  layout={layout}
-                  onLayoutChange={onLayoutChange}
-                  routes={routesString}
-                  setBusy={setBusy}
-                />
+                {rightPanelMode === "loco" ? (
+                  <LocoPanel locos={locos} />
+                ) : (
+                  <RightPropertyPanel
+                    selectedElement={
+                      selectedElement
+                    }
+                    invalidate={invalidateCounter}
+                    onUpdateSelectedElement={
+                      onUpdateSelectedElement
+                    }
+                    editMode={editMode}
+                    opened={!propertyPanelCollapsed}
+                    turnoutSelectionMode={
+                      turnoutSelection
+                    }
+                    setTurnoutSelectionMode={
+                      setTurnoutSelection
+                    }
+                    layout={layout}
+                    onLayoutChange={onLayoutChange}
+                    routes={routesString}
+                    setBusy={setBusy}
+                  />
+                )}
               </Card>
             )}
           </Box>
