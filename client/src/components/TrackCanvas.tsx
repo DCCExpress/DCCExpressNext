@@ -42,6 +42,7 @@ import {
   loadSavedViewState,
   openTrackCanvasSignalAspectPopover,
   registerTrackCanvasEventListeners,
+  reopenTrackCanvasSignalAspectPopover,
   saveViewState,
   screenToGrid,
   type CanvasSize,
@@ -435,11 +436,12 @@ export default function TrackCanvas({
       clientX: number,
       clientY: number
     ) => {
-      closeSignalAspectPopover();
-
-      window.setTimeout(() => {
-        openSignalAspectPopover(signal, clientX, clientY);
-      }, 100);
+      reopenTrackCanvasSignalAspectPopover(
+        setSignalAspectPopover,
+        signal,
+        clientX,
+        clientY
+      );
     };
     const handleClickableDown = (
       hitElement: BaseElementView | null,
