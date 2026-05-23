@@ -23,7 +23,10 @@ import type {
 } from "./scriptTypes.js";
 
 import type {
+  AddTrainTaskResult,
+  LoadTrainTasksResult,
   TaskLifecycleEventPayload,
+  TaskManagerActionResult,
   TaskManagerSnapshot,
   TaskRejectedPayload,
   TaskWaitingForLocoPayload,
@@ -115,6 +118,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "locosCommand",
   "scriptDocumentCommand",
   "commandCenterConfigCommand",
+  "taskManagerCommand",
   "runScript",
   "stopScript",
   "getScriptRuntimeState",
@@ -242,6 +246,17 @@ export type CommandCenterConfigResponsePayload = {
   config?: ICommandCenter | null;
 };
 
+export type TaskManagerResponsePayload = {
+  requestId: string;
+  action: "snapshot" | "add" | "update" | "delete" | "save" | "reload";
+  ok: boolean;
+  message?: string;
+  snapshot?: TaskManagerSnapshot;
+  addResult?: AddTrainTaskResult;
+  actionResult?: TaskManagerActionResult;
+  loadResult?: LoadTrainTasksResult;
+};
+
 export type ServerWsPayloadMap = {
   "ws:welcome": {
     message: string;
@@ -286,6 +301,7 @@ export type ServerWsPayloadMap = {
   locosResponse: LocosResponsePayload;
   scriptDocumentResponse: ScriptDocumentResponsePayload;
   commandCenterConfigResponse: CommandCenterConfigResponsePayload;
+  taskManagerResponse: TaskManagerResponsePayload;
 
   scriptRejected: {
     reason: string;
