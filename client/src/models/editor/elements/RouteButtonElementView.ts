@@ -244,6 +244,13 @@ export class RouteButtonElementView extends ClickableBaseElementView implements 
       <li><b>Route state: T</b> means the route wants the turnout in its logical thrown/diverging state.</li>
     </ul>
 
+    <h4>Testing</h4>
+    <ul>
+      <li>Click <b>Test route</b> to send the configured turnout commands immediately.</li>
+      <li>The test uses the same legacy route execution logic as clicking the route button on the layout.</li>
+      <li>The button is disabled until at least one turnout is assigned.</li>
+    </ul>
+
     <h4>Important turnout state note</h4>
     <p>
       Internally this legacy route button stores the physical command-center turnout state.
