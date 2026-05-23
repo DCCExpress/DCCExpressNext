@@ -60,6 +60,8 @@ export default function LocoPanel({
   const { powerInfo, alive } =
     useCommandCenter();
 
+  const controlsDisabled = !alive;
+
   const clearRuntimeState = useCallback(() => {
     setSpeed(0);
     setDirection("forward");
@@ -222,7 +224,7 @@ export default function LocoPanel({
   const setLocoSpeed = (
     nextSpeed: number
   ) => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -238,7 +240,7 @@ export default function LocoPanel({
   const setLocoSpeedByPercent = (
     percent: number
   ) => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -260,7 +262,7 @@ export default function LocoPanel({
   };
 
   const handleForward = () => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -274,7 +276,7 @@ export default function LocoPanel({
   };
 
   const handleReverse = () => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -288,7 +290,7 @@ export default function LocoPanel({
   };
 
   const handleStop = () => {
-    if (!currentLoco) {
+    if (!currentLoco || controlsDisabled) {
       return;
     }
 
@@ -302,7 +304,7 @@ export default function LocoPanel({
   };
 
   const handleEmergencyToggle = () => {
-    if (!powerInfo) {
+    if (!powerInfo || !alive) {
       return;
     }
 
@@ -352,7 +354,7 @@ export default function LocoPanel({
                   powerInfo?.emergencyStop ?? false
                 }
                 reservation={reservation}
-                controlsDisabled={false}
+                controlsDisabled={controlsDisabled}
                 onOpenPicker={() =>
                   setPickerOpened(true)
                 }
@@ -371,7 +373,7 @@ export default function LocoPanel({
               <LocoFunctionGrid
                 loco={currentLoco}
                 activeFunctions={activeFunctions}
-                disabled={false}
+                disabled={controlsDisabled}
                 onActiveFunctionsChange={
                   setActiveFunctions
                 }
