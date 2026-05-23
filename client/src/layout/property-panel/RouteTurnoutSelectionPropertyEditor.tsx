@@ -120,13 +120,15 @@ export default function RouteTurnoutSelectionPropertyEditor({
       layout,
       commandCenterLocked: commandCenter.locked,
       busyText: "Route is being tested...",
-      setBusy,
       onCommandCenterBusy: () => {
         showWarningMessage(
           "Route test",
           "Command center is busy."
         );
       },
+      ...(setBusy !== undefined
+        ? { setBusy }
+        : {}),
     });
   };
 
