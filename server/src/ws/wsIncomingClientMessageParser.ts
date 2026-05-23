@@ -11,6 +11,7 @@ import type {
   ReservationOwnerType,
   ScriptDocumentCommandAction,
   ScriptRunSource,
+  TaskManagerCommandAction,
 } from "../../../common/src/types.js";
 
 import {
@@ -85,6 +86,19 @@ function isCommandCenterConfigCommandAction(
   value: unknown
 ): value is CommandCenterConfigCommandAction {
   return value === "load" || value === "save";
+}
+
+function isTaskManagerCommandAction(
+  value: unknown
+): value is TaskManagerCommandAction {
+  return (
+    value === "snapshot" ||
+    value === "add" ||
+    value === "update" ||
+    value === "delete" ||
+    value === "save" ||
+    value === "reload"
+  );
 }
 
 function invalidPayload(type: ClientWsMessageType, detail: string): {
@@ -337,6 +351,30 @@ function parsePayload<TType extends ClientWsMessageType>(
           requestId: data.requestId,
           action: data.action,
           ...(isRecord(data.config) ? { config: data.config } : {}),
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
+    case "taskManagerCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isTaskManagerCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+
+      if ((data.action === "update" || data.action === "delete") && typeof data.taskId !== "string") {
+        return invalidPayload(type, "taskId must be string for update and delete.");
+      }
+
+      if ((data.action === "add" || data.action === "update") && !isRecord(data.input)) {
+        return invalidPayload(type, "input must be an object for add and update.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          ...(typeof data.taskId === "string" ? { taskId: data.taskId } : {}),
+          ...(isRecord(data.input) ? { input: data.input } : {}),
         } as ClientWsPayloadMap[TType],
       };
     }
