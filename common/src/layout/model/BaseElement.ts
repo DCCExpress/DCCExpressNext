@@ -115,6 +115,10 @@ export abstract class BaseElement {
     };
   }
 
+  getCollisionBounds(): IRect {
+    return this.getBounds();
+  }
+
   hitTest(px: number, py: number): boolean {
     const bounds = this.getBounds();
     const x2 = bounds.x + bounds.width;
