@@ -94,6 +94,9 @@ type LayoutPageWorkspaceProps = {
   setCanvasBusyText: Dispatch<SetStateAction<string>>;
 };
 
+const RIGHT_LOCO_STORAGE_KEY =
+  "dcc-express.loco-panel.right.selected-loco-id";
+
 export default function LayoutPageWorkspace({
   toolbarOpened,
 
@@ -263,15 +266,20 @@ export default function LayoutPageWorkspace({
             }}
           >
             {!propertyPanelCollapsed && (
-              <Card
-                withBorder
-                radius="xs"
-                p="xs"
-                h="100%"
-              >
-                {rightPanelMode === "loco" ? (
-                  <LocoPanel locos={locos} />
-                ) : (
+              rightPanelMode === "loco" ? (
+                <LocoPanel
+                  locos={locos}
+                  selectedLocoStorageKey={
+                    RIGHT_LOCO_STORAGE_KEY
+                  }
+                />
+              ) : (
+                <Card
+                  withBorder
+                  radius="xs"
+                  p="xs"
+                  h="100%"
+                >
                   <RightPropertyPanel
                     selectedElement={
                       selectedElement
@@ -293,8 +301,8 @@ export default function LayoutPageWorkspace({
                     routes={routesString}
                     setBusy={setBusy}
                   />
-                )}
-              </Card>
+                </Card>
+              )
             )}
           </Box>
         </Group>
