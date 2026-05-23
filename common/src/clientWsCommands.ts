@@ -197,7 +197,7 @@ export type TaskIdOrNameCommandPayload = {
   taskIdOrName: string;
 };
 
-export type SetEditorEditModePayload = {
+export type SetEditorEditModeCommandPayload = {
   editMode: boolean;
 };
 
@@ -217,8 +217,8 @@ export type ClientWsPayloadMap = {
   setSensor: SetSensorCommandPayload;
   setBasicAccessory: SetBasicAccessoryCommandPayload;
 
-  setBlock: SetBlockPayload;
-  setBlockRemove: SetBlockPayload;
+  setBlock: SetBlockCommandPayload;
+  setBlockRemove: SetBlockRemoveCommandPayload;
   setBlocksReset: EmptyClientWsCommandPayload;
   getBlocks: EmptyClientWsCommandPayload;
 
@@ -253,7 +253,7 @@ export type ClientWsPayloadMap = {
   setRuntimeVariable: SetRuntimeVariablePayload;
   getRuntimeVariables: EmptyClientWsCommandPayload;
 
-  setEditorEditMode: SetEditorEditModePayload;
+  setEditorEditMode: SetEditorEditModeCommandPayload;
 
   getTaskRuntimeState: EmptyClientWsCommandPayload;
 };
