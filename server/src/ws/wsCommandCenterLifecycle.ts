@@ -29,10 +29,6 @@ import {
 } from "../commandCenter/dccExSerialCommandCenter.js";
 
 import {
-  railwayTopologyStore,
-} from "../services/railwayTopologyStore.js";
-
-import {
   log,
 } from "../utility.js";
 
@@ -51,125 +47,53 @@ let configLoadedCallbackRegistered = false;
 export function configureCommandCenterLifecycle(params: {
   broadcast: BroadcastMessage;
 }): void {
-  broadcast =
-    params.broadcast;
+  broadcast = params.broadcast;
 }
 
 export function getCurrentCommandCenter(): CommandCenter | null {
   return commandCenter;
 }
 
-export function initializeCommandCenter2(
+function createCommandCenter(
   conf: CommandCenterConfig | null
-): void {
-  if (commandCenter) {
-    commandCenter
-      .stop()
-      .then(() => {
-        log("Previous command center stopped");
-      });
-  }
-
+): CommandCenter | null {
   switch (conf?.type) {
     case "simulator":
       log("Starting command center:", conf.type);
-
-      commandCenter =
-        new CommandCenterSimulator("Simulator");
-
-      commandCenter
-        .start()
-        .then(() => {
-          log("Command center started:", conf.type);
-        })
-        .catch(err => {
-          console.error("Failed to start command center:", err);
-        });
-
-      break;
+      return new CommandCenterSimulator("Simulator");
 
     case "z21":
       log("Starting command center:", "Z21");
-
-      commandCenter =
-        new Z21CommandCenter(
-          "Z21",
-          conf.z21.host!,
-          conf.z21.port!,
-          message => {
-            broadcast?.(message);
-          }
-        );
-
-      commandCenter
-        .start()
-        .then(() => {
-          log("Command center started:", conf?.type);
-        })
-        .catch(err => {
-          console.error("Failed to start command center:", err);
-        });
-
-      break;
+      return new Z21CommandCenter(
+        conf.name || "Z21",
+        conf.z21.host!,
+        conf.z21.port!,
+        (message: TypedServerWsMessage) => {
+          broadcast?.(message);
+        }
+      );
 
     case "dcc-ex-tcp":
       log("Starting command center:", "DCC-EX TCP");
-
-      commandCenter =
-        new DccExTcpCommandCenter(
-          conf.name || "DCC-EX TCP",
-          conf.dccexTcp.host!,
-          conf.dccexTcp.port!,
-          message => {
-            broadcast?.(message);
-          },
-          {
-            init: conf.dccexTcp.init,
-          }
-        );
-
-      commandCenter
-        .start()
-        .then(() => {
-          log("Command center started:", conf?.type);
-        })
-        .catch(err => {
-          console.error("Failed to start command center:", err);
-        });
-
-      break;
+      return new DccExTcpCommandCenter(
+        conf.name || "DCC-EX TCP",
+        conf.dccexTcp.host!,
+        conf.dccexTcp.port!,
+        conf.dccexTcp.init ?? ""
+      );
 
     case "dcc-ex-serial":
       log("Starting command center:", "DCC-EX Serial");
-
-      commandCenter =
-        new DccExSerialCommandCenter(
-          conf.name || "DCC-EX Serial",
-          conf.dccexSerial.serialPort!,
-          conf.dccexSerial.baudRate!,
-          message => {
-            broadcast?.(message);
-          },
-          {
-            init: conf.dccexSerial.init,
-          }
-        );
-
-      commandCenter
-        .start()
-        .then(() => {
-          log("Command center started:", conf?.type);
-        })
-        .catch(err => {
-          console.error("Failed to start command center:", err);
-        });
-
-      break;
+      return new DccExSerialCommandCenter(
+        conf.name || "DCC-EX Serial",
+        conf.dccexSerial.serialPort!,
+        conf.dccexSerial.baudRate!,
+        conf.dccexSerial.init ?? ""
+      );
 
     default:
       log("No command center configured");
-      commandCenter = null;
-      break;
+      return null;
   }
 }
 
@@ -188,66 +112,10 @@ export async function initializeCommandCenter(
     }
   }
 
-  switch (conf?.type) {
-    case "simulator":
-      log("Starting command center:", conf.type);
+  commandCenter = createCommandCenter(conf);
 
-      commandCenter =
-        new CommandCenterSimulator("Simulator");
-      break;
-
-    case "z21":
-      log("Starting command center:", "Z21");
-
-      commandCenter =
-        new Z21CommandCenter(
-          conf.name || "Z21",
-          conf.z21.host!,
-          conf.z21.port!,
-          message => {
-            broadcast?.(message);
-          }
-        );
-      break;
-
-    case "dcc-ex-tcp":
-      log("Starting command center:", "DCC-EX TCP");
-
-      commandCenter =
-        new DccExTcpCommandCenter(
-          conf.name || "DCC-EX TCP",
-          conf.dccexTcp.host!,
-          conf.dccexTcp.port!,
-          message => {
-            broadcast?.(message);
-          },
-          {
-            init: conf.dccexTcp.init,
-          }
-        );
-      break;
-
-    case "dcc-ex-serial":
-      log("Starting command center:", "DCC-EX Serial");
-
-      commandCenter =
-        new DccExSerialCommandCenter(
-          conf.name || "DCC-EX Serial",
-          conf.dccexSerial.serialPort!,
-          conf.dccexSerial.baudRate!,
-          message => {
-            broadcast?.(message);
-          },
-          {
-            init: conf.dccexSerial.init,
-          }
-        );
-      break;
-
-    default:
-      log("No command center configured");
-      commandCenter = null;
-      return;
+  if (!commandCenter) {
+    return;
   }
 
   try {
@@ -280,6 +148,6 @@ export function registerCommandCenterConfigLoadedCallback(): void {
 
 export function getLogicalTurnoutState(
   address: number
-): boolean | undefined {
-  return railwayTopologyStore.getTurnoutState(address);
+): boolean | null {
+  return commandCenter?.getTurnoutInfo(address)?.closed ?? null;
 }
