@@ -380,7 +380,6 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task not found.");
     }
 
-    await this.restoreTaskLocoToCurrentFromBlock(task);
     await this.stopTaskLocoIfNeeded(task);
     this.releaseTaskResources(task);
     this.tasks = this.tasks.filter(item => item.id !== taskId);
@@ -572,7 +571,6 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task not found.");
     }
 
-    await this.restoreTaskLocoToCurrentFromBlock(task);
     await this.stopTaskLocoIfNeeded(task);
     this.releaseTaskResources(task);
     task.status = "aborted";
@@ -628,7 +626,6 @@ class TaskRuntimeStore {
         task.status === "paused" ||
         task.status === "finishing"
       ) {
-        await this.restoreTaskLocoToCurrentFromBlock(task);
         await this.stopTaskLocoIfNeeded(task);
         this.releaseTaskResources(task);
         task.status = "aborted";
@@ -865,34 +862,6 @@ class TaskRuntimeStore {
 
     task.status = "finishing";
     task.error = undefined;
-  }
-
-  private async restoreTaskLocoToCurrentFromBlock(task: TrainTask): Promise<void> {
-    const loco = task.runtime.loco;
-
-    if (!loco) {
-      return;
-    }
-
-    const simulator =
-      this.getSimulatorCommandCenter?.() ?? null;
-
-    if (!simulator) {
-      return;
-    }
-
-    const blockId =
-      task.runtime.simulation?.fromBlockName ||
-      task.transition.fromBlock.name;
-
-    if (!blockId) {
-      return;
-    }
-
-    simulator.setBlock({
-      blockId,
-      locoId: loco.id,
-    });
   }
 
   private async stopTaskLocoIfNeeded(task: TrainTask): Promise<void> {
