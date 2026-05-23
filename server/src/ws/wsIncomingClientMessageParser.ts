@@ -4,6 +4,7 @@ import type {
   ClientWsMessageType,
   ClientWsMessageUnion,
   ClientWsPayloadMap,
+  CommandCenterConfigCommandAction,
   Direction,
   LayoutCommandAction,
   LocosCommandAction,
@@ -77,6 +78,12 @@ function isLocosCommandAction(value: unknown): value is LocosCommandAction {
 function isScriptDocumentCommandAction(
   value: unknown
 ): value is ScriptDocumentCommandAction {
+  return value === "load" || value === "save";
+}
+
+function isCommandCenterConfigCommandAction(
+  value: unknown
+): value is CommandCenterConfigCommandAction {
   return value === "load" || value === "save";
 }
 
@@ -311,6 +318,25 @@ function parsePayload<TType extends ClientWsMessageType>(
           requestId: data.requestId,
           action: data.action,
           ...(isRecord(data.document) ? { document: data.document } : {}),
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
+    case "commandCenterConfigCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isCommandCenterConfigCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+
+      if (data.action === "save" && !isRecord(data.config)) {
+        return invalidPayload(type, "config must be an object for save.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          ...(isRecord(data.config) ? { config: data.config } : {}),
         } as ClientWsPayloadMap[TType],
       };
     }
