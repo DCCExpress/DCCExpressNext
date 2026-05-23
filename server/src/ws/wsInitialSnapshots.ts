@@ -144,6 +144,11 @@ export function sendInitialWebSocketSnapshots({
   });
 
   sendToClient(ws, {
+    type: "powerInfo",
+    data: powerInfo,
+  });
+
+  sendToClient(ws, {
     type: "commandCenterLockChanged",
     data: {
       locked: commandCenter.locked,
