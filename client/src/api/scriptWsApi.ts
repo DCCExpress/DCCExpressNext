@@ -10,39 +10,24 @@ import type {
 } from "../../../common/src/types";
 
 import {
-  generateId,
-} from "../helpers";
-
-import {
-  wsApi,
-} from "../services/wsApi";
+  requestWsCommand,
+} from "./wsRequest";
 
 async function sendScriptDocumentCommand(
   action: ScriptDocumentCommandAction,
   document?: Partial<ScriptDocumentDto>
 ) {
-  const requestId = generateId();
-
-  const response = await wsApi.request(
+  return requestWsCommand(
     "scriptDocumentCommand",
     {
-      requestId,
       action,
       ...(document !== undefined
         ? { document }
         : {}),
     },
     "scriptDocumentResponse",
-    data => data.requestId === requestId
+    "Script document WebSocket command failed."
   );
-
-  if (!response.ok) {
-    throw new Error(
-      response.message ?? "Script document WebSocket command failed."
-    );
-  }
-
-  return response;
 }
 
 export async function getScriptWs(): Promise<ScriptDocumentDto> {
