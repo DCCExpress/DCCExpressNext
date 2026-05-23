@@ -31,8 +31,8 @@ import {
   drawScene,
   TrackCanvasBlockLocoPicker,
   TrackCanvasSignalAspectPopover,
-  executeExtendedRouteButton,
-  executeRouteButton,
+  handleTrackCanvasClickableDown,
+  handleTrackCanvasClickableUp,
   fitLayoutToView,
   getAllLayoutElements,
   getDistance,
@@ -445,56 +445,26 @@ export default function TrackCanvas({
       hitElement: BaseElementView | null,
       ev: MouseEvent | PointerEvent
     ): boolean => {
-      if (!hitElement) return false;
-      if (
-        !(hitElement instanceof ClickableBaseElementView) &&
-        !isTurnoutElement(hitElement)
-      ) {
-        return false;
-      }
-
-      if (hitElement instanceof RouteButtonElementView) {
-        void executeRouteButton(
-          hitElement,
-          layoutRef.current,
-          {
-            t,
-            commandCenterLocked: commandCenterRef.current.locked,
-            setBusy,
-          }
-        );
-        return true;
-      }
-
-      if (hitElement instanceof ExtendedRouteButtonElementView) {
-        void executeExtendedRouteButton(
-          hitElement,
-          {
-            t,
-            commandCenterLocked: commandCenterRef.current.locked,
-            setBusy,
-          }
-        );
-        return true;
-      }
-
-      hitElement.mouseDown(ev as any);
-      return true;
+      return handleTrackCanvasClickableDown(
+        hitElement,
+        ev,
+        {
+          layout: layoutRef.current,
+          t,
+          commandCenterLocked: commandCenterRef.current.locked,
+          setBusy,
+        }
+      );
     };
 
     const handleClickableUp = (
       hitElement: BaseElementView | null,
       ev: MouseEvent | PointerEvent
     ): boolean => {
-      if (!hitElement) return false;
-      if (
-        !(hitElement instanceof ClickableBaseElementView) &&
-        !isTurnoutElement(hitElement)
-      ) {
-        return false;
-      }
-      hitElement.mouseUp(ev as any);
-      return true;
+      return handleTrackCanvasClickableUp(
+        hitElement,
+        ev
+      );
     };
 
     const handleMouseDown = (ev: MouseEvent) => {
