@@ -14,4 +14,5 @@ export * from "./trackCanvasSelection";
 export * from "./trackCanvasSignalAspect";
 export * from "./trackCanvasSignalPopoverState";
 export * from "./trackCanvasViewStorage";
+export * from "./trackCanvasWheel";
 export * from "./createCursorElement";
