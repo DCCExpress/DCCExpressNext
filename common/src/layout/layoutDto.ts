@@ -46,6 +46,8 @@ export type SerializedLayoutElementDto = {
 
   x?: number;
   y?: number;
+  w?: number;
+  h?: number;
   rotation?: number;
   rotationStep?: RotationStepDto;
 
@@ -144,6 +146,8 @@ export interface BaseElementDto {
   layerName: string;
   x: number;
   y: number;
+  w: number;
+  h: number;
   rotation: number;
   rotationStep: RotationStepDto;
   bg: string;
