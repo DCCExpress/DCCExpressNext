@@ -34,8 +34,6 @@ export class TaskManager {
   private readonly listeners =
     new Set<TaskManagerListener>();
 
-  private initialLoadStarted = false;
-
   constructor() {
     wsClient.on(
       "taskManagerSnapshotChanged",
@@ -46,11 +44,11 @@ export class TaskManager {
 
     wsClient.subscribeStatus(status => {
       if (status === "connected") {
-        void this.loadTasks();
+        void this.refreshSnapshot();
       }
     });
 
-    void this.loadTasks();
+    void this.refreshSnapshot();
   }
 
   subscribe(listener: TaskManagerListener): () => void {
@@ -218,34 +216,6 @@ export class TaskManager {
   }
 
   async loadTasks(): Promise<LoadTrainTasksResult> {
-    if (this.initialLoadStarted) {
-      try {
-        const snapshot =
-          await getTaskManagerSnapshot();
-
-        this.setSnapshot(snapshot);
-
-        return {
-          ok: true,
-          loadedCount: snapshot.tasks.length,
-          skippedCount: 0,
-          warnings: [],
-          snapshot,
-        };
-      } catch (error) {
-        return {
-          ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Nem sikerült betölteni a feladatokat.",
-          snapshot: this.getSnapshot(),
-        };
-      }
-    }
-
-    this.initialLoadStarted = true;
-
     try {
       const result =
         await reloadTrainTasks();
@@ -266,6 +236,18 @@ export class TaskManager {
             : "Nem sikerült betölteni a feladatokat.",
         snapshot: this.getSnapshot(),
       };
+    }
+  }
+
+  private async refreshSnapshot(): Promise<void> {
+    try {
+      const snapshot =
+        await getTaskManagerSnapshot();
+
+      this.setSnapshot(snapshot);
+    } catch {
+      // Snapshot refresh is best-effort. The regular WS snapshot event
+      // will also update the task manager after reconnect.
     }
   }
 
@@ -345,11 +327,6 @@ export class TaskManager {
     this.snapshot = cloneSnapshot(snapshot);
     this.applyTransitBlockOverlay(this.snapshot);
 
-    /**
-     * A szerver már kiszámolja, mely szekciókon halad
-     * éppen aktív transit állapotban a train task.
-     * Ezt ráhúzzuk a track elemek runtime overlayére.
-     */
     layoutStore.setTransitSectionsByNames(
       this.snapshot.overlay.transitSectionNames
     );
