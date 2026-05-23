@@ -14,6 +14,18 @@ export class RouteButtonElementView extends ClickableBaseElementView implements 
     colorOn: string = "lime";
     active: boolean = false;
 
+    /**
+     * Legacy route button turnout states.
+     *
+     * Important: item.closed is the physical command-center turnout state.
+     * It is captured from TrackTurnout*.turnoutClosed and is sent back to
+     * wsApi.setTurnout(address, closed) unchanged.
+     *
+     * Do not interpret this field as the logical graph/script state.
+     * Logical turnout closed state is:
+     *
+     *   physicalClosed === turnout.turnoutClosedValue
+     */
     routeTurnouts: RouteTurnoutItem[] = [];
 
 
@@ -194,6 +206,10 @@ export class RouteButtonElementView extends ClickableBaseElementView implements 
         copy.selected = this.selected;
         copy.label = this.label;
         copy.colorOn = this.colorOn;
+        copy.routeTurnouts = this.routeTurnouts.map(item => ({
+            turnoutId: item.turnoutId,
+            closed: item.closed,
+        }));
         return copy;
     }
 
