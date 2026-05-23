@@ -20,13 +20,13 @@ export const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-app.use("/api/locos", locoRoutes);
-app.use("/api/layout", layoutRoutes);
-app.use("/api/command-centers", commandCenterRoutes);
-app.use("/api/script", createScriptRouter(dataDir));
-app.use("/api/tasks", createTaskRouter());
-app.use("/api/files", fileRoutes);
-app.use("/api/fast-clock", fastClockRoutes);
+// app.use("/api/locos", locoRoutes);
+// app.use("/api/layout", layoutRoutes);
+// app.use("/api/command-centers", commandCenterRoutes);
+// app.use("/api/script", createScriptRouter(dataDir));
+// app.use("/api/tasks", createTaskRouter());
+// app.use("/api/files", fileRoutes);
+// app.use("/api/fast-clock", fastClockRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
