@@ -160,6 +160,19 @@ export type TaskManagerCommandPayload = {
   input?: TrainTaskCreateInput;
 };
 
+export type FastClockCommandAction =
+  | "snapshot"
+  | "run"
+  | "pause"
+  | "reset"
+  | "setSpeed";
+
+export type FastClockCommandPayload = {
+  requestId: string;
+  action: FastClockCommandAction;
+  speed?: number;
+};
+
 export type RunScriptCommandPayload = {
   script?: string;
   source: ScriptRunSource;
@@ -208,6 +221,7 @@ export type ClientWsPayloadMap = {
   scriptDocumentCommand: ScriptDocumentCommandPayload;
   commandCenterConfigCommand: CommandCenterConfigCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
+  fastClockCommand: FastClockCommandPayload;
 
   runScript: RunScriptCommandPayload;
   stopScript: EmptyClientWsCommandPayload;
