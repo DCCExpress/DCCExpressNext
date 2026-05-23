@@ -21,6 +21,21 @@ type LayerFactory<
   options?: LayerOptions
 ) => TLayer;
 
+function elementsIntersect(
+  first: BaseElement,
+  second: BaseElement
+): boolean {
+  const a = first.getBounds();
+  const b = second.getBounds();
+
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
 /**
  * Grafikamentes, közös layout modell.
  *
@@ -189,7 +204,7 @@ export class Layout<
     for (let index = all.length - 1; index >= 0; index--) {
       const element = all[index]!;
 
-      if (element.x === x && element.y === y) {
+      if (element.hitTest(x, y)) {
         return element;
       }
     }
@@ -229,18 +244,33 @@ export class Layout<
     x: number,
     y: number
   ): TElement | null {
-    for (const layer of this.layers) {
-      for (const element of layer.elements) {
-        if (
-          element.hitTest(x, y) &&
-          element.layerName === referenceElement.layerName
-        ) {
-          return element;
+    const originalX = referenceElement.x;
+    const originalY = referenceElement.y;
+
+    referenceElement.x = x;
+    referenceElement.y = y;
+
+    try {
+      for (const layer of this.layers) {
+        for (const element of layer.elements) {
+          if (
+            element === referenceElement ||
+            element.layerName !== referenceElement.layerName
+          ) {
+            continue;
+          }
+
+          if (elementsIntersect(referenceElement, element)) {
+            return element;
+          }
         }
       }
-    }
 
-    return null;
+      return null;
+    } finally {
+      referenceElement.x = originalX;
+      referenceElement.y = originalY;
+    }
   }
 
   public checkElementCollision(
@@ -250,7 +280,11 @@ export class Layout<
     const firstLayer = this.findLayerOfElement(first);
     const secondLayer = this.findLayerOfElement(second);
 
-    return firstLayer?.name === secondLayer?.name;
+    if (firstLayer?.name !== secondLayer?.name) {
+      return false;
+    }
+
+    return elementsIntersect(first, second);
   }
 
   public getElements(
@@ -308,10 +342,12 @@ export class Layout<
     let maxY = -Infinity;
 
     for (const element of elements) {
-      minX = Math.min(minX, element.x);
-      minY = Math.min(minY, element.y);
-      maxX = Math.max(maxX, element.x);
-      maxY = Math.max(maxY, element.y);
+      const bounds = element.getBounds();
+
+      minX = Math.min(minX, bounds.x);
+      minY = Math.min(minY, bounds.y);
+      maxX = Math.max(maxX, bounds.x + bounds.width - 1);
+      maxY = Math.max(maxY, bounds.y + bounds.height - 1);
     }
 
     return {
@@ -326,9 +362,7 @@ export class Layout<
     point: Point
   ): TElement | undefined {
     return this.getAllElements().find(
-      element =>
-        element.x === point.x &&
-        element.y === point.y
+      element => element.hitTest(point.x, point.y)
     );
   }
 }
