@@ -7,7 +7,7 @@ import type {
 import {
   readCommandCenter,
   saveCommandCenterConfig,
-} from "../../routes/commandCenterRoutes.js";
+} from "../../services/commandCenterConfigStore.js";
 
 import type {
   WsMessageHandler,
