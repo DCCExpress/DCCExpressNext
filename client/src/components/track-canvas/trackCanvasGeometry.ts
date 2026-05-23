@@ -1,16 +1,25 @@
 // client/src/components/track-canvas/trackCanvasGeometry.ts
 
 import type {
+  BaseElementView,
+} from "../../models/editor/core/BaseElementView";
+
+import type {
   TouchPoint,
   ViewState,
 } from "./TrackCanvas.types";
+
+export type GridPoint = {
+  x: number;
+  y: number;
+};
 
 export function screenToGrid(
   screenX: number,
   screenY: number,
   view: ViewState,
   gridSize: number
-): { x: number; y: number } {
+): GridPoint {
   const worldX =
     (screenX - view.offsetX) / view.scale;
 
@@ -20,6 +29,16 @@ export function screenToGrid(
   return {
     x: Math.floor(worldX / gridSize),
     y: Math.floor(worldY / gridSize),
+  };
+}
+
+export function getCenteredElementGridAnchor(
+  element: BaseElementView,
+  grid: GridPoint
+): GridPoint {
+  return {
+    x: grid.x - Math.floor(element.w / 2),
+    y: grid.y - Math.floor(element.h / 2),
   };
 }
 
