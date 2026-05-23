@@ -9,6 +9,17 @@ export function generateId() {
     return v.toString(16);
   });
 }
+
+function isNoisyTaskWaitingMessage(
+  title: string,
+  message: string
+): boolean {
+  return (
+    title === "Task waiting" &&
+    message.includes("No loco assigned to task start block")
+  );
+}
+
 export function showOkMessage(
   title: string,
   message: string,
@@ -54,6 +65,10 @@ export function showWarningMessage(
   message: string,
   autoClose: number = 5000
 ) {
+  if (isNoisyTaskWaitingMessage(title, message)) {
+    return;
+  }
+
   notificationLogStore.add({
     level: "warning",
     title,
