@@ -15,7 +15,6 @@ import {
   RouteButtonElementView,
   type RouteTurnoutItem,
 } from "../../models/editor/elements/RouteButtonElementView";
-import { isTurnoutElement } from "../../models/editor/core/LayoutView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import type {
   LayoutSetter,
@@ -54,6 +53,20 @@ function removeTurnout(
   onUpdateSelectedElement(selectedElement);
 }
 
+function getRouteTurnoutLogicalLabel(
+  turnout: unknown,
+  physicalClosed: boolean
+): string {
+  const turnoutClosedValue =
+    typeof (turnout as any)?.turnoutClosedValue === "boolean"
+      ? (turnout as any).turnoutClosedValue as boolean
+      : true;
+
+  return physicalClosed === turnoutClosedValue
+    ? "C"
+    : "T";
+}
+
 export default function RouteTurnoutSelectionPropertyEditor({
   prop,
   selectedElement,
@@ -65,9 +78,9 @@ export default function RouteTurnoutSelectionPropertyEditor({
 }: RouteTurnoutSelectionPropertyEditorProps) {
   const items = getItems(selectedElement, prop);
 
-  const setRouteTurnoutClosed = (
+  const setRouteTurnoutPhysicalClosed = (
     turnoutId: string,
-    closed: boolean
+    physicalClosed: boolean
   ): void => {
     const routeItems = getItems(selectedElement, prop);
     const item = routeItems.find(routeItem => routeItem.turnoutId === turnoutId);
@@ -76,7 +89,7 @@ export default function RouteTurnoutSelectionPropertyEditor({
       return;
     }
 
-    item.closed = closed;
+    item.closed = physicalClosed;
     onLayoutChange(previous => previous);
   };
 
@@ -87,7 +100,7 @@ export default function RouteTurnoutSelectionPropertyEditor({
       return;
     }
 
-    setRouteTurnoutClosed(turnoutId, !item.closed);
+    setRouteTurnoutPhysicalClosed(turnoutId, !item.closed);
   };
 
   return (
@@ -146,6 +159,11 @@ export default function RouteTurnoutSelectionPropertyEditor({
             previewTurnout.enabled = true;
             (previewTurnout as any).turnoutClosed = item.closed;
 
+            const logicalLabel = getRouteTurnoutLogicalLabel(
+              turnout,
+              item.closed
+            );
+
             return (
               <Group
                 key={item.turnoutId}
@@ -156,16 +174,6 @@ export default function RouteTurnoutSelectionPropertyEditor({
                 <Box
                   className="route-turnout-preview-button"
                   onClick={() => {
-                    const elem = layout.getElementById(item.turnoutId);
-
-                    if (isTurnoutElement(elem)) {
-                      elem.toggle();
-                      item.closed =
-                        elem.turnoutClosed === elem.turnoutClosedValue;
-                      onUpdateSelectedElement(selectedElement);
-                      return;
-                    }
-
                     toggleRouteTurnout(item.turnoutId);
                     onUpdateSelectedElement(selectedElement);
                   }}
@@ -181,6 +189,9 @@ export default function RouteTurnoutSelectionPropertyEditor({
                 <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
                   <Text size="xs" fw={500} truncate>
                     {turnout.name || "Turnout"}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    Route state: {logicalLabel}
                   </Text>
                 </Stack>
 
