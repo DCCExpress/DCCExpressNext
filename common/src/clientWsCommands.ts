@@ -2,6 +2,7 @@
 
 import type {
   Direction,
+  ICommandCenter,
   Loco,
   ReservationOwnerType,
 } from "./domainTypes.js";
@@ -129,6 +130,16 @@ export type ScriptDocumentCommandPayload = {
   document?: Partial<ScriptDocumentDto>;
 };
 
+export type CommandCenterConfigCommandAction =
+  | "load"
+  | "save";
+
+export type CommandCenterConfigCommandPayload = {
+  requestId: string;
+  action: CommandCenterConfigCommandAction;
+  config?: Partial<ICommandCenter>;
+};
+
 export type RunScriptCommandPayload = {
   script?: string;
   source: ScriptRunSource;
@@ -183,6 +194,7 @@ export type ClientWsPayloadMap = {
   layoutCommand: LayoutCommandPayload;
   locosCommand: LocosCommandPayload;
   scriptDocumentCommand: ScriptDocumentCommandPayload;
+  commandCenterConfigCommand: CommandCenterConfigCommandPayload;
 
   runScript: RunScriptCommandPayload;
   stopScript: EmptyClientWsCommandPayload;
