@@ -6,7 +6,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { IconTrash } from "@tabler/icons-react";
+import { IconPlayerPlay, IconTrash } from "@tabler/icons-react";
 
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { LayoutView } from "../../models/editor/core/LayoutView";
@@ -16,6 +16,9 @@ import {
   type RouteTurnoutItem,
 } from "../../models/editor/elements/RouteButtonElementView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
+import { useCommandCenter } from "../../context/CommandCenterContext";
+import { showWarningMessage } from "../../helpers";
+import { executeLegacyRouteButton } from "../../services/routeButtonExecutor";
 import type {
   LayoutSetter,
   SelectedElementUpdateHandler,
@@ -29,6 +32,7 @@ type RouteTurnoutSelectionPropertyEditorProps = {
   setTurnoutSelectionMode: (on: boolean) => void;
   onLayoutChange: LayoutSetter;
   onUpdateSelectedElement: SelectedElementUpdateHandler;
+  setBusy?: (busy: boolean, text?: string) => void;
 };
 
 function findElementById(layout: LayoutView, id: string) {
@@ -75,8 +79,11 @@ export default function RouteTurnoutSelectionPropertyEditor({
   setTurnoutSelectionMode,
   onLayoutChange,
   onUpdateSelectedElement,
+  setBusy,
 }: RouteTurnoutSelectionPropertyEditorProps) {
+  const commandCenter = useCommandCenter();
   const items = getItems(selectedElement, prop);
+  const hasTurnouts = items.length > 0;
 
   const setRouteTurnoutPhysicalClosed = (
     turnoutId: string,
@@ -103,20 +110,54 @@ export default function RouteTurnoutSelectionPropertyEditor({
     setRouteTurnoutPhysicalClosed(turnoutId, !item.closed);
   };
 
+  const testRouteButton = async (): Promise<void> => {
+    if (!(selectedElement instanceof RouteButtonElementView)) {
+      return;
+    }
+
+    await executeLegacyRouteButton({
+      routeButton: selectedElement,
+      layout,
+      commandCenterLocked: commandCenter.locked,
+      busyText: "Route is being tested...",
+      setBusy,
+      onCommandCenterBusy: () => {
+        showWarningMessage(
+          "Route test",
+          "Command center is busy."
+        );
+      },
+    });
+  };
+
   return (
     <Stack gap="xs">
-      <Button
-        size="xs"
-        variant={turnoutSelectionMode ? "filled" : "light"}
-        onClick={() => setTurnoutSelectionMode(!turnoutSelectionMode)}
-      >
-        {turnoutSelectionMode ? "Finish selection" : "Add turnouts"}
-      </Button>
+      <Group gap="xs" grow>
+        <Button
+          size="xs"
+          variant={turnoutSelectionMode ? "filled" : "light"}
+          onClick={() => setTurnoutSelectionMode(!turnoutSelectionMode)}
+        >
+          {turnoutSelectionMode ? "Finish selection" : "Add turnouts"}
+        </Button>
+
+        <Button
+          size="xs"
+          variant="light"
+          leftSection={<IconPlayerPlay size={14} />}
+          disabled={!hasTurnouts}
+          onClick={() => {
+            void testRouteButton();
+          }}
+        >
+          Test route
+        </Button>
+      </Group>
 
       <Text size="xs" c="dimmed">
         {turnoutSelectionMode
           ? "Click turnouts on the layout to add them, then press Finish selection."
-          : "Use Add turnouts to pick turnouts from the layout. Click a preview below to change its stored route state only."}
+          : "Use Add turnouts to pick turnouts from the layout. Click a preview below to change its stored route state only. Test route sends the same turnout commands as clicking the route button."}
       </Text>
 
       {items.length === 0 ? (
