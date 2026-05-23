@@ -1,11 +1,14 @@
 // server/src/ws/handlers/wsTaskManagerMessageHandlers.ts
 
 import type {
+  TaskManagerResponsePayload,
+} from "../../../../common/src/types.js";
+
+import type {
   AddTrainTaskResult,
   LoadTrainTasksResult,
   TaskManagerActionResult,
-  TaskManagerResponsePayload,
-} from "../../../../common/src/types.js";
+} from "../../../../common/src/task.js";
 
 import {
   taskRuntimeStore,
