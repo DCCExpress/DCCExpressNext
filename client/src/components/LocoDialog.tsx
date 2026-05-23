@@ -23,7 +23,7 @@ import {
   Title,
 } from "@mantine/core";
 import { IconPhoto, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
-import { getLocos, saveLocos } from "../api/http";
+import { getLocos, saveLocos } from "../api/domainApi";
 import { generateId } from "../helpers";
 import { Loco, LocoFunction } from "../../../common/src/types";
 import { wsApi } from "../services/wsApi";
