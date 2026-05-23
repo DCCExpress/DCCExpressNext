@@ -36,7 +36,7 @@ import {
   getAllLayoutElements,
 } from "./trackCanvasSelection";
 
-export type TrackCanvasMutableRef<T> = {
+type MouseMoveRef<T> = {
   current: T;
 };
 
@@ -47,14 +47,14 @@ export type TrackCanvasGridPoint = {
 
 export type TrackCanvasMouseMoveContext = {
   canvas: HTMLCanvasElement;
-  layoutRef: TrackCanvasMutableRef<LayoutView>;
-  toolRef: TrackCanvasMutableRef<EditorTool>;
-  viewRef: TrackCanvasMutableRef<ViewState>;
-  currentCursorRef: TrackCanvasMutableRef<BaseElementView | null>;
-  panRef: TrackCanvasMutableRef<PanState>;
-  selectionRef: TrackCanvasMutableRef<SelectionState>;
-  dragRef: TrackCanvasMutableRef<DragState>;
-  editModeRef: TrackCanvasMutableRef<boolean>;
+  layoutRef: MouseMoveRef<LayoutView>;
+  toolRef: MouseMoveRef<EditorTool>;
+  viewRef: MouseMoveRef<ViewState>;
+  currentCursorRef: MouseMoveRef<BaseElementView | null>;
+  panRef: MouseMoveRef<PanState>;
+  selectionRef: MouseMoveRef<SelectionState>;
+  dragRef: MouseMoveRef<DragState>;
+  editModeRef: MouseMoveRef<boolean>;
   setMouseGrid: Dispatch<SetStateAction<TrackCanvasGridPoint>>;
   setHoverGrid: Dispatch<SetStateAction<TrackCanvasGridPoint | null>>;
   persistView: () => void;
