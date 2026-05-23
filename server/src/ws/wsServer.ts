@@ -13,7 +13,7 @@ import type {
 
 import {
   readCommandCenter,
-} from "../routes/commandCenterRoutes.js";
+} from "../services/commandCenterConfigStore.js";
 
 import {
   editorEditModeStore,
@@ -88,7 +88,11 @@ function canHandleWithoutCommandCenter(type: string): boolean {
   return (
     type === "layoutCommand" ||
     type === "locosCommand" ||
-    type === "scriptDocumentCommand"
+    type === "scriptDocumentCommand" ||
+    type === "commandCenterConfigCommand" ||
+    type === "taskManagerCommand" ||
+    type === "fastClockCommand" ||
+    type === "fileCommand"
   );
 }
 
