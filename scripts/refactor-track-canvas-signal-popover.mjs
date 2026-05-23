@@ -21,22 +21,55 @@ function mustReplace(search, replacement) {
 }
 
 function findMatchingJsxTagEnd(input, startIndex, tagName) {
-  const openTag = `<${tagName}`;
   const closeTag = `</${tagName}>`;
   let depth = 0;
   let index = startIndex;
 
+  const isExactOpeningTagAt = (position) => {
+    const token = `<${tagName}`;
+
+    if (!input.startsWith(token, position)) {
+      return false;
+    }
+
+    const next = input[position + token.length];
+
+    return (
+      next === " " ||
+      next === "\n" ||
+      next === "\t" ||
+      next === ">"
+    );
+  };
+
   while (index < input.length) {
-    const nextOpen = input.indexOf(openTag, index);
     const nextClose = input.indexOf(closeTag, index);
 
     if (nextClose === -1) {
       return -1;
     }
 
+    let nextOpen = -1;
+    let searchFrom = index;
+
+    while (true) {
+      const candidate = input.indexOf(`<${tagName}`, searchFrom);
+
+      if (candidate === -1 || candidate > nextClose) {
+        break;
+      }
+
+      if (isExactOpeningTagAt(candidate)) {
+        nextOpen = candidate;
+        break;
+      }
+
+      searchFrom = candidate + 1;
+    }
+
     if (nextOpen !== -1 && nextOpen < nextClose) {
       depth++;
-      index = nextOpen + openTag.length;
+      index = nextOpen + tagName.length + 1;
       continue;
     }
 
