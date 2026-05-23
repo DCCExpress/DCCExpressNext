@@ -173,6 +173,20 @@ export type FastClockCommandPayload = {
   speed?: number;
 };
 
+export type FileCommandAction =
+  | "readText"
+  | "writeText"
+  | "readJson"
+  | "writeJson";
+
+export type FileCommandPayload = {
+  requestId: string;
+  action: FileCommandAction;
+  fileName: string;
+  content?: string;
+  data?: unknown;
+};
+
 export type RunScriptCommandPayload = {
   script?: string;
   source: ScriptRunSource;
@@ -183,7 +197,7 @@ export type TaskIdOrNameCommandPayload = {
   taskIdOrName: string;
 };
 
-export type SetEditorEditModeCommandPayload = {
+export type SetEditorEditModePayload = {
   editMode: boolean;
 };
 
@@ -203,8 +217,8 @@ export type ClientWsPayloadMap = {
   setSensor: SetSensorCommandPayload;
   setBasicAccessory: SetBasicAccessoryCommandPayload;
 
-  setBlock: SetBlockCommandPayload;
-  setBlockRemove: SetBlockCommandPayload;
+  setBlock: SetBlockPayload;
+  setBlockRemove: SetBlockPayload;
   setBlocksReset: EmptyClientWsCommandPayload;
   getBlocks: EmptyClientWsCommandPayload;
 
@@ -222,6 +236,7 @@ export type ClientWsPayloadMap = {
   commandCenterConfigCommand: CommandCenterConfigCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
+  fileCommand: FileCommandPayload;
 
   runScript: RunScriptCommandPayload;
   stopScript: EmptyClientWsCommandPayload;
@@ -238,7 +253,7 @@ export type ClientWsPayloadMap = {
   setRuntimeVariable: SetRuntimeVariablePayload;
   getRuntimeVariables: EmptyClientWsCommandPayload;
 
-  setEditorEditMode: SetEditorEditModeCommandPayload;
+  setEditorEditMode: SetEditorEditModePayload;
 
   getTaskRuntimeState: EmptyClientWsCommandPayload;
 };
