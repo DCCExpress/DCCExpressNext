@@ -113,6 +113,12 @@ export default function RouteTurnoutSelectionPropertyEditor({
         {turnoutSelectionMode ? "Finish selection" : "Add turnouts"}
       </Button>
 
+      <Text size="xs" c="dimmed">
+        {turnoutSelectionMode
+          ? "Click turnouts on the layout to add them, then press Finish selection."
+          : "Use Add turnouts to pick turnouts from the layout. Click a preview below to change its stored route state only."}
+      </Text>
+
       {items.length === 0 ? (
         <Text size="xs" c="dimmed">
           No turnouts selected
