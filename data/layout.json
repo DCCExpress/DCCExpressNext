@@ -126,7 +126,7 @@
           "name": "element",
           "layerName": "buildings",
           "x": 11,
-          "y": 4,
+          "y": 5,
           "rotation": 0,
           "rotationStep": 45,
           "bg": "#000000",
@@ -362,7 +362,7 @@
           "fg": "white",
           "address": 0,
           "length": 100,
-          "locoAddress": 0,
+          "locoAddress": 18,
           "sensorAddress": 301,
           "blockType": "terminal"
         },
@@ -379,7 +379,7 @@
           "fg": "white",
           "address": 0,
           "length": 100,
-          "locoAddress": 7,
+          "locoAddress": 0,
           "sensorAddress": 303,
           "blockType": "terminal"
         },
@@ -396,7 +396,7 @@
           "fg": "white",
           "address": 0,
           "length": 100,
-          "locoAddress": 18,
+          "locoAddress": 0,
           "sensorAddress": 101,
           "blockType": "terminal"
         },
@@ -413,7 +413,7 @@
           "fg": "white",
           "address": 0,
           "length": 100,
-          "locoAddress": 0,
+          "locoAddress": 7,
           "sensorAddress": 102,
           "blockType": "terminal"
         },
@@ -464,7 +464,7 @@
           "fg": "white",
           "address": 0,
           "length": 100,
-          "locoAddress": 13,
+          "locoAddress": 0,
           "sensorAddress": 0,
           "blockType": "normal"
         },
