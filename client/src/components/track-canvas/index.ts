@@ -4,6 +4,7 @@ export * from "./TrackCanvas.types";
 export * from "./trackCanvasDraw";
 export * from "./trackCanvasGeometry";
 export * from "./trackCanvasLayoutBounds";
+export * from "./trackCanvasRouteActions";
 export * from "./trackCanvasSelection";
 export * from "./trackCanvasSignalAspect";
 export * from "./trackCanvasViewStorage";
