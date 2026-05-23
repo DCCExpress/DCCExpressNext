@@ -3,6 +3,7 @@
 export * from "./TrackCanvas.types";
 export * from "./TrackCanvasBlockLocoPicker";
 export * from "./TrackCanvasSignalAspectPopover";
+export * from "./trackCanvasClickableActions";
 export * from "./trackCanvasDraw";
 export * from "./trackCanvasEventListeners";
 export * from "./trackCanvasGeometry";
