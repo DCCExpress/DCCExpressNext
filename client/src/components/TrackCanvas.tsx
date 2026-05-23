@@ -1,47 +1,34 @@
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { generateId, showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
 import { BaseElementView } from "../models/editor/core/BaseElementView";
-import { DrawOptions, EditorTool } from "../models/editor/types/EditorTypes";
-import { TrackStraightElementView } from "../models/editor/elements/TrackStraightElementView";
-import { TrackEndElementView } from "../models/editor/elements/TrackEndElementView";
-import { TrackCornerElementView } from "../models/editor/elements/TrackCornerElementView";
-import { TrackCurveElementView } from "../models/editor/elements/TrackCurveElementView";
+import { isTurnoutElement, LayoutView } from "../models/editor/core/LayoutView";
 import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
-import { generateId, showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
-import { isTurnoutElement, LayoutView } from "../models/editor/core/LayoutView";
+import { DrawOptions, EditorTool } from "../models/editor/types/EditorTypes";
 
-import "../styles/TrackCanvas.css";
-import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
-import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";
-import { TrackSensorElementView } from "../models/editor/elements/TrackSensorElementView";
-import { ButtonElementView } from "../models/editor/elements/ButtonElementView";
-import { ClockElementView } from "../models/editor/elements/ClockElementView";
-import { TreeElementView } from "../models/editor/elements/TreeElementView";
-import { BlockElementView } from "../models/editor/elements/BlockElementView";
-import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
-import { AudioButtonElementView } from "../models/editor/elements/AudioButtonElementView";
-import { RouteButtonElementView } from "../models/editor/elements/RouteButtonElementView";
-import { TrackCrossingElementView } from "../models/editor/elements/TrackCrossingElementView";
-import { ClickableBaseElementView } from "../models/editor/core/ClickableBaseElementView";
+import { Loco } from "../../../common/src/types";
+import { useCommandCenter } from "../context/CommandCenterContext";
 import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
+import { ClickableBaseElementView } from "../models/editor/core/ClickableBaseElementView";
+import { AudioButtonElementView } from "../models/editor/elements/AudioButtonElementView";
+import { BlockElementView } from "../models/editor/elements/BlockElementView";
+import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
+import { RouteButtonElementView } from "../models/editor/elements/RouteButtonElementView";
+import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
+import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";
+import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
 import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../services/wsApi";
-import { useCommandCenter } from "../context/CommandCenterContext";
-import { ButtonScriptElementView } from "../models/editor/elements/ButtonScriptElementView";
-import { LabelElementView } from "../models/editor/elements/LabelElementView";
+import "../styles/TrackCanvas.css";
 import LocoPicker from "./loco/LocoPicker";
-import { Loco } from "../../../common/src/types";
-import { TrackDirectionElementView } from "../models/editor/elements/TrackDirectionElementView";
-import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 
-import { routeGraphStore } from "../services/routeGraphStore";
 import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
-import { createClientGraphFromRouteGraphDto } from "../services/routeGraphDtoMapper";
-import { getRouteGraph } from "../api/http";
+import { routeGraphStore } from "../services/routeGraphStore";
+
+import { useTranslation } from "react-i18next";
 import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
 import { createCursorElement } from "./track-canvas/createCursorElement";
-import { useTranslation } from "react-i18next";
 
 type TrackCanvasProps = {
   editMode?: boolean;

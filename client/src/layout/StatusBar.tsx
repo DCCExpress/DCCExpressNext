@@ -373,7 +373,7 @@ export default function StatusBar({
 
           <Divider orientation="vertical" />
 
-          <StatusActionIcon
+          <StatusActionIcon 
             tooltip={
               rightPanelMode === "loco"
                 ? "Right panel: loco panel"
@@ -386,7 +386,7 @@ export default function StatusBar({
             }
             onClick={handleToggleRightPanelMode}
           >
-            <IconTrain size={14} />
+            <IconTrain size={16}/>
           </StatusActionIcon>
 
           <Divider orientation="vertical" />
