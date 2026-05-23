@@ -1,6 +1,7 @@
 // client/src/components/track-canvas/index.ts
 
 export * from "./TrackCanvas.types";
+export * from "./TrackCanvasBlockLocoPicker";
 export * from "./TrackCanvasSignalAspectPopover";
 export * from "./trackCanvasDraw";
 export * from "./trackCanvasGeometry";
