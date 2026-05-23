@@ -25,7 +25,6 @@ import {
   onLocosChanged,
 } from "../services/locoChangeNotifier.js";
 
-
 import {
   locoReservationStore,
 } from "../services/locoReservationStore.js";
@@ -59,99 +58,325 @@ export abstract class CommandCenter {
     trackVoltageOn: false,
     emergencyStop: false,
     shortCircuit: false,
-    programmingModeActive: false,
+    current: 0,
   };
 
-  protected locos = new Map<number, LocoState>();
-  protected sensors = new Map<number, SensorInfo>();
-  protected turnouts = new Map<number, TurnoutInfo>();
-  protected accessories = new Map<number, AccessoryInfo>();
-  protected blocks = new Map<string, BlockState>();
+  protected locos: Map<number, LocoState> =
+    new Map();
 
-  private lockedValue = false;
-  public lockOwnerUUID: string | null = null;
+  private blocks: Map<string, BlockState> =
+    new Map();
 
-  protected constructor(name: string) {
+  protected turnouts: Map<number, TurnoutInfo> =
+    new Map();
+
+  protected sensors: Map<number, SensorInfo> =
+    new Map();
+
+  protected accessories: Map<number, AccessoryInfo> =
+    new Map();
+
+  protected readonly rbusGroups =
+    new Map<number, number[]>();
+
+  public locked = false;
+  public lockOwnerUUID: string | null = "";
+
+  constructor(name: string) {
     this.name = name;
     CommandCenter.activeInstance = this;
 
     onLocosChanged(async () => {
       const locos = await readLocos();
+
       this.setLocos(locos);
+
+      await this.loadRuntimeState()
+        .then(() => {
+          log(
+            "Runtime state loaded successfully after loco change"
+          );
+        })
+        .catch(err => {
+          log(
+            "Failed to load runtime state after loco change:",
+            err
+          );
+        });
     });
   }
 
-  get locked(): boolean {
-    return this.lockedValue;
+  static getActive(): CommandCenter | null {
+    return CommandCenter.activeInstance;
   }
 
-  set locked(value: boolean) {
-    if (this.lockedValue === value) {
-      return;
+  setLocos(locos: Loco[]): void {
+    this.locos.clear();
+
+    for (const loco of locos) {
+      const locoState: LocoState = {
+        ...loco,
+        speed: 0,
+        direction: "forward",
+        functions: {},
+      };
+
+      this.locos.set(
+        loco.address,
+        this.syncLocoReservation(locoState)
+      );
+    }
+  }
+
+  setBlocks(blocks: BlockState[]): void {
+    this.blocks.clear();
+
+    for (const block of blocks) {
+      this.blocks.set(
+        block.blockId.toString(),
+        block
+      );
     }
 
-    this.lockedValue = value;
+    void this.saveRuntimeState();
+  }
+
+  setBlock(block: BlockState): void {
+    for (const [blockId, state] of this.blocks) {
+      if (state.locoId === block.locoId) {
+        state.locoId = null;
+        this.blocks.set(blockId, state);
+      }
+    }
+
+    this.blocks.set(block.blockId, block);
 
     broadcastAll({
-      type: "commandCenterLockChanged",
-      data: {
-        locked: value,
-        lockOwner: value
-          ? this.lockOwnerUUID
-          : null,
-      },
+      type: "blockStateChanged",
+      data: Object.fromEntries(this.blocks),
+      uuid: null,
     });
+
+    void this.saveRuntimeState();
+  }
+
+  setBlockRemove(blockState: BlockState): void {
+    log("setBlockRemove", blockState);
+
+    const block =
+      this.blocks.get(blockState.blockId);
+
+    if (
+      block &&
+      block.locoId === blockState.locoId
+    ) {
+      block.locoId = null;
+      this.blocks.set(block.blockId, block);
+    }
+
+    broadcastAll({
+      type: "blockStateChanged",
+      data: Object.fromEntries(this.blocks),
+      uuid: null,
+    });
+
+    void this.saveRuntimeState();
+  }
+
+  setBlocksReset(): void {
+    for (const [blockId, block] of this.blocks) {
+      block.locoId = null;
+      this.blocks.set(blockId, block);
+    }
+
+    broadcastAll({
+      type: "blockStateChanged",
+      data: Object.fromEntries(this.blocks),
+      uuid: null,
+    });
+  }
+
+  public broadcastBlocks(): void {
+    broadcastAll({
+      type: "blockStateChanged",
+      data: Object.fromEntries(this.blocks),
+      uuid: null,
+    });
+  }
+
+  public getBlocks(): void {
+    this.broadcastBlocks();
+  }
+
+  getBlockState(blockId: string): BlockState | null {
+    const block =
+      this.blocks.get(blockId);
+
+    return block
+      ? { ...block }
+      : null;
+  }
+
+  abstract getConnectionString(): string;
+  abstract start(): Promise<boolean>;
+  abstract stop(): Promise<boolean>;
+  abstract clientConnected(): void;
+
+  abstract setTurnout(
+    address: number,
+    closed: boolean
+  ): Promise<boolean>;
+
+  abstract getTurnout(
+    address: number
+  ): Promise<TurnoutInfo | null>;
+
+  abstract setLoco(
+    address: number,
+    speed: number,
+    direction: "forward" | "reverse"
+  ): Promise<boolean>;
+
+  abstract setLocoFunction(
+    address: number,
+    fn: number,
+    active: boolean
+  ): Promise<boolean>;
+
+  protected syncLocoReservation(
+    loco: LocoState
+  ): LocoState {
+    const reservation =
+      locoReservationStore.getReservation(
+        loco.address
+      );
+
+    if (reservation) {
+      loco.reservation = reservation;
+    } else {
+      delete loco.reservation;
+    }
+
+    return loco;
+  }
+
+  protected getOrCreateLoco(
+    address: number
+  ): LocoState {
+    let loco =
+      this.locos.get(address);
+
+    if (!loco) {
+      loco = {
+        address,
+        speed: 0,
+        direction: "forward",
+        functions: {},
+      };
+
+      this.locos.set(address, loco);
+    }
+
+    return this.syncLocoReservation(loco);
+  }
+
+  abstract getLoco(
+    address: number
+  ): Promise<LocoState | null>;
+
+  getLocos(): LocoState[] {
+    return Array.from(this.locos.values()).map(
+      loco => this.syncLocoReservation(loco)
+    );
+  }
+
+  abstract setTrackPower(
+    on: boolean
+  ): Promise<boolean>;
+
+  setProgrammingPower(
+    _on: boolean
+  ): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
+  writeDirectCommand(
+    _command: string
+  ): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
+  abstract emergencyStop(): Promise<boolean>;
+
+  abstract getSensor(
+    address: number
+  ): Promise<SensorInfo | null>;
+
+  getPowerInfo(): PowerInfo {
+    return this.powerInfo;
+  }
+
+  getLocoInfo(
+    address: number
+  ): LocoState | undefined {
+    const loco =
+      this.locos.get(address);
+
+    return loco
+      ? this.syncLocoReservation(loco)
+      : undefined;
+  }
+
+  getTurnoutInfo(
+    address: number
+  ): TurnoutInfo | undefined {
+    return this.turnouts.get(address);
   }
 
   getName(): string {
     return this.name;
   }
 
-  getPowerInfo(): PowerInfo {
-    return this.powerInfo;
-  }
+  protected getOrCreateTurnout(
+    address: number
+  ): TurnoutInfo {
+    let turnout =
+      this.turnouts.get(address);
 
-  setPowerInfo(next: Partial<PowerInfo>): void {
-    this.powerInfo = {
-      ...this.powerInfo,
-      ...next,
-    };
-  }
+    if (!turnout) {
+      turnout = {
+        address,
+        closed: false,
+      };
 
-  setLocos(locos: Loco[]): void {
-    const existingByAddress = new Map(this.locos);
-
-    this.locos.clear();
-
-    for (const loco of locos) {
-      const previous =
-        existingByAddress.get(loco.address);
-
-      this.locos.set(loco.address, {
-        address: loco.address,
-        speed: previous?.speed ?? 0,
-        direction: previous?.direction ?? "forward",
-        functions: previous?.functions ?? {},
-        reservation: previous?.reservation,
-      });
+      this.turnouts.set(address, turnout);
     }
+
+    return turnout;
   }
 
-  getLocoState(address: number): LocoState | null {
-    return this.locos.get(address) ?? null;
+  protected getOrCreateAccessory(
+    address: number
+  ): AccessoryInfo {
+    let accessory =
+      this.accessories.get(address);
+
+    if (!accessory) {
+      accessory = {
+        address,
+        active: false,
+      };
+
+      this.accessories.set(address, accessory);
+    }
+
+    return accessory;
   }
 
-  getLocos(): LocoState[] {
-    return Array.from(this.locos.values());
-  }
-
-  getSensors(): SensorInfo[] {
-    return Array.from(this.sensors.values());
-  }
-
-  getBlocks(): BlockState[] {
-    return Array.from(this.blocks.values());
-  }
+  abstract setBasicAccessory(
+    address: number,
+    active: boolean
+  ): Promise<boolean>;
 
   getAccessories(): AccessoryInfo[] {
     return Array.from(this.accessories.values());
@@ -198,80 +423,91 @@ export abstract class CommandCenter {
     "command-center-runtime-state.json"
   );
 
-  onRuntimeStateLoaded(
+  public onRuntimeStateLoaded(
     callback: RuntimeStateLoadedCallback
   ): void {
     this.runtimeStateLoadedCallback = callback;
   }
 
-  async loadRuntimeState(): Promise<void> {
+  public async saveRuntimeState(): Promise<void> {
     try {
-      const content = await fs.readFile(
-        this.runtimeStateFile,
-        "utf8"
+      const state: PersistedCommandCenterState = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        blocks: Array.from(this.blocks.entries()),
+        turnouts: Array.from(this.turnouts.entries()),
+      };
+
+      await fs.mkdir(
+        path.dirname(this.runtimeStateFile),
+        {
+          recursive: true,
+        }
       );
 
+      await fs.writeFile(
+        this.runtimeStateFile,
+        JSON.stringify(state, null, 2),
+        "utf-8"
+      );
+
+      console.log(
+        `[CommandCenter] Runtime state saved: ${this.runtimeStateFile}`
+      );
+    } catch (err) {
+      console.error(
+        "[CommandCenter] Failed to save runtime state:",
+        err
+      );
+    }
+  }
+
+  public async loadRuntimeState(): Promise<void> {
+    try {
+      const raw =
+        await fs.readFile(
+          this.runtimeStateFile,
+          "utf-8"
+        );
+
       const state =
-        JSON.parse(content) as PersistedCommandCenterState;
+        JSON.parse(raw) as PersistedCommandCenterState;
+
+      if (state.version !== 1) {
+        console.warn(
+          `[CommandCenter] Unsupported runtime state version: ${state.version}`
+        );
+
+        return;
+      }
 
       this.blocks =
-        new Map(state.blocks);
+        new Map(state.blocks ?? []);
 
       this.turnouts =
-        new Map(state.turnouts);
+        new Map(state.turnouts ?? []);
+
+      console.log(
+        `[CommandCenter] Runtime state loaded: ${this.blocks.size} blocks, ${this.turnouts.size} turnouts`
+      );
 
       await this.runtimeStateLoadedCallback?.(
         this.blocks,
         this.turnouts
       );
-    } catch {
-      // No persisted runtime state yet.
+    } catch (err: any) {
+      if (err?.code === "ENOENT") {
+        console.log(
+          "[CommandCenter] No previous runtime state file found."
+        );
+
+        return;
+      }
+
+      console.error(
+        "[CommandCenter] Failed to load runtime state:",
+        err
+      );
     }
   }
-
-  async saveRuntimeState(): Promise<void> {
-    const state: PersistedCommandCenterState = {
-      version: 1,
-      savedAt: new Date().toISOString(),
-      blocks: Array.from(this.blocks.entries()),
-      turnouts: Array.from(this.turnouts.entries()),
-    };
-
-    await fs.mkdir(
-      path.dirname(this.runtimeStateFile),
-      { recursive: true }
-    );
-
-    await fs.writeFile(
-      this.runtimeStateFile,
-      JSON.stringify(state, null, 2),
-      "utf8"
-    );
-  }
-
-  abstract start(): Promise<void>;
-  abstract stop(): Promise<void>;
-  abstract setTrackPower(on: boolean): Promise<void>;
-  abstract setProgrammingPower(on: boolean): Promise<void>;
-  abstract emergencyStop(): Promise<void>;
-  abstract setLoco(
-    address: number,
-    speed: number,
-    direction: LocoState["direction"]
-  ): Promise<void>;
-  abstract getLoco(address: number): Promise<LocoState | null>;
-  abstract setLocoFunction(
-    address: number,
-    functionNumber: number,
-    active: boolean
-  ): Promise<void>;
-  abstract setTurnout(
-    address: number,
-    closed: boolean
-  ): Promise<void>;
-  abstract getTurnout(address: number): Promise<TurnoutInfo | null>;
-  abstract setAccessory(
-    address: number,
-    active: boolean
-  ): Promise<void>;
 }
