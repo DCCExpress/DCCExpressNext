@@ -39,6 +39,7 @@ import {
   getMidpoint,
   getTrackCanvasCursor,
   handleTrackCanvasKeyDown,
+  handleTrackCanvasMouseDown,
   handleTrackCanvasMouseMove,
   handleTrackCanvasWheel,
   getSelectionRect,
@@ -457,241 +458,33 @@ export default function TrackCanvas({
     };
 
     const handleMouseDown = (ev: MouseEvent) => {
-      const currentLayout = layoutRef.current;
-      const currentTool = toolRef.current;
-      const currentEditMode = editModeRef.current;
-      const currentTurnoutSelection = turnoutSelectionModeRef.current;
-      const currentElement = selectedElementRef.current;
-      //if (ev.button !== 0 && ev.button !== 1) return;
-
-      // Canvas mozgatása
-      if (ev.button === 2) {
-        ev.preventDefault();
-        if (signalAspectPopoverRef.current.opened) {
-          closeSignalAspectPopover();
-        }
-
-        panRef.current.isPanning = true;
-        panRef.current.lastX = ev.clientX;
-        panRef.current.lastY = ev.clientY;
-        canvas.style.cursor = "grabbing";
-        return;
-      }
-
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = ev.clientX - rect.left;
-      const mouseY = ev.clientY - rect.top;
-
-      const grid = screenToGrid(
-        mouseX,
-        mouseY,
-        viewRef.current,
-        currentLayout.gridSize
-      );
-
-      const hitElement = currentLayout.getElement(grid.x, grid.y);
-
-
-      if (!editModeRef.current && hitElement?.type === ELEMENT_TYPES.BUTTON_AUDIO) {
-        const audioButton = hitElement as AudioButtonElementView;
-        audioButton.press(() => {
-          invalidate();
-        });
-        return;
-      }
-
-      if (currentEditMode) {
-        if (currentTurnoutSelection) {
-          if (hitElement) {
-            if (currentElement instanceof RouteButtonElementView) {
-              if (isTurnoutElement(hitElement)) {
-                const rb = currentElement as RouteButtonElementView;
-                const closed = hitElement.turnoutClosed;
-                rb.addOrUpdateTurnout(hitElement.id, closed);
-                setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElementView);
-                onInvalidate();
-              }
-            } else {
-              alert("Nincs aktív RouteButton")
-            }
-            return;
-          }
-          return;
-        }
-      }
-
-      if (!editModeRef.current) {
-        if (hitElement instanceof BlockElementView) {
-          setSelectedBlock(hitElement);
-          setLocoPickerOpen(true);
-        }
-
-
-        if (hitElement instanceof TrackSignalElementView) {
-          if (signalAspectPopoverRef.current.opened) {
-            reopenSignalAspectPopover(hitElement, ev.clientX, ev.clientY);
-          } else {
-            openSignalAspectPopover(hitElement, ev.clientX, ev.clientY);
-          }
-
-          return;
-        }
-      }
-      if (signalAspectPopoverRef.current.opened) {
-        closeSignalAspectPopover();
-      }
-
-      // A klikkelést lehet csak Control módban kellene engedélyezni!
-      // if (toolRef.current.mode == "cursor" && hitElement && !editModeRef.current) {
-      //   if (hitElement instanceof ClickableBaseElementView) {
-      //     if (hitElement instanceof RouteButtonElementView) {
-      //       const rb = hitElement as RouteButtonElementView;
-      //       const elems = currentLayout.getAllElements();
-
-      //       //setBusy?.(true, "Route is being set...");
-      //       executeRoute(rb)
-
-      //     } else {
-      //       const elem = hitElement as ClickableBaseElementView
-      //       elem.mouseDown(ev);
-      //     }
-      //   }
-      // }
-      if (toolRef.current.mode === "cursor" && !editModeRef.current) {
-        if (handleClickableDown(hitElement, ev)) {
-          return;
-        }
-      }
-
-      if (!currentEditMode) return;
-
-      if (currentTool.mode === "delete") {
-        const elem = currentLayout.getElement(grid.x, grid.y);
-        if (elem) {
-          onBeforeLayoutChange?.();
-          currentLayout.removeElement(elem);
-          onLayoutChange((prev) => prev);
-          invalidate();
-        }
-        return;
-      }
-
-      if (currentTool.mode === "draw") {
-        const cursor = currentCursorRef.current;
-        if (!cursor) return;
-
-        const exists = currentLayout.getLayeredElement(cursor, grid.x, grid.y);
-        if (exists) {
-          showErrorMessage(
-            t("common.error"),
-            t("editor.messages.alreadyHasElement")
-          );
-          return;
-        }
-
-        onBeforeLayoutChange?.();
-
-        const newElement = cursor.clone();
-        newElement.id = generateId();
-        newElement.x = grid.x;
-        newElement.y = grid.y;
-        newElement.selected = false;
-
-        switch (newElement.layerName) {
-          case "blocks":
-            currentLayout.blocks.elements.push(newElement);
-            break;
-          case "signals":
-            currentLayout.signals.elements.push(newElement);
-            break;
-          case "sensors":
-            currentLayout.sensors.elements.push(newElement);
-            break;
-          case "track":
-            currentLayout.track.elements.push(newElement);
-            break;
-          case "buildings":
-            currentLayout.buildings.elements.push(newElement);
-            break;
-        }
-
-        onLayoutChange((prev) => prev);
-        invalidate();
-        return;
-      }
-
-      if (hitElement) {
-        if (ev.ctrlKey) {
-          hitElement.selected = !hitElement.selected;
-
-          const allSelected = getAllLayoutElements(currentLayout).filter(
-            (el) => el.selected
-          );
-
-          if (allSelected.length === 1) {
-            onSelectedElementChange(allSelected[0]!);
-          } else {
-            onSelectedElementChange(null);
-          }
-
-          onLayoutChange((prev) => prev);
-          invalidate();
-          return;
-        }
-
-        const wasSelected = hitElement.selected;
-
-        if (!wasSelected) {
-          currentLayout.unselectAll();
-          hitElement.selected = true;
-          onSelectedElementChange(hitElement);
-        }
-
-        const dragged = getAllLayoutElements(currentLayout)
-          .filter((el) => el.selected)
-          .map((el) => ({
-            id: el.id,
-            startX: el.x,
-            startY: el.y,
-          }));
-
-        onBeforeLayoutChange?.();
-
-        dragRef.current.isDraggingElement = true;
-        dragRef.current.elementId = hitElement.id;
-        dragRef.current.startMouseGridX = grid.x;
-        dragRef.current.startMouseGridY = grid.y;
-        dragRef.current.startElementX = hitElement.x;
-        dragRef.current.startElementY = hitElement.y;
-        dragRef.current.draggedElements = dragged;
-        canvas.style.cursor = "move";
-        invalidate();
-        return;
-      }
-
-      if (currentTool.mode === "cursor") {
-        if (!ev.ctrlKey) {
-          currentLayout.unselectAll();
-          onSelectedElementChange(null);
-        }
-
-        selectionRef.current.isSelecting = true;
-        selectionRef.current.additive = ev.ctrlKey;
-        selectionRef.current.startGridX = grid.x;
-        selectionRef.current.startGridY = grid.y;
-        selectionRef.current.endGridX = grid.x;
-        selectionRef.current.endGridY = grid.y;
-        canvas.style.cursor = "crosshair";
-        invalidate();
-        return;
-      }
-
-      if (!ev.ctrlKey) {
-        currentLayout.unselectAll();
-        onSelectedElementChange(null);
-        onLayoutChange((prev) => prev);
-        invalidate();
-      }
+      handleTrackCanvasMouseDown(ev, {
+        canvas,
+        layoutRef,
+        toolRef,
+        viewRef,
+        editModeRef,
+        turnoutSelectionModeRef,
+        selectedElementRef,
+        currentCursorRef,
+        signalAspectPopoverRef,
+        panRef,
+        dragRef,
+        selectionRef,
+        setSelectedBlock,
+        setLocoPickerOpen,
+        setRouteTurnoutsMarked,
+        onInvalidate,
+        onBeforeLayoutChange,
+        onLayoutChange,
+        onSelectedElementChange,
+        openSignalAspectPopover,
+        reopenSignalAspectPopover,
+        closeSignalAspectPopover,
+        handleClickableDown,
+        invalidate,
+        t,
+      });
     };
 
     const handleMouseMove = (ev: MouseEvent) => {
