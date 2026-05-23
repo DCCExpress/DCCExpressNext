@@ -20,31 +20,59 @@ function mustReplace(search, replacement) {
   source = source.replace(search, replacement);
 }
 
-function findMatchingJsxTagEnd(input, startIndex, tagName) {
-  const openTag = `<${tagName}`;
-  const closeTag = `</${tagName}>`;
-  let depth = 0;
-  let index = startIndex;
+function findSelfClosingJsxEnd(input, startIndex) {
+  let inString = null;
+  let escaped = false;
+  let inJsExpression = false;
+  let braceDepth = 0;
 
-  while (index < input.length) {
-    const nextOpen = input.indexOf(openTag, index);
-    const nextClose = input.indexOf(closeTag, index);
+  for (let index = startIndex; index < input.length; index++) {
+    const char = input[index];
+    const next = input[index + 1];
 
-    if (nextClose === -1) {
-      return -1;
-    }
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
 
-    if (nextOpen !== -1 && nextOpen < nextClose) {
-      depth++;
-      index = nextOpen + openTag.length;
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (char === inString) {
+        inString = null;
+      }
+
       continue;
     }
 
-    depth--;
-    index = nextClose + closeTag.length;
+    if (char === '"' || char === "'" || char === "`") {
+      inString = char;
+      continue;
+    }
 
-    if (depth === 0) {
-      return index;
+    if (char === "{") {
+      inJsExpression = true;
+      braceDepth++;
+      continue;
+    }
+
+    if (char === "}") {
+      if (braceDepth > 0) {
+        braceDepth--;
+      }
+
+      if (braceDepth === 0) {
+        inJsExpression = false;
+      }
+
+      continue;
+    }
+
+    if (!inJsExpression && char === "/" && next === ">") {
+      return index + 2;
     }
   }
 
@@ -72,14 +100,13 @@ if (locoPickerStart === -1) {
   throw new Error("Could not locate LocoPicker JSX block.");
 }
 
-const locoPickerEnd = findMatchingJsxTagEnd(
+const locoPickerEnd = findSelfClosingJsxEnd(
   source,
-  locoPickerStart,
-  "LocoPicker"
+  locoPickerStart
 );
 
 if (locoPickerEnd === -1) {
-  throw new Error("Could not locate end of LocoPicker JSX block.");
+  throw new Error("Could not locate end of self-closing LocoPicker JSX block.");
 }
 
 source =
