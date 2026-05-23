@@ -27,6 +27,10 @@ import type {
 } from "./TrackCanvas.types";
 
 import {
+  getCenteredElementGridAnchor,
+} from "./trackCanvasGeometry";
+
+import {
   normalizeSelectionRect,
 } from "./trackCanvasSelection";
 
@@ -132,8 +136,13 @@ export function drawScene(
   );
 
   if (currentCursor) {
-    currentCursor.x = mouseGrid.x;
-    currentCursor.y = mouseGrid.y;
+    const cursorAnchor = getCenteredElementGridAnchor(
+      currentCursor,
+      mouseGrid
+    );
+
+    currentCursor.x = cursorAnchor.x;
+    currentCursor.y = cursorAnchor.y;
 
     currentCursor.draw(ctx, {
       showOccupancySensorAddress: false,
