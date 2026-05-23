@@ -40,7 +40,7 @@ export type RouteBusySetter = (
 export type TrackCanvasRouteActionContext = {
   t: TFunction;
   commandCenterLocked: boolean;
-  setBusy?: RouteBusySetter;
+  setBusy?: RouteBusySetter | undefined;
 };
 
 export async function executeRouteButton(
