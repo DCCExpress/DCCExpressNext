@@ -55,7 +55,7 @@ function isValidCommandCenterType(value: unknown): value is CommandCenterType {
   return value === "z21" || value === "dcc-ex-tcp" || value === "dcc-ex-serial" || value === "simulator";
 }
 
-function normalizeCommandCenter(input: Partial<CommandCenterConfig>): CommandCenterConfig {
+export function normalizeCommandCenter(input: Partial<CommandCenterConfig>): CommandCenterConfig {
   return {
     name: typeof input.name === "string" ? input.name : "",
     type: isValidCommandCenterType(input.type) ? input.type : "simulator",
@@ -88,6 +88,25 @@ function normalizeCommandCenter(input: Partial<CommandCenterConfig>): CommandCen
   };
 }
 
+export async function saveCommandCenterConfig(
+  input: Partial<CommandCenterConfig>
+): Promise<CommandCenterConfig> {
+  const item = normalizeCommandCenter(input);
+
+  if (!item.name.trim()) {
+    throw new Error("A név megadása kötelező.");
+  }
+
+  await writeCommandCenter(item);
+  CurrentCommandCenterConfig = item;
+
+  if (cbCommandCenterConfigLoaded) {
+    cbCommandCenterConfigLoaded(item);
+  }
+
+  return item;
+}
+
 commandCenterRoutes.get("/", async (_req, res) => {
   try {
     const item = await readCommandCenter();
@@ -113,21 +132,7 @@ commandCenterRoutes.put("/", async (req, res) => {
       return;
     }
 
-    const item = normalizeCommandCenter(body);
-
-    if (!item.name.trim()) {
-      res.status(400).json({
-        success: false,
-        message: "A név megadása kötelező.",
-      });
-      return;
-    }
-
-    await writeCommandCenter(item);
-
-    if (cbCommandCenterConfigLoaded) {
-      cbCommandCenterConfigLoaded(item);
-    }
+    const item = await saveCommandCenterConfig(body);
 
     res.json({
       success: true,
@@ -137,7 +142,9 @@ commandCenterRoutes.put("/", async (req, res) => {
     console.error("PUT /api/command-centers error:", error);
     res.status(500).json({
       success: false,
-      message: "Nem sikerült elmenteni a parancsközpontot.",
+      message: error instanceof Error
+        ? error.message
+        : "Nem sikerült elmenteni a parancsközpontot.",
     });
   }
 });
