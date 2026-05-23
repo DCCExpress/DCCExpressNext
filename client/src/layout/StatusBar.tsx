@@ -187,24 +187,7 @@ export default function StatusBar({
     wsApi.getTaskRuntimeState();
   };
   const handleStartTasks = (): void => {
-    if (!taskSnapshot) {
-      return;
-    }
-
-    for (const task of taskSnapshot.tasks) {
-      if (
-        task.status === "queued" ||
-        task.status === "aborted" ||
-        task.status === "completed"
-      ) {
-        wsApi.startTask(task.id);
-        continue;
-      }
-
-      if (task.status === "paused") {
-        wsApi.resumeTask(task.id);
-      }
-    }
+    wsApi.startAllTasks();
   };;
   const handleCompleteTasks = (): void => {
     wsApi.finishAllTasks();
@@ -501,32 +484,17 @@ export default function StatusBar({
                     <Table.Th>Status</Table.Th>
                     <Table.Th>From</Table.Th>
                     <Table.Th>To</Table.Th>
-                    <Table.Th>Speed</Table.Th>
-                    <Table.Th>Phase</Table.Th>
+                    <Table.Th>Loco</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
-
                 <Table.Tbody>
                   {taskSnapshot.tasks.map(task => (
                     <Table.Tr key={task.id}>
-                      <Table.Td>
-                        {task.name}
-                      </Table.Td>
-                      <Table.Td>
-                        {task.status}
-                      </Table.Td>
-                      <Table.Td>
-                        {task.transition.fromBlock.name}
-                      </Table.Td>
-                      <Table.Td>
-                        {task.transition.toBlock.name}
-                      </Table.Td>
-                      <Table.Td>
-                        {task.targetSpeed}
-                      </Table.Td>
-                      <Table.Td>
-                        {task.runtime.simulation.phase}
-                      </Table.Td>
+                      <Table.Td>{task.name}</Table.Td>
+                      <Table.Td>{task.status}</Table.Td>
+                      <Table.Td>{task.transition.fromBlock.name}</Table.Td>
+                      <Table.Td>{task.transition.toBlock.name}</Table.Td>
+                      <Table.Td>{task.runtime.loco?.name ?? "-"}</Table.Td>
                     </Table.Tr>
                   ))}
                 </Table.Tbody>
@@ -539,34 +507,32 @@ export default function StatusBar({
   );
 }
 
-function getMemoryColor(
-  memoryUsedMb: number | null
-): string {
-  if (memoryUsedMb === null) {
+function getMemoryColor(value: number | null): string {
+  if (value === null) {
     return "gray";
   }
 
-  if (memoryUsedMb > 1000) {
+  if (value > 1000) {
     return "red";
   }
 
-  if (memoryUsedMb > 600) {
+  if (value > 500) {
     return "orange";
   }
 
   return "green";
 }
 
-function getFpsColor(fps: number | null): string {
-  if (fps === null) {
+function getFpsColor(value: number | null): string {
+  if (value === null) {
     return "gray";
   }
 
-  if (fps < 20) {
+  if (value < 20) {
     return "red";
   }
 
-  if (fps < 40) {
+  if (value < 45) {
     return "orange";
   }
 
