@@ -25,6 +25,37 @@ type ResponsePayload<T extends ServerWsMessageType> =
     message?: string;
   };
 
+type RequestWsCommandOptions = {
+  timeoutMs?: number;
+};
+
+function isMatchingRequestId(
+  data: unknown,
+  requestId: string
+): boolean {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "requestId" in data &&
+    data.requestId === requestId
+  );
+}
+
+function wrapWsRequestError(
+  error: unknown,
+  clientType: ClientWsMessageType,
+  serverType: ServerWsMessageType
+): Error {
+  const message =
+    error instanceof Error
+      ? error.message
+      : String(error);
+
+  return new Error(
+    `WebSocket command failed (${String(clientType)} -> ${String(serverType)}): ${message}`
+  );
+}
+
 export async function requestWsCommand<
   TClientType extends ClientWsMessageType,
   TServerType extends ServerWsMessageType
@@ -32,24 +63,34 @@ export async function requestWsCommand<
   clientType: TClientType,
   payload: RequestPayload<TClientType>,
   serverType: TServerType,
-  fallbackError: string
+  fallbackError: string,
+  options: RequestWsCommandOptions = {}
 ): Promise<ResponsePayload<TServerType>> {
   const requestId = generateId();
 
-  const response = await wsApi.request(
-    clientType,
-    {
-      requestId,
-      ...payload,
-    } as ClientWsPayloadMap[TClientType],
-    serverType,
-    data => (
-      typeof data === "object" &&
-      data !== null &&
-      "requestId" in data &&
-      data.requestId === requestId
-    )
-  ) as ResponsePayload<TServerType>;
+  let response: ResponsePayload<TServerType>;
+
+  try {
+    response = await wsApi.request(
+      clientType,
+      {
+        requestId,
+        ...payload,
+      } as ClientWsPayloadMap[TClientType],
+      serverType,
+      data => isMatchingRequestId(
+        data,
+        requestId
+      ),
+      options.timeoutMs
+    ) as ResponsePayload<TServerType>;
+  } catch (error) {
+    throw wrapWsRequestError(
+      error,
+      clientType,
+      serverType
+    );
+  }
 
   if (!response.ok) {
     throw new Error(
