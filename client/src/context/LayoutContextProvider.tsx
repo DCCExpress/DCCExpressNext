@@ -6,7 +6,7 @@ import {
 } from "react";
 
 import { LayoutView } from "../models/editor/core/LayoutView";
-import { getLayout, saveLayout as saveLayoutApi } from "../api/http";
+import { getLayout, saveLayout as saveLayoutApi } from "../api/domainApi";
 
 type LayoutContextValue = {
   layout: LayoutView;
