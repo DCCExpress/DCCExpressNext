@@ -41,6 +41,7 @@ import {
   getSelectionRect,
   loadSavedViewState,
   openTrackCanvasSignalAspectPopover,
+  registerTrackCanvasEventListeners,
   saveViewState,
   screenToGrid,
   type CanvasSize,
@@ -1305,33 +1306,21 @@ export default function TrackCanvas({
     };
     // #endregion
 
-    canvas.addEventListener("wheel", handleWheel, { passive: false });
-    canvas.addEventListener("mousedown", handleMouseDown);
-    canvas.addEventListener("mouseleave", handleMouseLeave);
-    canvas.addEventListener("contextmenu", handleContextMenu);
-
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseup", handleMouseUp);
-
-    canvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
-    canvas.addEventListener("pointermove", handlePointerMove, { passive: false });
-    canvas.addEventListener("pointerup", handlePointerUp);
-    canvas.addEventListener("pointercancel", handlePointerCancel);
-
-    return () => {
-      canvas.removeEventListener("wheel", handleWheel);
-      canvas.removeEventListener("mousedown", handleMouseDown);
-      canvas.removeEventListener("mouseleave", handleMouseLeave);
-      canvas.removeEventListener("contextmenu", handleContextMenu);
-
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mouseup", handleMouseUp);
-
-      canvas.removeEventListener("pointerdown", handlePointerDown);
-      canvas.removeEventListener("pointermove", handlePointerMove);
-      canvas.removeEventListener("pointerup", handlePointerUp);
-      canvas.removeEventListener("pointercancel", handlePointerCancel);
-    };
+    return registerTrackCanvasEventListeners(
+      canvas,
+      {
+        handleWheel,
+        handleMouseDown,
+        handleMouseLeave,
+        handleContextMenu,
+        handleMouseMove,
+        handleMouseUp,
+        handlePointerDown,
+        handlePointerMove,
+        handlePointerUp,
+        handlePointerCancel,
+      }
+    );
     // }, [onLayoutChange, tool, onBeforeLayoutChange]);
   }, []);
 
