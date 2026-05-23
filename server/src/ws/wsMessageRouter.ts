@@ -13,6 +13,10 @@ import {
 } from "./handlers/wsLayoutMessageHandlers.js";
 
 import {
+  handleLocosMessage,
+} from "./handlers/wsLocosMessageHandlers.js";
+
+import {
   handleLockMessage,
 } from "./handlers/wsLockMessageHandlers.js";
 
@@ -46,6 +50,7 @@ import {
 
 const handlers = [
   handleLayoutMessage,
+  handleLocosMessage,
   handleRuntimeVariableMessage,
   handleEditorEditModeMessage,
   handleLockMessage,
