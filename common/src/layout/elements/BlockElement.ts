@@ -33,9 +33,8 @@ export class BlockElement extends TrackElement {
   }
 
   /**
-   * Domain oldalon is szükséges:
-   * a szerver route graph ebből állapítja meg,
-   * melyik fizikai sín elem esik a blokk vizuális területére.
+   * A blokk vizuálisan 3x1 overlay, de az x/y továbbra is
+   * a blokkhoz tartozó középső fizikai síncella.
    */
   override getBounds(): IRect {
     if (this.rotation === 0 || this.rotation === 180) {
@@ -52,6 +51,22 @@ export class BlockElement extends TrackElement {
       y: this.y - 1,
       width: this.h,
       height: this.w,
+    };
+  }
+
+  /**
+   * Ütközéshez nem a teljes vizuális overlayt foglaljuk,
+   * hanem csak a blokk középső síncelláját.
+   *
+   * Így a blokk kattintható/kijelölhető a teljes rajzolt méretén,
+   * de a szerkesztőben nem tiltja túl agresszíven a szomszédos elemeket.
+   */
+  override getCollisionBounds(): IRect {
+    return {
+      x: this.x,
+      y: this.y,
+      width: 1,
+      height: 1,
     };
   }
 
