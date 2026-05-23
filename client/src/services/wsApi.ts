@@ -6,6 +6,8 @@ import type {
   Direction,
   ReservationOwnerType,
   ScriptRunSource,
+  ServerWsMessageType,
+  ServerWsPayloadMap,
   TypedClientWsMessage,
 } from "../../../common/src/types";
 
@@ -44,6 +46,58 @@ class WebSocketApi {
     };
 
     return wsClient.send(message);
+  }
+
+  request<
+    TClientType extends ClientWsMessageType,
+    TServerType extends ServerWsMessageType
+  >(
+    clientType: TClientType,
+    data: ClientWsPayloadMap[TClientType],
+    responseType: TServerType,
+    matches: (
+      data: ServerWsPayloadMap[TServerType]
+    ) => boolean,
+    timeoutMs = 10000
+  ): Promise<ServerWsPayloadMap[TServerType]> {
+    return new Promise((resolve, reject) => {
+      let timeoutHandle: number | null = null;
+
+      const unsubscribe = wsClient.on(responseType, responseData => {
+        if (!matches(responseData)) {
+          return;
+        }
+
+        if (timeoutHandle !== null) {
+          window.clearTimeout(timeoutHandle);
+        }
+
+        unsubscribe();
+        resolve(responseData);
+      });
+
+      timeoutHandle = window.setTimeout(() => {
+        unsubscribe();
+        reject(
+          new Error(
+            `WebSocket request timed out: ${String(clientType)}`
+          )
+        );
+      }, timeoutMs);
+
+      const sent = this.send(clientType, data);
+
+      if (!sent) {
+        if (timeoutHandle !== null) {
+          window.clearTimeout(timeoutHandle);
+        }
+
+        unsubscribe();
+        reject(
+          new Error("WebSocket is not connected.")
+        );
+      }
+    });
   }
 
   setTrackPower(on: boolean): boolean {
@@ -298,7 +352,7 @@ class WebSocketApi {
   abortTask(
     taskIdOrName: string
   ): boolean {
-    return this.send("abortTask", {
+    return this.send("finishTask", {
       taskIdOrName,
     });
   }
