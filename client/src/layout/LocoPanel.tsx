@@ -60,6 +60,21 @@ export default function LocoPanel({
   const { powerInfo, alive } =
     useCommandCenter();
 
+  const clearRuntimeState = useCallback(() => {
+    setSpeed(0);
+    setDirection("forward");
+    setActiveFunctions({});
+    setReservation(null);
+  }, []);
+
+  const requestCurrentLocoState = useCallback(() => {
+    const address = currentAddressRef.current;
+
+    if (address !== null) {
+      wsApi.getLoco(address);
+    }
+  }, []);
+
   const selectLocoId = useCallback(
     (id: string) => {
       setSelectedLocoId(id);
@@ -116,12 +131,35 @@ export default function LocoPanel({
     currentAddressRef.current =
       currentLoco?.address ?? null;
 
-    setReservation(null);
+    clearRuntimeState();
 
     if (currentLoco) {
       wsApi.getLoco(currentLoco.address);
     }
-  }, [currentLoco]);
+  }, [currentLoco, clearRuntimeState]);
+
+  useEffect(() => {
+    const unsubscribe =
+      wsClient.subscribeStatus(status => {
+        if (status === "connected") {
+          requestCurrentLocoState();
+          return;
+        }
+
+        if (
+          status === "disconnected" ||
+          status === "reconnecting" ||
+          status === "error"
+        ) {
+          clearRuntimeState();
+        }
+      });
+
+    return unsubscribe;
+  }, [
+    clearRuntimeState,
+    requestCurrentLocoState,
+  ]);
 
   useEffect(() => {
     const unsubscribe =
@@ -178,10 +216,7 @@ export default function LocoPanel({
   ) => {
     selectLocoId(loco.id);
     setPickerOpened(false);
-    setSpeed(0);
-    setDirection("forward");
-    setActiveFunctions({});
-    setReservation(null);
+    clearRuntimeState();
   };
 
   const setLocoSpeed = (
