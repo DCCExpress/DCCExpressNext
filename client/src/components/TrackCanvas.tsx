@@ -1,6 +1,6 @@
 import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";
 import { useEffect, useRef, useState } from "react";
-import { generateId, showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
+import { generateId, showErrorMessage, showWarningMessage } from "../helpers";
 import { BaseElementView } from "../models/editor/core/BaseElementView";
 import { isTurnoutElement } from "../models/editor/core/LayoutView";
 import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
@@ -23,8 +23,6 @@ import "../styles/TrackCanvas.css";
 import LocoPicker from "./loco/LocoPicker";
 
 import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
-import { routeGraphStore } from "../services/routeGraphStore";
-
 import { useTranslation } from "react-i18next";
 import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
 import {
@@ -33,6 +31,8 @@ import {
   createCursorElement,
   createSignalAspectPreviews,
   drawScene,
+  executeExtendedRouteButton,
+  executeRouteButton,
   fitLayoutToView,
   getAllLayoutElements,
   getDistance,
@@ -438,130 +438,6 @@ export default function TrackCanvas({
         openSignalAspectPopover(signal, clientX, clientY);
       }, 100);
     };
-
-
-    const executeRoute = async function (rb: RouteButtonElementView) {
-
-      if (commandCenterRef.current.locked) {
-        showWarningMessage(
-          t("common.error"),
-          t("routesPanel.commandCenterBusy")
-        );
-        return;
-      }
-
-      const elems = layoutRef.current.getAllElements();
-      wsApi.routeLock();
-      setBusy?.(true, t("routesPanel.routeIsBeingSet"));
-      await sleep(1000);
-      try {
-        for (const ri of rb.routeTurnouts) {
-          const t = elems.find(
-            elem => ri.turnoutId === elem.id
-          );
-
-          if (isTurnoutElement(t)) {
-            wsApi.setTurnout(
-              t.turnoutAddress,
-              ri.closed // === t.turnoutClosedValue
-            );
-
-            await sleep(1000);
-          }
-        }
-      } finally {
-        wsApi.routeUnlock();
-        setBusy?.(false);
-      }
-    }
-
-
-    const executeExtendedRoute = async function (
-      rb: ExtendedRouteButtonElementView
-    ) {
-      if (!rb.fromBlockId || !rb.toBlockId) {
-        showWarningMessage(
-          t("common.error"),
-          t("routesPanel.automaticRouteMissingBlocks")
-        );
-        return;
-      }
-
-      try {
-        const graph = await routeGraphStore.ensureLoaded();
-
-        if (!graph) {
-          showWarningMessage(
-            t("common.error"),
-            t("routesPanel.noServerGraph")
-          );
-          return;
-        }
-
-        const fromBlock = graph.findBlockById(rb.fromBlockId);
-        const toBlock = graph.findBlockById(rb.toBlockId);
-
-        if (!fromBlock || !toBlock) {
-          showWarningMessage(
-            t("common.error"),
-            t("routesPanel.configuredBlocksMissing")
-          );
-          return;
-        }
-
-        // =====================================
-        // AKTÍV ROUTE GOMB -> FOGLALÁS ELENGEDÉSE
-        // =====================================
-        if (rb.active) {
-          wsApi.releaseRouteReservation(
-            fromBlock.name,
-            toBlock.name
-          );
-
-          showOkMessage(
-            t("routesPanel.releaseRequest"),
-            t("routesPanel.releaseRequested", {
-              from: fromBlock.label,
-              to: toBlock.label,
-            })
-          );
-
-          return;
-        }
-
-        // =====================================
-        // INAKTÍV ROUTE GOMB -> ÚTVONAL FOGLALÁSA
-        // =====================================
-        if (commandCenterRef.current.locked) {
-          showWarningMessage(
-            t("common.error"),
-            t("routesPanel.commandCenterBusy")
-          );
-          return;
-        }
-
-        wsApi.reserveRoute(
-          fromBlock.name,
-          toBlock.name
-        );
-
-        showOkMessage(
-          t("routesPanel.routeRequest"),
-          t("routesPanel.reservationRequested", {
-            from: fromBlock.label,
-            to: toBlock.label,
-          })
-        );
-      } catch (error) {
-        showErrorMessage(
-          t("common.error"),
-          error instanceof Error
-            ? error.message
-            : t("routesPanel.automaticRouteFailed")
-        );
-      }
-    };
-
     const handleClickableDown = (
       hitElement: BaseElementView | null,
       ev: MouseEvent | PointerEvent
@@ -575,12 +451,27 @@ export default function TrackCanvas({
       }
 
       if (hitElement instanceof RouteButtonElementView) {
-        void executeRoute(hitElement);
+        void executeRouteButton(
+          hitElement,
+          layoutRef.current,
+          {
+            t,
+            commandCenterLocked: commandCenterRef.current.locked,
+            setBusy,
+          }
+        );
         return true;
       }
 
       if (hitElement instanceof ExtendedRouteButtonElementView) {
-        void executeExtendedRoute(hitElement);
+        void executeExtendedRouteButton(
+          hitElement,
+          {
+            t,
+            commandCenterLocked: commandCenterRef.current.locked,
+            setBusy,
+          }
+        );
         return true;
       }
 
