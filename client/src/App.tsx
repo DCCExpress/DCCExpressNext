@@ -17,16 +17,12 @@ export default function App() {
   const [page, setPage] = useState<AppPage>("home");
 
   useEffect(() => {
-  wsApi.connect(getDefaultWsUrl());
-    
+    wsApi.connect(getDefaultWsUrl());
 
     return () => {
       wsApi.disconnect();
     };
   }, []);
-
-
-
 
   return (
     <MantineProvider>
@@ -40,9 +36,9 @@ export default function App() {
       )}
 
       {page === "layout" && (
-          <LayoutContextProvider>
-            <LayoutPage onGoHome={() => setPage("home")} />
-          </LayoutContextProvider>
+        <LayoutContextProvider>
+          <LayoutPage onGoHome={() => setPage("home")} />
+        </LayoutContextProvider>
       )}
 
       {page === "programmer" && (
