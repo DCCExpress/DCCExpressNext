@@ -640,6 +640,35 @@ class TaskRuntimeStore {
     return this.createSuccessResult();
   }
 
+  private resolveStartBlockState(task: TrainTask): BlockState | null {
+    const blockIds = [
+      task.fromBlockId,
+      task.transition.fromBlock.id,
+      task.transition.fromBlock.name,
+      task.transition.fromBlock.label,
+      task.transition.fromBlock.trackName,
+    ];
+
+    const uniqueBlockIds = Array.from(
+      new Set(
+        blockIds
+          .map(blockId => blockId?.trim())
+          .filter((blockId): blockId is string => Boolean(blockId))
+      )
+    );
+
+    for (const blockId of uniqueBlockIds) {
+      const blockState =
+        this.getBlockState?.(blockId) ?? null;
+
+      if (blockState?.locoId) {
+        return blockState;
+      }
+    }
+
+    return null;
+  }
+
   private async tryResolveTaskLoco(
     taskId: string
   ): Promise<TaskManagerActionResult> {
@@ -654,7 +683,7 @@ class TaskRuntimeStore {
     }
 
     const blockState =
-      this.getBlockState?.(task.fromBlockId) ?? null;
+      this.resolveStartBlockState(task);
 
     const locoId =
       blockState?.locoId ?? null;
@@ -666,7 +695,7 @@ class TaskRuntimeStore {
           taskId: task.id,
           taskName: task.name,
           blockId: task.fromBlockId,
-          message: "No loco assigned to task start block.",
+          message: `No loco assigned to task start block (${task.transition.fromBlock.name}).`,
         },
       });
 
