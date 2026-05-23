@@ -7,6 +7,7 @@ import type {
   CommandCenterConfigCommandAction,
   Direction,
   FastClockCommandAction,
+  FileCommandAction,
   LayoutCommandAction,
   LocosCommandAction,
   ReservationOwnerType,
@@ -119,6 +120,15 @@ function isFastClockCommandAction(
     value === "pause" ||
     value === "reset" ||
     value === "setSpeed"
+  );
+}
+
+function isFileCommandAction(value: unknown): value is FileCommandAction {
+  return (
+    value === "readText" ||
+    value === "writeText" ||
+    value === "readJson" ||
+    value === "writeJson"
   );
 }
 
@@ -428,6 +438,28 @@ function parsePayload<TType extends ClientWsMessageType>(
           requestId: data.requestId,
           action: data.action,
           ...(typeof data.speed === "number" ? { speed: data.speed } : {}),
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
+    case "fileCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isFileCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+      if (typeof data.fileName !== "string" || data.fileName.trim().length === 0) return invalidPayload(type, "fileName must be string.");
+
+      if (data.action === "writeText" && typeof data.content !== "string") {
+        return invalidPayload(type, "content must be string for writeText.");
+      }
+
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          fileName: data.fileName,
+          ...(typeof data.content === "string" ? { content: data.content } : {}),
+          ...(data.data !== undefined ? { data: data.data } : {}),
         } as ClientWsPayloadMap[TType],
       };
     }
