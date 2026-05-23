@@ -30,6 +30,15 @@ import {
   saveScriptWs,
 } from "./scriptWsApi";
 
+import {
+  addTrainTaskWs,
+  deleteTrainTaskWs,
+  getTaskManagerSnapshotWs,
+  reloadTrainTasksWs,
+  saveTrainTasksWs,
+  updateTrainTaskWs,
+} from "./taskManagerWsApi";
+
 function serializeForWs<T>(value: unknown): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -89,89 +98,34 @@ async function readTaskResponse<T>(
 }
 
 export async function getTaskManagerSnapshot(): Promise<TaskManagerSnapshot> {
-  const res = await fetch("/api/tasks");
-
-  if (!res.ok) {
-    throw new Error("Failed to load tasks");
-  }
-
-  return await res.json();
+  return getTaskManagerSnapshotWs();
 }
 
 export async function addTrainTask(
   input: TrainTaskCreateInput
 ): Promise<AddTrainTaskResult> {
-  const res = await fetch("/api/tasks", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(input),
-  });
-
-  return readTaskResponse<AddTrainTaskResult>(
-    res,
-    "Failed to add task"
-  );
+  return addTrainTaskWs(input);
 }
 
 export async function updateTrainTask(
   taskId: string,
   input: TrainTaskCreateInput
 ): Promise<TaskManagerActionResult> {
-  const res = await fetch(
-    `/api/tasks/${encodeURIComponent(taskId)}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(input),
-    }
-  );
-
-  return readTaskResponse<TaskManagerActionResult>(
-    res,
-    "Failed to update task"
-  );
+  return updateTrainTaskWs(taskId, input);
 }
 
 export async function deleteTrainTask(
   taskId: string
 ): Promise<TaskManagerActionResult> {
-  const res = await fetch(
-    `/api/tasks/${encodeURIComponent(taskId)}`,
-    {
-      method: "DELETE",
-    }
-  );
-
-  return readTaskResponse<TaskManagerActionResult>(
-    res,
-    "Failed to delete task"
-  );
+  return deleteTrainTaskWs(taskId);
 }
 
 export async function saveTrainTasks(): Promise<TaskManagerActionResult> {
-  const res = await fetch("/api/tasks/save", {
-    method: "POST",
-  });
-
-  return readTaskResponse<TaskManagerActionResult>(
-    res,
-    "Failed to save tasks"
-  );
+  return saveTrainTasksWs();
 }
 
 export async function reloadTrainTasks(): Promise<LoadTrainTasksResult> {
-  const res = await fetch("/api/tasks/reload", {
-    method: "POST",
-  });
-
-  return readTaskResponse<LoadTrainTasksResult>(
-    res,
-    "Failed to reload tasks"
-  );
+  return reloadTrainTasksWs();
 }
 
 async function runTaskAction(
