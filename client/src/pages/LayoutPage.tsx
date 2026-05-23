@@ -115,6 +115,8 @@ export default function LayoutPage({
     setLocoPanelCollapsed,
     propertyPanelCollapsed,
     setPropertyPanelCollapsed,
+    rightPanelMode,
+    setRightPanelMode,
   } = useLayoutPageUiState();
 
   const [
@@ -210,11 +212,6 @@ export default function LayoutPage({
   const handleUpdateSelectedElement = (
     updated: BaseElementView | null
   ): void => {
-    /**
-     * Az ExtendedRouteButton beállításai
-     * nem módosítják a pálya topológiáját,
-     * ezért nem töröljük a route graphot.
-     */
     if (
       !(updated instanceof ExtendedRouteButtonElementView)
     ) {
@@ -291,6 +288,8 @@ export default function LayoutPage({
       setPropertyPanelCollapsed={
         setPropertyPanelCollapsed
       }
+      rightPanelMode={rightPanelMode}
+      setRightPanelMode={setRightPanelMode}
       tool={tool}
       setTool={setTool}
       saveLayoutToServer={
