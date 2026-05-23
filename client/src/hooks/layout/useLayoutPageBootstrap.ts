@@ -10,11 +10,14 @@ import {
 import { useTranslation } from "react-i18next";
 
 import {
-  getLayout,
   getLocos,
-  refreshLayoutRuntime,
-  saveLayout,
 } from "../../api/http";
+
+import {
+  getLayoutWs,
+  refreshLayoutRuntimeWs,
+  saveLayoutWs,
+} from "../../api/layoutWsApi";
 
 import {
   CommandCenter,
@@ -143,7 +146,7 @@ export function useLayoutPageBootstrap({
   const loadLayoutFromServer = useCallback(async (): Promise<void> => {
     try {
       const loaded =
-        await getLayout();
+        await getLayoutWs();
 
       const nextLayout =
         LayoutView.fromJSON(loaded);
@@ -196,7 +199,7 @@ export function useLayoutPageBootstrap({
   ]);
 
   const saveLayoutToServer = useCallback(async (): Promise<void> => {
-    await saveLayout(layoutRef.current);
+    await saveLayoutWs(layoutRef.current);
 
     routeGraphStore.invalidate();
 
@@ -208,7 +211,7 @@ export function useLayoutPageBootstrap({
 
   const refreshServerRuntimeLayout = useCallback(async (): Promise<void> => {
     try {
-      await refreshLayoutRuntime(layoutRef.current);
+      await refreshLayoutRuntimeWs(layoutRef.current);
 
       routeGraphStore.invalidate();
 
