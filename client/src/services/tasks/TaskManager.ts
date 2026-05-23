@@ -13,7 +13,7 @@ import {
   abortAllTrainTasks,
   abortTrainTask,
   updateTrainTask,
-} from "../../api/http";
+} from "../../api/domainApi";
 
 import { wsClient } from "../wsClient";
 import { layoutStore } from "../layoutStore";
