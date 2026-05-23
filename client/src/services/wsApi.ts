@@ -48,7 +48,39 @@ class WebSocketApi {
     return wsClient.send(message);
   }
 
-  request<
+  private waitUntilConnected(
+    timeoutMs: number
+  ): Promise<void> {
+    if (wsClient.isConnected()) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      let timeoutHandle: number | null = null;
+
+      const unsubscribe = wsClient.subscribeStatus(status => {
+        if (status !== "connected") {
+          return;
+        }
+
+        if (timeoutHandle !== null) {
+          window.clearTimeout(timeoutHandle);
+        }
+
+        unsubscribe();
+        resolve();
+      });
+
+      timeoutHandle = window.setTimeout(() => {
+        unsubscribe();
+        reject(
+          new Error("WebSocket connection timed out.")
+        );
+      }, timeoutMs);
+    });
+  }
+
+  async request<
     TClientType extends ClientWsMessageType,
     TServerType extends ServerWsMessageType
   >(
@@ -60,6 +92,8 @@ class WebSocketApi {
     ) => boolean,
     timeoutMs = 10000
   ): Promise<ServerWsPayloadMap[TServerType]> {
+    await this.waitUntilConnected(timeoutMs);
+
     return new Promise((resolve, reject) => {
       let timeoutHandle: number | null = null;
 
