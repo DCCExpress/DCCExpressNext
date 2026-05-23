@@ -5,6 +5,7 @@ import type {
 } from "../../../common/src/railway/graph.js";
 
 import type {
+  Direction,
   Loco,
 } from "../../../common/src/types.js";
 
@@ -77,6 +78,30 @@ type BroadcastFn =
 
 function createTaskOwnerId(taskId: string): string {
   return `task:${taskId}`;
+}
+
+function resolveTaskDirection(task: TrainTask): Direction {
+  return task.transition.solution.locoDirection === "reverse"
+    ? "reverse"
+    : "forward";
+}
+
+function createRestartingRuntimeState(task: TrainTask) {
+  const runtime = createEmptyTrainTaskRuntimeState();
+
+  runtime.hasReachedToBlock = true;
+  runtime.simulation = {
+    phase: "waitingForLoco",
+    legIndex: 0,
+    legCount: 0,
+    fromBlockId: task.fromBlockId,
+    fromBlockName: task.transition.fromBlock.name,
+    toBlockId: null,
+    toBlockName: null,
+    waitingSensorAddress: null,
+  };
+
+  return runtime;
 }
 
 class TaskRuntimeStore {
@@ -355,6 +380,7 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task not found.");
     }
 
+    await this.stopTaskLocoIfNeeded(task);
     this.releaseTaskResources(task);
     this.tasks = this.tasks.filter(item => item.id !== taskId);
 
@@ -528,6 +554,7 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task not found.");
     }
 
+    await this.stopTaskLocoIfNeeded(task);
     this.completeTask(task);
     this.broadcastTaskLifecycle("taskCompleted", task);
     this.broadcastSnapshot();
@@ -546,6 +573,7 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task not found.");
     }
 
+    await this.stopTaskLocoIfNeeded(task);
     this.releaseTaskResources(task);
     task.status = "aborted";
     task.abortedAt = Date.now();
@@ -582,6 +610,7 @@ class TaskRuntimeStore {
         task.status === "paused" ||
         task.status === "finishing"
       ) {
+        await this.stopTaskLocoIfNeeded(task);
         this.completeTask(task);
         this.broadcastTaskLifecycle("taskCompleted", task);
       }
@@ -601,6 +630,7 @@ class TaskRuntimeStore {
         task.status === "paused" ||
         task.status === "finishing"
       ) {
+        await this.stopTaskLocoIfNeeded(task);
         this.releaseTaskResources(task);
         task.status = "aborted";
         task.abortedAt = Date.now();
@@ -730,7 +760,9 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task not found.");
     }
 
-    this.completeTask(task);
+    this.releaseTaskResources(task);
+    task.status = "running";
+    task.runtime = createRestartingRuntimeState(task);
     this.broadcastTaskLifecycle("taskCycleCompleted", task);
     this.broadcastSnapshot();
 
@@ -743,6 +775,27 @@ class TaskRuntimeStore {
     task.completedAt = Date.now();
     task.runtime.hasReachedToBlock = true;
     task.runtime.inTransit = false;
+  }
+
+  private async stopTaskLocoIfNeeded(task: TrainTask): Promise<void> {
+    const loco = task.runtime.loco;
+
+    if (!loco) {
+      return;
+    }
+
+    const simulator =
+      this.getSimulatorCommandCenter?.() ?? null;
+
+    if (!simulator) {
+      return;
+    }
+
+    await simulator.setLoco(
+      loco.address,
+      0,
+      resolveTaskDirection(task)
+    );
   }
 
   private releaseTaskResources(task: TrainTask): void {
@@ -774,7 +827,9 @@ class TaskRuntimeStore {
         fromBlockId: task.fromBlockId,
         toBlockId: task.toBlockId,
         completedAt: Date.now(),
-        message: `${task.name} completed.`,
+        message: type === "taskCompleted"
+          ? `${task.name} completed.`
+          : `${task.name} cycle completed and is waiting for the next start.`,
       },
     });
   }
