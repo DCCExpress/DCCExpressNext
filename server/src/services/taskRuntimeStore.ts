@@ -867,6 +867,46 @@ class TaskRuntimeStore {
     task.error = undefined;
   }
 
+  private isSameLocoReference(
+    locoReference: string,
+    loco: Loco
+  ): boolean {
+    const normalized =
+      locoReference.trim();
+
+    if (normalized === loco.id) {
+      return true;
+    }
+
+    if (normalized === loco.name) {
+      return true;
+    }
+
+    const numericReference =
+      Number(normalized);
+
+    return (
+      Number.isFinite(numericReference) &&
+      numericReference === loco.address
+    );
+  }
+
+  private canRestoreLocoToBlock(
+    blockId: string,
+    loco: Loco
+  ): boolean {
+    const blockState =
+      this.getBlockState?.(blockId) ?? null;
+
+    const occupantLocoId =
+      blockState?.locoId ?? null;
+
+    return (
+      !occupantLocoId ||
+      this.isSameLocoReference(occupantLocoId, loco)
+    );
+  }
+
   private async restoreTaskLocoToCurrentFromBlock(task: TrainTask): Promise<void> {
     const loco = task.runtime.loco;
 
@@ -886,6 +926,17 @@ class TaskRuntimeStore {
       task.transition.fromBlock.name;
 
     if (!blockId) {
+      return;
+    }
+
+    if (!this.canRestoreLocoToBlock(blockId, loco)) {
+      this.broadcast?.({
+        type: "taskRejected",
+        data: {
+          reason: `Cannot restore loco ${loco.name} to ${blockId}, block is occupied by another loco.`,
+        },
+      });
+
       return;
     }
 
