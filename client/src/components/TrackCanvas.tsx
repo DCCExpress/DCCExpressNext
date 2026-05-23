@@ -47,6 +47,7 @@ import {
   reopenTrackCanvasSignalAspectPopover,
   saveViewState,
   screenToGrid,
+  stopTrackCanvasInteraction,
   type CanvasSize,
   type DragState,
   type PanState,
@@ -810,75 +811,19 @@ export default function TrackCanvas({
       );
     };
     const stopInteraction = () => {
-
-      const wasDragging = dragRef.current.isDraggingElement;
-
-      if (selectionRef.current.isSelecting) {
-        const rect = getSelectionRect(selectionRef.current);
-
-        if (rect) {
-          const selected = applySelectionRect(
-            layoutRef.current,
-            rect,
-            selectionRef.current.additive
-          );
-
-          if (selected.length === 1) {
-            onSelectedElementChange(selected[0]!);
-          } else {
-            onSelectedElementChange(null);
-          }
-
-          onLayoutChange((prev) => prev);
-        }
-
-        selectionRef.current.isSelecting = false;
-        selectionRef.current.additive = false;
-      }
-
-      if (panRef.current.isPanning) {
-        persistView();
-      }
-
-      panRef.current.isPanning = false;
-
-      if (wasDragging) {
-        const currentLayout = layoutRef.current;
-        const allElements = getAllLayoutElements(currentLayout);
-
-        const elementActuallyMoved = dragRef.current.draggedElements.some((dragged) => {
-          const current = allElements.find((el) => el.id === dragged.id);
-
-          if (!current) {
-            return false;
-          }
-
-          return (
-            current.x !== dragged.startX ||
-            current.y !== dragged.startY
-          );
-        });
-
-        if (elementActuallyMoved) {
-          onLayoutChange((prev) => prev);
-        }
-      }
-
-      dragRef.current.isDraggingElement = false;
-      dragRef.current.elementId = null;
-      dragRef.current.draggedElements = [];
-      canvas.style.cursor = "default";
-      const cursor = currentCursorRef.current;
-      if (cursor) {
-        const occupied = layoutRef.current.getLayeredElement(cursor, cursor.x, cursor.y);
-        if (occupied) {
-          setHoverGrid({ x: cursor.x, y: cursor.y });
-        }
-      } else {
-        setHoverGrid(null);
-      }
-
-      invalidate();
+      stopTrackCanvasInteraction({
+        canvas,
+        layoutRef,
+        dragRef,
+        panRef,
+        selectionRef,
+        currentCursorRef,
+        setHoverGrid,
+        onSelectedElementChange,
+        onLayoutChange,
+        persistView,
+        invalidate,
+      });
     };
 
     const handleMouseUp = (ev: MouseEvent) => {
