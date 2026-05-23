@@ -1,7 +1,12 @@
-import { readLocos } from "./locoStore.js";
-import { routeGraphRuntimeStore } from "./routeGraphRuntimeStore.js";
-import { railwayTopologyStore } from "./railwayTopologyStore.js";
-import type { CommandCenter } from "../commandCenter/CommandCenter.js";
+// server/src/services/taskRuntimeStore.ts
+
+import type {
+  RunnableBlockTransition,
+} from "../../../common/src/railway/graph.js";
+
+import type {
+  Loco,
+} from "../../../common/src/types.js";
 
 import type {
   AddTrainTaskResult,
@@ -18,7 +23,30 @@ import type {
   BlockState,
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
-import { trainSimulatorRuntimeStore } from "./trainSimulatorRuntimeStore.js";
+
+import type {
+  CommandCenter,
+} from "../commandCenter/CommandCenter.js";
+
+import {
+  readLocos,
+} from "./locoStore.js";
+
+import {
+  locoReservationStore,
+} from "./locoReservationStore.js";
+
+import {
+  railwayTopologyStore,
+} from "./railwayTopologyStore.js";
+
+import {
+  routeGraphRuntimeStore,
+} from "./routeGraphRuntimeStore.js";
+
+import {
+  trainSimulatorRuntimeStore,
+} from "./trainSimulatorRuntimeStore.js";
 
 import {
   cloneTrainTask,
@@ -38,41 +66,78 @@ import {
   TaskRouteRuntimeCoordinator,
 } from "./tasks/taskRouteRuntimeCoordinator.js";
 
-import {
-  createPendingLocoReservation,
-  createTaskLocoOwnerId,
-  TaskLocoReservation,
-} from "./tasks/taskLocoReservation.js";
+type SimulatorCommandCenterGetter =
+  () => CommandCenter | null;
 
-import {
-  getDirectionForBlockTransition,
-} from "./tasks/taskRouteDirection.js";
+type BlockStateGetter =
+  (blockId: string) => BlockState | null;
 
-import {
-  createTrainTaskSimulationStep,
-} from "./tasks/taskSimulation.js";
+type BroadcastFn =
+  (message: TypedServerWsMessage) => void;
 
-import {
-  locoReservationStore,
-} from "./locoReservationStore.js";
+function createTaskOwnerId(taskId: string): string {
+  return `task:${taskId}`;
+}
 
 class TaskRuntimeStore {
   private tasks: TrainTask[] = [];
   private initialized = false;
-  private broadcast: ((message: TypedServerWsMessage) => void) | null = null;
-  private getCommandCenter: (() => CommandCenter | null) | null = null;
-  private getBlockState: ((blockId: string) => BlockState | null) | null = null;
-  private runningTimers = new Map<string, ReturnType<typeof setTimeout>>();
-  private readonly routeRuntimeCoordinator = new TaskRouteRuntimeCoordinator();
+  private broadcast: BroadcastFn | null = null;
+  private getBlockState: BlockStateGetter | null = null;
+  private getSimulatorCommandCenter: SimulatorCommandCenterGetter | null = null;
+  private routeRuntimeCoordinator: TaskRouteRuntimeCoordinator | null = null;
 
   configure(params: {
-    broadcast: (message: TypedServerWsMessage) => void;
-    getCommandCenter: () => CommandCenter | null;
-    getBlockState: (blockId: string) => BlockState | null;
+    broadcast: BroadcastFn;
+    getBlockState: BlockStateGetter;
+    getSimulatorCommandCenter: SimulatorCommandCenterGetter;
   }): void {
     this.broadcast = params.broadcast;
-    this.getCommandCenter = params.getCommandCenter;
     this.getBlockState = params.getBlockState;
+    this.getSimulatorCommandCenter = params.getSimulatorCommandCenter;
+
+    this.routeRuntimeCoordinator = new TaskRouteRuntimeCoordinator({
+      broadcast: params.broadcast,
+      getBlockState: params.getBlockState,
+      getSimulatorCommandCenter: params.getSimulatorCommandCenter,
+      updateTaskSimulationProgress: async (
+        taskId,
+        progress
+      ) => this.updateTaskSimulationProgress(
+        taskId,
+        progress
+      ),
+    });
+
+    trainSimulatorRuntimeStore.configure({
+      getTasks: () => this.tasks,
+      getBlockState: params.getBlockState,
+      getSimulatorCommandCenter: params.getSimulatorCommandCenter,
+      tryResolveTaskLoco: async taskId =>
+        this.tryResolveTaskLoco(taskId),
+      tryPrepareTaskRoute: async taskId => {
+        const task = this.findTask(taskId);
+
+        if (!task || !this.routeRuntimeCoordinator) {
+          return false;
+        }
+
+        return this.routeRuntimeCoordinator.tryPrepareTaskRoute(task);
+      },
+      markTaskLeftFromBlock: async taskId =>
+        this.markTaskLeftFromBlock(taskId),
+      markTaskReachedToBlock: async taskId =>
+        this.markTaskReachedToBlock(taskId),
+      updateTaskSimulationProgress: async (
+        taskId,
+        progress
+      ) => this.updateTaskSimulationProgress(
+        taskId,
+        progress
+      ),
+    });
+
+    trainSimulatorRuntimeStore.start();
   }
 
   async initialize(): Promise<void> {
@@ -82,11 +147,17 @@ class TaskRuntimeStore {
 
     await ensureTaskStorage();
 
-    const savedEntries = await readSavedTrainTaskEntries();
+    const rawEntries =
+      await readSavedTrainTaskEntries();
 
-    this.tasks = savedEntries.map(
-      entry => normalizeSavedTrainTask(entry)
-    );
+    const normalizedEntries =
+      rawEntries
+        .map(item => normalizeSavedTrainTask(item))
+        .filter((item): item is SavedTrainTask => item !== null);
+
+    this.tasks = normalizedEntries
+      .map(item => this.createTaskFromSaved(item))
+      .filter((item): item is TrainTask => item !== null);
 
     this.initialized = true;
     this.broadcastSnapshot();
@@ -95,9 +166,9 @@ class TaskRuntimeStore {
   getSnapshot(): TaskManagerSnapshot {
     return {
       tasks: this.tasks.map(cloneTrainTask),
-      overlay: createTaskManagerOverlayState(
-        this.tasks
-      ),
+      overlay: createTaskManagerOverlayState(this.tasks),
+      hasGraph: routeGraphRuntimeStore.hasGraph(),
+      hasLayout: railwayTopologyStore.getTopology() !== null,
     };
   }
 
@@ -108,13 +179,19 @@ class TaskRuntimeStore {
     });
   }
 
-  private createActionResult(
-    ok: boolean,
-    error?: string
+  private createSuccessResult(): TaskManagerActionResult {
+    return {
+      ok: true,
+      snapshot: this.getSnapshot(),
+    };
+  }
+
+  private createErrorResult(
+    error: string
   ): TaskManagerActionResult {
     return {
-      ok,
-      ...(error ? { error } : {}),
+      ok: false,
+      error,
       snapshot: this.getSnapshot(),
     };
   }
@@ -123,21 +200,97 @@ class TaskRuntimeStore {
     return this.tasks.find(task => task.id === taskId) ?? null;
   }
 
-  private findTaskByIdOrName(taskIdOrName: string): TrainTask | null {
-    return this.tasks.find(task => task.id === taskIdOrName || task.name === taskIdOrName) ?? null;
+  private findTaskByIdOrName(
+    taskIdOrName: string
+  ): TrainTask | null {
+    return (
+      this.tasks.find(task =>
+        task.id === taskIdOrName ||
+        task.name === taskIdOrName
+      ) ?? null
+    );
   }
 
-  async addTask(input: TrainTaskCreateInput): Promise<AddTrainTaskResult> {
+  private createTransition(
+    fromBlockId: string,
+    toBlockId: string
+  ): RunnableBlockTransition | null {
+    const graph = routeGraphRuntimeStore.getGraph();
+
+    if (!graph) {
+      return null;
+    }
+
+    const solution = graph.findRouteBetweenBlocks(
+      fromBlockId,
+      toBlockId
+    );
+
+    if (!solution) {
+      return null;
+    }
+
+    return {
+      fromBlock: solution.fromBlock,
+      toBlock: solution.toBlock,
+      solution,
+    };
+  }
+
+  private createTaskFromSaved(
+    saved: SavedTrainTask
+  ): TrainTask | null {
+    const transition = this.createTransition(
+      saved.fromBlockId,
+      saved.toBlockId
+    );
+
+    if (!transition) {
+      return null;
+    }
+
+    return {
+      id: saved.id,
+      name: saved.name,
+      targetSpeed: saved.targetSpeed,
+      fromBlockId: saved.fromBlockId,
+      toBlockId: saved.toBlockId,
+      transition,
+      status: "queued",
+      createdAt: saved.createdAt,
+      runtime: createEmptyTrainTaskRuntimeState(),
+    };
+  }
+
+  async addTask(
+    input: TrainTaskCreateInput
+  ): Promise<AddTrainTaskResult> {
     await this.initialize();
+
+    const transition = this.createTransition(
+      input.fromBlockId,
+      input.toBlockId
+    );
+
+    if (!transition) {
+      return {
+        ok: false,
+        error: "No route found between task blocks.",
+        snapshot: this.getSnapshot(),
+      };
+    }
 
     const task: TrainTask = {
       id: createTrainTaskId(),
-      name: input.name,
-      status: "queued",
+      name:
+        input.name?.trim() ||
+        `${transition.fromBlock.name} → ${transition.toBlock.name}`,
+      targetSpeed: input.targetSpeed,
       fromBlockId: input.fromBlockId,
       toBlockId: input.toBlockId,
-      targetSpeed: input.targetSpeed,
-      transition: input.transition,
+      transition,
+      status: "queued",
+      createdAt: Date.now(),
       runtime: createEmptyTrainTaskRuntimeState(),
     };
 
@@ -151,39 +304,63 @@ class TaskRuntimeStore {
     };
   }
 
-  async updateTask(taskId: string, input: TrainTaskCreateInput): Promise<TaskManagerActionResult> {
+  async updateTask(
+    taskId: string,
+    input: TrainTaskCreateInput
+  ): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     const task = this.findTask(taskId);
 
     if (!task) {
-      return this.createActionResult(false, "Task not found.");
+      return this.createErrorResult("Task not found.");
     }
 
-    task.name = input.name;
+    if (task.status === "running" || task.status === "paused" || task.status === "finishing") {
+      return this.createErrorResult("Active task cannot be modified.");
+    }
+
+    const transition = this.createTransition(
+      input.fromBlockId,
+      input.toBlockId
+    );
+
+    if (!transition) {
+      return this.createErrorResult("No route found between task blocks.");
+    }
+
+    task.name =
+      input.name?.trim() ||
+      `${transition.fromBlock.name} → ${transition.toBlock.name}`;
+    task.targetSpeed = input.targetSpeed;
     task.fromBlockId = input.fromBlockId;
     task.toBlockId = input.toBlockId;
-    task.targetSpeed = input.targetSpeed;
-    task.transition = input.transition;
+    task.transition = transition;
+    task.runtime = createEmptyTrainTaskRuntimeState();
+    task.error = undefined;
 
     await this.saveTasks();
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
-  async removeTask(taskId: string): Promise<TaskManagerActionResult> {
+  async removeTask(
+    taskId: string
+  ): Promise<TaskManagerActionResult> {
     await this.initialize();
 
-    const before = this.tasks.length;
-    this.tasks = this.tasks.filter(task => task.id !== taskId);
+    const task = this.findTask(taskId);
 
-    if (this.tasks.length === before) {
-      return this.createActionResult(false, "Task not found.");
+    if (!task) {
+      return this.createErrorResult("Task not found.");
     }
+
+    this.releaseTaskResources(task);
+    this.tasks = this.tasks.filter(item => item.id !== taskId);
 
     await this.saveTasks();
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
   async saveTasks(): Promise<TaskManagerActionResult> {
@@ -192,323 +369,414 @@ class TaskRuntimeStore {
     const savedEntries: SavedTrainTask[] = this.tasks.map(task => ({
       id: task.id,
       name: task.name,
+      targetSpeed: task.targetSpeed,
       fromBlockId: task.fromBlockId,
       toBlockId: task.toBlockId,
-      targetSpeed: task.targetSpeed,
-      transition: task.transition,
+      createdAt: task.createdAt,
     }));
 
     await writeSavedTrainTasks(savedEntries);
     this.broadcastSnapshot();
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
   async reloadTasks(): Promise<LoadTrainTasksResult> {
-    this.initialized = false;
-    await this.initialize();
+    await ensureTaskStorage();
+
+    const rawEntries = await readSavedTrainTaskEntries();
+    const warnings: string[] = [];
+    const tasks: TrainTask[] = [];
+    let skippedCount = 0;
+
+    for (const rawEntry of rawEntries) {
+      const saved = normalizeSavedTrainTask(rawEntry);
+
+      if (!saved) {
+        skippedCount += 1;
+        warnings.push("Invalid task entry skipped.");
+        continue;
+      }
+
+      const task = this.createTaskFromSaved(saved);
+
+      if (!task) {
+        skippedCount += 1;
+        warnings.push(
+          `No route found for task: ${saved.name}`
+        );
+        continue;
+      }
+
+      tasks.push(task);
+    }
+
+    this.tasks = tasks;
+    this.initialized = true;
+    this.broadcastSnapshot();
 
     return {
       ok: true,
+      loadedCount: tasks.length,
+      skippedCount,
+      warnings,
       snapshot: this.getSnapshot(),
     };
   }
 
   hasActiveTasks(): boolean {
-    return this.tasks.some(
-      task =>
-        task.status === "running" ||
-        task.status === "paused" ||
-        task.status === "finishing"
+    return this.tasks.some(task =>
+      task.status === "running" ||
+      task.status === "paused" ||
+      task.status === "finishing"
     );
   }
 
-  async startTask(taskIdOrName: string): Promise<TaskManagerActionResult> {
+  async startTask(
+    taskIdOrName: string
+  ): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     const task = this.findTaskByIdOrName(taskIdOrName);
 
     if (!task) {
-      return this.createActionResult(false, "Task not found.");
+      return this.createErrorResult("Task not found.");
     }
 
     if (task.status === "running") {
-      return this.createActionResult(false, "Task is already running.");
+      return this.createErrorResult("Task is already running.");
     }
 
     if (task.status === "paused") {
       return this.resumeTask(task.id);
     }
 
-    const route = routeGraphRuntimeStore.findRouteBetweenBlockIds(
+    const transition = this.createTransition(
       task.fromBlockId,
       task.toBlockId
     );
 
-    if (!route) {
-      return this.createActionResult(false, "No route found between task blocks.");
+    if (!transition) {
+      return this.createErrorResult("No route found between task blocks.");
     }
 
-    const locoAssigned = await this.tryAssignLocoFromStartBlock(task);
-
-    if (!locoAssigned && !task.runtime.locoAddress) {
-      const reservation = createPendingLocoReservation(task);
-      task.runtime.locoReservation = reservation;
-      task.status = "queued";
-      this.broadcast?.({
-        type: "taskWaitingForLoco",
-        data: {
-          taskId: task.id,
-          taskName: task.name,
-        },
-      });
-      this.broadcastSnapshot();
-      return this.createActionResult(false, "No loco assigned to task start block.");
-    }
-
+    task.transition = transition;
     task.status = "running";
-    task.runtime.startedAt = new Date().toISOString();
-    task.runtime.completedAt = null;
-    task.runtime.error = null;
-    task.runtime.route = route;
-    task.runtime.simulation = createTrainTaskSimulationStep(task, route);
-    task.runtime.locoDirection = getDirectionForBlockTransition(route);
+    task.startedAt = Date.now();
+    task.abortedAt = undefined;
+    task.completedAt = undefined;
+    task.error = undefined;
+    task.runtime = createEmptyTrainTaskRuntimeState();
 
-    await this.applyRouteTurnouts(route.turnoutStates);
-    await this.startLocoForTask(task);
+    await this.tryResolveTaskLoco(task.id);
 
     this.broadcastSnapshot();
-    this.scheduleNextSimulationStep(task.id);
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
-  async pauseTask(taskIdOrName: string): Promise<TaskManagerActionResult> {
+  async pauseTask(
+    taskIdOrName: string
+  ): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     const task = this.findTaskByIdOrName(taskIdOrName);
 
-    if (!task) return this.createActionResult(false, "Task not found.");
-    if (task.status !== "running") return this.createActionResult(false, "Task is not running.");
+    if (!task) {
+      return this.createErrorResult("Task not found.");
+    }
 
-    this.clearTaskTimer(task.id);
+    if (task.status !== "running") {
+      return this.createErrorResult("Task is not running.");
+    }
+
     task.status = "paused";
-    await this.stopLocoForTask(task);
     this.broadcastSnapshot();
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
-  async resumeTask(taskIdOrName: string): Promise<TaskManagerActionResult> {
+  async resumeTask(
+    taskIdOrName: string
+  ): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     const task = this.findTaskByIdOrName(taskIdOrName);
 
-    if (!task) return this.createActionResult(false, "Task not found.");
-    if (task.status !== "paused") return this.createActionResult(false, "Task is not paused.");
+    if (!task) {
+      return this.createErrorResult("Task not found.");
+    }
+
+    if (task.status !== "paused") {
+      return this.createErrorResult("Task is not paused.");
+    }
 
     task.status = "running";
-    await this.startLocoForTask(task);
     this.broadcastSnapshot();
-    this.scheduleNextSimulationStep(task.id);
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
-  async finishTask(taskIdOrName: string): Promise<TaskManagerActionResult> {
+  async finishTask(
+    taskIdOrName: string
+  ): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     const task = this.findTaskByIdOrName(taskIdOrName);
 
-    if (!task) return this.createActionResult(false, "Task not found.");
+    if (!task) {
+      return this.createErrorResult("Task not found.");
+    }
 
-    this.clearTaskTimer(task.id);
-    await this.stopLocoForTask(task);
-    this.releaseTaskLocoReservation(task);
-    task.status = "completed";
-    task.runtime.completedAt = new Date().toISOString();
+    this.completeTask(task);
+    this.broadcastTaskLifecycle("taskCompleted", task);
     this.broadcastSnapshot();
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
-  async abortTask(taskIdOrName: string): Promise<TaskManagerActionResult> {
+  async abortTask(
+    taskIdOrName: string
+  ): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     const task = this.findTaskByIdOrName(taskIdOrName);
 
-    if (!task) return this.createActionResult(false, "Task not found.");
+    if (!task) {
+      return this.createErrorResult("Task not found.");
+    }
 
-    this.clearTaskTimer(task.id);
-    await this.stopLocoForTask(task);
-    this.releaseTaskLocoReservation(task);
+    this.releaseTaskResources(task);
     task.status = "aborted";
-    task.runtime.completedAt = new Date().toISOString();
+    task.abortedAt = Date.now();
+    task.error = undefined;
+    task.runtime = createEmptyTrainTaskRuntimeState();
     this.broadcastSnapshot();
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
   async startAllTasks(): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     for (const task of this.tasks) {
-      if (task.status === "queued" || task.status === "aborted" || task.status === "completed") {
+      if (
+        task.status === "queued" ||
+        task.status === "aborted" ||
+        task.status === "completed" ||
+        task.status === "error"
+      ) {
         await this.startTask(task.id);
       }
     }
 
-    return this.createActionResult(true);
+    return this.createSuccessResult();
   }
 
   async finishAllTasks(): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     for (const task of this.tasks) {
-      if (task.status === "running" || task.status === "paused" || task.status === "finishing") {
-        await this.finishTask(task.id);
+      if (
+        task.status === "running" ||
+        task.status === "paused" ||
+        task.status === "finishing"
+      ) {
+        this.completeTask(task);
+        this.broadcastTaskLifecycle("taskCompleted", task);
       }
     }
 
-    return this.createActionResult(true);
+    this.broadcastSnapshot();
+
+    return this.createSuccessResult();
   }
 
   async abortAllTasks(): Promise<TaskManagerActionResult> {
     await this.initialize();
 
     for (const task of this.tasks) {
-      if (task.status === "running" || task.status === "paused" || task.status === "finishing") {
-        await this.abortTask(task.id);
+      if (
+        task.status === "running" ||
+        task.status === "paused" ||
+        task.status === "finishing"
+      ) {
+        this.releaseTaskResources(task);
+        task.status = "aborted";
+        task.abortedAt = Date.now();
+        task.runtime = createEmptyTrainTaskRuntimeState();
       }
     }
 
-    return this.createActionResult(true);
+    this.broadcastSnapshot();
+
+    return this.createSuccessResult();
   }
 
-  private scheduleNextSimulationStep(taskId: string): void {
-    this.clearTaskTimer(taskId);
-
-    const timer = setTimeout(() => {
-      void this.runSimulationStep(taskId);
-    }, 500);
-
-    this.runningTimers.set(taskId, timer);
-  }
-
-  private clearTaskTimer(taskId: string): void {
-    const timer = this.runningTimers.get(taskId);
-    if (timer) clearTimeout(timer);
-    this.runningTimers.delete(taskId);
-  }
-
-  private async runSimulationStep(taskId: string): Promise<void> {
+  private async tryResolveTaskLoco(
+    taskId: string
+  ): Promise<TaskManagerActionResult> {
     const task = this.findTask(taskId);
 
-    if (!task || task.status !== "running") {
-      return;
+    if (!task) {
+      return this.createErrorResult("Task not found.");
     }
 
-    const progress: TrainTaskSimulationProgress = trainSimulatorRuntimeStore.step(task);
+    if (task.runtime.loco) {
+      return this.createSuccessResult();
+    }
 
-    task.runtime.simulation = progress;
+    const blockState =
+      this.getBlockState?.(task.fromBlockId) ?? null;
 
-    if (progress.completed) {
-      await this.finishTask(task.id);
+    const locoId =
+      blockState?.locoId ?? null;
+
+    if (!locoId) {
       this.broadcast?.({
-        type: "taskCompleted",
+        type: "taskWaitingForLoco",
         data: {
           taskId: task.id,
           taskName: task.name,
+          blockId: task.fromBlockId,
+          message: "No loco assigned to task start block.",
         },
       });
-      return;
-    }
 
-    this.broadcastSnapshot();
-    this.scheduleNextSimulationStep(task.id);
-  }
-
-  private async applyRouteTurnouts(turnoutStates: TrainTask["runtime"]["route"]["turnoutStates"]): Promise<void> {
-    const commandCenter = this.getCommandCenter?.();
-    if (!commandCenter) return;
-
-    for (const turnoutState of turnoutStates) {
-      await commandCenter.setTurnout(turnoutState.address, turnoutState.closed);
-    }
-  }
-
-  private async startLocoForTask(task: TrainTask): Promise<void> {
-    const commandCenter = this.getCommandCenter?.();
-    if (!commandCenter || !task.runtime.locoAddress) return;
-
-    await commandCenter.setLoco(
-      task.runtime.locoAddress,
-      task.targetSpeed,
-      task.runtime.locoDirection ?? "forward"
-    );
-  }
-
-  private async stopLocoForTask(task: TrainTask): Promise<void> {
-    const commandCenter = this.getCommandCenter?.();
-    if (!commandCenter || !task.runtime.locoAddress) return;
-
-    await commandCenter.setLoco(
-      task.runtime.locoAddress,
-      0,
-      task.runtime.locoDirection ?? "forward"
-    );
-  }
-
-  private releaseTaskLocoReservation(task: TrainTask): void {
-    if (task.runtime.locoAddress) {
-      locoReservationStore.releaseReservation(
-        task.runtime.locoAddress,
-        createTaskLocoOwnerId(task.id)
-      );
-    }
-
-    task.runtime.locoAddress = null;
-    task.runtime.locoReservation = null;
-  }
-
-  private async tryAssignLocoFromStartBlock(
-    task: TrainTask
-  ): Promise<boolean> {
-    const blockState = this.getBlockState?.(task.fromBlockId) ?? null;
-
-    if (!blockState?.locoId) {
-      return false;
+      return this.createErrorResult("No loco assigned to task start block.");
     }
 
     const loco =
-      (await readLocos()).find(
-        item => item.id === blockState.locoId
-      ) ?? null;
+      (await readLocos()).find(item => item.id === locoId) ?? null;
 
     if (!loco) {
-      return false;
+      return this.createErrorResult("Assigned loco was not found.");
     }
 
-    const existingReservation =
-      locoReservationStore.getReservation(loco.address);
+    const ownerId = createTaskOwnerId(task.id);
 
-    if (existingReservation && existingReservation.ownerId !== createTaskLocoOwnerId(task.id)) {
-      return false;
+    if (
+      locoReservationStore.isReservedByOther(
+        loco.address,
+        ownerId
+      )
+    ) {
+      return this.createErrorResult("Loco is reserved by another owner.");
     }
 
-    const reservation: TaskLocoReservation = {
+    const reservation = locoReservationStore.reserve({
       locoAddress: loco.address,
-      ownerId: createTaskLocoOwnerId(task.id),
+      ownerId,
       ownerType: "task",
       ownerName: task.name,
-      taskId: task.id,
+      reason: "task-runtime",
+    });
+
+    task.runtime.loco = {
+      ...loco,
     };
 
-    locoReservationStore.reserve(reservation);
-    task.runtime.locoAddress = loco.address;
-    task.runtime.locoReservation = reservation;
+    this.broadcast?.({
+      type: "locoReservationChanged",
+      data: {
+        locoAddress: loco.address,
+        reservation,
+      },
+    });
 
-    return true;
+    this.broadcastSnapshot();
+
+    return this.createSuccessResult();
+  }
+
+  private async updateTaskSimulationProgress(
+    taskId: string,
+    progress: TrainTaskSimulationProgress
+  ): Promise<TaskManagerActionResult> {
+    const task = this.findTask(taskId);
+
+    if (!task) {
+      return this.createErrorResult("Task not found.");
+    }
+
+    task.runtime.simulation = progress;
+    this.broadcastSnapshot();
+
+    return this.createSuccessResult();
+  }
+
+  private async markTaskLeftFromBlock(
+    taskId: string
+  ): Promise<TaskManagerActionResult> {
+    const task = this.findTask(taskId);
+
+    if (!task) {
+      return this.createErrorResult("Task not found.");
+    }
+
+    task.runtime.hasLeftFromBlock = true;
+    task.runtime.inTransit = true;
+    this.broadcastSnapshot();
+
+    return this.createSuccessResult();
+  }
+
+  private async markTaskReachedToBlock(
+    taskId: string
+  ): Promise<TaskManagerActionResult> {
+    const task = this.findTask(taskId);
+
+    if (!task) {
+      return this.createErrorResult("Task not found.");
+    }
+
+    this.completeTask(task);
+    this.broadcastTaskLifecycle("taskCycleCompleted", task);
+    this.broadcastSnapshot();
+
+    return this.createSuccessResult();
+  }
+
+  private completeTask(task: TrainTask): void {
+    this.releaseTaskResources(task);
+    task.status = "completed";
+    task.completedAt = Date.now();
+    task.runtime.hasReachedToBlock = true;
+    task.runtime.inTransit = false;
+  }
+
+  private releaseTaskResources(task: TrainTask): void {
+    this.routeRuntimeCoordinator?.releaseTaskRoute(task.id);
+
+    const ownerId = createTaskOwnerId(task.id);
+    const releases =
+      locoReservationStore.releaseByOwner(ownerId);
+
+    for (const release of releases) {
+      this.broadcast?.({
+        type: "locoReservationChanged",
+        data: release,
+      });
+    }
+
+    task.runtime.loco = null;
+  }
+
+  private broadcastTaskLifecycle(
+    type: "taskCompleted" | "taskCycleCompleted",
+    task: TrainTask
+  ): void {
+    this.broadcast?.({
+      type,
+      data: {
+        taskId: task.id,
+        taskName: task.name,
+        fromBlockId: task.fromBlockId,
+        toBlockId: task.toBlockId,
+        completedAt: Date.now(),
+        message: `${task.name} completed.`,
+      },
+    });
   }
 }
 
