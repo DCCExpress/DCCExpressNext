@@ -123,6 +123,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "getRouteReservations",
   "layoutCommand",
   "locosCommand",
+  "scriptDocumentCommand",
   "runScript",
   "stopScript",
   "getScriptRuntimeState",
@@ -237,6 +238,14 @@ export type LocosResponsePayload = {
   count?: number;
 };
 
+export type ScriptDocumentResponsePayload = {
+  requestId: string;
+  action: "load" | "save";
+  ok: boolean;
+  message?: string;
+  document?: ScriptDocumentDto;
+};
+
 /**
  * Szerver -> kliens WebSocket események payload térképe.
  */
@@ -282,6 +291,7 @@ export type ServerWsPayloadMap = {
 
   layoutResponse: LayoutResponsePayload;
   locosResponse: LocosResponsePayload;
+  scriptDocumentResponse: ScriptDocumentResponsePayload;
 
   scriptRejected: {
     reason: string;
