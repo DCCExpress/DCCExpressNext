@@ -18,6 +18,7 @@ import LocoFunctionGrid from "./loco-panel/LocoFunctionGrid";
 
 type LocoPanelProps = {
   locos?: Loco[];
+  selectedLocoStorageKey?: string;
 };
 
 const SELECTED_LOCO_STORAGE_KEY =
@@ -25,6 +26,7 @@ const SELECTED_LOCO_STORAGE_KEY =
 
 export default function LocoPanel({
   locos = [],
+  selectedLocoStorageKey = SELECTED_LOCO_STORAGE_KEY,
 }: LocoPanelProps) {
   const { t } = useTranslation();
 
@@ -32,7 +34,7 @@ export default function LocoPanel({
     useState<string>(() => {
       return (
         window.localStorage.getItem(
-          SELECTED_LOCO_STORAGE_KEY
+          selectedLocoStorageKey
         ) ?? ""
       );
     });
@@ -52,12 +54,6 @@ export default function LocoPanel({
   const [activeFunctions, setActiveFunctions] =
     useState<Record<number, boolean>>({});
 
-  /**
-   * Fontos:
-   * Ez nem külön kliensoldali foglaltság-cache.
-   * A LocoPanel ezt kizárólag a szervertől érkező
-   * LocoState.reservation mezőből állítja.
-   */
   const [reservation, setReservation] =
     useState<LocoReservation | null>(null);
 
@@ -70,20 +66,24 @@ export default function LocoPanel({
 
       if (id) {
         window.localStorage.setItem(
-          SELECTED_LOCO_STORAGE_KEY,
+          selectedLocoStorageKey,
           id
         );
       } else {
         window.localStorage.removeItem(
-          SELECTED_LOCO_STORAGE_KEY
+          selectedLocoStorageKey
         );
       }
     },
-    []
+    [selectedLocoStorageKey]
   );
 
   useEffect(() => {
     if (locos.length === 0) {
+      if (selectedLocoId) {
+        selectLocoId("");
+      }
+
       return;
     }
 
@@ -116,11 +116,6 @@ export default function LocoPanel({
     currentAddressRef.current =
       currentLoco?.address ?? null;
 
-    /**
-     * Mozdonyváltáskor nem külön reservation mapből dolgozunk.
-     * Újrakérjük a szervertől az adott mozdony LocoState-jét,
-     * amelynek már tartalmaznia kell a reservation mezőt is.
-     */
     setReservation(null);
 
     if (currentLoco) {
@@ -154,10 +149,6 @@ export default function LocoPanel({
           loco.functions ?? {}
         );
 
-        /**
-         * Egy igazság van:
-         * a foglaltság a LocoState.reservation része.
-         */
         setReservation(
           loco.reservation ?? null
         );
@@ -169,12 +160,6 @@ export default function LocoPanel({
   useEffect(() => {
     const unsubscribe =
       wsClient.on("locoReservationChanged", data => {
-        /**
-         * Ez az event kompatibilitási/trigger event.
-         * Nem ebből állítjuk közvetlenül a UI reservation state-et,
-         * hanem újrakérjük a szervertől az adott mozdony egységes
-         * LocoState állapotát.
-         */
         if (
           data.locoAddress !==
           currentAddressRef.current
