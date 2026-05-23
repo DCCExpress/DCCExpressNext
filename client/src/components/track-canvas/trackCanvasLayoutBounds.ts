@@ -39,10 +39,12 @@ export function getLayoutBounds(
   let maxY = -Infinity;
 
   for (const element of elements) {
-    minX = Math.min(minX, element.x);
-    minY = Math.min(minY, element.y);
-    maxX = Math.max(maxX, element.x);
-    maxY = Math.max(maxY, element.y);
+    const bounds = element.getBounds();
+
+    minX = Math.min(minX, bounds.x);
+    minY = Math.min(minY, bounds.y);
+    maxX = Math.max(maxX, bounds.x + bounds.width - 1);
+    maxY = Math.max(maxY, bounds.y + bounds.height - 1);
   }
 
   return {
