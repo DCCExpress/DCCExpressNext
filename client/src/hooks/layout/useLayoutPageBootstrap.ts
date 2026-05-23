@@ -58,6 +58,10 @@ import {
 } from "../../models/editor/core/LayoutView";
 
 import type {
+  SerializedLayoutDto,
+} from "../../../../common/src/layout/layoutDto";
+
+import type {
   Loco,
 } from "../../../../common/src/types";
 
@@ -75,6 +79,14 @@ type LocoSetter =
 
 type CommandCenterSetter =
   Dispatch<SetStateAction<CommandCenter>>;
+
+function serializeLayoutView(
+  layout: LayoutView
+): SerializedLayoutDto {
+  return JSON.parse(
+    JSON.stringify(layout)
+  ) as SerializedLayoutDto;
+}
 
 export type UseLayoutPageBootstrapParams = {
   layoutRef: MutableRefObject<LayoutView>;
@@ -199,7 +211,9 @@ export function useLayoutPageBootstrap({
   ]);
 
   const saveLayoutToServer = useCallback(async (): Promise<void> => {
-    await saveLayoutWs(layoutRef.current);
+    await saveLayoutWs(
+      serializeLayoutView(layoutRef.current)
+    );
 
     routeGraphStore.invalidate();
 
@@ -211,7 +225,9 @@ export function useLayoutPageBootstrap({
 
   const refreshServerRuntimeLayout = useCallback(async (): Promise<void> => {
     try {
-      await refreshLayoutRuntimeWs(layoutRef.current);
+      await refreshLayoutRuntimeWs(
+        serializeLayoutView(layoutRef.current)
+      );
 
       routeGraphStore.invalidate();
 
