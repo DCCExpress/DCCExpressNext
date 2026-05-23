@@ -1,7 +1,10 @@
 import { CommandCenterType, ICommandCenter } from "../../../common/src/types";
 import { showErrorMessage, showOkMessage } from "../helpers";
 import i18n from "../i18n";
-
+import {
+  loadCommandCenterConfigWs,
+  saveCommandCenterConfigWs,
+} from "./commandCenterConfigWsApi";
 
 export class CommandCenter implements ICommandCenter {
   name: string;
@@ -40,6 +43,8 @@ export class CommandCenter implements ICommandCenter {
         return `${this.name} IP: ${this.dccexTcp.host} PORT: ${this.dccexTcp.port}`;
       case "dcc-ex-serial":
         return `${this.name} PORT: ${this.dccexSerial.serialPort}`;
+      case "simulator":
+        return `${this.name} Simulator`;
     }
     return "NA";
   }
@@ -57,42 +62,40 @@ export class CommandCenter implements ICommandCenter {
   }
 }
 
-
-
-
-
 export async function loadCommandCenters(): Promise<ICommandCenter> {
-  const response = await fetch("/api/command-centers");
+  try {
+    const config = await loadCommandCenterConfigWs();
 
-  if (!response.ok) {
+    if (!config) {
+      return new CommandCenter();
+    }
+
+    return config;
+  } catch (error) {
     showErrorMessage(
       i18n.t("commandCenter.title"),
       i18n.t("commandCenter.messages.loadFailed")
     );
-    throw new Error(i18n.t("commandCenter.messages.loadFailed"));
+    throw error instanceof Error
+      ? error
+      : new Error(i18n.t("commandCenter.messages.loadFailed"));
   }
-
-  return (await response.json()) as ICommandCenter;
 }
 
 export async function saveCommandCenters(items: ICommandCenter): Promise<void> {
-  const response = await fetch("/api/command-centers", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(items),
-  });
+  try {
+    await saveCommandCenterConfigWs(items);
 
-  if (response.ok) {
     showOkMessage(
       i18n.t("common.success"),
       i18n.t("commandCenter.messages.saveOk")
     );
-  } else {
+  } catch (error) {
     showErrorMessage(
       i18n.t("common.error"),
       i18n.t("commandCenter.messages.saveFailed")
     );
+
+    throw error;
   }
 }
