@@ -9,39 +9,24 @@ import type {
 } from "../../../common/src/types";
 
 import {
-  generateId,
-} from "../helpers";
-
-import {
-  wsApi,
-} from "../services/wsApi";
+  requestWsCommand,
+} from "./wsRequest";
 
 async function sendCommandCenterConfigCommand(
   action: CommandCenterConfigCommandAction,
   config?: Partial<ICommandCenter>
 ) {
-  const requestId = generateId();
-
-  const response = await wsApi.request(
+  return requestWsCommand(
     "commandCenterConfigCommand",
     {
-      requestId,
       action,
       ...(config !== undefined
         ? { config }
         : {}),
     },
     "commandCenterConfigResponse",
-    data => data.requestId === requestId
+    "Command center config WebSocket command failed."
   );
-
-  if (!response.ok) {
-    throw new Error(
-      response.message ?? "Command center config WebSocket command failed."
-    );
-  }
-
-  return response;
 }
 
 export async function loadCommandCenterConfigWs(): Promise<ICommandCenter | null> {
