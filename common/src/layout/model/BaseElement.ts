@@ -97,6 +97,8 @@ export abstract class BaseElement {
       layerName: this.layerName,
       x: this.x,
       y: this.y,
+      w: this.w,
+      h: this.h,
       rotation: this.rotation,
       rotationStep: this.rotationStep,
       bg: this.bg,
