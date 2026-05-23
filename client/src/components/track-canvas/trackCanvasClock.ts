@@ -12,9 +12,6 @@ import {
   fastClockStore,
 } from "../../services/fastClockStore";
 
-const DAY_ZERO_UTC =
-  Date.UTC(1970, 0, 1, 0, 0, 0, 0);
-
 export function syncClockElementsWithFastClock(
   layout: LayoutView
 ): void {
@@ -26,7 +23,7 @@ export function syncClockElementsWithFastClock(
   }
 
   const currentTime =
-    new Date(DAY_ZERO_UTC + snapshot.timeMs);
+    new Date(1970, 0, 1, 0, 0, 0, snapshot.timeMs);
 
   for (const element of layout.getAllElements()) {
     if (element instanceof ClockElementView) {
