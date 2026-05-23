@@ -1,6 +1,10 @@
 // common/src/layout/model/Layout.ts
 
 import {
+  ELEMENT_TYPES,
+} from "../elementTypes.js";
+import {
+  type IRect,
   Point,
 } from "../../Rect.js";
 import {
@@ -21,18 +25,35 @@ type LayerFactory<
   options?: LayerOptions
 ) => TLayer;
 
-function elementsIntersect(
-  first: BaseElement,
-  second: BaseElement
+function rectsIntersect(
+  a: IRect,
+  b: IRect
 ): boolean {
-  const a = first.getCollisionBounds();
-  const b = second.getCollisionBounds();
-
   return (
     a.x < b.x + b.width &&
     a.x + a.width > b.x &&
     a.y < b.y + b.height &&
     a.y + a.height > b.y
+  );
+}
+
+function elementsIntersect(
+  first: BaseElement,
+  second: BaseElement
+): boolean {
+  if (
+    first.type === ELEMENT_TYPES.TRACK_BLOCK &&
+    second.type === ELEMENT_TYPES.TRACK_BLOCK
+  ) {
+    return rectsIntersect(
+      first.getBounds(),
+      second.getBounds()
+    );
+  }
+
+  return rectsIntersect(
+    first.getCollisionBounds(),
+    second.getCollisionBounds()
   );
 }
 
