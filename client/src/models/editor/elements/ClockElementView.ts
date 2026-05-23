@@ -3,10 +3,18 @@ import { generateId } from "../../../helpers";
 import { BaseElementView } from "../core/BaseElementView";
 import { DrawOptions, IClockElement } from "../types/EditorTypes";
 
+const CLOCK_GRID_SIZE = 3;
+
 export class ClockElementView extends BaseElementView implements IClockElement {
     override type: typeof ELEMENT_TYPES.CLOCK = ELEMENT_TYPES.CLOCK;
     currentTime: Date = new Date();
     scale = 1;
+
+    constructor(x: number, y: number) {
+        super(x, y);
+        this.w = CLOCK_GRID_SIZE;
+        this.h = CLOCK_GRID_SIZE;
+    }
 
     draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
         if (!this.visible) return;
@@ -19,11 +27,11 @@ export class ClockElementView extends BaseElementView implements IClockElement {
         const height = width;
         // const x = ctx.canvas.width / 2 - width / 2
         // var y = 10
-        const x = this.centerX
-        var y = this.centerY + 10
+        const x = this.posLeft;
+        var y = this.posTop;
 
         const centerX = x + width / 2
-        const centerY = height / 2 ;
+        const centerY = y + height / 2;
         const radius = Math.min(width, height) / 2 - 10;
 
         // ctx.shadowBlur = 0;
