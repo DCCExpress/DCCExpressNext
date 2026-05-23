@@ -26,8 +26,6 @@ class RouteGraphRuntimeStore {
 
   private readonly reservations = new Map<string, RouteReservation>();
 
-
-
   rebuildFromTopology(
     topology: RailwayTopologyLayout | null
   ): void {
@@ -74,6 +72,18 @@ class RouteGraphRuntimeStore {
     toBlockName: string
   ): string {
     return `${fromBlockName.trim()}=>${toBlockName.trim()}`;
+  }
+
+  hasRouteReservation(
+    fromBlockName: string,
+    toBlockName: string
+  ): boolean {
+    return this.reservations.has(
+      this.createReservationKey(
+        fromBlockName,
+        toBlockName
+      )
+    );
   }
 
   tryReserveRoute(
@@ -174,11 +184,6 @@ class RouteGraphRuntimeStore {
       };
     }
 
-    /**
-     * Először kivesszük ezt a reservationt.
-     * Így amikor megnézzük, hogy egy section/váltó
-     * kell-e még másik útvonalnak, már csak a TÖBBI foglalás számít.
-     */
     this.reservations.delete(key);
 
     const releasedSectionNames: string[] = [];
@@ -187,9 +192,6 @@ class RouteGraphRuntimeStore {
     const releasedTurnoutAddresses: number[] = [];
     const retainedTurnoutAddresses: number[] = [];
 
-    /**
-     * SZAKASZOK FELOLDÁSA
-     */
     for (const sectionName of reservation.sectionNames) {
       const stillUsedByAnotherReservation = [
         ...this.reservations.values(),
@@ -213,9 +215,6 @@ class RouteGraphRuntimeStore {
       releasedSectionNames.push(sectionName);
     }
 
-    /**
-     * VÁLTÓK FELOLDÁSA
-     */
     for (const turnoutAddress of reservation.turnoutAddresses) {
       const stillUsedByAnotherReservation = [
         ...this.reservations.values(),
