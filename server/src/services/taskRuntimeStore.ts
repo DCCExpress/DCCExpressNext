@@ -787,7 +787,7 @@ class TaskRuntimeStore {
       return;
     }
 
-    if (!task.runtime.loco) {
+    if (!task.runtime.loco || !task.runtime.hasLeftFromBlock) {
       this.completeTask(task);
       this.broadcastTaskLifecycle("taskCompleted", task);
       return;
