@@ -47,3 +47,24 @@ export function closeTrackCanvasSignalAspectPopover(
     signal: null,
   }));
 }
+
+export function reopenTrackCanvasSignalAspectPopover(
+  setSignalAspectPopover: SignalAspectPopoverStateSetter,
+  signal: TrackSignalElementView,
+  clientX: number,
+  clientY: number,
+  delayMs = 100
+): void {
+  closeTrackCanvasSignalAspectPopover(
+    setSignalAspectPopover
+  );
+
+  window.setTimeout(() => {
+    openTrackCanvasSignalAspectPopover(
+      setSignalAspectPopover,
+      signal,
+      clientX,
+      clientY
+    );
+  }, delayMs);
+}
