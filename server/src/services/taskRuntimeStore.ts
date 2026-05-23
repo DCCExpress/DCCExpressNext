@@ -86,6 +86,24 @@ function resolveTaskDirection(task: TrainTask): Direction {
     : "forward";
 }
 
+function createRestartingRuntimeState(task: TrainTask) {
+  const runtime = createEmptyTrainTaskRuntimeState();
+
+  runtime.hasReachedToBlock = true;
+  runtime.simulation = {
+    phase: "waitingForLoco",
+    legIndex: 0,
+    legCount: 0,
+    fromBlockId: task.fromBlockId,
+    fromBlockName: task.transition.fromBlock.name,
+    toBlockId: null,
+    toBlockName: null,
+    waitingSensorAddress: null,
+  };
+
+  return runtime;
+}
+
 class TaskRuntimeStore {
   private tasks: TrainTask[] = [];
   private initialized = false;
@@ -743,9 +761,8 @@ class TaskRuntimeStore {
     }
 
     this.releaseTaskResources(task);
-    task.status = "finishing";
-    task.runtime.hasReachedToBlock = true;
-    task.runtime.inTransit = false;
+    task.status = "running";
+    task.runtime = createRestartingRuntimeState(task);
     this.broadcastTaskLifecycle("taskCycleCompleted", task);
     this.broadcastSnapshot();
 
@@ -812,7 +829,7 @@ class TaskRuntimeStore {
         completedAt: Date.now(),
         message: type === "taskCompleted"
           ? `${task.name} completed.`
-          : `${task.name} reached destination and is waiting for finish.`,
+          : `${task.name} cycle completed and is waiting for the next start.`,
       },
     });
   }
