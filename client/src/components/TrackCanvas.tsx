@@ -13,6 +13,7 @@ import { AudioButtonElementView } from "../models/editor/elements/AudioButtonEle
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
 import { RouteButtonElementView } from "../models/editor/elements/RouteButtonElementView";
 import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
+import { fastClockStore } from "../services/fastClockStore";
 import { wsApi } from "../services/wsApi";
 import "../styles/TrackCanvas.css";
 
@@ -44,6 +45,7 @@ import {
   saveViewState,
   screenToGrid,
   stopTrackCanvasInteraction,
+  syncClockElementsWithFastClock,
   type CanvasSize,
   type DragState,
   type PanState,
@@ -164,6 +166,14 @@ export default function TrackCanvas({
       onInvalidate();
     });
   }, [onInvalidate]);
+
+  useEffect(() => {
+    void fastClockStore.ensureLoaded();
+
+    return fastClockStore.subscribe(() => {
+      invalidate();
+    });
+  }, []);
 
   useEffect(() => {
     invalidate();
@@ -365,6 +375,8 @@ export default function TrackCanvas({
       setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElementView);
     }
     //}
+
+    syncClockElementsWithFastClock(layout);
 
     drawScene(
       ctx,
