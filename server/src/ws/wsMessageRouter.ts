@@ -29,6 +29,10 @@ import {
 } from "./handlers/wsTaskManagerMessageHandlers.js";
 
 import {
+  handleFastClockMessage,
+} from "./handlers/wsFastClockMessageHandlers.js";
+
+import {
   handleLockMessage,
 } from "./handlers/wsLockMessageHandlers.js";
 
@@ -66,6 +70,7 @@ const handlers = [
   handleScriptDocumentMessage,
   handleCommandCenterConfigMessage,
   handleTaskManagerMessage,
+  handleFastClockMessage,
   handleRuntimeVariableMessage,
   handleEditorEditModeMessage,
   handleLockMessage,
