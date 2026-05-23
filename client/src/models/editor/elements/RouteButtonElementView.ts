@@ -216,19 +216,40 @@ export class RouteButtonElementView extends ClickableBaseElementView implements 
     override getEditableProperties(): IEditableProperty[] {
         return [
             ...super.getEditableProperties(),
-            { label: "TurnoutSelection", key: "routeTurnouts", type: "turnoutSelection", readonly: false, validate: (v) => { return true } },
+            { label: "Turnouts", key: "routeTurnouts", type: "turnoutSelection", readonly: false, validate: (v) => { return true } },
 
         ]
     }
 
     getHelp(): string {
         return `
-    <h3 style="margin-top:0;">Track element</h3>
-    <p>This is a straight track section.</p>
+    <h3 style="margin-top:0;">Route button</h3>
+    <p>
+      This legacy route button sets a predefined list of turnouts when it is clicked in control mode.
+    </p>
+
+    <h4>Add turnouts</h4>
     <ul>
-      <li>You can rotate it with R</li>
-      <li>You can move it by drag and drop</li>
+      <li>Click <b>Add turnouts</b> to enter turnout selection mode.</li>
+      <li>While selection mode is active, click turnouts on the layout to add them to this route button.</li>
+      <li>Click <b>Finish selection</b> when the turnout list is complete.</li>
     </ul>
+
+    <h4>Editing turnout states</h4>
+    <ul>
+      <li>The turnout list shows every turnout assigned to this route button.</li>
+      <li>Click a turnout preview in the list to switch the stored route state for that turnout.</li>
+      <li>This only changes the route button configuration. It does not move the real turnout on the layout.</li>
+      <li><b>Route state: C</b> means the route wants the turnout in its logical closed state.</li>
+      <li><b>Route state: T</b> means the route wants the turnout in its logical thrown/diverging state.</li>
+    </ul>
+
+    <h4>Important turnout state note</h4>
+    <p>
+      Internally this legacy route button stores the physical command-center turnout state.
+      The displayed C/T route state is calculated from the turnout's <code>turnoutClosedValue</code> setting.
+      This is why the displayed state can be different from the raw physical boolean value.
+    </p>
   `;
     }
 
