@@ -54,8 +54,18 @@ const emptyCommandCenterInfo: CommandCenterInfoState = {
 };
 
 const CommandCenterContext = createContext<CommandCenterContextValue>({
-  ...emptyLockState,
-  ...emptyCommandCenterInfo,
+  locked: false,
+  lockOwner: null,
+  reason: null,
+
+  alive: false,
+  type: null,
+  name: null,
+  ip: null,
+  port: null,
+  serialPort: null,
+  connectionString: null,
+
   powerInfo: null,
   z21SystemState: null,
 });
