@@ -29,8 +29,18 @@ const LOCO_PANEL_COLLAPSED_KEY =
 const PROPERTY_PANEL_COLLAPSED_KEY =
   "dcc-express.editor.propertyPanelCollapsed";
 
+const RIGHT_PANEL_MODE_KEY =
+  "dcc-express.editor.rightPanelMode";
+
+export type RightPanelMode =
+  | "property"
+  | "loco";
+
 type BooleanSetter =
   Dispatch<SetStateAction<boolean>>;
+
+type RightPanelModeSetter =
+  Dispatch<SetStateAction<RightPanelMode>>;
 
 export type UseLayoutPageUiStateResult = {
   editMode: boolean;
@@ -39,6 +49,8 @@ export type UseLayoutPageUiStateResult = {
   setLocoPanelCollapsed: BooleanSetter;
   propertyPanelCollapsed: boolean;
   setPropertyPanelCollapsed: BooleanSetter;
+  rightPanelMode: RightPanelMode;
+  setRightPanelMode: RightPanelModeSetter;
 };
 
 function readStoredBoolean(
@@ -65,6 +77,32 @@ function writeStoredBoolean(
     localStorage.setItem(
       key,
       String(value)
+    );
+  } catch {
+    // Storage unavailable; ignore.
+  }
+}
+
+function readStoredRightPanelMode(): RightPanelMode {
+  try {
+    const raw =
+      localStorage.getItem(RIGHT_PANEL_MODE_KEY);
+
+    return raw === "loco"
+      ? "loco"
+      : "property";
+  } catch {
+    return "property";
+  }
+}
+
+function writeStoredRightPanelMode(
+  value: RightPanelMode
+): void {
+  try {
+    localStorage.setItem(
+      RIGHT_PANEL_MODE_KEY,
+      value
     );
   } catch {
     // Storage unavailable; ignore.
@@ -105,6 +143,14 @@ export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
         PROPERTY_PANEL_COLLAPSED_KEY,
         false
       )
+    );
+
+  const [
+    rightPanelMode,
+    setRightPanelMode,
+  ] =
+    useState<RightPanelMode>(() =>
+      readStoredRightPanelMode()
     );
 
   useEffect(() => {
@@ -167,6 +213,12 @@ export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
     );
   }, [propertyPanelCollapsed]);
 
+  useEffect(() => {
+    writeStoredRightPanelMode(
+      rightPanelMode
+    );
+  }, [rightPanelMode]);
+
   return {
     editMode,
     setEditMode,
@@ -174,5 +226,7 @@ export function useLayoutPageUiState(): UseLayoutPageUiStateResult {
     setLocoPanelCollapsed,
     propertyPanelCollapsed,
     setPropertyPanelCollapsed,
+    rightPanelMode,
+    setRightPanelMode,
   };
 }
