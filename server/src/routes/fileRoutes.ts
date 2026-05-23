@@ -5,7 +5,7 @@ import { dataDir } from "../paths.js";
 
 export const fileRoutes = Router();
 
-function safeDataFilePath(fileName: string): string {
+export function safeDataFilePath(fileName: string): string {
   if (!fileName || typeof fileName !== "string") {
     throw new Error("Missing file name");
   }
@@ -26,12 +26,33 @@ function safeDataFilePath(fileName: string): string {
   return fullPath;
 }
 
+export async function readDataFile(fileName: string): Promise<string> {
+  const filePath = safeDataFilePath(fileName);
+  return fs.readFile(filePath, "utf8");
+}
+
+export async function writeDataFile(fileName: string, content: string): Promise<void> {
+  const filePath = safeDataFilePath(fileName);
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, content, "utf8");
+}
+
+export async function readDataJsonFile(fileName: string): Promise<unknown> {
+  const content = await readDataFile(fileName);
+  return JSON.parse(content);
+}
+
+export async function writeDataJsonFile(fileName: string, data: unknown): Promise<void> {
+  await writeDataFile(
+    fileName,
+    JSON.stringify(data, null, 2)
+  );
+}
+
 fileRoutes.get("/", async (req, res) => {
   try {
     const fileName = String(req.query.fn ?? "");
-    const filePath = safeDataFilePath(fileName);
-
-    const content = await fs.readFile(filePath, "utf8");
+    const content = await readDataFile(fileName);
 
     res.json({
       success: true,
@@ -69,10 +90,7 @@ fileRoutes.put("/", async (req, res) => {
       return;
     }
 
-    const filePath = safeDataFilePath(fn);
-
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, content, "utf8");
+    await writeDataFile(fn, content);
 
     res.json({
       success: true,
@@ -89,14 +107,12 @@ fileRoutes.put("/", async (req, res) => {
 fileRoutes.get("/json", async (req, res) => {
   try {
     const fileName = String(req.query.fn ?? "");
-    const filePath = safeDataFilePath(fileName);
-
-    const content = await fs.readFile(filePath, "utf8");
+    const data = await readDataJsonFile(fileName);
 
     res.json({
       success: true,
       fn: fileName,
-      data: JSON.parse(content),
+      data,
     });
   } catch (error) {
     res.status(500).json({
@@ -121,10 +137,7 @@ fileRoutes.put("/json", async (req, res) => {
       return;
     }
 
-    const filePath = safeDataFilePath(fn);
-
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
+    await writeDataJsonFile(fn, data);
 
     res.json({
       success: true,
