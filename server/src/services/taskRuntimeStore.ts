@@ -669,6 +669,39 @@ class TaskRuntimeStore {
     return null;
   }
 
+  private resolveLocoFromBlockLocoId(
+    locos: Loco[],
+    locoId: string
+  ): Loco | null {
+    const normalizedLocoId =
+      locoId.trim();
+
+    const byId =
+      locos.find(loco => loco.id === normalizedLocoId);
+
+    if (byId) {
+      return byId;
+    }
+
+    const byName =
+      locos.find(loco => loco.name === normalizedLocoId);
+
+    if (byName) {
+      return byName;
+    }
+
+    const numericLocoId =
+      Number(normalizedLocoId);
+
+    if (Number.isFinite(numericLocoId)) {
+      return (
+        locos.find(loco => loco.address === numericLocoId) ?? null
+      );
+    }
+
+    return null;
+  }
+
   private async tryResolveTaskLoco(
     taskId: string
   ): Promise<TaskManagerActionResult> {
@@ -702,11 +735,16 @@ class TaskRuntimeStore {
       return this.createErrorResult("No loco assigned to task start block.");
     }
 
+    const locos =
+      await readLocos();
+
     const loco =
-      (await readLocos()).find(item => item.id === locoId) ?? null;
+      this.resolveLocoFromBlockLocoId(locos, locoId);
 
     if (!loco) {
-      return this.createErrorResult("Assigned loco was not found.");
+      return this.createErrorResult(
+        `Assigned loco was not found for block value: ${locoId}`
+      );
     }
 
     const ownerId = createTaskOwnerId(task.id);
