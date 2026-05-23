@@ -13,8 +13,6 @@ let source = fs
   .replaceAll("\r\n", "\n");
 
 const removals = [
-  'import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";\n',
-  'import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";\n',
   'import { ClickableBaseElementView } from "../models/editor/core/ClickableBaseElementView";\n',
   'import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";\n',
   'import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";\n',
