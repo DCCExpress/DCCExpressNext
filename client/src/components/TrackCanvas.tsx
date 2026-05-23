@@ -38,6 +38,7 @@ import {
   getDistance,
   getMidpoint,
   handleTrackCanvasKeyDown,
+  handleTrackCanvasWheel,
   getSelectionRect,
   loadSavedViewState,
   openTrackCanvasSignalAspectPopover,
@@ -404,31 +405,14 @@ export default function TrackCanvas({
     if (!canvas) return;
 
     const handleWheel = (ev: WheelEvent) => {
-      ev.preventDefault();
-
-      if (signalAspectPopoverRef.current.opened) {
-        closeSignalAspectPopover();
-      }
-
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = ev.clientX - rect.left;
-      const mouseY = ev.clientY - rect.top;
-
-      const zoomFactor = ev.deltaY < 0 ? 1.1 : 0.9;
-      const oldScale = viewRef.current.scale;
-      const newScale = clamp(oldScale * zoomFactor, 0.2, 4);
-
-      if (newScale === oldScale) return;
-
-      const worldX = (mouseX - viewRef.current.offsetX) / oldScale;
-      const worldY = (mouseY - viewRef.current.offsetY) / oldScale;
-
-      viewRef.current.scale = newScale;
-      viewRef.current.offsetX = mouseX - worldX * newScale;
-      viewRef.current.offsetY = mouseY - worldY * newScale;
-
-      persistView();
-      invalidate();
+      handleTrackCanvasWheel(ev, {
+        canvas,
+        view: viewRef.current,
+        isSignalAspectPopoverOpen: signalAspectPopoverRef.current.opened,
+        closeSignalAspectPopover,
+        persistView,
+        invalidate,
+      });
     };
 
     const reopenSignalAspectPopover = (
