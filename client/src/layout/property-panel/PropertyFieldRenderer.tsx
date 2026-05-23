@@ -92,7 +92,9 @@ export default function PropertyFieldRenderer({
           setTurnoutSelectionMode={setTurnoutSelectionMode}
           onLayoutChange={onLayoutChange}
           onUpdateSelectedElement={onUpdateSelectedElement}
-          setBusy={setBusy}
+          {...(setBusy !== undefined
+            ? { setBusy }
+            : {})}
         />
       );
 
