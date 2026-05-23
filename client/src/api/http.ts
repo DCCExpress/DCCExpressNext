@@ -31,11 +31,19 @@ import {
 } from "./scriptWsApi";
 
 import {
+  abortAllTrainTasksWs,
+  abortTrainTaskWs,
   addTrainTaskWs,
   deleteTrainTaskWs,
+  finishAllTrainTasksWs,
+  finishTrainTaskWs,
   getTaskManagerSnapshotWs,
+  pauseTrainTaskWs,
   reloadTrainTasksWs,
+  resumeTrainTaskWs,
   saveTrainTasksWs,
+  startAllTrainTasksWs,
+  startTrainTaskWs,
   updateTrainTaskWs,
 } from "./taskManagerWsApi";
 
@@ -81,22 +89,6 @@ export async function saveScript(
   return saveScriptWs(input);
 }
 
-async function readTaskResponse<T>(
-  response: Response,
-  fallbackError: string
-): Promise<T> {
-  const json = await response.json() as T & {
-    ok?: boolean;
-    error?: string;
-  };
-
-  if (!response.ok && typeof json.error !== "string") {
-    throw new Error(fallbackError);
-  }
-
-  return json;
-}
-
 export async function getTaskManagerSnapshot(): Promise<TaskManagerSnapshot> {
   return getTaskManagerSnapshotWs();
 }
@@ -128,88 +120,48 @@ export async function reloadTrainTasks(): Promise<LoadTrainTasksResult> {
   return reloadTrainTasksWs();
 }
 
-async function runTaskAction(
-  taskId: string,
-  action:
-    | "start"
-    | "pause"
-    | "resume"
-    | "finish"
-    | "abort"
-): Promise<TaskManagerActionResult> {
-  const res = await fetch(
-    `/api/tasks/${encodeURIComponent(taskId)}/${action}`,
-    {
-      method: "POST",
-    }
-  );
-
-  return readTaskResponse<TaskManagerActionResult>(
-    res,
-    `Failed to ${action} task`
-  );
-}
-
 export async function startTrainTask(
   taskId: string
 ): Promise<TaskManagerActionResult> {
-  return runTaskAction(taskId, "start");
+  return startTrainTaskWs(taskId);
 }
 
 export async function pauseTrainTask(
   taskId: string
 ): Promise<TaskManagerActionResult> {
-  return runTaskAction(taskId, "pause");
+  return pauseTrainTaskWs(taskId);
 }
 
 export async function resumeTrainTask(
   taskId: string
 ): Promise<TaskManagerActionResult> {
-  return runTaskAction(taskId, "resume");
+  return resumeTrainTaskWs(taskId);
 }
 
 export async function finishTrainTask(
   taskId: string
 ): Promise<TaskManagerActionResult> {
-  return runTaskAction(taskId, "finish");
+  return finishTrainTaskWs(taskId);
 }
 
 export async function abortTrainTask(
   taskId: string
 ): Promise<TaskManagerActionResult> {
-  return runTaskAction(taskId, "abort");
+  return abortTrainTaskWs(taskId);
 }
+
 export async function startAllTrainTasks(): Promise<TaskManagerActionResult> {
-  const res = await fetch("/api/tasks/start-all", {
-    method: "POST",
-  });
-
-  return readTaskResponse<TaskManagerActionResult>(
-    res,
-    "Failed to start all tasks"
-  );
+  return startAllTrainTasksWs();
 }
-export async function finishAllTrainTasks(): Promise<TaskManagerActionResult> {
-  const res = await fetch("/api/tasks/finish-all", {
-    method: "POST",
-  });
 
-  return readTaskResponse<TaskManagerActionResult>(
-    res,
-    "Failed to finish all tasks"
-  );
+export async function finishAllTrainTasks(): Promise<TaskManagerActionResult> {
+  return finishAllTrainTasksWs();
 }
 
 export async function abortAllTrainTasks(): Promise<TaskManagerActionResult> {
-  const res = await fetch("/api/tasks/abort-all", {
-    method: "POST",
-  });
-
-  return readTaskResponse<TaskManagerActionResult>(
-    res,
-    "Failed to abort all tasks"
-  );
+  return abortAllTrainTasksWs();
 }
+
 export async function getRouteGraph(): Promise<RouteGraphResponseDto> {
   return getRouteGraphWs();
 }
