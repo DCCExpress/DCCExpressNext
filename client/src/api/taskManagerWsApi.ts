@@ -13,12 +13,8 @@ import type {
 } from "../../../common/src/task";
 
 import {
-  generateId,
-} from "../helpers";
-
-import {
-  wsApi,
-} from "../services/wsApi";
+  requestWsCommand,
+} from "./wsRequest";
 
 async function sendTaskManagerCommand(
   action: TaskManagerCommandAction,
@@ -27,12 +23,9 @@ async function sendTaskManagerCommand(
     input?: TrainTaskCreateInput;
   } = {}
 ) {
-  const requestId = generateId();
-
-  const response = await wsApi.request(
+  return requestWsCommand(
     "taskManagerCommand",
     {
-      requestId,
       action,
       ...(params.taskId !== undefined
         ? { taskId: params.taskId }
@@ -42,16 +35,8 @@ async function sendTaskManagerCommand(
         : {}),
     },
     "taskManagerResponse",
-    data => data.requestId === requestId
+    "Task manager WebSocket command failed."
   );
-
-  if (!response.ok) {
-    throw new Error(
-      response.message ?? "Task manager WebSocket command failed."
-    );
-  }
-
-  return response;
 }
 
 async function getActionResult(
