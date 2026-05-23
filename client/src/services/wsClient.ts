@@ -121,11 +121,13 @@ class WsClient {
             }
 
             this.socket = null;
-            this.setStatus("disconnected");
 
-            if (!this.manuallyClosed) {
-                this.scheduleReconnect();
+            if (this.manuallyClosed) {
+                this.setStatus("disconnected");
+                return;
             }
+
+            this.scheduleReconnect();
         };
     }
 
@@ -263,6 +265,7 @@ class WsClient {
         this.clearReconnectTimer();
 
         this.reconnectAttempts++;
+        this.setStatus("reconnecting");
 
         const delay = Math.min(
             this.reconnectDelayMs * this.reconnectAttempts,
@@ -286,6 +289,10 @@ class WsClient {
     private setStatus(
         status: WsConnectionStatus
     ): void {
+        if (this.status === status) {
+            return;
+        }
+
         this.status = status;
 
         for (const listener of this.statusListeners) {
