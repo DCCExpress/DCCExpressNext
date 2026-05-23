@@ -62,7 +62,25 @@ export class TaskRouteRuntimeCoordinator {
   hasReservedRoute(
     taskId: string
   ): boolean {
-    return this.reservedRoutesByTaskId.has(taskId);
+    const reservedRoute =
+      this.reservedRoutesByTaskId.get(taskId);
+
+    if (!reservedRoute) {
+      return false;
+    }
+
+    const stillReserved =
+      routeGraphRuntimeStore.hasRouteReservation(
+        reservedRoute.fromBlockName,
+        reservedRoute.toBlockName
+      );
+
+    if (!stillReserved) {
+      this.reservedRoutesByTaskId.delete(taskId);
+      return false;
+    }
+
+    return true;
   }
 
   async tryPrepareTaskRoute(
@@ -80,10 +98,6 @@ export class TaskRouteRuntimeCoordinator {
       return false;
     }
 
-    /**
-     * Ha ennek a tasknak már van lefoglalt route-ja,
-     * nem foglaljuk újra.
-     */
     if (this.hasReservedRoute(task.id)) {
       return true;
     }
@@ -91,19 +105,11 @@ export class TaskRouteRuntimeCoordinator {
     const commandCenter =
       this.config.getSimulatorCommandCenter();
 
-    /**
-     * Nincs elérhető command center.
-     * Nem hibázunk el, csak várunk.
-     */
     if (!commandCenter) {
       await this.markTaskWaitingForRoute(task);
       return false;
     }
 
-    /**
-     * Ha épp foglalt a command center,
-     * akkor nem állítunk váltót, hanem később újrapróbáljuk.
-     */
     if (commandCenter.locked) {
       await this.markTaskWaitingForRoute(task);
       return false;
@@ -117,13 +123,6 @@ export class TaskRouteRuntimeCoordinator {
       return false;
     }
 
-    /**
-     * Indítás előtti teljes blokkellenőrzés.
-     *
-     * A task csak akkor foglalhat le útvonalat,
-     * ha a saját induló blokkján kívül
-     * a teljes blokk-lánc üres.
-     */
     const blockedRouteBlock =
       this.findFirstOccupiedRouteBlock(task);
 
