@@ -352,7 +352,7 @@ class WebSocketApi {
   abortTask(
     taskIdOrName: string
   ): boolean {
-    return this.send("finishTask", {
+    return this.send("abortTask", {
       taskIdOrName,
     });
   }
