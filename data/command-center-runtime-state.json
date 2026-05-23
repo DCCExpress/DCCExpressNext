@@ -1,7 +1,43 @@
 {
   "version": 1,
-  "savedAt": "2026-05-23T10:27:35.634Z",
-  "blocks": [],
+  "savedAt": "2026-05-23T12:53:14.427Z",
+  "blocks": [
+    [
+      "97aa3af-3ac9-4483-815a-d1ead989",
+      {
+        "blockId": "97aa3af-3ac9-4483-815a-d1ead989",
+        "locoId": "4bccdc08-2fd3-406e-82ea-ccfa3942df24"
+      }
+    ],
+    [
+      "6b6786a-1238-4ad4-8ac9-9d2b60c4",
+      {
+        "blockId": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
+        "locoId": null
+      }
+    ],
+    [
+      "518e54e-918c-4add-a05a-37dab832",
+      {
+        "blockId": "518e54e-918c-4add-a05a-37dab832",
+        "locoId": null
+      }
+    ],
+    [
+      "389fdf2-889e-44bc-8013-d8aa373d",
+      {
+        "blockId": "389fdf2-889e-44bc-8013-d8aa373d",
+        "locoId": "1"
+      }
+    ],
+    [
+      "5bac967-d1d9-42dc-a6e0-7eb4292c",
+      {
+        "blockId": "5bac967-d1d9-42dc-a6e0-7eb4292c",
+        "locoId": null
+      }
+    ]
+  ],
   "turnouts": [
     [
       10,
@@ -21,7 +57,7 @@
       12,
       {
         "address": 12,
-        "closed": false
+        "closed": true
       }
     ],
     [

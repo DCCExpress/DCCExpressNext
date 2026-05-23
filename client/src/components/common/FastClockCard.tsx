@@ -278,14 +278,14 @@ export default function FastClockCard() {
         </Button>
       </Group>
 
-      <Text
+      {/* <Text
         size="xs"
         c={!connected ? "red" : "dimmed"}
       >
         {!connected
           ? t("fastClock.serverDisconnected")
           : t("fastClock.serverSynced")}
-      </Text>
+      </Text> */}
 
       {error && (
         <Text
