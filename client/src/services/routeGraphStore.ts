@@ -3,7 +3,7 @@ import type {
   RouteGraphTrackRuntimeDto,
 } from "../../../common/src/railway/routeGraphDto";
 
-import { getRouteGraph } from "../api/http";
+import { getRouteGraphWs } from "../api/layoutWsApi";
 import { createClientGraphFromRouteGraphDto } from "./routeGraphDtoMapper";
 
 type RouteGraphListener = (graph: Graph | null) => void;
@@ -51,6 +51,7 @@ class RouteGraphStore {
 
     this.emit();
   }
+
   /**
    * A jelenlegi kliens cache már nem biztos, hogy a szerver aktuális gráfja.
    * Példa: layout mentés után.
@@ -61,6 +62,7 @@ class RouteGraphStore {
     this.stale = true;
     this.emit();
   }
+
   /**
    * Régi clear() hívások kompatibilitására.
    * Most ugyanaz, mint invalidate().
@@ -103,6 +105,7 @@ class RouteGraphStore {
 
     return this.ensureLoaded();
   }
+
   subscribe(listener: RouteGraphListener): () => void {
     this.listeners.add(listener);
 
@@ -114,7 +117,7 @@ class RouteGraphStore {
   }
 
   private async loadFromServer(): Promise<Graph | null> {
-    const response = await getRouteGraph();
+    const response = await getRouteGraphWs();
 
     if (!response.ready) {
       this.graph = null;
