@@ -7,7 +7,7 @@ import type {
 import {
   readLocos,
   writeLocos,
-} from "../../routes/locoRoutes.js";
+} from "../../services/locoStore.js";
 
 import {
   notifyLocosChanged,
