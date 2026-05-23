@@ -6,6 +6,10 @@ import type {
 } from "./domainTypes.js";
 
 import type {
+  SerializedLayoutDto,
+} from "./layout/layoutDto.js";
+
+import type {
   ScriptRunSource,
 } from "./scriptTypes.js";
 
@@ -91,6 +95,18 @@ export type RouteReservationCommandPayload = {
   toBlockName: string;
 };
 
+export type LayoutCommandAction =
+  | "load"
+  | "save"
+  | "refreshRuntime"
+  | "getRouteGraph";
+
+export type LayoutCommandPayload = {
+  requestId: string;
+  action: LayoutCommandAction;
+  layout?: SerializedLayoutDto;
+};
+
 export type RunScriptCommandPayload = {
   script?: string;
   source: ScriptRunSource;
@@ -141,6 +157,8 @@ export type ClientWsPayloadMap = {
   releaseRouteReservation: RouteReservationCommandPayload;
   clearAllRouteReservations: EmptyClientWsCommandPayload;
   getRouteReservations: EmptyClientWsCommandPayload;
+
+  layoutCommand: LayoutCommandPayload;
 
   runScript: RunScriptCommandPayload;
   stopScript: EmptyClientWsCommandPayload;
