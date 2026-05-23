@@ -37,6 +37,7 @@ import {
   getAllLayoutElements,
   getDistance,
   getMidpoint,
+  handleTrackCanvasKeyDown,
   getSelectionRect,
   loadSavedViewState,
   saveViewState,
@@ -1334,101 +1335,30 @@ export default function TrackCanvas({
   }, []);
 
   useEffect(() => {
-    const handleKeyDown = (ev: KeyboardEvent) => {
-      const active = document.activeElement as HTMLElement;
-      if (active?.tagName !== "CANVAS") {
-        return;
-      }
-
-      const currentLayout = layoutRef.current;
-      const currentTool = toolRef.current;
-      const currentEditMode = editModeRef.current;
-
-      const sel = currentLayout.getSelected();
-      const selectedElements = getAllLayoutElements(currentLayout).filter(
-        (el) => el.selected
-      );
-
-      if (ev.key.toLowerCase() == "escape") {
-        closeSignalAspectPopover();
-      }
-
-      if (ev.key.toLowerCase() === "f") {
-        ev.preventDefault();
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
-
-        fitLayoutToView(
-          layoutRef.current,
-          viewRef.current,
-          width,
-          height
-        );
-
-        persistView();
-        invalidate();
-        return;
-      }
-
-      if (!currentEditMode) return;
-
-
-      if (ev.key === "r" || ev.key === "R") {
-        ev.preventDefault();
-
-        if (currentTool.mode === "draw") {
-          const cursor = currentCursorRef.current;
-          if (!cursor) return;
-
-          cursor.rotation = (cursor.rotation + cursor.rotationStep) % 360;
-          setCurrentCursor(cursor.clone());
-          invalidate();
-          return;
-        }
-
-        if (currentTool.mode === "cursor") {
-          if (!sel) return;
-
-          onBeforeLayoutChange?.();
-
-          sel.rotation = (sel.rotation + sel.rotationStep) % 360;
-          onLayoutChange((prev) => prev);
-          invalidate();
-          return;
-        }
-      }
-
-      if (ev.key === "Delete" || ev.key === "Backspace") {
-        if (!sel) return;
-
-        ev.preventDefault();
-        onBeforeLayoutChange?.();
-        //currentLayout.removeElement(sel);
-
-        const toRemove = [...selectedElements];
-        for (const el of toRemove) {
-          currentLayout.removeElement(el);
-        }
-
-        if (selectedElementRef.current?.id === sel.id) {
-          onSelectedElementChange(null);
-        }
-
-        onLayoutChange((prev) => prev);
-        invalidate();
-      }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      handleTrackCanvasKeyDown(event, {
+        canvasRef,
+        layoutRef,
+        toolRef,
+        editModeRef,
+        currentCursorRef,
+        selectedElementRef,
+        viewRef,
+        setCurrentCursor,
+        onBeforeLayoutChange,
+        onLayoutChange,
+        onSelectedElementChange,
+        closeSignalAspectPopover,
+        persistView,
+        invalidate,
+      });
     };
 
     window.addEventListener("keydown", handleKeyDown);
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-    //}, [onLayoutChange, onBeforeLayoutChange]);
   }, []);
 
 
