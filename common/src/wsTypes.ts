@@ -120,6 +120,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "commandCenterConfigCommand",
   "taskManagerCommand",
   "fastClockCommand",
+  "fileCommand",
   "runScript",
   "stopScript",
   "getScriptRuntimeState",
@@ -280,6 +281,16 @@ export type FastClockResponsePayload = {
   snapshot?: FastClockSnapshot;
 };
 
+export type FileResponsePayload = {
+  requestId: string;
+  action: "readText" | "writeText" | "readJson" | "writeJson";
+  ok: boolean;
+  fileName: string;
+  message?: string;
+  content?: string;
+  data?: unknown;
+};
+
 export type ServerWsPayloadMap = {
   "ws:welcome": {
     message: string;
@@ -326,6 +337,7 @@ export type ServerWsPayloadMap = {
   commandCenterConfigResponse: CommandCenterConfigResponsePayload;
   taskManagerResponse: TaskManagerResponsePayload;
   fastClockResponse: FastClockResponsePayload;
+  fileResponse: FileResponsePayload;
 
   scriptRejected: {
     reason: string;
