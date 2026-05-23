@@ -29,6 +29,7 @@ import {
 } from "./trackCanvasCursor";
 
 import {
+  getCenteredElementGridAnchor,
   screenToGrid,
 } from "./trackCanvasGeometry";
 
@@ -116,17 +117,19 @@ export function handleTrackCanvasMouseMove(
     currentLayout.getElement(grid.x, grid.y);
 
   if (toolRef.current.mode === "draw" && currentCursorRef.current) {
+    const cursorAnchor = getCenteredElementGridAnchor(
+      currentCursorRef.current,
+      grid
+    );
+
     const occupied = currentLayout.getLayeredElement(
       currentCursorRef.current,
-      grid.x,
-      grid.y
+      cursorAnchor.x,
+      cursorAnchor.y
     );
 
     if (occupied != null) {
-      setHoverGrid({
-        x: grid.x,
-        y: grid.y,
-      });
+      setHoverGrid(cursorAnchor);
     } else {
       setHoverGrid(null);
     }
