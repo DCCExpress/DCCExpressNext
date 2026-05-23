@@ -25,6 +25,11 @@ import {
   saveLayoutWs,
 } from "./layoutWsApi";
 
+import {
+  getScriptWs,
+  saveScriptWs,
+} from "./scriptWsApi";
+
 function serializeForWs<T>(value: unknown): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -58,36 +63,13 @@ export async function refreshLayoutRuntime(
 }
 
 export async function getScript(): Promise<SingleScriptFile> {
-  const res = await fetch("/api/script");
-
-  if (!res.ok) {
-    throw new Error("Failed to load script");
-  }
-
-  return await res.json();
+  return getScriptWs();
 }
 
 export async function saveScript(
   input: string | SingleScriptFile
 ): Promise<SingleScriptFile> {
-  const payload =
-    typeof input === "string"
-      ? { content: input }
-      : input;
-
-  const res = await fetch("/api/script", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to save script");
-  }
-
-  return await res.json();
+  return saveScriptWs(input);
 }
 
 async function readTaskResponse<T>(
