@@ -29,6 +29,10 @@ import {
 } from "../commandCenter/dccExSerialCommandCenter.js";
 
 import {
+  railwayTopologyStore,
+} from "../services/railwayTopologyStore.js";
+
+import {
   log,
 } from "../utility.js";
 
@@ -149,5 +153,22 @@ export function registerCommandCenterConfigLoadedCallback(): void {
 export function getLogicalTurnoutState(
   address: number
 ): boolean | null {
-  return commandCenter?.getTurnoutInfo(address)?.closed ?? null;
+  const physicalClosed =
+    commandCenter?.getTurnoutInfo(address)?.closed;
+
+  if (typeof physicalClosed !== "boolean") {
+    return null;
+  }
+
+  const turnout =
+    railwayTopologyStore
+      .getTopology()
+      ?.getTurnouts()
+      .find(item => item.turnoutAddress === address);
+
+  if (!turnout) {
+    return physicalClosed;
+  }
+
+  return physicalClosed === turnout.turnoutClosedValue;
 }
