@@ -6,6 +6,7 @@ import type {
   ClientWsPayloadMap,
   CommandCenterConfigCommandAction,
   Direction,
+  FastClockCommandAction,
   LayoutCommandAction,
   LocosCommandAction,
   ReservationOwnerType,
@@ -106,6 +107,18 @@ function isTaskManagerCommandAction(
     value === "startAll" ||
     value === "finishAll" ||
     value === "abortAll"
+  );
+}
+
+function isFastClockCommandAction(
+  value: unknown
+): value is FastClockCommandAction {
+  return (
+    value === "snapshot" ||
+    value === "run" ||
+    value === "pause" ||
+    value === "reset" ||
+    value === "setSpeed"
   );
 }
 
@@ -394,6 +407,27 @@ function parsePayload<TType extends ClientWsMessageType>(
           action: data.action,
           ...(typeof data.taskId === "string" ? { taskId: data.taskId } : {}),
           ...(isRecord(data.input) ? { input: data.input } : {}),
+        } as ClientWsPayloadMap[TType],
+      };
+    }
+
+    case "fastClockCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isFastClockCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+
+      if (data.action === "setSpeed") {
+        if (typeof data.speed !== "number" || !Number.isFinite(data.speed) || data.speed < 1) {
+          return invalidPayload(type, "speed must be a number greater than or equal to 1.");
+        }
+      }
+
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          ...(typeof data.speed === "number" ? { speed: data.speed } : {}),
         } as ClientWsPayloadMap[TType],
       };
     }
