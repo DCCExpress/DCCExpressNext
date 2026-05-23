@@ -158,20 +158,6 @@ export function setupWebSocketServer(
 
       log("WS incoming:", text);
 
-      const currentCommandCenter =
-        getCurrentCommandCenter();
-
-      if (!currentCommandCenter) {
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "No command center available",
-          },
-        });
-
-        return;
-      }
-
       const parseResult =
         parseIncomingClientWsMessage(text);
 
@@ -194,11 +180,25 @@ export function setupWebSocketServer(
 
       log("Received message of type:", msg.type);
 
+      const currentCommandCenter =
+        getCurrentCommandCenter();
+
+      if (!currentCommandCenter && msg.type !== "layoutCommand") {
+        sendToClient(ws, {
+          type: "error",
+          data: {
+            message: "No command center available",
+          },
+        });
+
+        return;
+      }
+
       try {
         await routeIncomingWebSocketMessage({
           ws,
           msg,
-          commandCenter: currentCommandCenter,
+          commandCenter: currentCommandCenter!,
           sendToClient,
           broadcast: broadcastAll,
         });
