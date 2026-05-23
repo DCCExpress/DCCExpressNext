@@ -139,12 +139,22 @@ export function useLayoutRuntimeWsBindings({
       return changed;
     };
 
+    const unsubscribeWsStatus =
+      wsClient.subscribeStatus(status => {
+        if (
+          status === "disconnected" ||
+          status === "reconnecting" ||
+          status === "error"
+        ) {
+          layoutStore.clearRuntimeOverlays();
+          invalidateLayout();
+        }
+      });
+
     const unsubscribeSensor =
       wsClient.on(
         "sensorChanged",
         data => {
-          //console.log("bejött sensor:", data);
-
           const elements =
             layoutRef.current.getAllElements();
 
@@ -174,8 +184,6 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "turnoutChanged",
         data => {
-          //console.log("turnoutChanged:", data);
-
           const elements =
             layoutRef.current.getAllElements();
 
@@ -223,8 +231,6 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "accessoryChanged",
         data => {
-          //console.log("accessoryChanged:", data);
-
           const elements =
             layoutRef.current.getAllElements();
 
@@ -254,8 +260,6 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "blockStateChanged",
         data => {
-          //console.log("blockStateChanged:", data);
-
           for (const [blockId, blockState] of Object.entries(data)) {
             const element =
               layoutRef.current.getElementById(blockId);
@@ -335,7 +339,7 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "allRouteReservationsCleared",
         () => {
-          layoutStore.clearAllBusy();
+          layoutStore.clearRuntimeOverlays();
         }
       );
 
@@ -407,6 +411,7 @@ export function useLayoutRuntimeWsBindings({
       );
 
     return () => {
+      unsubscribeWsStatus();
       unsubscribeSensor();
       unsubscribeTurnout();
       unsubscribeAccessory();
