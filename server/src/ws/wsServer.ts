@@ -84,6 +84,10 @@ function broadcast(
   }
 }
 
+function canHandleWithoutCommandCenter(type: string): boolean {
+  return type === "layoutCommand" || type === "locosCommand";
+}
+
 export function broadcastAll(
   message: TypedServerWsMessage,
   exclude?: WebSocket
@@ -183,7 +187,10 @@ export function setupWebSocketServer(
       const currentCommandCenter =
         getCurrentCommandCenter();
 
-      if (!currentCommandCenter && msg.type !== "layoutCommand") {
+      if (
+        !currentCommandCenter &&
+        !canHandleWithoutCommandCenter(msg.type)
+      ) {
         sendToClient(ws, {
           type: "error",
           data: {
