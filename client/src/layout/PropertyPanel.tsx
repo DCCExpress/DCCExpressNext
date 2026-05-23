@@ -263,7 +263,9 @@ export default function RightPropertyPanel({
                   routeGraphError={routeGraphError}
                   onChange={handleChange}
                   onUpdateSelectedElement={onUpdateSelectedElement}
-                  setBusy={setBusy}
+                  {...(setBusy !== undefined
+                    ? { setBusy }
+                    : {})}
                 />
               </Card>
             </div>
