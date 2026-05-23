@@ -5,6 +5,7 @@ export * from "./TrackCanvas.types";
 export * from "./createCursorElement";
 
 // Rendering and geometry
+export * from "./trackCanvasClock";
 export * from "./trackCanvasDraw";
 export * from "./trackCanvasGeometry";
 export * from "./trackCanvasLayoutBounds";
