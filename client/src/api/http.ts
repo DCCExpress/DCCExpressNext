@@ -13,85 +13,49 @@ import type {
   RouteGraphResponseDto,
 } from "../../../common/src/railway/routeGraphDto";
 
+import {
+  getLocosWs,
+  saveLocosWs,
+} from "./locosWsApi";
+
+import {
+  getLayoutWs,
+  getRouteGraphWs,
+  refreshLayoutRuntimeWs,
+  saveLayoutWs,
+} from "./layoutWsApi";
+
+function serializeForWs<T>(value: unknown): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 export async function getLocos(): Promise<Loco[]> {
-  const response = await fetch("/api/locos");
-
-  if (!response.ok) {
-    throw new Error("Nem sikerült lekérni a mozdonyokat.");
-  }
-
-  return response.json();
+  return getLocosWs();
 }
 
 export async function saveLocos(locos: Loco[]): Promise<void> {
-  const response = await fetch("/api/locos", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(locos),
-  });
-
-  if (!response.ok) {
-    throw new Error("Nem sikerült elmenteni a mozdonyokat.");
-  }
+  await saveLocosWs(locos);
 }
 
 export async function getLayout(): Promise<LayoutView> {
-  const response = await fetch("/api/layout");
-
-  if (!response.ok) {
-    throw new Error("Nem sikerült betölteni a pályát.");
-  }
-
-  return response.json();
+  return LayoutView.fromJSON(
+    await getLayoutWs()
+  );
 }
 
 export async function saveLayout(elements: LayoutView): Promise<void> {
-  const response = await fetch("/api/layout", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(elements),
-  });
-
-  if (!response.ok) {
-    throw new Error("Nem sikerült elmenteni a pályát.");
-  }
+  await saveLayoutWs(
+    serializeForWs(elements)
+  );
 }
 
 export async function refreshLayoutRuntime(
   layout: LayoutView
 ): Promise<void> {
-  const response = await fetch("/api/layout/runtime", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(layout),
-  });
-
-  if (!response.ok) {
-    let message =
-      "Nem sikerült frissíteni a szerveroldali runtime layoutot.";
-
-    try {
-      const data = await response.json() as {
-        message?: unknown;
-      };
-
-      if (typeof data.message === "string") {
-        message = data.message;
-      }
-    } catch {
-      // Ha a szerver nem JSON-t küldött, marad a fallback üzenet.
-    }
-
-    throw new Error(message);
-  }
+  await refreshLayoutRuntimeWs(
+    serializeForWs(layout)
+  );
 }
-
 
 export async function getScript(): Promise<SingleScriptFile> {
   const res = await fetch("/api/script");
@@ -311,11 +275,5 @@ export async function abortAllTrainTasks(): Promise<TaskManagerActionResult> {
   );
 }
 export async function getRouteGraph(): Promise<RouteGraphResponseDto> {
-  const response = await fetch("/api/layout/route-graph");
-
-  if (!response.ok) {
-    throw new Error("Nem sikerült lekérni a szerveroldali route gráfot.");
-  }
-
-  return response.json();
+  return getRouteGraphWs();
 }
