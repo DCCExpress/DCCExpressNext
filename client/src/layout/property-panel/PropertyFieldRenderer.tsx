@@ -32,6 +32,7 @@ type PropertyFieldRendererProps = {
   routeGraphError: string | null;
   onChange: PropertyChangeHandler;
   onUpdateSelectedElement: SelectedElementUpdateHandler;
+  setBusy?: (busy: boolean, text?: string) => void;
 };
 
 export default function PropertyFieldRenderer({
@@ -46,6 +47,7 @@ export default function PropertyFieldRenderer({
   routeGraphError,
   onChange,
   onUpdateSelectedElement,
+  setBusy,
 }: PropertyFieldRendererProps) {
   switch (prop.type) {
     case "string":
@@ -90,6 +92,7 @@ export default function PropertyFieldRenderer({
           setTurnoutSelectionMode={setTurnoutSelectionMode}
           onLayoutChange={onLayoutChange}
           onUpdateSelectedElement={onUpdateSelectedElement}
+          setBusy={setBusy}
         />
       );
 
