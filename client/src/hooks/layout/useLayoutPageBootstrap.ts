@@ -10,8 +10,8 @@ import {
 import { useTranslation } from "react-i18next";
 
 import {
-  getLocos,
-} from "../../api/http";
+  getLocosWs,
+} from "../../api/locosWsApi";
 
 import {
   getLayoutWs,
@@ -121,7 +121,7 @@ export function useLayoutPageBootstrap({
   const loadLocos = useCallback(async (): Promise<void> => {
     try {
       const data =
-        await getLocos();
+        await getLocosWs();
 
       setLocos(data);
       locoStore.setLocos(data);
