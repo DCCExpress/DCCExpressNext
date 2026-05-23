@@ -13,16 +13,12 @@ let source = fs
   .replaceAll("\r\n", "\n");
 
 const removals = [
-  'import { generateId, showErrorMessage, showWarningMessage } from "../helpers";\n',
-  'import { isTurnoutElement } from "../models/editor/core/LayoutView";\n',
   'import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";\n',
   'import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";\n',
   'import { ClickableBaseElementView } from "../models/editor/core/ClickableBaseElementView";\n',
-  'import { AudioButtonElementView } from "../models/editor/elements/AudioButtonElementView";\n',
   'import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";\n',
   'import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";\n',
   'import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";\n',
-  'import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";\n',
 ];
 
 for (const removal of removals) {
@@ -31,16 +27,7 @@ for (const removal of removals) {
 
 const trackCanvasImportCleanup = [
   "  applySelectionRect,\n",
-  "  clamp,\n",
-  "  handleTrackCanvasClickableDown,\n",
-  "  handleTrackCanvasClickableUp,\n",
-  "  fitLayoutToView,\n",
-  "  getAllLayoutElements,\n",
-  "  getDistance,\n",
-  "  getMidpoint,\n",
   "  getTrackCanvasCursor,\n",
-  "  getSelectionRect,\n",
-  "  screenToGrid,\n",
   "  type SelectionRect,\n",
 ];
 
