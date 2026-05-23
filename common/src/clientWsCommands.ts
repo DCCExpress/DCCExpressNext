@@ -243,6 +243,7 @@ export type ClientWsPayloadMap = {
   getScriptRuntimeState: EmptyClientWsCommandPayload;
 
   startTask: TaskIdOrNameCommandPayload;
+  startAllTasks: EmptyClientWsCommandPayload;
   finishTask: TaskIdOrNameCommandPayload;
   abortTask: TaskIdOrNameCommandPayload;
   pauseTask: TaskIdOrNameCommandPayload;
