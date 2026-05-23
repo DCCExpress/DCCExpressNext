@@ -56,6 +56,7 @@ import type {
 } from "./TrackCanvas.types";
 
 import {
+  getCenteredElementGridAnchor,
   screenToGrid,
 } from "./trackCanvasGeometry";
 
@@ -288,10 +289,15 @@ export function handleTrackCanvasMouseDown(
       return;
     }
 
+    const cursorAnchor = getCenteredElementGridAnchor(
+      cursor,
+      grid
+    );
+
     const exists = currentLayout.getLayeredElement(
       cursor,
-      grid.x,
-      grid.y
+      cursorAnchor.x,
+      cursorAnchor.y
     );
 
     if (exists) {
@@ -309,8 +315,8 @@ export function handleTrackCanvasMouseDown(
       cursor.clone();
 
     newElement.id = generateId();
-    newElement.x = grid.x;
-    newElement.y = grid.y;
+    newElement.x = cursorAnchor.x;
+    newElement.y = cursorAnchor.y;
     newElement.selected = false;
 
     switch (newElement.layerName) {
