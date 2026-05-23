@@ -5,12 +5,8 @@ import type {
 } from "../../../common/src/clientWsCommands";
 
 import {
-  generateId,
-} from "../helpers";
-
-import {
-  wsApi,
-} from "../services/wsApi";
+  requestWsCommand,
+} from "./wsRequest";
 
 async function sendFileCommand(
   action: FileCommandAction,
@@ -20,12 +16,9 @@ async function sendFileCommand(
     data?: unknown;
   } = {}
 ) {
-  const requestId = generateId();
-
-  const response = await wsApi.request(
+  return requestWsCommand(
     "fileCommand",
     {
-      requestId,
       action,
       fileName,
       ...(payload.content !== undefined
@@ -36,16 +29,8 @@ async function sendFileCommand(
         : {}),
     },
     "fileResponse",
-    data => data.requestId === requestId
+    "File WebSocket command failed."
   );
-
-  if (!response.ok) {
-    throw new Error(
-      response.message ?? "File WebSocket command failed."
-    );
-  }
-
-  return response;
 }
 
 export async function readTextFileWs(
