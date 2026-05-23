@@ -85,7 +85,11 @@ function broadcast(
 }
 
 function canHandleWithoutCommandCenter(type: string): boolean {
-  return type === "layoutCommand" || type === "locosCommand";
+  return (
+    type === "layoutCommand" ||
+    type === "locosCommand" ||
+    type === "scriptDocumentCommand"
+  );
 }
 
 export function broadcastAll(
