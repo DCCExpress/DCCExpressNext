@@ -26,14 +26,14 @@ function findFunctionStart(input, functionName) {
   return match?.index ?? -1;
 }
 
-function findMatchingBrace(input, openBraceIndex) {
+function findMatchingToken(input, openIndex, openToken, closeToken) {
   let depth = 0;
   let inString = null;
   let escaped = false;
   let inLineComment = false;
   let inBlockComment = false;
 
-  for (let index = openBraceIndex; index < input.length; index++) {
+  for (let index = openIndex; index < input.length; index++) {
     const char = input[index];
     const next = input[index + 1];
 
@@ -87,12 +87,12 @@ function findMatchingBrace(input, openBraceIndex) {
       continue;
     }
 
-    if (char === "{") {
+    if (char === openToken) {
       depth++;
       continue;
     }
 
-    if (char === "}") {
+    if (char === closeToken) {
       depth--;
 
       if (depth === 0) {
@@ -104,6 +104,24 @@ function findMatchingBrace(input, openBraceIndex) {
   return -1;
 }
 
+function findMatchingBrace(input, openBraceIndex) {
+  return findMatchingToken(
+    input,
+    openBraceIndex,
+    "{",
+    "}"
+  );
+}
+
+function findMatchingParen(input, openParenIndex) {
+  return findMatchingToken(
+    input,
+    openParenIndex,
+    "(",
+    ")"
+  );
+}
+
 function removeFunction(input, functionName) {
   const start = findFunctionStart(input, functionName);
 
@@ -111,10 +129,22 @@ function removeFunction(input, functionName) {
     throw new Error(`Could not locate function ${functionName}.`);
   }
 
-  const openBrace = input.indexOf("{", start);
+  const openParen = input.indexOf("(", start);
+
+  if (openParen === -1) {
+    throw new Error(`Could not locate opening parenthesis for ${functionName}.`);
+  }
+
+  const closeParen = findMatchingParen(input, openParen);
+
+  if (closeParen === -1) {
+    throw new Error(`Could not locate closing parenthesis for ${functionName}.`);
+  }
+
+  const openBrace = input.indexOf("{", closeParen);
 
   if (openBrace === -1) {
-    throw new Error(`Could not locate opening brace for ${functionName}.`);
+    throw new Error(`Could not locate opening body brace for ${functionName}.`);
   }
 
   const closeBrace = findMatchingBrace(input, openBrace);
