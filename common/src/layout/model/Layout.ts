@@ -25,8 +25,8 @@ function elementsIntersect(
   first: BaseElement,
   second: BaseElement
 ): boolean {
-  const a = first.getBounds();
-  const b = second.getBounds();
+  const a = first.getCollisionBounds();
+  const b = second.getCollisionBounds();
 
   return (
     a.x < b.x + b.width &&
