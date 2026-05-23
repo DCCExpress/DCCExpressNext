@@ -248,7 +248,21 @@ export type CommandCenterConfigResponsePayload = {
 
 export type TaskManagerResponsePayload = {
   requestId: string;
-  action: "snapshot" | "add" | "update" | "delete" | "save" | "reload";
+  action:
+    | "snapshot"
+    | "add"
+    | "update"
+    | "delete"
+    | "save"
+    | "reload"
+    | "start"
+    | "pause"
+    | "resume"
+    | "finish"
+    | "abort"
+    | "startAll"
+    | "finishAll"
+    | "abortAll";
   ok: boolean;
   message?: string;
   snapshot?: TaskManagerSnapshot;
