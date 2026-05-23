@@ -2,8 +2,11 @@
 
 import type {
   LayoutResponsePayload,
-  RouteGraphResponseDto,
 } from "../../../../common/src/types.js";
+
+import type {
+  RouteGraphResponseDto,
+} from "../../../../common/src/railway/routeGraphDto.js";
 
 import {
   layoutRuntimeStore,
