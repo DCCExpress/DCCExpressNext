@@ -5,6 +5,10 @@ import type {
 } from "./clientWsCommands.js";
 
 import type {
+  Loco,
+} from "./domainTypes.js";
+
+import type {
   SerializedLayoutDto,
 } from "./layout/layoutDto.js";
 
@@ -118,6 +122,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "clearAllRouteReservations",
   "getRouteReservations",
   "layoutCommand",
+  "locosCommand",
   "runScript",
   "stopScript",
   "getScriptRuntimeState",
@@ -223,6 +228,15 @@ export type LayoutResponsePayload = {
   routeGraph?: RouteGraphResponseDto;
 };
 
+export type LocosResponsePayload = {
+  requestId: string;
+  action: "load" | "save";
+  ok: boolean;
+  message?: string;
+  locos?: Loco[];
+  count?: number;
+};
+
 /**
  * Szerver -> kliens WebSocket események payload térképe.
  */
@@ -267,6 +281,7 @@ export type ServerWsPayloadMap = {
   allRouteReservationsCleared: {};
 
   layoutResponse: LayoutResponsePayload;
+  locosResponse: LocosResponsePayload;
 
   scriptRejected: {
     reason: string;
