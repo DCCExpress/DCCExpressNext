@@ -392,7 +392,10 @@ class WebSocketApi {
   }
 
   startAllTasks(): boolean {
-    return this.send("startAllTasks", {});
+    return this.send("taskManagerCommand", {
+      requestId: generateId(),
+      action: "startAll",
+    });
   }
 
   pauseTask(
@@ -412,11 +415,17 @@ class WebSocketApi {
   }
 
   finishAllTasks(): boolean {
-    return this.send("finishAllTasks", {});
+    return this.send("taskManagerCommand", {
+      requestId: generateId(),
+      action: "finishAll",
+    });
   }
 
   abortAllTasks(): boolean {
-    return this.send("abortAllTasks", {});
+    return this.send("taskManagerCommand", {
+      requestId: generateId(),
+      action: "abortAll",
+    });
   }
 
   finishTask(
