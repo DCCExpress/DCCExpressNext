@@ -11,6 +11,10 @@ import type {
 } from "../../../../common/src/task.js";
 
 import {
+  editorEditModeStore,
+} from "../../services/editorEditModeStore.js";
+
+import {
   taskRuntimeStore,
 } from "../../services/taskRuntimeStore.js";
 
@@ -45,7 +49,18 @@ function createAddTaskResponse(
 
 function createActionResponse(
   requestId: string,
-  action: "update" | "delete" | "save",
+  action:
+    | "update"
+    | "delete"
+    | "save"
+    | "start"
+    | "pause"
+    | "resume"
+    | "finish"
+    | "abort"
+    | "startAll"
+    | "finishAll"
+    | "abortAll",
   result: TaskManagerActionResult
 ): TaskManagerResponsePayload {
   return {
@@ -73,6 +88,26 @@ function createReloadResponse(
   };
 }
 
+function createRejectedActionResult(error: string): TaskManagerActionResult {
+  return {
+    ok: false,
+    error,
+    snapshot: taskRuntimeStore.getSnapshot(),
+  };
+}
+
+async function startTaskWithGuards(taskId: string): Promise<TaskManagerActionResult> {
+  if (taskRuntimeStore.hasActiveTasks()) {
+    return createRejectedActionResult("A task is already active.");
+  }
+
+  if (editorEditModeStore.hasEditingClients()) {
+    return createRejectedActionResult("Editor mode is active on at least one client.");
+  }
+
+  return taskRuntimeStore.startTask(taskId);
+}
+
 export const handleTaskManagerMessage: WsMessageHandler = async context => {
   if (context.msg.type !== "taskManagerCommand") {
     return false;
@@ -96,84 +131,80 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
       }
 
       case "add": {
-        const result = await taskRuntimeStore.addTask(
-          context.msg.data.input!
-        );
-
-        sendTaskManagerResponse(
-          context,
-          createAddTaskResponse(
-            requestId,
-            action,
-            result
-          )
-        );
-
+        const result = await taskRuntimeStore.addTask(context.msg.data.input!);
+        sendTaskManagerResponse(context, createAddTaskResponse(requestId, action, result));
         return true;
       }
 
       case "update": {
-        const result = await taskRuntimeStore.updateTask(
-          context.msg.data.taskId ?? "",
-          context.msg.data.input!
-        );
-
-        sendTaskManagerResponse(
-          context,
-          createActionResponse(
-            requestId,
-            action,
-            result
-          )
-        );
-
+        const result = await taskRuntimeStore.updateTask(context.msg.data.taskId ?? "", context.msg.data.input!);
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
         return true;
       }
 
       case "delete": {
-        const result = await taskRuntimeStore.removeTask(
-          context.msg.data.taskId ?? ""
-        );
-
-        sendTaskManagerResponse(
-          context,
-          createActionResponse(
-            requestId,
-            action,
-            result
-          )
-        );
-
+        const result = await taskRuntimeStore.removeTask(context.msg.data.taskId ?? "");
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
         return true;
       }
 
       case "save": {
         const result = await taskRuntimeStore.saveTasks();
-
-        sendTaskManagerResponse(
-          context,
-          createActionResponse(
-            requestId,
-            action,
-            result
-          )
-        );
-
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
         return true;
       }
 
       case "reload": {
         const result = await taskRuntimeStore.reloadTasks();
+        sendTaskManagerResponse(context, createReloadResponse(requestId, action, result));
+        return true;
+      }
 
-        sendTaskManagerResponse(
-          context,
-          createReloadResponse(
-            requestId,
-            action,
-            result
-          )
-        );
+      case "start": {
+        const result = await startTaskWithGuards(context.msg.data.taskId ?? "");
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
+        return true;
+      }
 
+      case "pause": {
+        const result = await taskRuntimeStore.pauseTask(context.msg.data.taskId ?? "");
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
+        return true;
+      }
+
+      case "resume": {
+        const result = await taskRuntimeStore.resumeTask(context.msg.data.taskId ?? "");
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
+        return true;
+      }
+
+      case "finish": {
+        const result = await taskRuntimeStore.finishTask(context.msg.data.taskId ?? "");
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
+        return true;
+      }
+
+      case "abort": {
+        const result = await taskRuntimeStore.abortTask(context.msg.data.taskId ?? "");
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
+        return true;
+      }
+
+      case "startAll": {
+        const result = await taskRuntimeStore.startAllTasks();
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
+        return true;
+      }
+
+      case "finishAll": {
+        const result = await taskRuntimeStore.finishAllTasks();
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
+        return true;
+      }
+
+      case "abortAll": {
+        const result = await taskRuntimeStore.abortAllTasks();
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
         return true;
       }
 
@@ -193,9 +224,7 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
       requestId,
       action,
       ok: false,
-      message: error instanceof Error
-        ? error.message
-        : String(error),
+      message: error instanceof Error ? error.message : String(error),
     });
 
     return true;
