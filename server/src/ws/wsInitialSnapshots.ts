@@ -5,7 +5,9 @@ import type {
 } from "ws";
 
 import type {
+  PowerInfo,
   TypedServerWsMessage,
+  WsPowerInfoPayload,
 } from "../../../common/src/types.js";
 
 import type {
@@ -50,6 +52,18 @@ type InitialSnapshotParams = {
   commandCenter: CommandCenter | null;
   sendToClient: SendToClient;
 };
+
+function toWsPowerInfoPayload(
+  powerInfo: PowerInfo
+): WsPowerInfoPayload {
+  return {
+    emergencyStop: powerInfo.emergencyStop,
+    trackVoltageOn: powerInfo.trackVoltageOn,
+    trackVoltageOff: !powerInfo.trackVoltageOn,
+    shortCircuit: powerInfo.shortCircuit,
+    programmingModeActive: false,
+  };
+}
 
 function sendRouteReservationSnapshots(
   ws: WebSocket,
@@ -145,7 +159,7 @@ export function sendInitialWebSocketSnapshots({
 
   sendToClient(ws, {
     type: "powerInfo",
-    data: powerInfo,
+    data: toWsPowerInfoPayload(powerInfo),
   });
 
   sendToClient(ws, {
