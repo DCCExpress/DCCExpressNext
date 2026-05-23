@@ -13,39 +13,24 @@ import type {
 } from "../../../common/src/railway/routeGraphDto";
 
 import {
-  generateId,
-} from "../helpers";
-
-import {
-  wsApi,
-} from "../services/wsApi";
+  requestWsCommand,
+} from "./wsRequest";
 
 async function sendLayoutCommand(
   action: LayoutCommandAction,
   layout?: SerializedLayoutDto
 ) {
-  const requestId = generateId();
-
-  const response = await wsApi.request(
+  return requestWsCommand(
     "layoutCommand",
     {
-      requestId,
       action,
       ...(layout !== undefined
         ? { layout }
         : {}),
     },
     "layoutResponse",
-    data => data.requestId === requestId
+    "Layout WebSocket command failed."
   );
-
-  if (!response.ok) {
-    throw new Error(
-      response.message ?? "Layout WebSocket command failed."
-    );
-  }
-
-  return response;
 }
 
 export async function getLayoutWs(): Promise<SerializedLayoutDto> {
