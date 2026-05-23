@@ -8,6 +8,7 @@ export * from "./trackCanvasCursor";
 export * from "./trackCanvasDraw";
 export * from "./trackCanvasEventListeners";
 export * from "./trackCanvasGeometry";
+export * from "./trackCanvasInteractionStop";
 export * from "./trackCanvasKeyboard";
 export * from "./trackCanvasLayoutBounds";
 export * from "./trackCanvasRouteActions";
