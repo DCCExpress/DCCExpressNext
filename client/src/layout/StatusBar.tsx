@@ -14,16 +14,23 @@ import {
   IconPlayerPlayFilled,
   IconPlayerSkipForward,
   IconPlayerStopFilled,
+  IconTrain,
 } from "@tabler/icons-react";
 
 import {
   useEffect,
   useState,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 
 import type {
   TaskManagerSnapshot,
 } from "../../../common/src/task";
+
+import type {
+  RightPanelMode,
+} from "../hooks/layout/useLayoutPageUiState";
 
 import StatusActionIcon from "../components/common/StatusActionIcon";
 import StatusBadge from "../components/common/StatusBadge";
@@ -40,7 +47,15 @@ import { getWsColor } from "./TopMenuBar";
 
 import "../styles/global.css";
 
-export default function StatusBar() {
+type StatusBarProps = {
+  rightPanelMode: RightPanelMode;
+  setRightPanelMode: Dispatch<SetStateAction<RightPanelMode>>;
+};
+
+export default function StatusBar({
+  rightPanelMode,
+  setRightPanelMode,
+}: StatusBarProps) {
   const wsStatus =
     useWsStatus();
 
@@ -157,6 +172,14 @@ export default function StatusBar() {
     }
 
     handleStartScript();
+  };
+
+  const handleToggleRightPanelMode = (): void => {
+    setRightPanelMode(value =>
+      value === "property"
+        ? "loco"
+        : "property"
+    );
   };
 
   const handleOpenTasks = (): void => {
@@ -296,10 +319,6 @@ export default function StatusBar() {
 
           <Divider orientation="vertical" />
 
-          {/* <StatusBadge color={taskBadgeColor}>
-            TASK {activeTaskCount}
-          </StatusBadge> */}
-
           <StatusActionIcon
             tooltip="Open tasks"
             color="blue"
@@ -351,6 +370,22 @@ export default function StatusBar() {
           <Divider orientation="vertical" />
 
           <FastClockStatus />
+
+          <StatusActionIcon
+            tooltip={
+              rightPanelMode === "loco"
+                ? "Right panel: locomotive control"
+                : "Right panel: properties"
+            }
+            color={
+              rightPanelMode === "loco"
+                ? "green"
+                : "gray"
+            }
+            onClick={handleToggleRightPanelMode}
+          >
+            <IconTrain size={14} />
+          </StatusActionIcon>
 
           <Divider orientation="vertical" />
 
@@ -520,18 +555,16 @@ function getMemoryColor(
   return "green";
 }
 
-function getFpsColor(
-  fps: number | null
-): string {
+function getFpsColor(fps: number | null): string {
   if (fps === null) {
     return "gray";
   }
 
-  if (fps < 30) {
+  if (fps < 20) {
     return "red";
   }
 
-  if (fps < 50) {
+  if (fps < 40) {
     return "orange";
   }
 
