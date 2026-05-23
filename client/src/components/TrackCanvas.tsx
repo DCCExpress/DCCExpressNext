@@ -1,4 +1,4 @@
-import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";
+import { useMantineColorScheme } from "@mantine/core";
 import { useEffect, useRef, useState } from "react";
 import { generateId, showErrorMessage, showWarningMessage } from "../helpers";
 import { BaseElementView } from "../models/editor/core/BaseElementView";
@@ -17,7 +17,6 @@ import { RouteButtonElementView } from "../models/editor/elements/RouteButtonEle
 import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
 import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";
 import { TrackTurnoutTwoWayElementView } from "../models/editor/elements/TrackTurnoutTwoWayElementView";
-import ElementPreview from "../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../services/wsApi";
 import "../styles/TrackCanvas.css";
 import LocoPicker from "./loco/LocoPicker";
@@ -31,6 +30,7 @@ import {
   createCursorElement,
   createSignalAspectPreviews,
   drawScene,
+  TrackCanvasSignalAspectPopover,
   executeExtendedRouteButton,
   executeRouteButton,
   fitLayoutToView,
@@ -1469,122 +1469,10 @@ export default function TrackCanvas({
     <>
       <canvas tabIndex={0} ref={canvasRef} className="track-canvas" />
 
-      <Popover
-        opened={signalAspectPopover.opened}
-        onChange={(opened) => {
-          if (!opened) closeSignalAspectPopover();
-        }}
-
-        withArrow
-        shadow="xl"
-        closeOnClickOutside={false}
-        closeOnEscape
-        withinPortal
-        offset={18}
-        transitionProps={{
-          transition: "scale",
-          duration: 200,
-          timingFunction: "ease-out",
-        }}
-      >
-        <Popover.Target>
-          <Box p={4}
-            style={{
-              position: "fixed",
-              left: signalAspectPopover.x,
-              top: signalAspectPopover.y,
-              width: 0,
-              height: 0,
-              pointerEvents: "none",
-            }}
-          />
-        </Popover.Target>
-
-        <Popover.Dropdown
-          p={4}
-
-          onPointerDown={(e) => {
-            e.stopPropagation();
-          }}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-
-          <Stack gap="xs">
-            {/* <Text p={2} bg={"blue"}>Signal aspect</Text> */}
-            <Group gap={4}>
-              <Box className="signal-aspect-button"
-                onClick={() => {
-                  closeSignalAspectPopover();
-                  signalAspectPopover.signal?.sendGreen();
-                }}
-              >
-                <ElementPreview style={{ cursor: "pointer" }}
-                  element={signalAspectPopover.previews?.green!}
-                  label="Green"
-                  width={40}
-                  height={40}
-                  translateX={-10}
-                />
-              </Box>
-
-              <Box className="signal-aspect-button"
-                onClick={() => {
-                  closeSignalAspectPopover();
-                  signalAspectPopover.signal?.sendRed();
-                }}
-              >
-                <ElementPreview
-                  element={signalAspectPopover.previews?.red!}
-                  label="Red"
-                  width={40}
-                  height={40}
-                  translateX={-10}
-                />
-              </Box>
-
-              {signalAspectPopover.signal && signalAspectPopover.signal.aspect > 2 && (
-                <Box className="signal-aspect-button"
-                  onClick={() => {
-                    closeSignalAspectPopover();
-                    signalAspectPopover.signal?.sendYellow();
-                  }}
-                >
-                  <ElementPreview
-                    element={signalAspectPopover.previews?.yellow!}
-                    label="Yellow"
-                    width={40}
-                    height={40}
-                    translateX={-10}
-                  />
-                </Box>)}
-
-              {signalAspectPopover.signal && signalAspectPopover.signal!.aspect > 3 && (
-                <Box className="signal-aspect-button"
-                  onClick={() => {
-                    closeSignalAspectPopover();
-                    signalAspectPopover.signal?.sendWhite();
-                  }}
-                >
-                  <ElementPreview
-                    element={signalAspectPopover.previews?.white!}
-                    label="White"
-                    width={40}
-                    height={40}
-                    translateX={-10}
-                  />
-                </Box>
-              )}
-
-
-            </Group>
-          </Stack>
-        </Popover.Dropdown>
-      </Popover>
+      <TrackCanvasSignalAspectPopover
+        state={signalAspectPopover}
+        onClose={closeSignalAspectPopover}
+      />
 
       <LocoPicker
         opened={locoPickerOpen}
