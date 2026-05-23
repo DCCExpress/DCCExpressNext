@@ -35,6 +35,69 @@ The project is built with:
 
 ---
 
+# Communication Architecture
+
+DCCExpressNext uses **WebSocket-only application communication** between the browser client and the Node.js server.
+
+The client does not use HTTP GET/PUT/POST endpoints for application data anymore. Runtime and persisted application operations are sent through the WebSocket endpoint:
+
+```text
+/ws
+```
+
+The Express HTTP server is still used for:
+
+- serving the production frontend,
+- the health check endpoint:
+
+```text
+/api/health
+```
+
+Application data commands are WebSocket request/response messages, including:
+
+- layout load/save/runtime refresh,
+- locomotive load/save,
+- command center configuration load/save,
+- route graph requests,
+- script document load/save and script runtime commands,
+- train task manager commands,
+- fast clock commands,
+- file read/write commands,
+- command center runtime control.
+
+The client-side domain entry point is:
+
+```text
+client/src/api/domainApi.ts
+```
+
+Lower-level WebSocket-specific API files are kept in:
+
+```text
+client/src/api/*WsApi.ts
+```
+
+Shared WebSocket request plumbing is centralized in:
+
+```text
+client/src/api/wsRequest.ts
+```
+
+Server-side WebSocket message handling lives under:
+
+```text
+server/src/ws
+```
+
+Server-side storage and domain helpers live under:
+
+```text
+server/src/services
+```
+
+---
+
 # Requirements
 
 Before running the project, install:
@@ -72,6 +135,12 @@ The server listens on:
 http://localhost:3000
 ```
 
+The WebSocket endpoint is:
+
+```text
+ws://localhost:3000/ws
+```
+
 ## 2. Start the client
 
 Open another terminal and run:
@@ -92,7 +161,7 @@ Open the application in the browser:
 http://localhost:5173
 ```
 
-The frontend development server proxies API and WebSocket requests to the backend server automatically.
+The frontend development server proxies the WebSocket connection and health check requests to the backend server automatically.
 
 ---
 
@@ -116,7 +185,7 @@ Then open:
 http://localhost:3000
 ```
 
-In production mode, the Express server serves the built frontend and the backend API from the same application.
+In production mode, the Express server serves the built frontend, exposes `/api/health`, and hosts the `/ws` WebSocket endpoint.
 
 ---
 
@@ -194,9 +263,11 @@ A common usage flow is:
 
 # Notes
 
-- Layout, locomotive, task and command center data are stored by the server in local project data files.
-- The project is under active development, so some workflows and file formats may still evolve.
+- Layout, locomotive, task, script and command center data are stored by the server in local project data files.
+- Application data communication is WebSocket-based; do not add new HTTP data endpoints unless there is a deliberate reason.
+- Keep `/api/health` small and side-effect free.
 - Simulator mode is recommended for initial testing before connecting real hardware.
+- The project is under active development, so some workflows and file formats may still evolve.
 
 ---
 
