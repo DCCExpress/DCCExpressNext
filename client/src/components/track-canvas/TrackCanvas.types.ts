@@ -25,6 +25,10 @@ import type {
   EditorTool,
 } from "../../models/editor/types/EditorTypes";
 
+import type {
+  SignalAspectPreviews,
+} from "./trackCanvasSignalAspect";
+
 export type TrackCanvasProps = {
   editMode?: boolean;
   tool: EditorTool;
@@ -115,10 +119,5 @@ export type SignalAspectPopoverState = {
   x: number;
   y: number;
   signal: TrackSignalElementView | null;
-  previews: {
-    green: TrackSignalElementView;
-    red: TrackSignalElementView;
-    yellow: TrackSignalElementView;
-    white: TrackSignalElementView;
-  } | null;
+  previews: SignalAspectPreviews | null;
 };
