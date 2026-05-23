@@ -143,7 +143,15 @@ export type TaskManagerCommandAction =
   | "update"
   | "delete"
   | "save"
-  | "reload";
+  | "reload"
+  | "start"
+  | "pause"
+  | "resume"
+  | "finish"
+  | "abort"
+  | "startAll"
+  | "finishAll"
+  | "abortAll";
 
 export type TaskManagerCommandPayload = {
   requestId: string;
@@ -183,7 +191,7 @@ export type ClientWsPayloadMap = {
   setBasicAccessory: SetBasicAccessoryCommandPayload;
 
   setBlock: SetBlockCommandPayload;
-  setBlockRemove: SetBlockRemoveCommandPayload;
+  setBlockRemove: SetBlockCommandPayload;
   setBlocksReset: EmptyClientWsCommandPayload;
   getBlocks: EmptyClientWsCommandPayload;
 
