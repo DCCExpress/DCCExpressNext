@@ -39,6 +39,7 @@ import {
   getMidpoint,
   getTrackCanvasCursor,
   handleTrackCanvasKeyDown,
+  handleTrackCanvasMouseMove,
   handleTrackCanvasWheel,
   getSelectionRect,
   loadSavedViewState,
@@ -694,121 +695,21 @@ export default function TrackCanvas({
     };
 
     const handleMouseMove = (ev: MouseEvent) => {
-
-      const currentLayout = layoutRef.current;
-      const currentTool = toolRef.current;
-
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = ev.clientX - rect.left;
-      const mouseY = ev.clientY - rect.top;
-
-      const grid = screenToGrid(
-        mouseX,
-        mouseY,
-        viewRef.current,
-        currentLayout.gridSize
-      );
-
-      setMouseGrid((prev) =>
-        prev.x === grid.x && prev.y === grid.y ? prev : { x: grid.x, y: grid.y }
-      );
-
-      const hoveredElement = currentLayout.getElement(grid.x, grid.y);
-
-
-      if (toolRef.current.mode === "draw" && currentCursorRef.current) {
-
-        const occupied = currentLayout.getLayeredElement(currentCursorRef.current, grid.x, grid.y);
-        if (occupied != null) {
-
-          setHoverGrid({ x: grid.x, y: grid.y });
-        } else {
-          setHoverGrid(null);
-        }
-        invalidate();
-      }
-
-      if (panRef.current.isPanning) {
-        ev.preventDefault();
-
-        const dx = ev.clientX - panRef.current.lastX;
-        const dy = ev.clientY - panRef.current.lastY;
-
-        panRef.current.lastX = ev.clientX;
-        panRef.current.lastY = ev.clientY;
-
-        viewRef.current.offsetX += dx;
-        viewRef.current.offsetY += dy;
-
-        persistView();
-        invalidate();
-        return;
-      }
-
-      if (selectionRef.current.isSelecting) {
-        ev.preventDefault();
-
-        selectionRef.current.endGridX = grid.x;
-        selectionRef.current.endGridY = grid.y;
-
-        canvas.style.cursor = "crosshair";
-        invalidate();
-        return;
-      }
-
-      if (dragRef.current.isDraggingElement && dragRef.current.elementId) {
-        ev.preventDefault();
-
-        const dx = grid.x - dragRef.current.startMouseGridX;
-        const dy = grid.y - dragRef.current.startMouseGridY;
-
-        const all = getAllLayoutElements(currentLayout);
-        const selectedIds = new Set(
-          dragRef.current.draggedElements.map((item) => item.id)
-        );
-
-        for (const item of dragRef.current.draggedElements) {
-          const el = all.find((e) => e.id === item.id);
-          if (!el) continue;
-
-          const nextX = item.startX + dx;
-          const nextY = item.startY + dy;
-
-          const occupied = currentLayout.getLayeredElement(el, nextX, nextY);
-
-          if (occupied && !selectedIds.has(occupied.id)) {
-            // setHoverGrid((prev) =>
-            //   prev?.x === nextX && prev?.y === nextY
-            //     ? prev
-            //     : { x: nextX, y: nextY }
-            // );
-
-            setHoverGrid({ x: grid.x, y: grid.y });
-            canvas.style.cursor = "not-allowed";
-            return;
-          }
-        }
-
-        setHoverGrid(null);
-
-        for (const item of dragRef.current.draggedElements) {
-          const el = all.find((e) => e.id === item.id);
-          if (!el) continue;
-
-          el.x = item.startX + dx;
-          el.y = item.startY + dy;
-        }
-
-        canvas.style.cursor = "move";
-        invalidate();
-        return;
-      }
-
-      canvas.style.cursor = getTrackCanvasCursor(
-        editModeRef.current,
-        currentTool,
-        hoveredElement
-      );
+      handleTrackCanvasMouseMove(ev, {
+        canvas,
+        layoutRef,
+        toolRef,
+        viewRef,
+        currentCursorRef,
+        panRef,
+        selectionRef,
+        dragRef,
+        editModeRef,
+        setMouseGrid,
+        setHoverGrid,
+        persistView,
+        invalidate,
+      });
     };
     const stopInteraction = () => {
       stopTrackCanvasInteraction({
