@@ -554,9 +554,7 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task not found.");
     }
 
-    await this.stopTaskLocoIfNeeded(task);
-    this.completeTask(task);
-    this.broadcastTaskLifecycle("taskCompleted", task);
+    this.requestTaskFinish(task);
     this.broadcastSnapshot();
 
     return this.createSuccessResult();
@@ -610,9 +608,7 @@ class TaskRuntimeStore {
         task.status === "paused" ||
         task.status === "finishing"
       ) {
-        await this.stopTaskLocoIfNeeded(task);
-        this.completeTask(task);
-        this.broadcastTaskLifecycle("taskCompleted", task);
+        this.requestTaskFinish(task);
       }
     }
 
@@ -760,6 +756,14 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task not found.");
     }
 
+    if (task.status === "finishing") {
+      this.completeTask(task);
+      this.broadcastTaskLifecycle("taskCompleted", task);
+      this.broadcastSnapshot();
+
+      return this.createSuccessResult();
+    }
+
     this.releaseTaskResources(task);
     task.status = "running";
     task.runtime = createRestartingRuntimeState(task);
@@ -775,6 +779,21 @@ class TaskRuntimeStore {
     task.completedAt = Date.now();
     task.runtime.hasReachedToBlock = true;
     task.runtime.inTransit = false;
+  }
+
+  private requestTaskFinish(task: TrainTask): void {
+    if (task.status === "completed") {
+      return;
+    }
+
+    if (!task.runtime.loco) {
+      this.completeTask(task);
+      this.broadcastTaskLifecycle("taskCompleted", task);
+      return;
+    }
+
+    task.status = "finishing";
+    task.error = undefined;
   }
 
   private async stopTaskLocoIfNeeded(task: TrainTask): Promise<void> {

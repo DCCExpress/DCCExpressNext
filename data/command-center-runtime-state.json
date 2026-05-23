@@ -1,19 +1,19 @@
 {
   "version": 1,
-  "savedAt": "2026-05-23T13:05:50.526Z",
+  "savedAt": "2026-05-23T13:28:53.953Z",
   "blocks": [
     [
       "97aa3af-3ac9-4483-815a-d1ead989",
       {
         "blockId": "97aa3af-3ac9-4483-815a-d1ead989",
-        "locoId": "1"
+        "locoId": null
       }
     ],
     [
       "6b6786a-1238-4ad4-8ac9-9d2b60c4",
       {
         "blockId": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
-        "locoId": "4bccdc08-2fd3-406e-82ea-ccfa3942df24"
+        "locoId": "1"
       }
     ],
     [
@@ -34,7 +34,7 @@
       "5bac967-d1d9-42dc-a6e0-7eb4292c",
       {
         "blockId": "5bac967-d1d9-42dc-a6e0-7eb4292c",
-        "locoId": null
+        "locoId": "4bccdc08-2fd3-406e-82ea-ccfa3942df24"
       }
     ]
   ],
@@ -57,7 +57,7 @@
       12,
       {
         "address": 12,
-        "closed": false
+        "closed": true
       }
     ],
     [
