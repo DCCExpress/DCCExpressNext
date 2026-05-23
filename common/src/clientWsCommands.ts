@@ -2,6 +2,7 @@
 
 import type {
   Direction,
+  Loco,
   ReservationOwnerType,
 } from "./domainTypes.js";
 
@@ -107,6 +108,16 @@ export type LayoutCommandPayload = {
   layout?: SerializedLayoutDto;
 };
 
+export type LocosCommandAction =
+  | "load"
+  | "save";
+
+export type LocosCommandPayload = {
+  requestId: string;
+  action: LocosCommandAction;
+  locos?: Loco[];
+};
+
 export type RunScriptCommandPayload = {
   script?: string;
   source: ScriptRunSource;
@@ -159,6 +170,7 @@ export type ClientWsPayloadMap = {
   getRouteReservations: EmptyClientWsCommandPayload;
 
   layoutCommand: LayoutCommandPayload;
+  locosCommand: LocosCommandPayload;
 
   runScript: RunScriptCommandPayload;
   stopScript: EmptyClientWsCommandPayload;
