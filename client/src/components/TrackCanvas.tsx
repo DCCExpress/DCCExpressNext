@@ -1,15 +1,14 @@
 import { Box, Group, Popover, Stack, useMantineColorScheme } from "@mantine/core";
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { generateId, showErrorMessage, showOkMessage, showWarningMessage, sleep } from "../helpers";
 import { BaseElementView } from "../models/editor/core/BaseElementView";
-import { isTurnoutElement, LayoutView } from "../models/editor/core/LayoutView";
+import { isTurnoutElement } from "../models/editor/core/LayoutView";
 import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
-import { DrawOptions, EditorTool } from "../models/editor/types/EditorTypes";
+import { EditorTool } from "../models/editor/types/EditorTypes";
 
-import { Loco } from "../../../common/src/types";
 import { useCommandCenter } from "../context/CommandCenterContext";
-import { EditorSettings, useEditorSettings } from "../context/EditorSettingsContext";
+import { useEditorSettings } from "../context/EditorSettingsContext";
 import { ClickableBaseElementView } from "../models/editor/core/ClickableBaseElementView";
 import { AudioButtonElementView } from "../models/editor/elements/AudioButtonElementView";
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
@@ -28,151 +27,32 @@ import { routeGraphStore } from "../services/routeGraphStore";
 
 import { useTranslation } from "react-i18next";
 import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
-import { createCursorElement } from "./track-canvas/createCursorElement";
-
-type TrackCanvasProps = {
-  editMode?: boolean;
-  tool: EditorTool;
-  layout: LayoutView;
-  onLayoutChange: Dispatch<SetStateAction<LayoutView>>;
-  onBeforeLayoutChange?: () => void;
-  selectedElement: BaseElementView | null;
-  onSelectedElementChange: (element: BaseElementView | null) => void;
-  invalidateCounter: number;
-  onInvalidate: () => void;
-  fitCounter: number;
-  turnoutSelectionMode: boolean;
-  setBusy?: (busy: boolean, text?: string) => void;
-  locos: Loco[];
-};
-
-type ViewState = {
-  scale: number;
-  offsetX: number;
-  offsetY: number;
-};
-
-type PanState = {
-  isPanning: boolean;
-  lastX: number;
-  lastY: number;
-};
-
-type DragState = {
-  isDraggingElement: boolean;
-  elementId: string | null;
-  startMouseGridX: number;
-  startMouseGridY: number;
-  startElementX: number;
-  startElementY: number;
-  draggedElements: Array<{
-    id: string;
-    startX: number;
-    startY: number;
-  }>;
-};
-
-type PointerPanState = {
-  activePointerId: number | null;
-  isTouchPanning: boolean;
-};
-
-type TouchPoint = {
-  x: number;
-  y: number;
-};
-
-type PinchState = {
-  isPinching: boolean;
-  pointer1Id: number | null;
-  pointer2Id: number | null;
-  startDistance: number;
-  startScale: number;
-  worldCenterX: number;
-  worldCenterY: number;
-};
-
-type CanvasSize = {
-  width: number;
-  height: number;
-};
-
-type SelectionRect = {
-  startGridX: number;
-  startGridY: number;
-  endGridX: number;
-  endGridY: number;
-};
-
-type SelectionState = {
-  isSelecting: boolean;
-  additive: boolean;
-  startGridX: number;
-  startGridY: number;
-  endGridX: number;
-  endGridY: number;
-};
-
-const VIEW_STORAGE_KEY = "dcc-express.editor.trackCanvas.view";
-
-function loadSavedViewState(): ViewState {
-  try {
-    const raw = localStorage.getItem(VIEW_STORAGE_KEY);
-    if (!raw) {
-      return {
-        scale: 1,
-        offsetX: 0,
-        offsetY: 0,
-      };
-    }
-
-    const parsed = JSON.parse(raw) as Partial<ViewState>;
-
-    return {
-      scale:
-        typeof parsed.scale === "number" && Number.isFinite(parsed.scale)
-          ? clamp(parsed.scale, 0.2, 4)
-          : 1,
-      offsetX:
-        typeof parsed.offsetX === "number" && Number.isFinite(parsed.offsetX)
-          ? parsed.offsetX
-          : 0,
-      offsetY:
-        typeof parsed.offsetY === "number" && Number.isFinite(parsed.offsetY)
-          ? parsed.offsetY
-          : 0,
-    };
-  } catch {
-    return {
-      scale: 1,
-      offsetX: 0,
-      offsetY: 0,
-    };
-  }
-}
-
-function saveViewState(view: ViewState): void {
-  try {
-    localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify(view));
-  } catch {
-    // ignore
-  }
-}
-
-type SignalAspectValue = 1 | 2 | 3 | 4;
-
-type SignalAspectPopoverState = {
-  opened: boolean;
-  x: number;
-  y: number;
-  signal: TrackSignalElementView | null;
-  previews: {
-    green: TrackSignalElementView;
-    red: TrackSignalElementView;
-    yellow: TrackSignalElementView;
-    white: TrackSignalElementView;
-  } | null;
-};
+import {
+  applySelectionRect,
+  clamp,
+  createCursorElement,
+  createSignalAspectPreviews,
+  drawScene,
+  fitLayoutToView,
+  getAllLayoutElements,
+  getDistance,
+  getMidpoint,
+  getSelectionRect,
+  loadSavedViewState,
+  saveViewState,
+  screenToGrid,
+  type CanvasSize,
+  type DragState,
+  type PanState,
+  type PinchState,
+  type PointerPanState,
+  type SelectionRect,
+  type SelectionState,
+  type SignalAspectPopoverState,
+  type TouchPoint,
+  type TrackCanvasProps,
+  type ViewState,
+} from "./track-canvas";
 
 export default function TrackCanvas({
   editMode = false,
@@ -1670,33 +1550,15 @@ export default function TrackCanvas({
     clientY: number
   ) => {
 
-    const green = new TrackSignalElementView(0, 0);
-    green.aspect = signal.aspect;
-    green.setGreen();
-
-    const red = new TrackSignalElementView(0, 0);
-    red.aspect = signal.aspect;
-    red.setRed();
-
-    const yellow = new TrackSignalElementView(0, 0);
-    yellow.aspect = signal.aspect;
-    yellow.setYellow();
-
-    const white = new TrackSignalElementView(0, 0);
-    white.aspect = signal.aspect;
-    white.setWhite();
+    const previews =
+      createSignalAspectPreviews(signal);
 
     setSignalAspectPopover({
       opened: true,
       x: clientX,
       y: clientY,
       signal,
-      previews: {
-        green: green,
-        red: red,
-        yellow: yellow,
-        white: white,
-      }
+      previews
     });
 
   };
@@ -1864,348 +1726,3 @@ export default function TrackCanvas({
     </>
   );
 }
-
-function drawScene(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  editMode: boolean,
-  colorScheme: "light" | "dark" | "auto",
-  view: ViewState,
-  mouseGrid: { x: number; y: number },
-  tool: EditorTool,
-  hoverGrid: { x: number; y: number } | null,
-  currentCursor: BaseElementView | null,
-  layout: LayoutView,
-  settings: EditorSettings,
-  dragId?: string,
-  selected?: BaseElementView,
-  selectionRect?: SelectionRect | null,
-  turnoutSelectionMode?: boolean,
-  locos?: Loco[],
-) {
-  const isDark = colorScheme !== "light";
-
-  ctx.clearRect(0, 0, width, height);
-  drawBackground(ctx, width, height, isDark);
-
-  ctx.save();
-  ctx.translate(view.offsetX, view.offsetY);
-  ctx.scale(view.scale, view.scale);
-
-  if (settings.showGrid) {
-    drawGrid(ctx, width, height, layout.gridSize, isDark, view);
-  }
-
-  if (hoverGrid) {
-    const gs = layout.gridSize;
-    ctx.strokeStyle = "#ef4444";
-    ctx.fillStyle = "#ef444450";
-    ctx.lineWidth = 2 / view.scale;
-    ctx.fillRect(hoverGrid.x * gs, hoverGrid.y * gs, gs, gs);
-    ctx.strokeRect(hoverGrid.x * gs, hoverGrid.y * gs, gs, gs);
-
-    if (currentCursor) {
-
-      //  const rect = currentCursor.getBounds();
-      //  ctx.fillRect(rect.x, rect.y , rect.width, rect.height);
-      //  ctx.strokeRect(rect.x, rect.y , rect.width, rect.height);
-
-    }
-  }
-
-  const opt: DrawOptions = {
-    showOccupancySensorAddress: settings.showOccupacySensorAddress,
-    showSensorAddress: settings.showSensorAddress,
-    showTurnoutAddress: settings.showTurnoutAddress,
-    showSignalAddress: settings.showSignalAddress,
-    showSection: settings.showSegments,
-    showBlockNames: settings.showBlockNames,
-    darkMode: isDark,
-    locos: locos || [],
-  };
-
-  layout.draw(ctx, opt);
-
-  if (currentCursor) {
-    currentCursor.x = mouseGrid.x;
-    currentCursor.y = mouseGrid.y;
-
-    currentCursor.draw(ctx, {
-      showOccupancySensorAddress: false,
-      showSensorAddress: false,
-      showSignalAddress: false,
-      showTurnoutAddress: false,
-      locos: [] as Loco[],
-    });
-  }
-
-  if (selectionRect) {
-    drawSelectionRect(ctx, layout.gridSize, selectionRect, view.scale);
-  }
-
-  ctx.restore();
-
-  if (editMode) {
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    drawInfo(ctx, width, editMode, isDark, view.scale, mouseGrid, tool, currentCursor);
-  }
-}
-
-function drawBackground(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  isDark: boolean
-) {
-  ctx.fillStyle = isDark ? "#313131" : "#F8F9FA";
-  ctx.fillRect(0, 0, width, height);
-}
-
-function drawGrid(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  gridSize: number,
-  isDark: boolean,
-  view: ViewState
-) {
-  ctx.strokeStyle = isDark
-    ? "rgba(255,255,255,0.07)"
-    : "rgba(0,0,0,0.08)";
-  ctx.lineWidth = 1 / view.scale;
-
-  const worldLeft = -view.offsetX / view.scale;
-  const worldTop = -view.offsetY / view.scale;
-  const worldRight = worldLeft + width / view.scale;
-  const worldBottom = worldTop + height / view.scale;
-
-  const startX = Math.floor(worldLeft / gridSize) * gridSize;
-  const endX = Math.ceil(worldRight / gridSize) * gridSize;
-  const startY = Math.floor(worldTop / gridSize) * gridSize;
-  const endY = Math.ceil(worldBottom / gridSize) * gridSize;
-
-  for (let x = startX; x <= endX; x += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(x, worldTop);
-    ctx.lineTo(x, worldBottom);
-    ctx.stroke();
-  }
-
-  for (let y = startY; y <= endY; y += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(worldLeft, y);
-    ctx.lineTo(worldRight, y);
-    ctx.stroke();
-  }
-}
-
-function drawInfo(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  editMode: boolean,
-  isDark: boolean,
-  scale: number,
-  mouseGrid: { x: number; y: number },
-  tool: EditorTool,
-  currentCursor: BaseElementView | null
-) {
-  const px = 20;
-  const toolText =
-    tool.mode === "cursor" ? "Kurzor" : `Rajz: ${tool.elementType}`;
-
-  const rotationText =
-    tool.mode === "draw" && currentCursor
-      ? ` | Rot: ${currentCursor.rotation}°`
-      : "";
-
-  const text = `${editMode ? "Szerkesztési mód" : "Nézet mód"} | Tool: ${toolText}${rotationText} | Zoom: ${Math.round(
-    scale * 100
-  )}% | X: ${mouseGrid.x} Y: ${mouseGrid.y}`;
-
-  ctx.fillStyle = isDark
-    ? "rgba(0,0,0,0.35)"
-    : "rgba(255,255,255,0.85)";
-  ctx.fillRect(px, 16, 470, 32);
-
-  ctx.fillStyle = isDark ? "#ffffff" : "#000000";
-  ctx.font = "13px sans-serif";
-  ctx.fillText(text, px + 20, 36);
-}
-
-function screenToGrid(
-  screenX: number,
-  screenY: number,
-  view: ViewState,
-  gridSize: number
-): { x: number; y: number } {
-  const worldX = (screenX - view.offsetX) / view.scale;
-  const worldY = (screenY - view.offsetY) / view.scale;
-
-  return {
-    x: Math.floor(worldX / gridSize),
-    y: Math.floor(worldY / gridSize),
-  };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function drawSelectionRect(
-  ctx: CanvasRenderingContext2D,
-  gridSize: number,
-  rect: SelectionRect,
-  scale: number
-) {
-  const n = normalizeSelectionRect(rect);
-
-  const x = n.left * gridSize;
-  const y = n.top * gridSize;
-  const w = (n.right - n.left + 1) * gridSize;
-  const h = (n.bottom - n.top + 1) * gridSize;
-
-  ctx.save();
-  ctx.strokeStyle = "#339af0";
-  ctx.fillStyle = "rgba(51, 154, 240, 0.18)";
-  ctx.lineWidth = 2 / scale;
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeRect(x, y, w, h);
-  ctx.restore();
-}
-
-function normalizeSelectionRect(rect: SelectionRect) {
-  return {
-    left: Math.min(rect.startGridX, rect.endGridX),
-    right: Math.max(rect.startGridX, rect.endGridX),
-    top: Math.min(rect.startGridY, rect.endGridY),
-    bottom: Math.max(rect.startGridY, rect.endGridY),
-  };
-}
-
-function getSelectionRect(selection: SelectionState): SelectionRect | null {
-  if (!selection.isSelecting) return null;
-
-  return {
-    startGridX: selection.startGridX,
-    startGridY: selection.startGridY,
-    endGridX: selection.endGridX,
-    endGridY: selection.endGridY,
-  };
-}
-
-function getAllLayoutElements(layout: LayoutView): BaseElementView[] {
-  return [
-    ...layout.track.elements,
-    ...layout.sensors.elements,
-    ...layout.signals.elements,
-    ...layout.blocks.elements,
-    ...layout.buildings.elements,
-  ];
-}
-
-function applySelectionRect(
-  layout: LayoutView,
-  rect: SelectionRect,
-  additive = false
-): BaseElementView[] {
-  const n = normalizeSelectionRect(rect);
-  const all = getAllLayoutElements(layout);
-
-  if (!additive) {
-    layout.unselectAll();
-  }
-
-  const selected = all.filter((el) => {
-    return (
-      el.x >= n.left &&
-      el.x <= n.right &&
-      el.y >= n.top &&
-      el.y <= n.bottom
-    );
-  });
-
-  for (const el of selected) {
-    el.selected = true;
-  }
-
-  return all.filter((el) => el.selected);
-}
-
-function getLayoutBounds(layout: LayoutView) {
-  const elements = getAllLayoutElements(layout);
-
-  if (elements.length === 0) {
-    return null;
-  }
-
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  for (const el of elements) {
-    minX = Math.min(minX, el.x);
-    minY = Math.min(minY, el.y);
-    maxX = Math.max(maxX, el.x);
-    maxY = Math.max(maxY, el.y);
-  }
-
-  return { minX, minY, maxX, maxY };
-}
-
-function fitLayoutToView(
-  layout: LayoutView,
-  view: ViewState,
-  canvasWidth: number,
-  canvasHeight: number
-) {
-  const bounds = getLayoutBounds(layout);
-  if (!bounds) return;
-
-  const gridSize = layout.gridSize;
-  const padding = 40;
-
-  // A layout világkoordinátás szélei pixelben
-  const worldLeft = bounds.minX * gridSize;
-  const worldTop = bounds.minY * gridSize;
-  const worldRight = (bounds.maxX + 1) * gridSize;
-  const worldBottom = (bounds.maxY + 1) * gridSize;
-
-  const worldWidth = worldRight - worldLeft;
-  const worldHeight = worldBottom - worldTop;
-
-  if (worldWidth <= 0 || worldHeight <= 0) return;
-
-  const availableWidth = Math.max(1, canvasWidth - padding * 2);
-  const availableHeight = Math.max(1, canvasHeight - padding * 2);
-
-  let newScale = Math.min(
-    availableWidth / worldWidth,
-    availableHeight / worldHeight
-  );
-
-  newScale = clamp(newScale, 0.2, 4);
-
-  view.scale = newScale;
-
-  view.offsetX =
-    (canvasWidth - worldWidth * newScale) / 2 - worldLeft * newScale;
-
-  view.offsetY =
-    (canvasHeight - worldHeight * newScale) / 2 - worldTop * newScale;
-}
-
-function getDistance(a: TouchPoint, b: TouchPoint): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-function getMidpoint(a: TouchPoint, b: TouchPoint): TouchPoint {
-  return {
-    x: (a.x + b.x) / 2,
-    y: (a.y + b.y) / 2,
-  };
-}
-
