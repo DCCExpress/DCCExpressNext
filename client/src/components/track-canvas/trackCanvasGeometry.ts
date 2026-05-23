@@ -36,9 +36,18 @@ export function getCenteredElementGridAnchor(
   element: BaseElementView,
   grid: GridPoint
 ): GridPoint {
+  const bounds =
+    element.getBounds();
+
+  const boundsOffsetX =
+    bounds.x - element.x;
+
+  const boundsOffsetY =
+    bounds.y - element.y;
+
   return {
-    x: grid.x - Math.floor(element.w / 2),
-    y: grid.y - Math.floor(element.h / 2),
+    x: grid.x - Math.floor(bounds.width / 2) - boundsOffsetX,
+    y: grid.y - Math.floor(bounds.height / 2) - boundsOffsetY,
   };
 }
 
