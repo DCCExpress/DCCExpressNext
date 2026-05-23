@@ -96,23 +96,68 @@ class WebSocketApi {
 
     return new Promise((resolve, reject) => {
       let timeoutHandle: number | null = null;
+      let settled = false;
+      let unsubscribeResponse: () => void = () => {};
+      let unsubscribeStatus: () => void = () => {};
 
-      const unsubscribe = wsClient.on(responseType, responseData => {
+      const cleanup = (): void => {
+        if (timeoutHandle !== null) {
+          window.clearTimeout(timeoutHandle);
+          timeoutHandle = null;
+        }
+
+        unsubscribeResponse();
+        unsubscribeStatus();
+      };
+
+      const resolveOnce = (
+        responseData: ServerWsPayloadMap[TServerType]
+      ): void => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        cleanup();
+        resolve(responseData);
+      };
+
+      const rejectOnce = (error: Error): void => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        cleanup();
+        reject(error);
+      };
+
+      unsubscribeResponse = wsClient.on(responseType, responseData => {
         if (!matches(responseData)) {
           return;
         }
 
-        if (timeoutHandle !== null) {
-          window.clearTimeout(timeoutHandle);
+        resolveOnce(responseData);
+      });
+
+      unsubscribeStatus = wsClient.subscribeStatus(status => {
+        if (
+          status === "connected" ||
+          status === "connecting" ||
+          status === "reconnecting"
+        ) {
+          return;
         }
 
-        unsubscribe();
-        resolve(responseData);
+        rejectOnce(
+          new Error(
+            `WebSocket request failed because connection is ${status}: ${String(clientType)}`
+          )
+        );
       });
 
       timeoutHandle = window.setTimeout(() => {
-        unsubscribe();
-        reject(
+        rejectOnce(
           new Error(
             `WebSocket request timed out: ${String(clientType)}`
           )
@@ -122,12 +167,7 @@ class WebSocketApi {
       const sent = this.send(clientType, data);
 
       if (!sent) {
-        if (timeoutHandle !== null) {
-          window.clearTimeout(timeoutHandle);
-        }
-
-        unsubscribe();
-        reject(
+        rejectOnce(
           new Error("WebSocket is not connected.")
         );
       }
