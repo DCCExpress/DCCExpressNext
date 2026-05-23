@@ -27,7 +27,7 @@ import {
   applySelectionRect,
   clamp,
   createCursorElement,
-  createSignalAspectPreviews,
+  closeTrackCanvasSignalAspectPopover,
   drawScene,
   TrackCanvasBlockLocoPicker,
   TrackCanvasSignalAspectPopover,
@@ -40,6 +40,7 @@ import {
   handleTrackCanvasKeyDown,
   getSelectionRect,
   loadSavedViewState,
+  openTrackCanvasSignalAspectPopover,
   saveViewState,
   screenToGrid,
   type CanvasSize,
@@ -1370,26 +1371,18 @@ export default function TrackCanvas({
     clientX: number,
     clientY: number
   ) => {
-
-    const previews =
-      createSignalAspectPreviews(signal);
-
-    setSignalAspectPopover({
-      opened: true,
-      x: clientX,
-      y: clientY,
+    openTrackCanvasSignalAspectPopover(
+      setSignalAspectPopover,
       signal,
-      previews
-    });
-
+      clientX,
+      clientY
+    );
   };
 
   const closeSignalAspectPopover = () => {
-    setSignalAspectPopover((prev) => ({
-      ...prev,
-      opened: false,
-      signal: null,
-    }));
+    closeTrackCanvasSignalAspectPopover(
+      setSignalAspectPopover
+    );
   };
 
   const handleLocoSelected = (locoId: string) => { };
