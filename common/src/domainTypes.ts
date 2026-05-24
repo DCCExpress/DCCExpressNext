@@ -71,7 +71,7 @@ export type CommandCenterType =
   | "simulator";
 
 export interface ICommandCenter {
-  name: string;
+  name?: string;
   type: CommandCenterType;
   z21: {
     host?: string;
