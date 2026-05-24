@@ -61,15 +61,10 @@ export class DccExSerialCommandCenter extends DccExCommandCenter {
     this.serialClient.start();
 
     this.mainTask = setInterval(() => {
-      this.processBuffer();
-
-      if (
-        this.serialClient.isOpen &&
-        Date.now() - this.lastSentAt > 5000
-      ) {
-        this.enqueueKeepalive();
-      }
+      this.tickCommandLoop();
     }, this.mainTaskIntervalMs);
+
+    this.mainTask.unref?.();
 
     return Promise.resolve(true);
   }
@@ -82,6 +77,21 @@ export class DccExSerialCommandCenter extends DccExCommandCenter {
 
     this.serialClient.stop();
     return Promise.resolve(true);
+  }
+
+  private tickCommandLoop(): void {
+    try {
+      this.processBuffer();
+
+      if (
+        this.serialClient.isOpen &&
+        Date.now() - this.lastSentAt > 5000
+      ) {
+        this.enqueueKeepalive();
+      }
+    } catch (error) {
+      logError("DCC-EX serial command loop failed:", error);
+    }
   }
 
   private processBuffer(): void {
