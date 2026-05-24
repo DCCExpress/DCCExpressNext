@@ -1,18 +1,38 @@
 // server/src/ws/handlers/wsLockMessageHandlers.ts
 
 import type {
+  WsHandlerContext,
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
 
-export const handleLockMessage: WsMessageHandler = ({
+function rejectMissingCommandCenter({
   ws,
-  msg,
-  commandCenter,
   sendToClient,
-  broadcast,
-}) => {
+}: WsHandlerContext): void {
+  sendToClient(ws, {
+    type: "error",
+    data: {
+      message: "No command center available",
+    },
+  });
+}
+
+export const handleLockMessage: WsMessageHandler = context => {
+  const {
+    ws,
+    msg,
+    commandCenter,
+    sendToClient,
+    broadcast,
+  } = context;
+
   switch (msg.type) {
     case "routeLock": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       if (
         commandCenter.locked &&
         commandCenter.lockOwnerUUID !== msg.uuid
@@ -44,6 +64,11 @@ export const handleLockMessage: WsMessageHandler = ({
     }
 
     case "routeUnlock": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       if (commandCenter.lockOwnerUUID === msg.uuid) {
         commandCenter.locked = false;
         commandCenter.lockOwnerUUID = null;
