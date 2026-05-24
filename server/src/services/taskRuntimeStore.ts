@@ -516,6 +516,7 @@ class TaskRuntimeStore {
       return this.createErrorResult("Task is not running.");
     }
 
+    await this.stopTaskLocoIfNeeded(task);
     task.status = "paused";
     this.broadcastSnapshot();
 
@@ -604,6 +605,7 @@ class TaskRuntimeStore {
 
     for (const task of this.tasks) {
       if (task.status === "running") {
+        await this.stopTaskLocoIfNeeded(task);
         task.status = "paused";
       }
     }
