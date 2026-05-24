@@ -597,7 +597,14 @@ export default function GraphDialog({
                             )}
                         </Tabs.Tab>
 
-                        <Tabs.Tab value="blocks">{t("graph.tabs.blocks")}</Tabs.Tab>
+                        <Tabs.Tab value="blocks">
+                            {t("graph.tabs.blocks")}
+                            {graph && (
+                                <Badge ml="xs" size="xs" variant="light">
+                                    {blockConnectionRows.length}
+                                </Badge>
+                            )}
+                        </Tabs.Tab>
 
                         <Tabs.Tab value="runnableBlocks">
                             {t("graph.tabs.runnableBlocks")}
