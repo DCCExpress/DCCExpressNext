@@ -7,6 +7,10 @@ import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
 
+import {
+  wsTrafficStatsStore,
+} from "./wsTrafficStatsStore.js";
+
 type BroadcastMessage = (
   message: TypedServerWsMessage
 ) => void;
@@ -148,6 +152,7 @@ class ServerRuntimeStatsStore {
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
     const usedMemory = totalMemory - freeMemory;
+    const wsTraffic = wsTrafficStatsStore.getSnapshot();
 
     const nextCpuSample = this.createCpuSample();
     const previousCpuSample = this.lastCpuSample;
@@ -201,6 +206,10 @@ class ServerRuntimeStatsStore {
       systemLoadPercent,
       cpuCount: os.cpus().length,
       uptimeSec: Math.round(process.uptime()),
+      wsRxKbps: wsTraffic.rxKbps,
+      wsTxKbps: wsTraffic.txKbps,
+      wsRxBytesTotal: wsTraffic.rxBytesTotal,
+      wsTxBytesTotal: wsTraffic.txBytesTotal,
     };
   }
 }
