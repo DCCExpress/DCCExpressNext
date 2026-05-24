@@ -46,10 +46,6 @@ export async function saveCommandCenterConfig(
 ): Promise<CommandCenterConfig> {
   const item = normalizeCommandCenter(input);
 
-  if (!item.name.trim()) {
-    throw new Error("A név megadása kötelező.");
-  }
-
   await appSettingsStore.saveSettings({
     commandCenter: item,
   });
