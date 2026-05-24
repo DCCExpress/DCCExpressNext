@@ -22,6 +22,7 @@ import {
 import {
   log,
   logError,
+  logWs,
 } from "../utility.js";
 
 import {
@@ -155,7 +156,7 @@ export async function setupWebSocketServer(
   await initializeWebSocketRuntimeStores();
 
   wss.on("connection", (ws, req) => {
-    log(
+    logWs(
       "WebSocket client connected:",
       req.socket.remoteAddress
     );
@@ -172,7 +173,7 @@ export async function setupWebSocketServer(
       const text =
         message.toString();
 
-      log("WS incoming:", text);
+      logWs("incoming:", text);
 
       const parseResult =
         parseIncomingClientWsMessage(text);
@@ -194,7 +195,7 @@ export async function setupWebSocketServer(
       clientUUID =
         msg.uuid;
 
-      log("Received message of type:", msg.type);
+      logWs("received message type:", msg.type);
 
       const currentCommandCenter =
         getCurrentCommandCenter();
@@ -232,7 +233,7 @@ export async function setupWebSocketServer(
     });
 
     ws.on("close", () => {
-      log("WebSocket client disconnected");
+      logWs("WebSocket client disconnected");
 
       editorEditModeStore.removeClient(clientUUID);
 
@@ -258,7 +259,7 @@ export async function setupWebSocketServer(
     });
 
     ws.on("error", error => {
-      console.error("WebSocket client error:", error);
+      logError("WebSocket client error:", error);
     });
   });
 
