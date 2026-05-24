@@ -17,7 +17,6 @@ type MainMenuActionsProps = {
   onLoadLayout: () => void;
   onSettingsClick: () => void;
   onOpenAppSettingsDialog: () => void;
-  onOpenCommandCenterDialog: () => void;
   onOpenHelp: () => void;
 };
 
@@ -28,7 +27,6 @@ export default function MainMenuActions({
   onLoadLayout,
   onSettingsClick,
   onOpenAppSettingsDialog,
-  onOpenCommandCenterDialog,
   onOpenHelp,
 }: MainMenuActionsProps) {
   const { t } = useTranslation();
@@ -111,9 +109,6 @@ export default function MainMenuActions({
           </Menu.Item>
           <Menu.Item onClick={onOpenAppSettingsDialog}>
             App...
-          </Menu.Item>
-          <Menu.Item onClick={onOpenCommandCenterDialog}>
-            {t("CommandCenter") + "..."}
           </Menu.Item>
         </Menu.Dropdown>
       </Menu>
