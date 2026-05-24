@@ -1,6 +1,7 @@
-import { Card, Group, Modal, Stack } from "@mantine/core";
+import { Card, Group, Stack } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
+import AppModal from "../common/AppModal";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import { TrackStraightElementView } from "../../models/editor/elements/TrackStraightElementView";
 import { TrackEndElementView } from "../../models/editor/elements/TrackEndElementView";
@@ -56,7 +57,7 @@ export default function ElementPickerDialog({
   const extendedroutebutton = new ExtendedRouteButtonElementView(0, 0);
   const label = new LabelElementView(0, 0);
   const clock = new ClockElementView(0, 0);
-  clock.scale = 0.28
+  clock.scale = 0.28;
   const tree = new TreeElementView(0, 0);
   const block = new BlockElementView(0, 0);
   const signal2 = new TrackSignalElementView(0, 0);
@@ -68,10 +69,16 @@ export default function ElementPickerDialog({
   signal4.aspect = 4;
 
   return (
-    <Modal size={"xl"} opened={opened} onClose={onClose} title={t("editor.pickElement")} centered>
-
+    <AppModal
+      size="xl"
+      opened={opened}
+      onClose={onClose}
+      title={t("editor.pickElement")}
+      centered
+      draggable
+    >
       <Stack p={2} gap="xs">
-        <Card padding="xs" withBorder >
+        <Card padding="xs" withBorder>
           <Group>
             <ElementPreview element={trackdirection} label={t("editor.elements.direction")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_DIRECTION);
@@ -123,7 +130,7 @@ export default function ElementPickerDialog({
           </Group>
         </Card>
 
-        <Card padding="xs" withBorder >
+        <Card padding="xs" withBorder>
           <Group>
             <ElementPreview element={signal2} label={t("editor.elements.signal2")} width={40} height={40} translateX={-10} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SIGNAL2);
@@ -140,7 +147,7 @@ export default function ElementPickerDialog({
           </Group>
         </Card>
 
-        <Card padding="xs" withBorder >
+        <Card padding="xs" withBorder>
           <Group>
             <ElementPreview element={tracksensor} label={t("editor.elements.sensor")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_SENSOR);
@@ -190,8 +197,7 @@ export default function ElementPickerDialog({
             }} />
           </Group>
         </Card>
-
       </Stack>
-    </Modal>
+    </AppModal>
   );
 }
