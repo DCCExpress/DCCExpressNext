@@ -11,6 +11,7 @@ import type {
   EditorTool,
 } from "../../../models/editor/types/EditorTypes";
 
+import AppSettingsDialog from "../../../components/app-settings/AppSettingsDialog";
 import CommandCenterDialog from "../../../components/CommandCenterDialog";
 import ElementPickerDialog from "../../../components/editor/ElementPickerDialog";
 import FullscreenLoader from "../../../components/FullscreenLoader";
@@ -44,6 +45,9 @@ type LayoutPageDialogsProps = {
   settingsDialogOpened: boolean;
   setSettingsDialogOpened: BooleanSetter;
 
+  appSettingsDialogOpened: boolean;
+  setAppSettingsDialogOpened: BooleanSetter;
+
   setTool: EditorToolSetter;
 };
 
@@ -65,6 +69,9 @@ export default function LayoutPageDialogs({
 
   settingsDialogOpened,
   setSettingsDialogOpened,
+
+  appSettingsDialogOpened,
+  setAppSettingsDialogOpened,
 
   setTool,
 }: LayoutPageDialogsProps) {
@@ -109,6 +116,13 @@ export default function LayoutPageDialogs({
         opened={settingsDialogOpened}
         onClose={() =>
           setSettingsDialogOpened(false)
+        }
+      />
+
+      <AppSettingsDialog
+        opened={appSettingsDialogOpened}
+        onClose={() =>
+          setAppSettingsDialogOpened(false)
         }
       />
     </>
