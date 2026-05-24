@@ -153,11 +153,16 @@ export default function AppSettingsDialog({
       opened={opened}
       onClose={onClose}
       title="App settings"
-      size="lg"
+      size="900px"
       centered
       draggable
     >
-      <Stack gap="md" pos="relative">
+      <Stack
+        gap="md"
+        pos="relative"
+        h={680}
+        style={{ overflow: "hidden" }}
+      >
         <LoadingOverlay visible={loading || saving} />
 
         {error && (
@@ -166,7 +171,15 @@ export default function AppSettingsDialog({
           </Alert>
         )}
 
-        <Tabs defaultValue="commandCenter">
+        <Tabs
+          defaultValue="commandCenter"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <Tabs.List>
             <Tabs.Tab value="commandCenter">
               Command center
@@ -181,7 +194,11 @@ export default function AppSettingsDialog({
             </Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="commandCenter" pt="md">
+          <Tabs.Panel
+            value="commandCenter"
+            pt="md"
+            style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
+          >
             <CommandCenterSettingsTab
               commandCenter={settings.commandCenter}
               onChange={commandCenter => {
@@ -193,7 +210,11 @@ export default function AppSettingsDialog({
             />
           </Tabs.Panel>
 
-          <Tabs.Panel value="general" pt="md">
+          <Tabs.Panel
+            value="general"
+            pt="md"
+            style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
+          >
             <GeneralSettingsTab
               settings={settings.general}
               onChange={general => {
@@ -205,7 +226,11 @@ export default function AppSettingsDialog({
             />
           </Tabs.Panel>
 
-          <Tabs.Panel value="fastClock" pt="md">
+          <Tabs.Panel
+            value="fastClock"
+            pt="md"
+            style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
+          >
             <FastClockSettingsTab
               settings={settings}
               onChange={setSettings}
