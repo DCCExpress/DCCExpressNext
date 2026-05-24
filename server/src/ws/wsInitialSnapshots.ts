@@ -159,7 +159,7 @@ export function sendInitialWebSocketSnapshots({
   sendToClient(ws, {
     type: "commandCenterInfo",
     data: {
-      alive: true,
+      alive: commandCenter.isAlive(),
       name: commandCenter.getName(),
       connectionString: commandCenter.getConnectionString(),
       power: powerInfo.trackVoltageOn,
