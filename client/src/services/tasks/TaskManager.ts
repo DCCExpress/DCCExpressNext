@@ -2,6 +2,7 @@ import {
   addTrainTask,
   deleteTrainTask,
   getTaskManagerSnapshot,
+  pauseAllTrainTasks,
   pauseTrainTask,
   reloadTrainTasks,
   resumeTrainTask,
@@ -174,6 +175,17 @@ export class TaskManager {
   async startAllTasks(): Promise<TaskManagerActionResult> {
     const result =
       await startAllTrainTasks();
+
+    if (result.snapshot) {
+      this.setSnapshot(result.snapshot);
+    }
+
+    return result;
+  }
+
+  async pauseAllTasks(): Promise<TaskManagerActionResult> {
+    const result =
+      await pauseAllTrainTasks();
 
     if (result.snapshot) {
       this.setSnapshot(result.snapshot);
