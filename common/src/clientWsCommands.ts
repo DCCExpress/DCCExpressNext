@@ -150,6 +150,7 @@ export type TaskManagerCommandAction =
   | "finish"
   | "abort"
   | "startAll"
+  | "pauseAll"
   | "finishAll"
   | "abortAll";
 
@@ -244,10 +245,11 @@ export type ClientWsPayloadMap = {
 
   startTask: TaskIdOrNameCommandPayload;
   startAllTasks: EmptyClientWsCommandPayload;
+  pauseTask: TaskIdOrNameCommandPayload;
+  pauseAllTasks: EmptyClientWsCommandPayload;
+  resumeTask: TaskIdOrNameCommandPayload;
   finishTask: TaskIdOrNameCommandPayload;
   abortTask: TaskIdOrNameCommandPayload;
-  pauseTask: TaskIdOrNameCommandPayload;
-  resumeTask: TaskIdOrNameCommandPayload;
   finishAllTasks: EmptyClientWsCommandPayload;
   abortAllTasks: EmptyClientWsCommandPayload;
 
