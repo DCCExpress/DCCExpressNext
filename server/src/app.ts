@@ -38,6 +38,13 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+app.use("/api", (_req, res) => {
+  res.status(404).json({
+    ok: false,
+    message: "API endpoint not found.",
+  });
+});
+
 // production frontend
 app.use(express.static(clientDir));
 
