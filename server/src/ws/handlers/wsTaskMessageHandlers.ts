@@ -9,6 +9,10 @@ import {
 } from "../../services/taskRuntimeStore.js";
 
 import type {
+  TaskManagerActionResult,
+} from "../../../../common/src/task.js";
+
+import type {
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
 
@@ -23,6 +27,35 @@ function rejectTaskStart(
       reason,
     },
   });
+}
+
+function rejectTaskCommand(
+  sendToClient: Parameters<WsMessageHandler>[0]["sendToClient"],
+  ws: Parameters<WsMessageHandler>[0]["ws"],
+  reason: string
+): void {
+  sendToClient(ws, {
+    type: "taskRejected",
+    data: {
+      reason,
+    },
+  });
+}
+
+function reportTaskResult(
+  sendToClient: Parameters<WsMessageHandler>[0]["sendToClient"],
+  ws: Parameters<WsMessageHandler>[0]["ws"],
+  result: TaskManagerActionResult
+): void {
+  if (result.ok) {
+    return;
+  }
+
+  rejectTaskCommand(
+    sendToClient,
+    ws,
+    result.error
+  );
 }
 
 export const handleTaskMessage: WsMessageHandler = async ({
@@ -66,19 +99,19 @@ export const handleTaskMessage: WsMessageHandler = async ({
             taskIdOrName
           );
 
-        if (!result.ok) {
-          throw new Error(result.error);
-        }
+        reportTaskResult(
+          sendToClient,
+          ws,
+          result
+        );
       } catch (error) {
-        sendToClient(ws, {
-          type: "taskRejected",
-          data: {
-            reason:
-              error instanceof Error
-                ? error.message
-                : String(error),
-          },
-        });
+        rejectTaskCommand(
+          sendToClient,
+          ws,
+          error instanceof Error
+            ? error.message
+            : String(error)
+        );
       }
 
       return true;
@@ -95,14 +128,11 @@ export const handleTaskMessage: WsMessageHandler = async ({
             taskIdOrName
           );
 
-        if (!result.ok) {
-          sendToClient(ws, {
-            type: "taskRejected",
-            data: {
-              reason: result.error,
-            },
-          });
-        }
+        reportTaskResult(
+          sendToClient,
+          ws,
+          result
+        );
       }
 
       return true;
@@ -119,14 +149,11 @@ export const handleTaskMessage: WsMessageHandler = async ({
             taskIdOrName
           );
 
-        if (!result.ok) {
-          sendToClient(ws, {
-            type: "taskRejected",
-            data: {
-              reason: result.error,
-            },
-          });
-        }
+        reportTaskResult(
+          sendToClient,
+          ws,
+          result
+        );
       }
 
       return true;
@@ -143,14 +170,11 @@ export const handleTaskMessage: WsMessageHandler = async ({
             taskIdOrName
           );
 
-        if (!result.ok) {
-          sendToClient(ws, {
-            type: "taskRejected",
-            data: {
-              reason: result.error,
-            },
-          });
-        }
+        reportTaskResult(
+          sendToClient,
+          ws,
+          result
+        );
       }
 
       return true;
@@ -167,30 +191,54 @@ export const handleTaskMessage: WsMessageHandler = async ({
             taskIdOrName
           );
 
-        if (!result.ok) {
-          sendToClient(ws, {
-            type: "taskRejected",
-            data: {
-              reason: result.error,
-            },
-          });
-        }
+        reportTaskResult(
+          sendToClient,
+          ws,
+          result
+        );
       }
 
       return true;
     }
 
-    case "startAllTasks":
-      await taskRuntimeStore.startAllTasks();
-      return true;
+    case "startAllTasks": {
+      const result =
+        await taskRuntimeStore.startAllTasks();
 
-    case "finishAllTasks":
-      await taskRuntimeStore.finishAllTasks();
-      return true;
+      reportTaskResult(
+        sendToClient,
+        ws,
+        result
+      );
 
-    case "abortAllTasks":
-      await taskRuntimeStore.abortAllTasks();
       return true;
+    }
+
+    case "finishAllTasks": {
+      const result =
+        await taskRuntimeStore.finishAllTasks();
+
+      reportTaskResult(
+        sendToClient,
+        ws,
+        result
+      );
+
+      return true;
+    }
+
+    case "abortAllTasks": {
+      const result =
+        await taskRuntimeStore.abortAllTasks();
+
+      reportTaskResult(
+        sendToClient,
+        ws,
+        result
+      );
+
+      return true;
+    }
 
     case "getTaskRuntimeState":
       sendToClient(ws, {
