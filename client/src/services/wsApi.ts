@@ -274,6 +274,16 @@ class WebSocketApi {
     });
   }
 
+  setSensor(
+    address: number,
+    on: boolean
+  ): boolean {
+    return this.send("setSensor", {
+      address,
+      on,
+    });
+  }
+
   setBasicAccessory(
     address: number,
     active: boolean
@@ -358,17 +368,15 @@ class WebSocketApi {
     script?: string,
     context?: {
       source?: ScriptRunSource;
-      elementId?: string | null;
+      route?: {
+        fromBlockName?: string;
+        toBlockName?: string;
+      };
     }
   ): boolean {
     return this.send("runScript", {
-      ...(typeof script === "string"
-        ? {
-          script,
-        }
-        : {}),
-      source: context?.source ?? "unknown",
-      elementId: context?.elementId ?? null,
+      script,
+      context,
     });
   }
 
@@ -377,107 +385,80 @@ class WebSocketApi {
   }
 
   getScriptRuntimeState(): boolean {
-    return this.send(
-      "getScriptRuntimeState",
-      {}
-    );
+    return this.send("getScriptRuntimeState", {});
   }
 
-  startTask(
-    taskIdOrName: string
-  ): boolean {
+  startTask(taskId: string): boolean {
     return this.send("startTask", {
-      taskIdOrName,
+      taskId,
     });
   }
 
   startAllTasks(): boolean {
-    return this.send("taskManagerCommand", {
-      requestId: generateId(),
-      action: "startAll",
-    });
+    return this.send("startAllTasks", {});
   }
 
-  pauseTask(
-    taskIdOrName: string
-  ): boolean {
+  pauseTask(taskId: string): boolean {
     return this.send("pauseTask", {
-      taskIdOrName,
+      taskId,
     });
   }
 
   pauseAllTasks(): boolean {
-    return this.send("taskManagerCommand", {
-      requestId: generateId(),
-      action: "pauseAll",
+    return this.send("pauseAllTasks", {});
+  }
+
+  resumeTask(taskId: string): boolean {
+    return this.send("resumeTask", {
+      taskId,
     });
   }
 
-  resumeTask(
-    taskIdOrName: string
-  ): boolean {
-    return this.send("resumeTask", {
-      taskIdOrName,
+  finishTask(taskId: string): boolean {
+    return this.send("finishTask", {
+      taskId,
     });
   }
 
   finishAllTasks(): boolean {
-    return this.send("taskManagerCommand", {
-      requestId: generateId(),
-      action: "finishAll",
+    return this.send("finishAllTasks", {});
+  }
+
+  abortTask(taskId: string): boolean {
+    return this.send("abortTask", {
+      taskId,
     });
   }
 
   abortAllTasks(): boolean {
-    return this.send("taskManagerCommand", {
-      requestId: generateId(),
-      action: "abortAll",
-    });
-  }
-
-  finishTask(
-    taskIdOrName: string
-  ): boolean {
-    return this.send("finishTask", {
-      taskIdOrName,
-    });
-  }
-
-  abortTask(
-    taskIdOrName: string
-  ): boolean {
-    return this.send("abortTask", {
-      taskIdOrName,
-    });
-  }
-
-  setEditorEditMode(editMode: boolean): boolean {
-    return this.send("setEditorEditMode", {
-      editMode,
-    });
+    return this.send("abortAllTasks", {});
   }
 
   getTaskRuntimeState(): boolean {
-    return this.send(
-      "getTaskRuntimeState",
-      {}
-    );
+    return this.send("getTaskRuntimeState", {});
   }
-}
 
-export function getDefaultWsUrl(): string {
-  const protocol =
-    window.location.protocol === "https:"
-      ? "wss"
-      : "ws";
+  setRuntimeVariable(
+    name: string,
+    value: unknown
+  ): boolean {
+    return this.send("setRuntimeVariable", {
+      name,
+      value,
+    });
+  }
 
-  const host =
-    window.location.hostname;
+  getRuntimeVariables(): boolean {
+    return this.send("getRuntimeVariables", {});
+  }
 
-  const port =
-    3000;
-
-  return `${protocol}://${host}:${port}/ws`;
+  setEditorEditMode(
+    editing: boolean
+  ): boolean {
+    return this.send("setEditorEditMode", {
+      editing,
+    });
+  }
 }
 
 export const wsApi =
