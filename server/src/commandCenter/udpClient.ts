@@ -1,6 +1,6 @@
 import dgram, { type RemoteInfo, type Socket } from "node:dgram";
 import { EventEmitter } from "node:events";
-import { log } from "../utility.js";
+import { log, logError } from "../utility.js";
 
 export type UdpClientOptions = {
   host: string;
@@ -40,9 +40,7 @@ export class UdpClient extends EventEmitter {
   }
 
   async open(): Promise<void> {
-    log("=======================================");
-    log("              UDP OPEN");
-    log("=======================================");
+    log("UDP open requested");
 
     if (this.socket) return;
 
@@ -55,8 +53,10 @@ export class UdpClient extends EventEmitter {
       this.lastReceivedMessage = Date.now();
 
       if (this.debug) {
-        console.log(
-          `[UDP] <= ${remote.address}:${remote.port} ${bufferToHex(data)}`
+        log(
+          "UDP receive",
+          `${remote.address}:${remote.port}`,
+          bufferToHex(data)
         );
       }
 
@@ -65,7 +65,7 @@ export class UdpClient extends EventEmitter {
 
     socket.on("error", (error) => {
       if (this.debug) {
-        console.error("[UDP] socket error:", error);
+        logError("UDP socket error:", error);
       }
 
       this.emit("error", error);
@@ -73,7 +73,7 @@ export class UdpClient extends EventEmitter {
 
     socket.on("close", () => {
       if (this.debug) {
-        console.log("[UDP] socket closed");
+        log("UDP socket closed");
       }
 
       this.emit("close");
@@ -114,7 +114,7 @@ export class UdpClient extends EventEmitter {
     const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
 
     if (this.debug) {
-      console.log(`[UDP] => ${this.host}:${this.port} ${bufferToHex(buffer)}`);
+      log("UDP send", `${this.host}:${this.port}`, bufferToHex(buffer));
     }
 
     await new Promise<void>((resolve, reject) => {
