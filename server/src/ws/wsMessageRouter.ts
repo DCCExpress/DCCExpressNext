@@ -25,6 +25,10 @@ import {
 } from "./handlers/wsCommandCenterConfigMessageHandlers.js";
 
 import {
+  handleAppSettingsMessage,
+} from "./handlers/wsAppSettingsMessageHandlers.js";
+
+import {
   handleTaskManagerMessage,
 } from "./handlers/wsTaskManagerMessageHandlers.js";
 
@@ -73,6 +77,7 @@ const handlers = [
   handleLocosMessage,
   handleScriptDocumentMessage,
   handleCommandCenterConfigMessage,
+  handleAppSettingsMessage,
   handleTaskManagerMessage,
   handleFastClockMessage,
   handleFileMessage,
