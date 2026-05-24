@@ -20,6 +20,10 @@ import type {
   RouteReservationReleaseResult,
 } from "../../../common/src/types.js";
 
+import {
+  log,
+} from "../utility.js";
+
 class RouteGraphRuntimeStore {
   private graph: Graph | null = null;
   private readonly busyTurnoutAddresses = new Set<number>();
@@ -32,9 +36,7 @@ class RouteGraphRuntimeStore {
     if (!topology) {
       this.graph = null;
 
-      console.log(
-        "[RouteGraphRuntimeStore] Graph cleared: no topology."
-      );
+      log("Route graph cleared: no topology.");
 
       return;
     }
@@ -50,13 +52,11 @@ class RouteGraphRuntimeStore {
         0
       );
 
-    console.log(
-      "[RouteGraphRuntimeStore] Graph rebuilt:"
-    );
-
-    console.log("  nodes:", this.graph.nodes.length);
-    console.log("  edges:", this.graph.edges.length);
-    console.log("  blocks:", blockCount);
+    log("Route graph rebuilt:", {
+      nodes: this.graph.nodes.length,
+      edges: this.graph.edges.length,
+      blocks: blockCount,
+    });
   }
 
   getGraph(): Graph | null {
