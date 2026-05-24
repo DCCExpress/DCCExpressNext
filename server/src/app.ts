@@ -33,6 +33,9 @@ app.use((
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
+    app: "DCCExpressNext",
+    nodeVersion: process.version,
+    platform: process.platform,
     timestamp: new Date().toISOString(),
     uptimeSec: Math.round(process.uptime()),
   });
