@@ -82,11 +82,13 @@ export abstract class CommandCenter {
   public locked = false;
   public lockOwnerUUID: string | null = "";
 
+  private readonly unsubscribeLocosChanged: () => void;
+
   constructor(name: string) {
     this.name = name;
     CommandCenter.activeInstance = this;
 
-    onLocosChanged(async () => {
+    this.unsubscribeLocosChanged = onLocosChanged(async () => {
       const locos = await readLocos();
 
       this.setLocos(locos);
@@ -104,6 +106,14 @@ export abstract class CommandCenter {
           );
         });
     });
+  }
+
+  dispose(): void {
+    this.unsubscribeLocosChanged();
+
+    if (CommandCenter.activeInstance === this) {
+      CommandCenter.activeInstance = null;
+    }
   }
 
   static getActive(): CommandCenter | null {
