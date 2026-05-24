@@ -915,8 +915,8 @@ class TaskRuntimeStore {
         toBlockId: task.toBlockId,
         completedAt: Date.now(),
         message: type === "taskCompleted"
-          ? `${task.name} completed.`
-          : `${task.name} cycle completed and is waiting for the next start.`,
+          ? "Completed."
+          : "Cycle completed and is waiting for the next start.",
       },
     });
   }
