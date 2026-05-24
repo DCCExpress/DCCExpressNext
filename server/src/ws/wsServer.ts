@@ -61,13 +61,29 @@ import {
   registerCommandCenterConfigLoadedCallback,
 } from "./wsCommandCenterLifecycle.js";
 
+function sendTextToClient(
+  ws: WebSocket,
+  text: string
+): void {
+  if (ws.readyState !== WebSocket.OPEN) {
+    return;
+  }
+
+  ws.send(text, error => {
+    if (error) {
+      logError("WebSocket send failed:", error);
+    }
+  });
+}
+
 function sendToClient(
   ws: WebSocket,
   message: TypedServerWsMessage
 ): void {
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(message));
-  }
+  sendTextToClient(
+    ws,
+    JSON.stringify(message)
+  );
 }
 
 let wss: WebSocketServer;
@@ -80,11 +96,8 @@ function broadcast(
     JSON.stringify(message);
 
   for (const client of wss.clients) {
-    if (
-      client !== exclude &&
-      client.readyState === WebSocket.OPEN
-    ) {
-      client.send(text);
+    if (client !== exclude) {
+      sendTextToClient(client, text);
     }
   }
 }
@@ -225,7 +238,7 @@ export async function setupWebSocketServer(
         await routeIncomingWebSocketMessage({
           ws,
           msg,
-          commandCenter: currentCommandCenter!,
+          commandCenter: currentCommandCenter,
           sendToClient,
           broadcast: broadcastAll,
         });
