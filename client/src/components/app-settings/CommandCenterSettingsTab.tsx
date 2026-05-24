@@ -144,16 +144,6 @@ export default function CommandCenterSettingsTab({
 
   return (
     <Stack gap="md">
-      <TextInput
-        label="Name"
-        value={commandCenter.name}
-        onChange={event =>
-          update({
-            name: event.currentTarget.value,
-          })
-        }
-      />
-
       <Select
         label="Connection type"
         data={[
