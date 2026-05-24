@@ -2,7 +2,7 @@ import { Alert, Badge, Button, Group, NumberInput, ScrollArea, SegmentedControl,
 import { useState } from "react";
 
 import AppModal from "../common/AppModal";
-import { useRailwayDiagnostics } from "../../hooks/useRailwayDiagnostics";
+import { useRailwayDiagnostics, type DiagnosticAccessoryItem } from "../../hooks/useRailwayDiagnostics";
 import { wsApi } from "../../services/wsApi";
 
 type DiagnosticsDialogProps = {
@@ -87,6 +87,86 @@ function RuntimeTable<T extends RuntimeItem>({
   );
 }
 
+function BasicAccessoryTable({
+  items,
+}: {
+  items: DiagnosticAccessoryItem[];
+}) {
+  if (items.length === 0) {
+    return <Text size="sm" c="dimmed">No basic accessory runtime data yet.</Text>;
+  }
+
+  return (
+    <ScrollArea h={460} type="auto" offsetScrollbars>
+      <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Address</Table.Th>
+            <Table.Th>Physical state</Table.Th>
+            <Table.Th>Warning</Table.Th>
+            <Table.Th>Element type</Table.Th>
+            <Table.Th>Element name</Table.Th>
+            <Table.Th>Test</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {items.map(item => (
+            <Table.Tr key={item.address} style={item.hasConflict ? { backgroundColor: "var(--mantine-color-yellow-light)" } : undefined}>
+              <Table.Td>{item.address}</Table.Td>
+              <Table.Td>
+                <Badge size="sm" variant="light" color={item.active ? "green" : "gray"}>
+                  {item.active ? "ON" : "OFF"}
+                </Badge>
+              </Table.Td>
+              <Table.Td>
+                {item.hasConflict ? (
+                  <Badge size="sm" color="yellow" variant="filled">
+                    shared address
+                  </Badge>
+                ) : (
+                  <Text size="sm" c="dimmed">-</Text>
+                )}
+              </Table.Td>
+              <Table.Td>
+                <Stack gap={3}>
+                  {item.sources.length === 0 ? (
+                    <Text size="sm" c="dimmed">runtime only</Text>
+                  ) : item.sources.map(source => (
+                    <Badge key={`${item.address}-${source.elementId}-${source.elementType}`} size="sm" variant="light">
+                      {source.elementType}
+                    </Badge>
+                  ))}
+                </Stack>
+              </Table.Td>
+              <Table.Td>
+                <Stack gap={3}>
+                  {item.sources.length === 0 ? (
+                    <Text size="sm" c="dimmed">-</Text>
+                  ) : item.sources.map(source => (
+                    <Text key={`${item.address}-${source.elementId}-${source.elementName}`} size="sm">
+                      {source.elementName}
+                    </Text>
+                  ))}
+                </Stack>
+              </Table.Td>
+              <Table.Td>
+                <Group gap="xs" wrap="nowrap">
+                  <Button size="compact-xs" variant="light" color="green" onClick={() => wsApi.setBasicAccessory(item.address, true)}>
+                    ON
+                  </Button>
+                  <Button size="compact-xs" variant="light" color="gray" onClick={() => wsApi.setBasicAccessory(item.address, false)}>
+                    OFF
+                  </Button>
+                </Group>
+              </Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    </ScrollArea>
+  );
+}
+
 function CommandTab() {
   const [kind, setKind] = useState<CommandKind>("basicAccessory");
   const [address, setAddress] = useState<number | string>(1);
@@ -150,7 +230,7 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
   const { sensors, turnouts, accessories } = useRailwayDiagnostics();
 
   return (
-    <AppModal opened={opened} onClose={onClose} title="Diagnostics" size="min(940px, 95vw)" centered draggable>
+    <AppModal opened={opened} onClose={onClose} title="Diagnostics" size="min(1120px, 96vw)" centered draggable>
       <Stack gap="md" h="min(680px, calc(100vh - 130px))">
         <Alert color="yellow" variant="light">
           Values shown here are physical command-center values, not logical layout values. Sensor values are simulated/test values when changed from this dialog.
@@ -187,14 +267,7 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
           </Tabs.Panel>
 
           <Tabs.Panel value="accessories" pt="md">
-            <RuntimeTable
-              items={accessories}
-              emptyText="No basic accessory runtime data yet."
-              stateLabel="Physical state"
-              getStateText={item => item.active ? "ON" : "OFF"}
-              getStateColor={item => item.active ? "green" : "gray"}
-              onSet={(item, active) => wsApi.setBasicAccessory(item.address, active)}
-            />
+            <BasicAccessoryTable items={accessories} />
           </Tabs.Panel>
 
           <Tabs.Panel value="command" pt="md">
