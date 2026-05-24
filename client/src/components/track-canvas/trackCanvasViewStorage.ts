@@ -11,6 +11,7 @@ const SAVE_DEBOUNCE_MS = 250;
 
 let pendingViewState: ViewState | null = null;
 let saveTimer: number | null = null;
+let pageHideFlushRegistered = false;
 
 function clamp(
   value: number,
@@ -34,6 +35,18 @@ function writeViewState(
   } catch {
     // Ignore storage errors. The canvas can still work with in-memory view state.
   }
+}
+
+function ensurePageHideFlushRegistered(): void {
+  if (pageHideFlushRegistered || typeof window === "undefined") {
+    return;
+  }
+
+  window.addEventListener("pagehide", () => {
+    flushSavedViewState();
+  });
+
+  pageHideFlushRegistered = true;
 }
 
 export function loadSavedViewState(): ViewState {
@@ -81,6 +94,8 @@ export function loadSavedViewState(): ViewState {
 export function saveViewState(
   view: ViewState
 ): void {
+  ensurePageHideFlushRegistered();
+
   pendingViewState = {
     ...view,
   };
