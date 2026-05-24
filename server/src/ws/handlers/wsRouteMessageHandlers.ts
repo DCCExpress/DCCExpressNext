@@ -4,11 +4,9 @@ import {
   routeGraphRuntimeStore,
 } from "../../services/routeGraphRuntimeStore.js";
 
-
 import {
   locoReservationStore,
 } from "../../services/locoReservationStore.js";
-
 
 import {
   taskRuntimeStore,
@@ -23,18 +21,38 @@ import {
 } from "../../utility.js";
 
 import type {
+  WsHandlerContext,
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
 
-export const handleRouteMessage: WsMessageHandler = async ({
+function rejectMissingCommandCenter({
   ws,
-  msg,
-  commandCenter,
   sendToClient,
-  broadcast,
-}) => {
+}: WsHandlerContext): void {
+  sendToClient(ws, {
+    type: "error",
+    data: {
+      message: "No command center available",
+    },
+  });
+}
+
+export const handleRouteMessage: WsMessageHandler = async context => {
+  const {
+    ws,
+    msg,
+    commandCenter,
+    sendToClient,
+    broadcast,
+  } = context;
+
   switch (msg.type) {
     case "reserveRoute": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         fromBlockName,
         toBlockName,
@@ -260,7 +278,7 @@ export const handleRouteMessage: WsMessageHandler = async ({
         });
 
         const loco =
-          commandCenter.getLocoInfo(
+          commandCenter?.getLocoInfo(
             released.locoAddress
           );
 
