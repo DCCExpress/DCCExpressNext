@@ -62,15 +62,10 @@ export class DccExTcpCommandCenter extends DccExCommandCenter {
     this.tcpClient.start();
 
     this.mainTask = setInterval(() => {
-      this.processBuffer();
-
-      if (
-        this.tcpClient.isOpen &&
-        Date.now() - this.lastSentAt > 5000
-      ) {
-        this.enqueueKeepalive();
-      }
+      this.tickCommandLoop();
     }, this.mainTaskIntervalMs);
+
+    this.mainTask.unref?.();
 
     return Promise.resolve(true);
   }
@@ -83,6 +78,21 @@ export class DccExTcpCommandCenter extends DccExCommandCenter {
 
     this.tcpClient.stop();
     return Promise.resolve(true);
+  }
+
+  private tickCommandLoop(): void {
+    try {
+      this.processBuffer();
+
+      if (
+        this.tcpClient.isOpen &&
+        Date.now() - this.lastSentAt > 5000
+      ) {
+        this.enqueueKeepalive();
+      }
+    } catch (error) {
+      logError("DCC-EX TCP command loop failed:", error);
+    }
   }
 
   private processBuffer(): void {
