@@ -8,6 +8,10 @@ import {
   appSettingsStore,
 } from "../../services/appSettingsStore.js";
 
+import {
+  initializeCommandCenter,
+} from "../wsCommandCenterLifecycle.js";
+
 import type {
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
@@ -45,10 +49,19 @@ export const handleAppSettingsMessage: WsMessageHandler = async context => {
       }
 
       case "save": {
+        const inputSettings =
+          context.msg.data.settings ?? {};
+
         const settings =
           await appSettingsStore.saveSettings(
-            context.msg.data.settings ?? {}
+            inputSettings
           );
+
+        if (inputSettings.commandCenter) {
+          await initializeCommandCenter(
+            settings.commandCenter
+          );
+        }
 
         sendAppSettingsResponse(context, {
           requestId,
