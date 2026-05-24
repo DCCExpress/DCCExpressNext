@@ -5,6 +5,8 @@ import type {
   ClientWsPayloadMap,
   Direction,
   ReservationOwnerType,
+  RuntimeVariableKey,
+  RuntimeVariableValue,
   ScriptRunSource,
   ServerWsMessageType,
   ServerWsPayloadMap,
@@ -175,9 +177,7 @@ class WebSocketApi {
   }
 
   setTrackPower(on: boolean): boolean {
-    return this.send("setTrackPower", {
-      on,
-    });
+    return this.send("setTrackPower", { on });
   }
 
   powerOn(): boolean {
@@ -189,15 +189,11 @@ class WebSocketApi {
   }
 
   setProgrammingPower(on: boolean): boolean {
-    return this.send("setProgrammingPower", {
-      on,
-    });
+    return this.send("setProgrammingPower", { on });
   }
 
   writeDccExDirectCommand(command: string): boolean {
-    return this.send("writeDccExDirectCommand", {
-      command,
-    });
+    return this.send("writeDccExDirectCommand", { command });
   }
 
   emergencyStop(): boolean {
@@ -217,9 +213,7 @@ class WebSocketApi {
   }
 
   getLoco(locoAddress: number): boolean {
-    return this.send("getLoco", {
-      locoAddress,
-    });
+    return this.send("getLoco", { locoAddress });
   }
 
   setLocoFunction(
@@ -245,12 +239,8 @@ class WebSocketApi {
       locoAddress,
       ownerId,
       ownerType,
-      ...(ownerName !== undefined
-        ? { ownerName }
-        : {}),
-      ...(reason !== undefined
-        ? { reason }
-        : {}),
+      ...(ownerName !== undefined ? { ownerName } : {}),
+      ...(reason !== undefined ? { reason } : {}),
     });
   }
 
@@ -268,50 +258,35 @@ class WebSocketApi {
     address: number,
     closed: boolean
   ): boolean {
-    return this.send("setTurnout", {
-      address,
-      closed,
-    });
+    return this.send("setTurnout", { address, closed });
   }
 
   setSensor(
     address: number,
     on: boolean
   ): boolean {
-    return this.send("setSensor", {
-      address,
-      on,
-    });
+    return this.send("setSensor", { address, on });
   }
 
   setBasicAccessory(
     address: number,
     active: boolean
   ): boolean {
-    return this.send("setBasicAccessory", {
-      address,
-      active,
-    });
+    return this.send("setBasicAccessory", { address, active });
   }
 
   setBlock(
     blockId: string,
     locoId: string | null
   ): boolean {
-    return this.send("setBlock", {
-      blockId,
-      locoId,
-    });
+    return this.send("setBlock", { blockId, locoId });
   }
 
   setBlockRemove(
     blockId: string,
     locoId: string | null
   ): boolean {
-    return this.send("setBlockRemove", {
-      blockId,
-      locoId,
-    });
+    return this.send("setBlockRemove", { blockId, locoId });
   }
 
   setBlocksReset(): boolean {
@@ -351,32 +326,22 @@ class WebSocketApi {
   }
 
   clearAllRouteReservations(): boolean {
-    return this.send(
-      "clearAllRouteReservations",
-      {}
-    );
+    return this.send("clearAllRouteReservations", {});
   }
 
   getRouteReservations(): boolean {
-    return this.send(
-      "getRouteReservations",
-      {}
-    );
+    return this.send("getRouteReservations", {});
   }
 
   runScript(
     script?: string,
-    context?: {
-      source?: ScriptRunSource;
-      route?: {
-        fromBlockName?: string;
-        toBlockName?: string;
-      };
-    }
+    source: ScriptRunSource = "unknown",
+    elementId: string | null = null
   ): boolean {
     return this.send("runScript", {
       script,
-      context,
+      source,
+      elementId,
     });
   }
 
@@ -388,46 +353,36 @@ class WebSocketApi {
     return this.send("getScriptRuntimeState", {});
   }
 
-  startTask(taskId: string): boolean {
-    return this.send("startTask", {
-      taskId,
-    });
+  startTask(taskIdOrName: string): boolean {
+    return this.send("startTask", { taskIdOrName });
   }
 
   startAllTasks(): boolean {
     return this.send("startAllTasks", {});
   }
 
-  pauseTask(taskId: string): boolean {
-    return this.send("pauseTask", {
-      taskId,
-    });
+  pauseTask(taskIdOrName: string): boolean {
+    return this.send("pauseTask", { taskIdOrName });
   }
 
   pauseAllTasks(): boolean {
     return this.send("pauseAllTasks", {});
   }
 
-  resumeTask(taskId: string): boolean {
-    return this.send("resumeTask", {
-      taskId,
-    });
+  resumeTask(taskIdOrName: string): boolean {
+    return this.send("resumeTask", { taskIdOrName });
   }
 
-  finishTask(taskId: string): boolean {
-    return this.send("finishTask", {
-      taskId,
-    });
+  finishTask(taskIdOrName: string): boolean {
+    return this.send("finishTask", { taskIdOrName });
   }
 
   finishAllTasks(): boolean {
     return this.send("finishAllTasks", {});
   }
 
-  abortTask(taskId: string): boolean {
-    return this.send("abortTask", {
-      taskId,
-    });
+  abortTask(taskIdOrName: string): boolean {
+    return this.send("abortTask", { taskIdOrName });
   }
 
   abortAllTasks(): boolean {
@@ -438,28 +393,20 @@ class WebSocketApi {
     return this.send("getTaskRuntimeState", {});
   }
 
-  setRuntimeVariable(
-    name: string,
-    value: unknown
+  setRuntimeVariable<TKey extends RuntimeVariableKey>(
+    key: TKey,
+    value: RuntimeVariableValue<TKey>
   ): boolean {
-    return this.send("setRuntimeVariable", {
-      name,
-      value,
-    });
+    return this.send("setRuntimeVariable", { key, value });
   }
 
   getRuntimeVariables(): boolean {
     return this.send("getRuntimeVariables", {});
   }
 
-  setEditorEditMode(
-    editing: boolean
-  ): boolean {
-    return this.send("setEditorEditMode", {
-      editing,
-    });
+  setEditorEditMode(editMode: boolean): boolean {
+    return this.send("setEditorEditMode", { editMode });
   }
 }
 
-export const wsApi =
-  new WebSocketApi();
+export const wsApi = new WebSocketApi();
