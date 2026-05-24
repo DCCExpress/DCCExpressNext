@@ -11,6 +11,7 @@ export type ScriptStatus =
   | "idle"
   | "running"
   | "stopping"
+  | "stopped"
   | "finished"
   | "error";
 
@@ -38,13 +39,41 @@ export type ScriptContext = {
   element?: BaseElementView | null;
 };
 
-export class ScriptSession {
-  constructor(
-    public readonly state: ScriptState
-  ) {}
-}
+type SessionListener = (state: ScriptState) => void;
+type EngineListener = (session: ScriptSession | null) => void;
+type ScriptDocumentListener = (scriptDocument: ScriptDocumentDto) => void;
 
-type Listener = () => void;
+export class ScriptSession {
+  private readonly listeners = new Set<SessionListener>();
+
+  constructor(
+    private state: ScriptState
+  ) {}
+
+  getState(): ScriptState {
+    return this.state;
+  }
+
+  updateState(state: ScriptState): void {
+    this.state = state;
+    this.emit();
+  }
+
+  subscribe(listener: SessionListener): () => void {
+    this.listeners.add(listener);
+    listener(this.state);
+
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private emit(): void {
+    for (const listener of this.listeners) {
+      listener(this.state);
+    }
+  }
+}
 
 function toDate(
   value: string | Date | undefined
@@ -62,14 +91,13 @@ function fromServerState(
   state: ScriptStateDto
 ): ScriptState {
   return {
-    id: state.sessionId,
+    id: state.id,
     status: state.status,
     source: state.source,
     startedAt: toDate(state.startedAt),
     finishedAt: toDate(state.finishedAt),
     logs: state.logs.map(log => ({
-      time: toDate(log.timestamp) ?? new Date(),
-      level: log.level,
+      time: toDate(log.time) ?? new Date(),
       source: log.source,
       message: log.message,
     })),
@@ -79,8 +107,8 @@ function fromServerState(
 
 class ScriptEngine {
   private currentSession: ScriptSession | null = null;
-  private listeners = new Set<Listener>();
-  private scriptListeners = new Set<Listener>();
+  private listeners = new Set<EngineListener>();
+  private scriptListeners = new Set<ScriptDocumentListener>();
   private script: ScriptDocumentDto = {
     content: "",
     autoStart: false,
@@ -88,9 +116,19 @@ class ScriptEngine {
 
   constructor() {
     wsClient.on("scriptStateChanged", state => {
-      this.currentSession = state
-        ? new ScriptSession(fromServerState(state))
-        : null;
+      if (!state) {
+        this.currentSession = null;
+        this.emit();
+        return;
+      }
+
+      const nextState = fromServerState(state);
+
+      if (this.currentSession?.getState().id === nextState.id) {
+        this.currentSession.updateState(nextState);
+      } else {
+        this.currentSession = new ScriptSession(nextState);
+      }
 
       this.emit();
     });
@@ -106,35 +144,39 @@ class ScriptEngine {
     });
   }
 
-  subscribe(listener: Listener): () => void {
+  subscribe(listener: EngineListener): () => void {
     this.listeners.add(listener);
+    listener(this.currentSession);
 
     return () => {
       this.listeners.delete(listener);
     };
   }
 
-  subscribeScript(listener: Listener): () => void {
+  subscribeScript(listener: ScriptDocumentListener): () => void {
     this.scriptListeners.add(listener);
+    listener(this.getScriptDocument());
 
     return () => {
       this.scriptListeners.delete(listener);
     };
   }
 
-  private emit() {
+  private emit(): void {
     for (const listener of this.listeners) {
-      listener();
+      listener(this.currentSession);
     }
   }
 
-  private emitScript() {
+  private emitScript(): void {
+    const document = this.getScriptDocument();
+
     for (const listener of this.scriptListeners) {
-      listener();
+      listener(document);
     }
   }
 
-  getCurrentSession() {
+  getCurrentSession(): ScriptSession | null {
     return this.currentSession;
   }
 
@@ -142,7 +184,11 @@ class ScriptEngine {
     return { ...this.script };
   }
 
-  updateScript(content: string) {
+  getScript(): string {
+    return this.script.content ?? "";
+  }
+
+  setScript(content: string): void {
     this.script = {
       ...this.script,
       content,
@@ -151,7 +197,15 @@ class ScriptEngine {
     this.emitScript();
   }
 
-  setAutoStart(autoStart: boolean) {
+  updateScript(content: string): void {
+    this.setScript(content);
+  }
+
+  getAutoStart(): boolean {
+    return this.script.autoStart === true;
+  }
+
+  setAutoStart(autoStart: boolean): void {
     this.script = {
       ...this.script,
       autoStart,
@@ -195,7 +249,7 @@ class ScriptEngine {
   run(
     script: string,
     context: ScriptContext = {}
-  ) {
+  ): ScriptSession {
     const optimisticState: ScriptState = {
       id: `pending-${Date.now()}`,
       status: "running",
@@ -210,9 +264,7 @@ class ScriptEngine {
       ],
     };
 
-    this.currentSession =
-      new ScriptSession(optimisticState);
-
+    this.currentSession = new ScriptSession(optimisticState);
     this.emit();
 
     wsApi.runScript(
@@ -226,14 +278,14 @@ class ScriptEngine {
 
   runCurrent(
     context: ScriptContext = {}
-  ) {
+  ): ScriptSession {
     return this.run(
       this.script.content,
       context
     );
   }
 
-  stopCurrent() {
+  stopCurrent(): void {
     wsApi.stopScript();
   }
 }
