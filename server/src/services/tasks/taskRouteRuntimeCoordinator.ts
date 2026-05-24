@@ -22,6 +22,10 @@ import type {
   TrainTaskSimulationProgress,
 } from "../../../../common/src/task.js";
 
+import {
+  logError,
+} from "../../utility.js";
+
 type BroadcastFn = (
   message: TypedServerWsMessage
 ) => void;
@@ -204,8 +208,15 @@ export class TaskRouteRuntimeCoordinator {
             );
 
         if (!turnout) {
-          console.error(
-            `[TaskRouteRuntimeCoordinator] Turnout not found in topology: ${turnoutState.address}`
+          logError(
+            "Task route turnout not found in topology:",
+            {
+              taskId: task.id,
+              taskName: task.name,
+              turnoutAddress: turnoutState.address,
+              fromBlockName,
+              toBlockName,
+            }
           );
 
           return false;
@@ -221,8 +232,17 @@ export class TaskRouteRuntimeCoordinator {
           );
 
         if (!success) {
-          console.error(
-            `[TaskRouteRuntimeCoordinator] Failed to set turnout #${turnoutState.address}.`
+          logError(
+            "Task route turnout setting failed:",
+            {
+              taskId: task.id,
+              taskName: task.name,
+              turnoutAddress: turnoutState.address,
+              physicalClosed,
+              logicalClosed: turnoutState.closed,
+              fromBlockName,
+              toBlockName,
+            }
           );
 
           return false;
@@ -276,8 +296,14 @@ export class TaskRouteRuntimeCoordinator {
     this.reservedRoutesByTaskId.delete(taskId);
 
     if (!result.ok) {
-      console.warn(
-        `[TaskRouteRuntimeCoordinator] Task route release failed for ${reservedRoute.fromBlockName} → ${reservedRoute.toBlockName}: ${result.error}`
+      logError(
+        "Task route release failed:",
+        {
+          taskId,
+          fromBlockName: reservedRoute.fromBlockName,
+          toBlockName: reservedRoute.toBlockName,
+          error: result.error,
+        }
       );
 
       return;
