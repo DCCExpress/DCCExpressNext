@@ -59,6 +59,7 @@ function createActionResponse(
     | "finish"
     | "abort"
     | "startAll"
+    | "pauseAll"
     | "finishAll"
     | "abortAll",
   result: TaskManagerActionResult
@@ -192,6 +193,12 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
 
       case "startAll": {
         const result = await taskRuntimeStore.startAllTasks();
+        sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
+        return true;
+      }
+
+      case "pauseAll": {
+        const result = await taskRuntimeStore.pauseAllTasks();
         sendTaskManagerResponse(context, createActionResponse(requestId, action, result));
         return true;
       }
