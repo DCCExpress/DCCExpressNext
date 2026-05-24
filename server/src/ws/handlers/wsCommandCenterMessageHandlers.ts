@@ -148,10 +148,6 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
         closed,
       } = msg.data;
 
-      /**
-       * Ha a váltó aktív route foglalás része,
-       * kézzel nem engedjük átállítani.
-       */
       if (routeGraphRuntimeStore.isTurnoutBusy(address)) {
         sendToClient(ws, {
           type: "commandRejected",
@@ -166,10 +162,6 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
         return true;
       }
 
-      /**
-       * A meglévő command center műveleti lock is marad:
-       * például route-beállítás közben se állítgatható kézzel.
-       */
       if (
         commandCenter.locked &&
         commandCenter.lockOwnerUUID != msg.uuid
@@ -206,15 +198,29 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
       return true;
     }
 
-    case "setSensor":
-      /**
-       * A payload validálását már a WS parser elvégzi.
-       *
-       * Ez az ág a korábbi működést tartja meg:
-       * a kliensoldali setSensor parancs jelenleg nem
-       * avatkozik be a CommandCenter rétegbe.
-       */
+    case "setSensor": {
+      const {
+        address,
+        on,
+      } = msg.data;
+
+      commandCenter
+        .setSensor(address, on)
+        .then(success => {
+          log("Sensor set result:", success);
+
+          if (!success) {
+            sendToClient(ws, {
+              type: "error",
+              data: {
+                message: "Failed to set sensor",
+              },
+            });
+          }
+        });
+
       return true;
+    }
 
     case "setBasicAccessory": {
       const {
