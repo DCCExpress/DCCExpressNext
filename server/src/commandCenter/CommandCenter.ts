@@ -120,6 +120,10 @@ export abstract class CommandCenter {
     return CommandCenter.activeInstance;
   }
 
+  isAlive(): boolean {
+    return true;
+  }
+
   setLocos(locos: Loco[]): void {
     this.locos.clear();
 
