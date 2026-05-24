@@ -37,6 +37,10 @@ import type {
 } from "./fastClock.js";
 
 import type {
+  AppSettings,
+} from "./appSettings.js";
+
+import type {
   RouteReservationChangedPayload,
   RouteReservationRejectedPayload,
   RouteReservationReleasedPayload,
@@ -118,6 +122,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "locosCommand",
   "scriptDocumentCommand",
   "commandCenterConfigCommand",
+  "appSettingsCommand",
   "taskManagerCommand",
   "fastClockCommand",
   "fileCommand",
@@ -250,6 +255,14 @@ export type CommandCenterConfigResponsePayload = {
   config?: ICommandCenter | null;
 };
 
+export type AppSettingsResponsePayload = {
+  requestId: string;
+  action: "load" | "save";
+  ok: boolean;
+  message?: string;
+  settings?: AppSettings;
+};
+
 export type TaskManagerResponsePayload = {
   requestId: string;
   action:
@@ -338,6 +351,7 @@ export type ServerWsPayloadMap = {
   locosResponse: LocosResponsePayload;
   scriptDocumentResponse: ScriptDocumentResponsePayload;
   commandCenterConfigResponse: CommandCenterConfigResponsePayload;
+  appSettingsResponse: AppSettingsResponsePayload;
   taskManagerResponse: TaskManagerResponsePayload;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
