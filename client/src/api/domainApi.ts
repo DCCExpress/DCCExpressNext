@@ -46,6 +46,7 @@ import {
   finishAllTrainTasksWs,
   finishTrainTaskWs,
   getTaskManagerSnapshotWs,
+  pauseAllTrainTasksWs,
   pauseTrainTaskWs,
   reloadTrainTasksWs,
   resumeTrainTaskWs,
@@ -164,6 +165,10 @@ export async function abortTrainTask(
 
 export async function startAllTrainTasks(): Promise<TaskManagerActionResult> {
   return startAllTrainTasksWs();
+}
+
+export async function pauseAllTrainTasks(): Promise<TaskManagerActionResult> {
+  return pauseAllTrainTasksWs();
 }
 
 export async function finishAllTrainTasks(): Promise<TaskManagerActionResult> {
