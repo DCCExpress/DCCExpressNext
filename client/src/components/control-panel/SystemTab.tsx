@@ -58,6 +58,12 @@ function fpsColor(value: number | null | undefined) {
   return "green";
 }
 
+function trafficColor(value: number | null | undefined) {
+  if (value === null || value === undefined) return "gray";
+  if (value > 1024) return "orange";
+  return "blue";
+}
+
 function yesNo(value: boolean, t: (key: string) => string) {
   return value ? t("commandCenter.yes") : t("commandCenter.no");
 }
@@ -128,6 +134,8 @@ export default function SystemTab(p: SystemTabProps) {
                 <SmallRow label="Heap used" value={serverStats?.memoryHeapUsedMb} suffix=" MB" color={memColor(serverStats?.memoryHeapUsedMb)} />
                 <SmallRow label="CPU load" value={serverStats?.systemLoadPercent} suffix="%" color={percentColor(serverStats?.systemLoadPercent)} />
                 <SmallRow label="Process CPU" value={serverStats?.processCpuPercent} suffix="%" color={percentColor(serverStats?.processCpuPercent)} />
+                <SmallRow label="WS RX" value={serverStats?.wsRxKbps} suffix=" kbit/s" color={trafficColor(serverStats?.wsRxKbps)} />
+                <SmallRow label="WS TX" value={serverStats?.wsTxKbps} suffix=" kbit/s" color={trafficColor(serverStats?.wsTxKbps)} />
               </Stack>
             </SimpleGrid>
           </CollapsiblePanelCard>
