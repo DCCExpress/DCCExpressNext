@@ -114,5 +114,7 @@ export class TcpClient {
       this.reconnectTimer = null;
       this.connect();
     }, this.reconnectDelayMs);
+
+    this.reconnectTimer.unref?.();
   }
 }
