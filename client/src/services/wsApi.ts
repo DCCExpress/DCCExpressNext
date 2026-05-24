@@ -406,6 +406,13 @@ class WebSocketApi {
     });
   }
 
+  pauseAllTasks(): boolean {
+    return this.send("taskManagerCommand", {
+      requestId: generateId(),
+      action: "pauseAll",
+    });
+  }
+
   resumeTask(
     taskIdOrName: string
   ): boolean {
