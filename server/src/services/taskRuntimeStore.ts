@@ -599,6 +599,20 @@ class TaskRuntimeStore {
     return this.createSuccessResult();
   }
 
+  async pauseAllTasks(): Promise<TaskManagerActionResult> {
+    await this.initialize();
+
+    for (const task of this.tasks) {
+      if (task.status === "running") {
+        task.status = "paused";
+      }
+    }
+
+    this.broadcastSnapshot();
+
+    return this.createSuccessResult();
+  }
+
   async finishAllTasks(): Promise<TaskManagerActionResult> {
     await this.initialize();
 
