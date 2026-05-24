@@ -87,21 +87,42 @@ function toDate(
     : new Date(value);
 }
 
+function toScriptDocument(
+  document: ScriptDocumentDto
+): ScriptDocumentDto {
+  return {
+    content: document.content ?? "",
+    autoStart: document.autoStart === true,
+    ...(document.updatedAt !== undefined
+      ? { updatedAt: document.updatedAt }
+      : {}),
+  };
+}
+
 function fromServerState(
   state: ScriptStateDto
 ): ScriptState {
+  const startedAt = toDate(state.startedAt);
+  const finishedAt = toDate(state.finishedAt);
+
   return {
     id: state.id,
     status: state.status,
     source: state.source,
-    startedAt: toDate(state.startedAt),
-    finishedAt: toDate(state.finishedAt),
     logs: state.logs.map(log => ({
       time: toDate(log.time) ?? new Date(),
       source: log.source,
       message: log.message,
     })),
-    error: state.error,
+    ...(startedAt !== undefined
+      ? { startedAt }
+      : {}),
+    ...(finishedAt !== undefined
+      ? { finishedAt }
+      : {}),
+    ...(state.error !== undefined
+      ? { error: state.error }
+      : {}),
   };
 }
 
@@ -134,12 +155,7 @@ class ScriptEngine {
     });
 
     wsClient.on("scriptDocumentChanged", document => {
-      this.script = {
-        content: document.content ?? "",
-        autoStart: document.autoStart === true,
-        updatedAt: document.updatedAt,
-      };
-
+      this.script = toScriptDocument(document);
       this.emitScript();
     });
   }
@@ -215,15 +231,11 @@ class ScriptEngine {
   }
 
   async loadScript(): Promise<ScriptDocumentDto> {
-    const { loadScriptDocumentWs } = await import("../api/scriptDocumentWsApi");
+    const { getScriptWs } = await import("../api/scriptWsApi");
 
-    const loaded = await loadScriptDocumentWs();
+    const loaded = await getScriptWs();
 
-    this.script = {
-      content: loaded.content ?? "",
-      autoStart: loaded.autoStart === true,
-      updatedAt: loaded.updatedAt,
-    };
+    this.script = toScriptDocument(loaded);
 
     this.emitScript();
 
@@ -231,15 +243,11 @@ class ScriptEngine {
   }
 
   async saveScript(): Promise<ScriptDocumentDto> {
-    const { saveScriptDocumentWs } = await import("../api/scriptDocumentWsApi");
+    const { saveScriptWs } = await import("../api/scriptWsApi");
 
-    const saved = await saveScriptDocumentWs(this.script);
+    const saved = await saveScriptWs(this.script);
 
-    this.script = {
-      content: saved.content ?? "",
-      autoStart: saved.autoStart === true,
-      updatedAt: saved.updatedAt,
-    };
+    this.script = toScriptDocument(saved);
 
     this.emitScript();
 
