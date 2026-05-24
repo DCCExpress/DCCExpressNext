@@ -179,6 +179,8 @@ export async function setupWebSocketServer(
         parseIncomingClientWsMessage(text);
 
       if (!parseResult.ok) {
+        logError("Invalid WebSocket message:", parseResult.reason);
+
         sendToClient(ws, {
           type: "error",
           data: {
@@ -204,6 +206,11 @@ export async function setupWebSocketServer(
         !currentCommandCenter &&
         !canHandleWithoutCommandCenter(msg.type)
       ) {
+        logError(
+          "WebSocket message rejected: no command center available for type",
+          msg.type
+        );
+
         sendToClient(ws, {
           type: "error",
           data: {
@@ -223,6 +230,12 @@ export async function setupWebSocketServer(
           broadcast: broadcastAll,
         });
       } catch (error) {
+        logError(
+          "WebSocket route failed:",
+          msg.type,
+          error
+        );
+
         sendToClient(ws, {
           type: "error",
           data: {
