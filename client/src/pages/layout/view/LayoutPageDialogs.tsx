@@ -4,15 +4,10 @@ import type {
 } from "react";
 
 import type {
-  CommandCenter,
-} from "../../../api/commandCentersApi";
-
-import type {
   EditorTool,
 } from "../../../models/editor/types/EditorTypes";
 
 import AppSettingsDialog from "../../../components/app-settings/AppSettingsDialog";
-import CommandCenterDialog from "../../../components/CommandCenterDialog";
 import ElementPickerDialog from "../../../components/editor/ElementPickerDialog";
 import FullscreenLoader from "../../../components/FullscreenLoader";
 import LocoDialog from "../../../components/LocoDialog";
@@ -27,13 +22,6 @@ type EditorToolSetter =
 type LayoutPageDialogsProps = {
   canvasBusy: boolean;
   canvasBusyText: string;
-
-  commandCenterOpened: boolean;
-  setCommandCenterOpened: BooleanSetter;
-  commandCenter: CommandCenter;
-  onCommandCenterSaved: (
-    commandCenter: CommandCenter
-  ) => void;
 
   locoDialogOpened: boolean;
   setLocoDialogOpened: BooleanSetter;
@@ -55,11 +43,6 @@ export default function LayoutPageDialogs({
   canvasBusy,
   canvasBusyText,
 
-  commandCenterOpened,
-  setCommandCenterOpened,
-  commandCenter,
-  onCommandCenterSaved,
-
   locoDialogOpened,
   setLocoDialogOpened,
   onLocosSaved,
@@ -80,15 +63,6 @@ export default function LayoutPageDialogs({
       <FullscreenLoader
         visible={canvasBusy}
         text={canvasBusyText}
-      />
-
-      <CommandCenterDialog
-        opened={commandCenterOpened}
-        onClose={() =>
-          setCommandCenterOpened(false)
-        }
-        onSave={onCommandCenterSaved}
-        commandCenter={commandCenter}
       />
 
       <LocoDialog
