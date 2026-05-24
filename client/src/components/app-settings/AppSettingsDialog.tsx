@@ -36,9 +36,9 @@ import {
 } from "../../helpers";
 
 import AppModal from "../common/AppModal";
-import CommandCenterSettingsTab from "./CommandCenterSettingsTab";
 import FastClockSettingsTab from "./FastClockSettingsTab";
 import GeneralSettingsTab from "./GeneralSettingsTab";
+import SystemSettingsTab from "./SystemSettingsTab";
 
 const LANG_KEY = "lang";
 
@@ -172,7 +172,7 @@ export default function AppSettingsDialog({
         )}
 
         <Tabs
-          defaultValue="commandCenter"
+          defaultValue="system"
           style={{
             flex: 1,
             minHeight: 0,
@@ -181,8 +181,8 @@ export default function AppSettingsDialog({
           }}
         >
           <Tabs.List>
-            <Tabs.Tab value="commandCenter">
-              Command center
+            <Tabs.Tab value="system">
+              System
             </Tabs.Tab>
 
             <Tabs.Tab value="general">
@@ -195,13 +195,13 @@ export default function AppSettingsDialog({
           </Tabs.List>
 
           <Tabs.Panel
-            value="commandCenter"
+            value="system"
             pt="md"
             style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
           >
-            <CommandCenterSettingsTab
+            <SystemSettingsTab
               commandCenter={settings.commandCenter}
-              onChange={commandCenter => {
+              onCommandCenterChange={commandCenter => {
                 setSettings(current => ({
                   ...current,
                   commandCenter,
