@@ -125,6 +125,8 @@ class TrainSimulatorRuntimeStore {
       void this.tick();
     }, TICK_MS);
 
+    this.timer.unref?.();
+
     log("[TrainSimulator] Runtime loop started.");
   }
 
@@ -279,12 +281,13 @@ class TrainSimulatorRuntimeStore {
 
           this.sessions.set(task.id, session);
 
-          await simulator.setLoco(
-            task.runtime.loco.address,
+          await this.setLocoSafely(
+            simulator,
+            task,
             task.status === "paused"
               ? 0
               : task.targetSpeed,
-            this.resolveDirection(task)
+            "session start"
           );
 
           log(
@@ -334,10 +337,11 @@ class TrainSimulatorRuntimeStore {
 
     session.pausedAt = Date.now();
 
-    await simulator.setLoco(
-      task.runtime.loco!.address,
+    await this.setLocoSafely(
+      simulator,
+      task,
       0,
-      this.resolveDirection(task)
+      "pause"
     );
 
     log(
@@ -360,10 +364,11 @@ class TrainSimulatorRuntimeStore {
     session.phaseStartedAt += pausedDuration;
     session.pausedAt = null;
 
-    await simulator.setLoco(
-      task.runtime.loco!.address,
+    await this.setLocoSafely(
+      simulator,
+      task,
       task.targetSpeed,
-      this.resolveDirection(task)
+      "resume"
     );
 
     log(
@@ -412,10 +417,11 @@ class TrainSimulatorRuntimeStore {
       const waitingSensorAddress =
         this.getBlockSensorAddress(currentLeg.toBlockId);
 
-      await simulator.setLoco(
-        task.runtime.loco!.address,
+      await this.setLocoSafely(
+        simulator,
+        task,
         0,
-        this.resolveDirection(task)
+        "collision guard"
       );
 
       session.phase = "waitingForBlockSensor";
@@ -459,10 +465,11 @@ class TrainSimulatorRuntimeStore {
         return;
       }
 
-      await simulator.setLoco(
-        task.runtime.loco!.address,
+      await this.setLocoSafely(
+        simulator,
+        task,
         task.targetSpeed,
-        this.resolveDirection(task)
+        "collision guard release"
       );
 
       session.phase = "departing";
@@ -574,10 +581,11 @@ class TrainSimulatorRuntimeStore {
        * majd újra várakozás következik.
        */
       if (isLastLeg) {
-        await simulator.setLoco(
-          task.runtime.loco!.address,
+        await this.setLocoSafely(
+          simulator,
+          task,
           0,
-          this.resolveDirection(task)
+          "route cycle finish"
         );
 
         await params.markTaskReachedToBlock(task.id);
@@ -638,11 +646,56 @@ class TrainSimulatorRuntimeStore {
       return;
     }
 
-    await simulator.setLoco(
-      task.runtime.loco.address,
+    await this.setLocoSafely(
+      simulator,
+      task,
       0,
-      this.resolveDirection(task)
+      "session cleanup"
     );
+  }
+
+  private async setLocoSafely(
+    simulator: SimulatorCommandCenterPort,
+    task: TrainTask,
+    speed: number,
+    reason: string
+  ): Promise<boolean> {
+    const loco = task.runtime.loco;
+
+    if (!loco) {
+      return false;
+    }
+
+    try {
+      const success = await simulator.setLoco(
+        loco.address,
+        speed,
+        this.resolveDirection(task)
+      );
+
+      if (!success) {
+        logError("[TrainSimulator] Failed to set loco:", {
+          taskId: task.id,
+          taskName: task.name,
+          locoAddress: loco.address,
+          speed,
+          reason,
+        });
+      }
+
+      return success;
+    } catch (error) {
+      logError("[TrainSimulator] setLoco threw:", {
+        taskId: task.id,
+        taskName: task.name,
+        locoAddress: loco.address,
+        speed,
+        reason,
+        error,
+      });
+
+      return false;
+    }
   }
 
   private async setBlockSensor(
@@ -661,13 +714,22 @@ class TrainSimulatorRuntimeStore {
       return;
     }
 
-    const success =
-      await simulator.setSensor(sensorAddress, on);
+    try {
+      const success =
+        await simulator.setSensor(sensorAddress, on);
 
-    if (!success) {
-      logError(
-        `[TrainSimulator] Failed to set sensor #${sensorAddress} to ${on ? "ON" : "OFF"}.`
-      );
+      if (!success) {
+        logError(
+          `[TrainSimulator] Failed to set sensor #${sensorAddress} to ${on ? "ON" : "OFF"}.`
+        );
+      }
+    } catch (error) {
+      logError("[TrainSimulator] setSensor threw:", {
+        sensorAddress,
+        blockId,
+        on,
+        error,
+      });
     }
   }
 
