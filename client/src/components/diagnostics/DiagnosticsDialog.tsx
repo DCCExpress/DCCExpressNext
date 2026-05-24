@@ -226,6 +226,62 @@ function CommandTab() {
   );
 }
 
+function InfoHelpTab() {
+  return (
+    <ScrollArea h={500} type="auto" offsetScrollbars>
+      <Stack gap="md" maw={820}>
+        <Alert color="blue" variant="light" title="Diagnostics value model">
+          This dialog shows physical command-center values. These values are useful for low-level testing, but they are not always the same as the logical layout state.
+        </Alert>
+
+        <Stack gap={4}>
+          <Text fw={700}>Basic accessory / signal / raw accessory</Text>
+          <Text size="sm">
+            OFF means deactivate / value 0. ON means activate / value 1.
+          </Text>
+          <Text size="sm">
+            Signals are handled as basic accessory address ranges. A signal with start address A and length L uses addresses A through A + L - 1.
+          </Text>
+        </Stack>
+
+        <Stack gap={4}>
+          <Text fw={700}>Sensors</Text>
+          <Text size="sm">
+            Sensor ON/OFF values changed from this dialog are simulated/test values. They are not real physical DCC sensor commands.
+          </Text>
+        </Stack>
+
+        <Stack gap={4}>
+          <Text fw={700}>Turnouts</Text>
+          <Text size="sm">
+            Turnout values are physical command-center values. In many systems, physical 0/false means closed and physical 1/true means thrown.
+          </Text>
+          <Text size="sm">
+            DCCExpress also has a logical turnout setting named turnoutClosedValue. Logical CLOSED means physical value equals turnoutClosedValue; logical THROWN means it does not.
+          </Text>
+        </Stack>
+
+        <Stack gap={4}>
+          <Text fw={700}>DCC-EX and Z21 summary</Text>
+          <Text size="sm">
+            DCC-EX basic accessory: 0 = deactivate/OFF, 1 = activate/ON.
+          </Text>
+          <Text size="sm">
+            DCC-EX turnout command convention: 0 = unthrown, 1 = thrown.
+          </Text>
+          <Text size="sm">
+            Z21 turnout handling is best treated as turnout state, not as raw ON/OFF. In practice, false is commonly closed and true is commonly thrown.
+          </Text>
+        </Stack>
+
+        <Alert color="yellow" variant="light" title="Shared address warning">
+          If a basic accessory row shows shared address, more than one layout element uses the same physical accessory address. That usually means one command may control multiple devices, which is normally not recommended.
+        </Alert>
+      </Stack>
+    </ScrollArea>
+  );
+}
+
 export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialogProps) {
   const { sensors, turnouts, accessories } = useRailwayDiagnostics();
 
@@ -242,6 +298,7 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
             <Tabs.Tab value="turnouts"><TabLabel label="Turnouts" count={turnouts.length} /></Tabs.Tab>
             <Tabs.Tab value="accessories"><TabLabel label="Basic accessories" count={accessories.length} /></Tabs.Tab>
             <Tabs.Tab value="command"><TabLabel label="Command" /></Tabs.Tab>
+            <Tabs.Tab value="info"><TabLabel label="Info / Help" /></Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="sensors" pt="md">
@@ -272,6 +329,10 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
 
           <Tabs.Panel value="command" pt="md">
             <CommandTab />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="info" pt="md">
+            <InfoHelpTab />
           </Tabs.Panel>
         </Tabs>
       </Stack>
