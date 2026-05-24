@@ -15,7 +15,6 @@ type MainMenuActionsProps = {
   onOpenLocos: () => void;
   onSaveLayout: () => void;
   onLoadLayout: () => void;
-  onSettingsClick: () => void;
   onOpenAppSettingsDialog: () => void;
   onOpenHelp: () => void;
 };
@@ -25,7 +24,6 @@ export default function MainMenuActions({
   onOpenLocos,
   onSaveLayout,
   onLoadLayout,
-  onSettingsClick,
   onOpenAppSettingsDialog,
   onOpenHelp,
 }: MainMenuActionsProps) {
@@ -96,22 +94,13 @@ export default function MainMenuActions({
         </Menu.Dropdown>
       </Menu>
 
-      <Menu>
-        <Menu.Target>
-          <Button variant="subtle" size="xs">
-            {t("topMenu.settings")}
-          </Button>
-        </Menu.Target>
-
-        <Menu.Dropdown>
-          <Menu.Item onClick={onSettingsClick}>
-            {t("UI") + "..."}
-          </Menu.Item>
-          <Menu.Item onClick={onOpenAppSettingsDialog}>
-            App...
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+      <Button
+        variant="subtle"
+        size="xs"
+        onClick={onOpenAppSettingsDialog}
+      >
+        {t("topMenu.settings")}
+      </Button>
 
       <Button variant="subtle" size="xs" onClick={onOpenHelp}>
         {t("topMenu.help")}
