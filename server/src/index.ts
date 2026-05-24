@@ -23,6 +23,7 @@ import {
 } from "./utility.js";
 
 const DEFAULT_PORT = 3000;
+const SHUTDOWN_TIMEOUT_MS = 5000;
 
 function readPort(): number {
   const raw = process.env.PORT ?? process.env.DCCEXPRESS_PORT;
@@ -67,7 +68,19 @@ function registerGracefulShutdown(server: http.Server): void {
 
     log(`Received ${signal}, closing HTTP server...`);
 
+    const forceExitTimer = setTimeout(() => {
+      logError(
+        `HTTP server did not close within ${SHUTDOWN_TIMEOUT_MS}ms, forcing shutdown.`
+      );
+
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT_MS);
+
+    forceExitTimer.unref?.();
+
     server.close(error => {
+      clearTimeout(forceExitTimer);
+
       if (error) {
         logError("HTTP server close failed:", error);
         process.exitCode = 1;
