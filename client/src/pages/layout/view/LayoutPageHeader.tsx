@@ -56,6 +56,7 @@ type LayoutPageHeaderProps = {
   redo: () => void;
 
   onSettingsClick: () => void;
+  onOpenAppSettingsDialog: () => void;
   onFitLayout: () => void;
 
   setCommandCenterOpened: BooleanSetter;
@@ -91,6 +92,7 @@ export default function LayoutPageHeader({
   redo,
 
   onSettingsClick,
+  onOpenAppSettingsDialog,
   onFitLayout,
 
   setCommandCenterOpened,
@@ -179,6 +181,7 @@ export default function LayoutPageHeader({
             onUndo={undo}
             onRedo={redo}
             onSettingsClick={onSettingsClick}
+            onOpenAppSettingsDialog={onOpenAppSettingsDialog}
             onDeleteToolClick={() =>
               setTool({
                 mode: "delete",
