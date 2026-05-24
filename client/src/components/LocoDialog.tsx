@@ -39,6 +39,7 @@ import {
   saveLocos,
 } from "../api/domainApi";
 import { generateId } from "../helpers";
+import { wsApi } from "../services/wsApi";
 import AppModal from "./common/AppModal";
 
 type LocoDialogProps = {
@@ -166,6 +167,26 @@ export default function LocoDialog({
     updateSelectedLoco({
       functions: selectedLoco.functions.filter(fn => fn.id !== fnId),
     });
+  };
+
+  const sendFunctionTest = async (
+    fn: LocoFunction,
+    active: boolean
+  ): Promise<void> => {
+    if (!selectedLoco) return;
+
+    try {
+      setMessage("");
+      await wsApi.setLocoFunction(
+        selectedLoco.address,
+        fn.number,
+        active
+      );
+      setMessage(`F${fn.number} ${active ? "ON" : "OFF"} elküldve.`);
+    } catch (error) {
+      console.error(error);
+      setMessage(`F${fn.number} parancs nem sikerült.`);
+    }
   };
 
   const setImageFromFile = (file: File | null): void => {
@@ -359,6 +380,34 @@ export default function LocoDialog({
                                 <TextInput label={t("locodialog.functionname")} value={fn.name} style={{ flex: 1 }} onChange={event => updateFunction(fn.id, { name: event.currentTarget.value })} />
                                 <TextInput label="Ikon" value={fn.icon} w={90} onChange={event => updateFunction(fn.id, { icon: event.currentTarget.value })} />
                                 <Checkbox mt={30} label={t("locodialog.function_momentary")} checked={fn.momentary} onChange={event => updateFunction(fn.id, { momentary: event.currentTarget.checked })} />
+                                <Button
+                                  mt={24}
+                                  size="xs"
+                                  variant="light"
+                                  onPointerDown={event => {
+                                    event.preventDefault();
+                                    void sendFunctionTest(fn, true);
+                                  }}
+                                  onPointerUp={event => {
+                                    event.preventDefault();
+                                    if (fn.momentary) {
+                                      void sendFunctionTest(fn, false);
+                                    }
+                                  }}
+                                  onPointerCancel={event => {
+                                    event.preventDefault();
+                                    if (fn.momentary) {
+                                      void sendFunctionTest(fn, false);
+                                    }
+                                  }}
+                                  onPointerLeave={event => {
+                                    if (fn.momentary && event.buttons === 1) {
+                                      void sendFunctionTest(fn, false);
+                                    }
+                                  }}
+                                >
+                                  {t("locodialog.function_test")}
+                                </Button>
                                 <ActionIcon mt={28} color="red" variant="light" onClick={() => deleteFunction(fn.id)}>
                                   <IconTrash size={16} />
                                 </ActionIcon>
