@@ -1,12 +1,38 @@
 import http from "node:http";
-import { app } from "./app.js";
-import { setupWebSocketServer } from "./ws/wsServer.js";
-import { dataDir, distDir } from "./paths.js";
-import { layoutRuntimeStore } from "./services/layoutRuntimeStore.js";
+
+import {
+  app,
+} from "./app.js";
+
+import {
+  setupWebSocketServer,
+} from "./ws/wsServer.js";
+
+import {
+  dataDir,
+  distDir,
+} from "./paths.js";
+
+import {
+  layoutRuntimeStore,
+} from "./services/layoutRuntimeStore.js";
+
+import {
+  log,
+  logError,
+} from "./utility.js";
 
 const PORT = 3000;
 
-async function bootstrap() {
+process.on("unhandledRejection", reason => {
+  logError("Unhandled promise rejection:", reason);
+});
+
+process.on("uncaughtException", error => {
+  logError("Uncaught exception:", error);
+});
+
+async function bootstrap(): Promise<void> {
   await layoutRuntimeStore.initialize();
 
   const server = http.createServer(app);
@@ -14,11 +40,14 @@ async function bootstrap() {
   await setupWebSocketServer(server);
 
   server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server listening on http://0.0.0.0:${PORT}`);
-    console.log(server.address());
-    console.log("Dist: ", distDir);
-    console.log("DataDir:", dataDir);
+    log(`Server listening on http://0.0.0.0:${PORT}`);
+    log("Server address:", server.address());
+    log("Dist:", distDir);
+    log("DataDir:", dataDir);
   });
 }
 
-void bootstrap();
+void bootstrap().catch(error => {
+  logError("Server bootstrap failed:", error);
+  process.exitCode = 1;
+});
