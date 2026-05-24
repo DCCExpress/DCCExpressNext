@@ -13,7 +13,7 @@ import {
 } from "../ws/wsServer.js";
 
 import {
-  log,
+  logDccEx,
   logError,
 } from "../utility.js";
 
@@ -54,7 +54,7 @@ export abstract class DccExCommandCenter extends CommandCenter {
     }
 
     if (!trimmed.startsWith(DCC_EX_KEEPALIVE_COMMAND)) {
-      log(`DCC-EX ${this.getName()} -> ${trimmed}`);
+      logDccEx(`${this.getName()} -> ${trimmed}`);
     }
 
     this.buffer.push(trimmed);
@@ -93,7 +93,7 @@ export abstract class DccExCommandCenter extends CommandCenter {
       data.toString();
 
     if (!message.startsWith("<#")) {
-      log(`DCC-EX ${this.getName()} <- ${message.trim()}`);
+      logDccEx(`${this.getName()} <- ${message.trim()}`);
     }
 
     for (const char of message) {
