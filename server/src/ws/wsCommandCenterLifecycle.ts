@@ -34,6 +34,7 @@ import {
 
 import {
   log,
+  logError,
 } from "../utility.js";
 
 import type {
@@ -56,6 +57,15 @@ export function configureCommandCenterLifecycle(params: {
 
 export function getCurrentCommandCenter(): CommandCenter | null {
   return commandCenter;
+}
+
+function broadcastCommandCenterUnavailable(): void {
+  broadcast?.({
+    type: "commandCenterInfo",
+    data: {
+      alive: false,
+    },
+  });
 }
 
 function createCommandCenter(
@@ -111,7 +121,7 @@ export async function initializeCommandCenter(
       await previousCommandCenter.stop();
       log("Previous command center stopped");
     } catch (error) {
-      console.error(
+      logError(
         "Failed to stop previous command center:",
         error
       );
@@ -123,19 +133,34 @@ export async function initializeCommandCenter(
   commandCenter = createCommandCenter(conf);
 
   if (!commandCenter) {
+    broadcastCommandCenterUnavailable();
     return;
   }
 
   try {
-    await commandCenter.start();
+    const started =
+      await commandCenter.start();
+
+    if (!started) {
+      logError(
+        "Command center start returned false:",
+        conf?.type
+      );
+
+      broadcastCommandCenterUnavailable();
+      return;
+    }
+
     await commandCenter.loadRuntimeState();
     commandCenter.broadcastBlocks();
     log("Command center started:", conf?.type);
   } catch (error) {
-    console.error(
+    logError(
       "Failed to start command center:",
       error
     );
+
+    broadcastCommandCenterUnavailable();
   }
 }
 
@@ -146,7 +171,7 @@ export function registerCommandCenterConfigLoadedCallback(): void {
 
   setCommandCenterConfigLoadedCallback(conf => {
     initializeCommandCenter(conf).catch(error => {
-      console.error(
+      logError(
         "Failed to reinitialize command center:",
         error
       );
