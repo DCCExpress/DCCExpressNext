@@ -8,10 +8,10 @@ import {
 
 import {
   IconAlertTriangle,
-  IconBolt,
   IconDeviceGamepad2,
   IconEye,
   IconRoute2,
+  IconServer,
 } from "@tabler/icons-react";
 
 import type { LayoutView } from "../models/editor/core/LayoutView";
@@ -38,15 +38,18 @@ type ControlPanelProps = {
 };
 
 const CONTROL_PANEL_ACTIVE_TAB_KEY = "dcc-express.control-panel.active-tab";
-const DEFAULT_CONTROL_PANEL_TAB = "command-center";
+const DEFAULT_CONTROL_PANEL_TAB = "system";
 
 export default function ControlPanel(p: ControlPanelProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string | null>(() => {
-    return (
+    const stored =
       window.localStorage.getItem(CONTROL_PANEL_ACTIVE_TAB_KEY) ??
-      DEFAULT_CONTROL_PANEL_TAB
-    );
+      DEFAULT_CONTROL_PANEL_TAB;
+
+    return stored === "command-center"
+      ? DEFAULT_CONTROL_PANEL_TAB
+      : stored;
   });
 
   const handleActiveTabChange = (value: string | null) => {
@@ -61,10 +64,10 @@ export default function ControlPanel(p: ControlPanelProps) {
       <Tabs value={activeTab} onChange={handleActiveTabChange} keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab
-            value="command-center"
-            leftSection={<IconBolt size={16} />}
-            title={t("controlPanel.tabs.commandCenter")}
-            aria-label={t("controlPanel.tabs.commandCenter")}
+            value="system"
+            leftSection={<IconServer size={16} />}
+            title="System"
+            aria-label="System"
           />
 
           <Tabs.Tab
@@ -96,7 +99,7 @@ export default function ControlPanel(p: ControlPanelProps) {
           />
         </Tabs.List>
 
-        <Tabs.Panel value="command-center" pt="sm">
+        <Tabs.Panel value="system" pt="sm">
           <CommandCenterTab
             onConnect={p.onConnectCommandCenter}
             onDisconnect={p.onDisconnectCommandCenter}
