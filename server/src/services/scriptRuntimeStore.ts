@@ -56,12 +56,6 @@ type BroadcastFn = (
     message: TypedServerWsMessage
 ) => void;
 
-type SignalAspect =
-    | "green"
-    | "yellow"
-    | "red"
-    | "white";
-
 class ScriptStoppedError extends Error {
     constructor() {
         super("Script stopped");
@@ -85,9 +79,6 @@ class ServerScriptSession {
             ReturnType<typeof setTimeout> |
             ReturnType<typeof setInterval>
         >();
-
-    private readonly signalAspectByAddress =
-        new Map<number, SignalAspect>();
 
     constructor(
         private readonly script: string,
@@ -624,7 +615,11 @@ return (async () => {
 
     private async setSignalAspect(
         address: number,
-        aspect: SignalAspect
+        aspect:
+            | "green"
+            | "yellow"
+            | "red"
+            | "white"
     ): Promise<void> {
         await this.check();
 
@@ -646,20 +641,6 @@ return (async () => {
             throw new Error(
                 `Signal not found for address ${address}.`
             );
-        }
-
-        const currentAspect =
-            this.signalAspectByAddress.get(signal.address) ??
-            this.getSignalCurrentAspect(signal);
-
-        if (currentAspect === aspect) {
-            this.signalAspectByAddress.set(
-                signal.address,
-                aspect
-            );
-
-            await this.check();
-            return;
         }
 
         const bits =
@@ -692,69 +673,7 @@ return (async () => {
             }
         }
 
-        this.applySignalAspectState(signal, aspect);
-
-        this.signalAspectByAddress.set(
-            signal.address,
-            aspect
-        );
-
         await this.check();
-    }
-
-    private getSignalCurrentAspect(
-        signal: {
-            isGreen: boolean;
-            isYellow: boolean;
-            isRed: boolean;
-            isWhite: boolean;
-        }
-    ): SignalAspect | null {
-        if (signal.isGreen) {
-            return "green";
-        }
-
-        if (signal.isYellow) {
-            return "yellow";
-        }
-
-        if (signal.isWhite) {
-            return "white";
-        }
-
-        if (signal.isRed) {
-            return "red";
-        }
-
-        return null;
-    }
-
-    private applySignalAspectState(
-        signal: {
-            setGreen(): void;
-            setYellow(): void;
-            setRed(): void;
-            setWhite(): void;
-        },
-        aspect: SignalAspect
-    ): void {
-        switch (aspect) {
-            case "green":
-                signal.setGreen();
-                break;
-
-            case "yellow":
-                signal.setYellow();
-                break;
-
-            case "red":
-                signal.setRed();
-                break;
-
-            case "white":
-                signal.setWhite();
-                break;
-        }
     }
 
     private findSerializedElementById(
