@@ -2,8 +2,6 @@ import {
     CommandCenter,
 } from "./CommandCenter.js";
 
-import { log, logError } from "../utility.js";
-import { UdpClient, bufferToHex, type UdpMessage } from "./udpClient.js";
 import type {
     AccessoryInfo,
     LocoState,
@@ -16,26 +14,51 @@ import type {
     TypedServerWsMessage,
     Z21SystemStatePayload,
 } from "../../../common/src/types.js";
+import { log, logError } from "../utility.js";
+import { UdpClient, bufferToHex, type UdpMessage } from "./udpClient.js";
+
+
+import {
+    buildEmergencyStopPacket,
+    buildGetLocoInfoPacket,
+    buildGetTurnoutInfoPacket,
+    buildSetBasicAccessoryPacket,
+    buildSetLocoDrivePacket,
+    buildSetLocoFunctionPacket,
+    buildSetTrackPowerPacket,
+    buildSetTurnoutPackets,
+} from "./z21/z21CommandBuilders.js";
+
+import {
+    isTurnoutInfoPacket as isZ21TurnoutInfoPacket,
+} from "./z21/z21Parsers.js";
+
+import {
+    isRBusDataChangedPacket as isZ21RBusDataChangedPacket,
+} from "./z21/z21Parsers.js";
+
+import {
+    isLocoInfoPacket as isZ21LocoInfoPacket,
+} from "./z21/z21Parsers.js";
+
+import {
+    decodeRBusSensors,
+    isLocoInfoPacket,
+    isRBusDataChangedPacket,
+    isTurnoutInfoPacket,
+    parseLocoInfoPacket,
+    parseRBusDataChangedPacket,
+    parseSystemStatePacket,
+    parseTurnoutInfoPacket,
+} from "./z21/z21Parsers.js";
 
 const LAN_X_HEADER = 0x0040;
 
-const LAN_X_SET_TRACK_POWER_OFF = [0x21, 0x80];
-const LAN_X_SET_TRACK_POWER_ON = [0x21, 0x81];
-const LAN_X_SET_STOP = [0x80];
-
-const LAN_X_GET_TURNOUT_INFO = 0x43;
-const LAN_X_SET_TURNOUT = 0x53;
 const LAN_X_TURNOUT_INFO = 0x43;
 
-const LAN_X_GET_LOCO_INFO = 0xe3;
-const LAN_X_SET_LOCO_DRIVE = 0xe4;
-const LAN_X_SET_LOCO_FUNCTION = 0xe4;
 const LAN_X_LOCO_INFO = 0xef;
 
-const Z21_SPEED_STEPS_128 = 0x13;
-const Z21_LOCO_FUNCTION = 0xf8;
 
-const LAN_SYSTEMSTATE_GETDATA = 0x0085;
 const LAN_SYSTEMSTATE_DATACHANGED = 0x0084;
 
 const LAN_SET_BROADCASTFLAGS = 0x0050;
@@ -46,8 +69,6 @@ const BC_RBUS = 0x00000002;
 const BC_SYSTEM_STATE = 0x00000100;
 
 const LAN_RMBUS_DATACHANGED = 0x0080;
-const LAN_RMBUS_GETDATA = 0x0081;
-const LAN_RMBUS_PROGRAMMODULE = 0x0082;
 
 type WsBroadcaster = (
     message: TypedServerWsMessage
@@ -146,7 +167,7 @@ export class Z21CommandCenter extends CommandCenter {
             logError("Z21 start failed:", error);
 
             this.broadcastCommandCenterInfo(false);
-           
+
             this.stopLocoSubscribePolling();
 
             return false;
@@ -230,41 +251,23 @@ export class Z21CommandCenter extends CommandCenter {
         //     throw new Error("Z21 did not respond to system state request");
         // }
 
-//        await this.getRBusGroup(0);
-//        await this.getRBusGroup(1);
+        //        await this.getRBusGroup(0);
+        //        await this.getRBusGroup(1);
 
         await this.init();
         await this.resubscribeLocos();
 
-        
+
     }
 
 
     async setTurnout(address: number, closed: boolean): Promise<boolean> {
         try {
-            const functionAddress = this.toZ21FunctionAddress(address);
-
-            const msb = (functionAddress >> 8) & 0xff;
-            const lsb = functionAddress & 0xff;
-
-            const p = closed ? 1 : 0;
-
-            const activateDb2 = 0x88 | p;
-            const deactivateDb2 = 0x80 | p;
-
-            const activatePacket = this.buildLanXPacket([
-                LAN_X_SET_TURNOUT,
-                msb,
-                lsb,
-                activateDb2,
-            ]);
-
-            const deactivatePacket = this.buildLanXPacket([
-                LAN_X_SET_TURNOUT,
-                msb,
-                lsb,
-                deactivateDb2,
-            ]);
+            const {
+                functionAddress,
+                activatePacket,
+                deactivatePacket,
+            } = buildSetTurnoutPackets(address, closed);
 
             log("Z21 setTurnout activate:", {
                 address,
@@ -306,27 +309,31 @@ export class Z21CommandCenter extends CommandCenter {
                 source: "setTurnout",
             });
 
-            void this.getTurnout(address);
+            void this.getTurnout(address).catch(error => {
+                logError("Z21 delayed getTurnout failed:", {
+                    address,
+                    error,
+                });
+            });
 
             return true;
         } catch (error) {
-            logError("Z21 setTurnout failed:", { address, closed, error });
+            logError("Z21 setTurnout failed:", {
+                address,
+                closed,
+                error,
+            });
+
             return false;
         }
     }
 
     async getTurnout(address: number): Promise<TurnoutInfo | null> {
         try {
-            const functionAddress = this.toZ21FunctionAddress(address);
-
-            const msb = (functionAddress >> 8) & 0xff;
-            const lsb = functionAddress & 0xff;
-
-            const packet = this.buildLanXPacket([
-                LAN_X_GET_TURNOUT_INFO,
-                msb,
-                lsb,
-            ]);
+            const {
+                functionAddress,
+                packet,
+            } = buildGetTurnoutInfoPacket(address);
 
             log("Z21 getTurnout:", {
                 address,
@@ -334,12 +341,14 @@ export class Z21CommandCenter extends CommandCenter {
                 packet: bufferToHex(packet),
             });
 
-            const response = await this.udpClient.send(packet);
-
+            await this.udpClient.send(packet);
 
             return null;
         } catch (error) {
-            logError("Z21 getTurnout failed:", { address, error });
+            logError("Z21 getTurnout failed:", {
+                address,
+                error,
+            });
 
             return this.turnouts.get(address) ?? null;
         }
@@ -355,22 +364,14 @@ export class Z21CommandCenter extends CommandCenter {
         direction: "forward" | "reverse"
     ): Promise<boolean> {
         try {
-            const { msb, lsb } = this.encodeLocoAddress(address);
-            const normalizedSpeed = clampInt(speed, 0, 126);
-
-            const z21Speed =
-                normalizedSpeed === 0 ? 0 : normalizedSpeed + 1;
-
-            const directionBit = direction === "forward" ? 0x80 : 0x00;
-            const speedByte = directionBit | z21Speed;
-
-            const packet = this.buildLanXPacket([
-                LAN_X_SET_LOCO_DRIVE,
-                Z21_SPEED_STEPS_128,
-                msb,
-                lsb,
-                speedByte,
-            ]);
+            const {
+                normalizedSpeed,
+                packet,
+            } = buildSetLocoDrivePacket(
+                address,
+                speed,
+                direction
+            );
 
             log("Z21 setLoco:", {
                 address,
@@ -388,9 +389,16 @@ export class Z21CommandCenter extends CommandCenter {
 
             this.broadcastLocoState(loco);
 
-            setTimeout(() => {
-                void this.getLoco(address);
+            const refreshTimer = setTimeout(() => {
+                void this.getLoco(address).catch(error => {
+                    logError("Z21 delayed getLoco failed:", {
+                        address,
+                        error,
+                    });
+                });
             }, 150);
+
+            refreshTimer.unref?.();
 
             return true;
         } catch (error) {
@@ -404,25 +412,18 @@ export class Z21CommandCenter extends CommandCenter {
             return false;
         }
     }
-
     async getLoco(address: number): Promise<LocoState | null> {
         try {
-            const { msb, lsb } = this.encodeLocoAddress(address);
-
-            const packet = this.buildLanXPacket([
-                LAN_X_GET_LOCO_INFO,
-                0xf0,
-                msb,
-                lsb,
-            ]);
+            const packet = buildGetLocoInfoPacket(address);
 
             log("Z21 getLoco:", {
                 address,
                 packet: bufferToHex(packet),
             });
 
-            const response = await this.udpClient.send(packet);
-            return Promise.resolve(null);
+            await this.udpClient.send(packet);
+
+            return null;
         } catch (error) {
             logError("Z21 getLoco failed:", {
                 address,
@@ -439,21 +440,14 @@ export class Z21CommandCenter extends CommandCenter {
         active: boolean
     ): Promise<boolean> {
         try {
-            if (!Number.isInteger(fn) || fn < 0 || fn > 28) {
-                throw new Error(`Invalid loco function index: ${fn}`);
-            }
-
-            const { msb, lsb } = this.encodeLocoAddress(address);
-
-            const functionByte = (active ? 0x40 : 0x00) | (fn & 0x3f);
-
-            const packet = this.buildLanXPacket([
-                LAN_X_SET_LOCO_FUNCTION,
-                Z21_LOCO_FUNCTION,
-                msb,
-                lsb,
+            const {
                 functionByte,
-            ]);
+                packet,
+            } = buildSetLocoFunctionPacket(
+                address,
+                fn,
+                active
+            );
 
             log("Z21 setLocoFunction:", {
                 address,
@@ -470,9 +464,17 @@ export class Z21CommandCenter extends CommandCenter {
 
             this.broadcastLocoState(loco);
 
-            setTimeout(() => {
-                void this.getLoco(address);
+            const refreshTimer = setTimeout(() => {
+                void this.getLoco(address).catch(error => {
+                    logError("Z21 delayed getLoco after function failed:", {
+                        address,
+                        fn,
+                        error,
+                    });
+                });
             }, 150);
+
+            refreshTimer.unref?.();
 
             return true;
         } catch (error) {
@@ -489,23 +491,10 @@ export class Z21CommandCenter extends CommandCenter {
 
     async setBasicAccessory(address: number, active: boolean): Promise<boolean> {
         try {
-            const functionAddress = this.toZ21FunctionAddress(address);
-
-            const msb = (functionAddress >> 8) & 0xff;
-            const lsb = functionAddress & 0xff;
-
-            const p = 0;
-
-            const db2 = active
-                ? 0x88 | p
-                : 0x80 | p;
-
-            const packet = this.buildLanXPacket([
-                LAN_X_SET_TURNOUT,
-                msb,
-                lsb,
-                db2,
-            ]);
+            const {
+                functionAddress,
+                packet,
+            } = buildSetBasicAccessoryPacket(address, active);
 
             log("Z21 setBasicAccessory:", {
                 address,
@@ -547,9 +536,7 @@ export class Z21CommandCenter extends CommandCenter {
 
     async setTrackPower(on: boolean): Promise<boolean> {
         try {
-            const packet = this.buildLanXPacket(
-                on ? LAN_X_SET_TRACK_POWER_ON : LAN_X_SET_TRACK_POWER_OFF
-            );
+            const packet = buildSetTrackPowerPacket(on);
 
             log("Z21 setTrackPower:", {
                 on,
@@ -557,18 +544,6 @@ export class Z21CommandCenter extends CommandCenter {
             });
 
             await this.udpClient.send(packet);
-
-            // this.broadcastWs("powerInfo", {
-            //     emergencyStop: false,
-            //     trackVoltageOn: on,
-            //     trackVoltageOff: !on,
-            //     shortCircuit: false,
-            //     programmingModeActive: false,
-            // });
-
-            // setTimeout(() => {
-            //     void this.getSystemState();
-            // }, 200);
 
             return true;
         } catch (error) {
@@ -580,10 +555,9 @@ export class Z21CommandCenter extends CommandCenter {
             return false;
         }
     }
-
     async emergencyStop(): Promise<boolean> {
         try {
-            const packet = this.buildLanXPacket(LAN_X_SET_STOP);
+            const packet = buildEmergencyStopPacket();
 
             log("Z21 emergencyStop:", {
                 packet: bufferToHex(packet),
@@ -591,25 +565,12 @@ export class Z21CommandCenter extends CommandCenter {
 
             await this.udpClient.send(packet);
 
-            // this.broadcastWs("powerInfo", {
-            //     emergencyStop: true,
-            //     trackVoltageOn: true,
-            //     trackVoltageOff: false,
-            //     shortCircuit: false,
-            //     programmingModeActive: false,
-            // });
-
-            // setTimeout(() => {
-            //     void this.getSystemState();
-            // }, 200);
-
             return true;
         } catch (error) {
             logError("Z21 emergencyStop failed:", error);
             return false;
         }
     }
-
     async getSensor(address: number): Promise<SensorInfo | null> {
         return Promise.resolve(this.sensors.get(address) ?? null);
     }
@@ -954,25 +915,24 @@ export class Z21CommandCenter extends CommandCenter {
     }
 
     private parseRBusDataChanged(data: Buffer): RBusInfo | null {
-        if (!this.isRBusDataChangedPacket(data)) {
+        const rbus = parseRBusDataChangedPacket(data);
+
+        if (!rbus) {
             logError("Z21 invalid RBUS packet:", bufferToHex(data));
             return null;
         }
 
-        const group = data.readUInt8(4);
-        const bytes = Array.from(data.subarray(5, 15));
+        const previousBytes = this.rbusGroups.get(rbus.group) ?? [];
 
-        const previousBytes = this.rbusGroups.get(group) ?? [];
-        this.rbusGroups.set(group, bytes);
-
-        const rbus: RBusInfo = {
-            group,
-            bytes,
-        };
+        this.rbusGroups.set(rbus.group, rbus.bytes);
 
         this.broadcastWs("rbusInfo", rbus);
 
-        const changedSensors = this.decodeRBusSensors(group, bytes, previousBytes);
+        const changedSensors = decodeRBusSensors(
+            rbus.group,
+            rbus.bytes,
+            previousBytes
+        );
 
         for (const sensor of changedSensors) {
             this.sensors.set(sensor.address, {
@@ -984,8 +944,8 @@ export class Z21CommandCenter extends CommandCenter {
         }
 
         log("Z21 LAN_RMBUS_DATACHANGED:", {
-            group,
-            bytes,
+            group: rbus.group,
+            bytes: rbus.bytes,
             changedSensors,
         });
 
@@ -993,67 +953,7 @@ export class Z21CommandCenter extends CommandCenter {
     }
 
     private parseSystemState(data: Buffer): Z21SystemState {
-        if (!this.isZ21Header(data, LAN_SYSTEMSTATE_DATACHANGED)) {
-            throw new Error(`Invalid Z21 system state packet: ${bufferToHex(data)}`);
-        }
-
-        const len = data.readUInt16LE(0);
-
-        if (len < 0x14 || data.length < 0x14) {
-            throw new Error(
-                `Invalid Z21 system state length: len=${len}, bufferLength=${data.length}`
-            );
-        }
-
-        const mainCurrentMa = data.readInt16LE(4);
-        const progCurrentMa = data.readInt16LE(6);
-        const filteredMainCurrentMa = data.readInt16LE(8);
-        const temperatureC = data.readInt16LE(10);
-        const supplyVoltageMv = data.readUInt16LE(12);
-        const vccVoltageMv = data.readUInt16LE(14);
-        const centralState = data.readUInt8(16);
-        const centralStateEx = data.readUInt8(17);
-        const reserved = data.readUInt8(18);
-        const capabilities = data.readUInt8(19);
-
-        const powerInfo = {
-            emergencyStop: hasFlag(centralState, 0x01),
-            trackVoltageOff: hasFlag(centralState, 0x02),
-            trackVoltageOn: !hasFlag(centralState, 0x02),
-            shortCircuit: hasFlag(centralState, 0x04),
-            programmingModeActive: hasFlag(centralState, 0x20),
-        };
-
-        return {
-            mainCurrentMa,
-            progCurrentMa,
-            filteredMainCurrentMa,
-            temperatureC,
-            supplyVoltageMv,
-            vccVoltageMv,
-            centralState,
-            centralStateEx,
-            reserved,
-            capabilities,
-
-            powerInfo,
-
-            flags: {
-                highTemperature: hasFlag(centralStateEx, 0x01),
-                powerLost: hasFlag(centralStateEx, 0x02),
-                shortCircuitExternal: hasFlag(centralStateEx, 0x04),
-                shortCircuitInternal: hasFlag(centralStateEx, 0x08),
-                rcn213: hasFlag(centralStateEx, 0x20),
-
-                capDcc: hasFlag(capabilities, 0x01),
-                capMm: hasFlag(capabilities, 0x02),
-                capRailCom: hasFlag(capabilities, 0x08),
-                capLocoCmds: hasFlag(capabilities, 0x10),
-                capAccessoryCmds: hasFlag(capabilities, 0x20),
-                capDetectorCmds: hasFlag(capabilities, 0x40),
-                capNeedsUnlockCode: hasFlag(capabilities, 0x80),
-            },
-        };
+        return parseSystemStatePacket(data);
     }
 
     private async setBroadcastFlags(flags: number): Promise<void> {
@@ -1091,20 +991,20 @@ export class Z21CommandCenter extends CommandCenter {
                 this.LAN_SYSTEMSTATE_GETDATA();
                 this.LAN_SET_BROADCASTFLAGS();
 
-                if(diff > this.timeoutMs * 2) {
+                if (diff > this.timeoutMs * 2) {
                     logError("Z21 connection seems lost, no response for", {
                         diff,
                         timeoutMs: this.timeoutMs,
                     });
                     this.broadcastCommandCenterInfo(false);
-                }   
+                }
             }
         }, 1000);
 
     }
 
     private stopPollingTask() {
-        if(this.pollingTask) {
+        if (this.pollingTask) {
             clearInterval(this.pollingTask);
             this.pollingTask = undefined;
         }
@@ -1172,24 +1072,24 @@ export class Z21CommandCenter extends CommandCenter {
         }
     }
 
-  public async LAN_GET_SERIAL_NUMBER(): Promise<void> {
-    log("Z21 LAN_GET_SERIAL_NUMBER()");
-    await this.udpClient.send([0x04, 0x00, 0x10, 0x00]);
-  }
+    public async LAN_GET_SERIAL_NUMBER(): Promise<void> {
+        log("Z21 LAN_GET_SERIAL_NUMBER()");
+        await this.udpClient.send([0x04, 0x00, 0x10, 0x00]);
+    }
 
-  public async LAN_SYSTEMSTATE_GETDATA(): Promise<void> {
-    log("Z21 LAN_SYSTEMSTATE_GETDATA()");
-    await this.udpClient.send([0x04, 0x00, 0x85, 0x00]);
-  }
+    public async LAN_SYSTEMSTATE_GETDATA(): Promise<void> {
+        log("Z21 LAN_SYSTEMSTATE_GETDATA()");
+        await this.udpClient.send([0x04, 0x00, 0x85, 0x00]);
+    }
 
-  public async LAN_SET_BROADCASTFLAGS(): Promise<void> {
-    log("Z21 LAN_SET_BROADCASTFLAGS()");
-    await this.udpClient.send([
-      0x08, 0x00,       // length = 8
-      0x50, 0x00,       // LAN_SET_BROADCASTFLAGS
-      0x03, 0x01, 0x00, 0x00 // flags = 0x00000103
-    ]);
-  }
+    public async LAN_SET_BROADCASTFLAGS(): Promise<void> {
+        log("Z21 LAN_SET_BROADCASTFLAGS()");
+        await this.udpClient.send([
+            0x08, 0x00,       // length = 8
+            0x50, 0x00,       // LAN_SET_BROADCASTFLAGS
+            0x03, 0x01, 0x00, 0x00 // flags = 0x00000103
+        ]);
+    }
 
 
     private buildZ21Packet(header: number, payload?: Buffer): Buffer {
@@ -1261,70 +1161,19 @@ export class Z21CommandCenter extends CommandCenter {
             state: string;
             rawState: number;
             functionAddress: number;
-        } | null {
-        if (!this.isTurnoutInfoPacket(data)) {
+        }
+        | null {
+        const info = parseTurnoutInfoPacket(data);
+
+        if (!info) {
             logError("Z21 invalid turnout info packet:", bufferToHex(data));
             return null;
         }
 
-        const xHeader = data.readUInt8(4);
-        const msb = data.readUInt8(5);
-        const lsb = data.readUInt8(6);
-        const zzRaw = data.readUInt8(7);
-        const xor = data.readUInt8(8);
-
-        const valid = (xHeader ^ msb ^ lsb ^ zzRaw) === xor;
-
-        const functionAddress = (msb << 8) + lsb;
-        const address = functionAddress + 1;
-
-        const zz = zzRaw & 0x03;
-
-        let closed = false;
-        let state = "NA";
-
-        switch (zz) {
-            case 0:
-                state = "Turnout not switched yet";
-                break;
-
-            case 1:
-                state = "pos: P0";
-                closed = false;
-                break;
-
-            case 2:
-                state = "pos: P1";
-                closed = true;
-                break;
-
-            case 3:
-                state = "Invalid";
-                break;
-        }
-
-        return {
-            address,
-            closed,
-            valid,
-            state,
-            rawState: zz,
-            functionAddress,
-        };
+        return info;
     }
-
     private isTurnoutInfoPacket(data: Buffer): boolean {
-        if (data.length < 9) return false;
-
-        const len = data.readUInt16LE(0);
-        const header = data.readUInt16LE(2);
-        const xHeader = data.readUInt8(4);
-
-        return (
-            len === 0x09 &&
-            header === LAN_X_HEADER &&
-            xHeader === LAN_X_TURNOUT_INFO
-        );
+        return isTurnoutInfoPacket(data);
     }
 
     private isTurnoutInfoForAddress(data: Buffer, address: number): boolean {
@@ -1380,17 +1229,7 @@ export class Z21CommandCenter extends CommandCenter {
     }
 
     private isLocoInfoPacket(data: Buffer): boolean {
-        if (data.length < 11) return false;
-
-        const len = data.readUInt16LE(0);
-        const header = data.readUInt16LE(2);
-        const xHeader = data.readUInt8(4);
-
-        return (
-            len >= 0x0b &&
-            header === LAN_X_HEADER &&
-            xHeader === LAN_X_LOCO_INFO
-        );
+        return isZ21LocoInfoPacket(data);
     }
 
     private isLocoInfoForAddress(data: Buffer, address: number): boolean {
@@ -1417,81 +1256,25 @@ export class Z21CommandCenter extends CommandCenter {
     }
 
     private parseLocoInfo(data: Buffer): LocoState | null {
-        if (!this.isLocoInfoPacket(data)) {
+        const parsed = parseLocoInfoPacket(data);
+
+        if (!parsed) {
             logError("Z21 invalid loco info packet:", bufferToHex(data));
             return null;
         }
 
-        const len = data.readUInt16LE(0);
+        const loco = this.getOrCreateLoco(parsed.address);
 
-        const adrMsb = data.readUInt8(5);
-        const adrLsb = data.readUInt8(6);
-        const db3 = data.readUInt8(8);
+        loco.address = parsed.address;
+        loco.speed = parsed.speed;
+        loco.direction = parsed.direction;
 
-        const address = this.decodeLocoAddress(adrMsb, adrLsb);
-
-        const rawSpeed = db3 & 0x7f;
-        const direction: "forward" | "reverse" =
-            (db3 & 0x80) !== 0 ? "forward" : "reverse";
-
-        const speed =
-            rawSpeed === 0
-                ? 0
-                : rawSpeed === 1
-                    ? 0
-                    : rawSpeed - 1;
-
-        const loco = this.getOrCreateLoco(address);
-
-        loco.address = address;
-        loco.speed = speed;
-        loco.direction = direction;
-
-        if (data.length > 9) {
-            const db4 = data.readUInt8(9);
-
-            loco.functions[0] = (db4 & 0x10) !== 0;
-            loco.functions[1] = (db4 & 0x01) !== 0;
-            loco.functions[2] = (db4 & 0x02) !== 0;
-            loco.functions[3] = (db4 & 0x04) !== 0;
-            loco.functions[4] = (db4 & 0x08) !== 0;
-        }
-
-        if (data.length > 10) {
-            const db5 = data.readUInt8(10);
-
-            for (let i = 0; i < 8; i++) {
-                loco.functions[5 + i] = (db5 & (1 << i)) !== 0;
-            }
-        }
-
-        if (data.length > 11) {
-            const db6 = data.readUInt8(11);
-
-            for (let i = 0; i < 8; i++) {
-                loco.functions[13 + i] = (db6 & (1 << i)) !== 0;
-            }
-        }
-
-        if (data.length > 12) {
-            const db7 = data.readUInt8(12);
-
-            for (let i = 0; i < 8; i++) {
-                loco.functions[21 + i] = (db7 & (1 << i)) !== 0;
-            }
-        }
-
-        if (len >= 15 && data.length > 13) {
-            const db8 = data.readUInt8(13);
-
-            for (let i = 0; i < 3; i++) {
-                loco.functions[29 + i] = (db8 & (1 << i)) !== 0;
-            }
+        for (const [fn, active] of Object.entries(parsed.functions)) {
+            loco.functions[Number(fn)] = active;
         }
 
         return loco;
     }
-
     private broadcastLocoState(loco: LocoState): void {
         this.broadcastWs("locoState", {
             loco,
@@ -1511,12 +1294,7 @@ export class Z21CommandCenter extends CommandCenter {
     }
 
     private isRBusDataChangedPacket(data: Buffer): boolean {
-        if (data.length < 15) return false;
-
-        const len = data.readUInt16LE(0);
-        const header = data.readUInt16LE(2);
-
-        return len === 0x0f && header === LAN_RMBUS_DATACHANGED;
+        return isZ21RBusDataChangedPacket(data);
     }
 
     private isRBusDataChangedForGroup(data: Buffer, group: number): boolean {
