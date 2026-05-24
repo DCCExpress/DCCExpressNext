@@ -16,6 +16,7 @@ type MainMenuActionsProps = {
   onSaveLayout: () => void;
   onLoadLayout: () => void;
   onSettingsClick: () => void;
+  onOpenAppSettingsDialog: () => void;
   onOpenCommandCenterDialog: () => void;
   onOpenHelp: () => void;
 };
@@ -26,6 +27,7 @@ export default function MainMenuActions({
   onSaveLayout,
   onLoadLayout,
   onSettingsClick,
+  onOpenAppSettingsDialog,
   onOpenCommandCenterDialog,
   onOpenHelp,
 }: MainMenuActionsProps) {
@@ -106,6 +108,9 @@ export default function MainMenuActions({
         <Menu.Dropdown>
           <Menu.Item onClick={onSettingsClick}>
             {t("UI") + "..."}
+          </Menu.Item>
+          <Menu.Item onClick={onOpenAppSettingsDialog}>
+            App...
           </Menu.Item>
           <Menu.Item onClick={onOpenCommandCenterDialog}>
             {t("CommandCenter") + "..."}
