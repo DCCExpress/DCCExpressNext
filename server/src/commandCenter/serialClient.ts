@@ -48,7 +48,6 @@ export class SerialClient {
     }
 
     if (!this.port) {
-      this.callbacks.onDisconnected();
       return;
     }
 
@@ -71,14 +70,22 @@ export class SerialClient {
   }
 
   send(data: string): boolean {
-    if (!this.port || !this.port.isOpen) {
+    const port = this.port;
+
+    if (!port || !port.isOpen) {
       logError(
         "DCC-EX serial send failed: no active serial connection."
       );
       return false;
     }
 
-    this.port.write(data);
+    port.write(data, error => {
+      if (error) {
+        logError("DCC-EX serial write failed:", error.message);
+        this.callbacks.onError(error);
+      }
+    });
+
     return true;
   }
 
@@ -156,6 +163,10 @@ export class SerialClient {
     if (this.stopped || this.reconnectTimer) {
       return;
     }
+
+    log(
+      `DCC-EX serial reconnect scheduled in ${this.reconnectDelayMs}ms`
+    );
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
