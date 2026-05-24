@@ -40,6 +40,26 @@ function uniqueSorted(values: number[]): number[] {
     .sort((a, b) => a - b);
 }
 
+function addAddressRange(
+  target: number[],
+  startAddress: number,
+  length: number
+): void {
+  const safeLength = Math.max(0, Math.floor(length));
+
+  for (let offset = 0; offset < safeLength; offset++) {
+    target.push(startAddress + offset);
+  }
+}
+
+function isSignalElementType(type: unknown): boolean {
+  return (
+    type === ELEMENT_TYPES.TRACK_SIGNAL2 ||
+    type === ELEMENT_TYPES.TRACK_SIGNAL3 ||
+    type === ELEMENT_TYPES.TRACK_SIGNAL4
+  );
+}
+
 function readConfiguredAddresses(): ConfiguredRuntimeAddresses {
   const elements = layoutStore.getElements();
 
@@ -80,6 +100,19 @@ function readConfiguredAddresses(): ConfiguredRuntimeAddresses {
       )
     ) {
       accessories.push(item.address);
+    }
+
+    if (
+      isSignalElementType(item.type) &&
+      typeof item.address === "number"
+    ) {
+      addAddressRange(
+        accessories,
+        item.address,
+        typeof item.addressLength === "number"
+          ? item.addressLength
+          : 1
+      );
     }
   }
 
