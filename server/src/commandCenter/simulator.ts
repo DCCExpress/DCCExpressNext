@@ -174,10 +174,12 @@ export class CommandCenterSimulator extends CommandCenter {
     address: number,
     active: boolean
   ): Promise<boolean> {
-    const accessory =
-      this.getOrCreateAccessory(address);
+    if (this.isBasicAccessoryStateAlreadySet(address, active)) {
+      return Promise.resolve(true);
+    }
 
-    accessory.active = active;
+    const accessory =
+      this.setBasicAccessoryRuntimeState(address, active);
 
     const msg: TypedServerWsMessage<"accessoryChanged"> = {
       type: "accessoryChanged",
