@@ -19,5 +19,6 @@ export * from "./commandCenterTelemetry.js";
 export * from "./routeReservation.js";
 export * from "./railwayRuntimeEvents.js";
 export * from "./clientWsCommands.js";
+export * from "./appSettings.js";
 
 export * from "./runtimeVariables.js";
