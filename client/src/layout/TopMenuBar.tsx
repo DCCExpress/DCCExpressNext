@@ -43,7 +43,6 @@ type TopMenuBarProps = {
   onOpenAppSettingsDialog: () => void;
   onDeleteToolClick: () => void;
   onFitLayout: () => void;
-  onOpenCommandCenterDialog: () => void;
 };
 
 export default function TopMenuBar({
@@ -68,7 +67,6 @@ export default function TopMenuBar({
   onOpenAppSettingsDialog,
   onDeleteToolClick,
   onFitLayout,
-  onOpenCommandCenterDialog,
 }: TopMenuBarProps) {
   const [helpOpened, setHelpOpened] = useState(false);
 
@@ -85,7 +83,6 @@ export default function TopMenuBar({
             onLoadLayout={onLoadLayout}
             onSettingsClick={onSettingsClick}
             onOpenAppSettingsDialog={onOpenAppSettingsDialog}
-            onOpenCommandCenterDialog={onOpenCommandCenterDialog}
             onOpenHelp={() => setHelpOpened(true)}
           />
 
