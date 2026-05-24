@@ -48,6 +48,7 @@ type BroadcastMessage = (
 let commandCenter: CommandCenter | null = null;
 let broadcast: BroadcastMessage | null = null;
 let configLoadedCallbackRegistered = false;
+let commandCenterInitializationVersion = 0;
 
 export function configureCommandCenterLifecycle(params: {
   broadcast: BroadcastMessage;
@@ -123,6 +124,9 @@ function createCommandCenter(
 export async function initializeCommandCenter(
   conf: CommandCenterConfig | null
 ): Promise<void> {
+  const initializationVersion =
+    ++commandCenterInitializationVersion;
+
   const previousCommandCenter = commandCenter;
 
   if (previousCommandCenter) {
@@ -140,7 +144,14 @@ export async function initializeCommandCenter(
     }
   }
 
-  commandCenter = createCommandCenter(conf);
+  const nextCommandCenter = createCommandCenter(conf);
+
+  if (initializationVersion !== commandCenterInitializationVersion) {
+    nextCommandCenter?.dispose();
+    return;
+  }
+
+  commandCenter = nextCommandCenter;
 
   if (!commandCenter) {
     broadcastCommandCenterUnavailable();
@@ -150,6 +161,12 @@ export async function initializeCommandCenter(
   try {
     const started =
       await commandCenter.start();
+
+    if (initializationVersion !== commandCenterInitializationVersion) {
+      await commandCenter.stop();
+      clearCurrentCommandCenter();
+      return;
+    }
 
     if (!started) {
       logError(
