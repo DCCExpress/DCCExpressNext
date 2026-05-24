@@ -120,12 +120,6 @@ export default function LayoutPage({
   } = useLayoutPageUiState();
 
   const [
-    settingsDialogOpened,
-    setSettingsDialogOpened,
-  ] =
-    useState(false);
-
-  const [
     appSettingsDialogOpened,
     setAppSettingsDialogOpened,
   ] =
@@ -274,12 +268,6 @@ export default function LayoutPage({
       onLocosSaved={loadLocos}
       pickerOpened={pickerOpened}
       setPickerOpened={setPickerOpened}
-      settingsDialogOpened={
-        settingsDialogOpened
-      }
-      setSettingsDialogOpened={
-        setSettingsDialogOpened
-      }
       appSettingsDialogOpened={
         appSettingsDialogOpened
       }
@@ -314,9 +302,6 @@ export default function LayoutPage({
       canRedo={canRedo}
       undo={undo}
       redo={redo}
-      onSettingsClick={() =>
-        setSettingsDialogOpened(true)
-      }
       onOpenAppSettingsDialog={() =>
         setAppSettingsDialogOpened(true)
       }
