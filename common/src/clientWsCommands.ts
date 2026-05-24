@@ -24,6 +24,10 @@ import type {
   SetRuntimeVariablePayload,
 } from "./runtimeVariables.js";
 
+import type {
+  AppSettings,
+} from "./appSettings.js";
+
 export type EmptyClientWsCommandPayload = {};
 
 export type SetTrackPowerCommandPayload = {
@@ -137,6 +141,16 @@ export type CommandCenterConfigCommandPayload = {
   config?: Partial<ICommandCenter>;
 };
 
+export type AppSettingsCommandAction =
+  | "load"
+  | "save";
+
+export type AppSettingsCommandPayload = {
+  requestId: string;
+  action: AppSettingsCommandAction;
+  settings?: Partial<AppSettings>;
+};
+
 export type TaskManagerCommandAction =
   | "snapshot"
   | "add"
@@ -235,6 +249,7 @@ export type ClientWsPayloadMap = {
   locosCommand: LocosCommandPayload;
   scriptDocumentCommand: ScriptDocumentCommandPayload;
   commandCenterConfigCommand: CommandCenterConfigCommandPayload;
+  appSettingsCommand: AppSettingsCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
   fileCommand: FileCommandPayload;
