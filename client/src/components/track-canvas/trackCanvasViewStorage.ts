@@ -7,6 +7,11 @@ import type {
 const VIEW_STORAGE_KEY =
   "dcc-express.editor.trackCanvas.view";
 
+const SAVE_DEBOUNCE_MS = 250;
+
+let pendingViewState: ViewState | null = null;
+let saveTimer: number | null = null;
+
 function clamp(
   value: number,
   min: number,
@@ -16,6 +21,19 @@ function clamp(
     min,
     Math.min(max, value)
   );
+}
+
+function writeViewState(
+  view: ViewState
+): void {
+  try {
+    localStorage.setItem(
+      VIEW_STORAGE_KEY,
+      JSON.stringify(view)
+    );
+  } catch {
+    // Ignore storage errors. The canvas can still work with in-memory view state.
+  }
 }
 
 export function loadSavedViewState(): ViewState {
@@ -63,12 +81,32 @@ export function loadSavedViewState(): ViewState {
 export function saveViewState(
   view: ViewState
 ): void {
-  try {
-    localStorage.setItem(
-      VIEW_STORAGE_KEY,
-      JSON.stringify(view)
-    );
-  } catch {
-    // Ignore storage errors. The canvas can still work with in-memory view state.
+  pendingViewState = {
+    ...view,
+  };
+
+  if (saveTimer !== null) {
+    window.clearTimeout(saveTimer);
+  }
+
+  saveTimer = window.setTimeout(() => {
+    if (pendingViewState) {
+      writeViewState(pendingViewState);
+      pendingViewState = null;
+    }
+
+    saveTimer = null;
+  }, SAVE_DEBOUNCE_MS);
+}
+
+export function flushSavedViewState(): void {
+  if (saveTimer !== null) {
+    window.clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+
+  if (pendingViewState) {
+    writeViewState(pendingViewState);
+    pendingViewState = null;
   }
 }
