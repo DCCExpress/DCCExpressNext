@@ -23,7 +23,7 @@ export class UdpClient extends EventEmitter {
   private readonly debug: boolean;
 
   private socket: Socket | undefined;
-  public lastReceivedMessage = Date.now();
+  public lastReceivedMessage = 0;
 
   constructor(options: UdpClientOptions) {
     super();
@@ -36,7 +36,11 @@ export class UdpClient extends EventEmitter {
   }
 
   get isOpen(): boolean {
-    return Date.now() - this.lastReceivedMessage <= this.timeoutMs;
+    return Boolean(
+      this.socket &&
+      this.lastReceivedMessage > 0 &&
+      Date.now() - this.lastReceivedMessage <= this.timeoutMs
+    );
   }
 
   async open(): Promise<void> {
@@ -72,6 +76,12 @@ export class UdpClient extends EventEmitter {
     });
 
     socket.on("close", () => {
+      if (this.socket === socket) {
+        this.socket = undefined;
+      }
+
+      this.lastReceivedMessage = 0;
+
       if (this.debug) {
         logZ21("UDP socket closed");
       }
@@ -79,32 +89,51 @@ export class UdpClient extends EventEmitter {
       this.emit("close");
     });
 
-    await new Promise<void>((resolve, reject) => {
-      const onError = (error: Error) => {
-        socket.off("listening", onListening);
-        reject(error);
-      };
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const onError = (error: Error) => {
+          socket.off("listening", onListening);
+          reject(error);
+        };
 
-      const onListening = () => {
-        socket.off("error", onError);
-        resolve();
-      };
+        const onListening = () => {
+          socket.off("error", onError);
+          resolve();
+        };
 
-      socket.once("error", onError);
-      socket.once("listening", onListening);
+        socket.once("error", onError);
+        socket.once("listening", onListening);
 
-      if (this.localPort !== undefined) {
-        socket.bind(this.localPort);
-      } else {
-        socket.bind();
+        if (this.localPort !== undefined) {
+          socket.bind(this.localPort);
+        } else {
+          socket.bind();
+        }
+      });
+    } catch (error) {
+      if (this.socket === socket) {
+        this.socket = undefined;
       }
-    });
+
+      socket.removeAllListeners();
+      socket.close();
+
+      throw error;
+    }
   }
 
   close(): void {
     if (this.socket) {
-      this.socket.close();
+      const socket = this.socket;
       this.socket = undefined;
+
+      try {
+        socket.close();
+      } catch (error) {
+        if (this.debug) {
+          logError("UDP socket close failed:", error);
+        }
+      }
     }
 
     this.lastReceivedMessage = 0;
@@ -118,12 +147,14 @@ export class UdpClient extends EventEmitter {
     }
 
     await new Promise<void>((resolve, reject) => {
-      if (!this.socket) {
+      const socket = this.socket;
+
+      if (!socket) {
         reject(new Error("UDP socket is not open"));
         return;
       }
 
-      this.socket.send(buffer, this.port, this.host, (error) => {
+      socket.send(buffer, this.port, this.host, (error) => {
         if (error) reject(error);
         else resolve();
       });
