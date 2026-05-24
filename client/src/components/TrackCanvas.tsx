@@ -1,5 +1,5 @@
 import { useMantineColorScheme } from "@mantine/core";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { generateId, showErrorMessage, showWarningMessage } from "../helpers";
 import { BaseElementView } from "../models/editor/core/BaseElementView";
 import { isTurnoutElement } from "../models/editor/core/LayoutView";
@@ -83,6 +83,8 @@ export default function TrackCanvas({
   const [drawVersion, setDrawVersion] = useState(0);
   const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0, });
 
+  const drawRafRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
   const turnoutSelectionModeRef = useRef(false);
   //const [lo]
   const [locoPickerOpen, setLocoPickerOpen] = useState(false);
@@ -150,9 +152,38 @@ export default function TrackCanvas({
     signalAspectPopoverRef.current = signalAspectPopover;
   }, [signalAspectPopover]);
 
-  const invalidate = () => {
-    setDrawVersion((prev) => prev + 1);
-  };
+  const requestDraw = useCallback(() => {
+    if (drawRafRef.current !== null) {
+      return;
+    }
+
+    drawRafRef.current = window.requestAnimationFrame(() => {
+      drawRafRef.current = null;
+
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setDrawVersion((prev) => prev + 1);
+    });
+  }, []);
+
+  const invalidate = useCallback(() => {
+    requestDraw();
+  }, [requestDraw]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+
+      if (drawRafRef.current !== null) {
+        window.cancelAnimationFrame(drawRafRef.current);
+        drawRafRef.current = null;
+      }
+    };
+  }, []);
 
   const commandCenter = useCommandCenter();
   const commandCenterRef = useRef(commandCenter);
