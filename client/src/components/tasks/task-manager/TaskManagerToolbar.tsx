@@ -9,6 +9,7 @@ import {
 
 import {
   IconCheck,
+  IconPlayerPause,
   IconPlayerPlay,
   IconPlayerStop,
   IconPlus,
@@ -22,6 +23,7 @@ type TaskManagerToolbarProps = {
   tasks: TrainTask[];
   onAddTask: () => void;
   onStartAllTasks: () => void;
+  onPauseAllTasks: () => void;
   onFinishAllTasks: () => void;
   onAbortAllTasks: () => void;
   onLoadTasks: () => void;
@@ -32,11 +34,22 @@ export default function TaskManagerToolbar({
   tasks,
   onAddTask,
   onStartAllTasks,
+  onPauseAllTasks,
   onFinishAllTasks,
   onAbortAllTasks,
   onLoadTasks,
   onSaveTasks,
 }: TaskManagerToolbarProps) {
+  const hasRunningTasks =
+    tasks.some(task => task.status === "running");
+
+  const hasActiveTasks =
+    tasks.some(task =>
+      task.status === "running" ||
+      task.status === "paused" ||
+      task.status === "finishing"
+    );
+
   return (
     <Group
       justify="space-between"
@@ -75,15 +88,21 @@ export default function TaskManagerToolbar({
         <Button
           size="xs"
           variant="light"
+          color="yellow"
+          leftSection={<IconPlayerPause size={16} />}
+          onClick={onPauseAllTasks}
+          disabled={!hasRunningTasks}
+        >
+          Pause all
+        </Button>
+
+        <Button
+          size="xs"
+          variant="light"
           color="orange"
           leftSection={<IconCheck size={16} />}
           onClick={onFinishAllTasks}
-          disabled={
-            !tasks.some(task =>
-              task.status === "running" ||
-              task.status === "paused"
-            )
-          }
+          disabled={!hasActiveTasks}
         >
           Finish all
         </Button>
@@ -94,13 +113,7 @@ export default function TaskManagerToolbar({
           color="red"
           leftSection={<IconPlayerStop size={16} />}
           onClick={onAbortAllTasks}
-          disabled={
-            !tasks.some(task =>
-              task.status === "running" ||
-              task.status === "paused" ||
-              task.status === "finishing"
-            )
-          }
+          disabled={!hasActiveTasks}
         >
           Abort all
         </Button>
