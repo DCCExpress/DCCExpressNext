@@ -441,6 +441,10 @@ export default function StatusBar({
           >
             SRV CPU {serverStats?.systemLoadPercent ?? "-"}%
           </StatusBadge>
+
+          <StatusBadge color="blue">
+            NET ↓{serverStats?.wsRxKbps ?? "-"} ↑{serverStats?.wsTxKbps ?? "-"} kbit/s
+          </StatusBadge>
         </Group>
       </Group>
 
