@@ -19,6 +19,10 @@ import {
 } from "@tabler/icons-react";
 
 import type {
+  ReactNode,
+} from "react";
+
+import type {
   TrainTask,
 } from "../../../services/tasks/TaskTypes";
 
@@ -138,7 +142,7 @@ type TaskToolbarIconButtonProps = {
   color: string;
   disabled?: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 function TaskToolbarIconButton({
