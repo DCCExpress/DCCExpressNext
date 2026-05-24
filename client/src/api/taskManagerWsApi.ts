@@ -149,6 +149,10 @@ export async function startAllTrainTasksWs(): Promise<TaskManagerActionResult> {
   return getActionResult("startAll");
 }
 
+export async function pauseAllTrainTasksWs(): Promise<TaskManagerActionResult> {
+  return getActionResult("pauseAll");
+}
+
 export async function finishAllTrainTasksWs(): Promise<TaskManagerActionResult> {
   return getActionResult("finishAll");
 }
