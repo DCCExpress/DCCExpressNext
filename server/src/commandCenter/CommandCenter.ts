@@ -373,6 +373,27 @@ export abstract class CommandCenter {
     return accessory;
   }
 
+  protected isBasicAccessoryStateAlreadySet(
+    address: number,
+    active: boolean
+  ): boolean {
+    return this.accessories.get(address)?.active === active;
+  }
+
+  protected setBasicAccessoryRuntimeState(
+    address: number,
+    active: boolean
+  ): AccessoryInfo {
+    const accessory =
+      this.getOrCreateAccessory(address);
+
+    accessory.active = active;
+
+    this.accessories.set(address, accessory);
+
+    return accessory;
+  }
+
   abstract setBasicAccessory(
     address: number,
     active: boolean
