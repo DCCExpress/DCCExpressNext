@@ -26,7 +26,7 @@ export type BroadcastToClients = (
 export type WsHandlerContext = {
   ws: WebSocket;
   msg: ClientWsMessageUnion;
-  commandCenter: CommandCenter;
+  commandCenter: CommandCenter | null;
   sendToClient: SendToClient;
   broadcast: BroadcastToClients;
 };
