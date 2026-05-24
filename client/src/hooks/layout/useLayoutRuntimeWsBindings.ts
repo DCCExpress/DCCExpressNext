@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   type Dispatch,
   type MutableRefObject,
   type SetStateAction,
@@ -74,12 +75,16 @@ export type UseLayoutRuntimeWsBindingsParams = {
   setInvalidateCounter: InvalidateSetter;
 };
 
+const TASK_WAITING_NOTIFICATION_THROTTLE_MS = 15000;
+
 export function useLayoutRuntimeWsBindings({
   layoutRef,
   locosRef,
   setInvalidateCounter,
 }: UseLayoutRuntimeWsBindingsParams): void {
   const { t } = useTranslation();
+  const taskWaitingNotificationRef =
+    useRef(new Map<string, number>());
 
   useEffect(() => {
     const invalidateLayout = (): void => {
@@ -139,6 +144,21 @@ export function useLayoutRuntimeWsBindings({
       return changed;
     };
 
+    const shouldShowTaskWaitingNotification = (
+      key: string
+    ): boolean => {
+      const now = Date.now();
+      const previous =
+        taskWaitingNotificationRef.current.get(key) ?? 0;
+
+      if (now - previous < TASK_WAITING_NOTIFICATION_THROTTLE_MS) {
+        return false;
+      }
+
+      taskWaitingNotificationRef.current.set(key, now);
+      return true;
+    };
+
     const unsubscribeWsStatus =
       wsClient.subscribeStatus(status => {
         if (
@@ -147,6 +167,7 @@ export function useLayoutRuntimeWsBindings({
           status === "error"
         ) {
           layoutStore.clearRuntimeOverlays();
+          taskWaitingNotificationRef.current.clear();
           invalidateLayout();
         }
       });
@@ -340,6 +361,7 @@ export function useLayoutRuntimeWsBindings({
         "allRouteReservationsCleared",
         () => {
           layoutStore.clearRuntimeOverlays();
+          taskWaitingNotificationRef.current.clear();
         }
       );
 
@@ -388,11 +410,23 @@ export function useLayoutRuntimeWsBindings({
       wsClient.on(
         "taskWaitingForLoco",
         data => {
+          const message = data.messageKey
+            ? t(data.messageKey)
+            : data.message;
+
+          const key = [
+            data.taskId,
+            data.blockId,
+            data.messageKey ?? data.message,
+          ].join("|");
+
+          if (!shouldShowTaskWaitingNotification(key)) {
+            return;
+          }
+
           showWarningMessage(
             t("task.manager.messages.waiting"),
-            `${data.taskName}: ${data.messageKey
-              ? t(data.messageKey)
-              : data.message}`
+            `${data.taskName}: ${message}`
           );
         }
       );
