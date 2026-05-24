@@ -49,24 +49,36 @@ export class TcpClient {
       this.reconnectTimer = null;
     }
 
-    if (this.socket) {
-      this.socket.removeAllListeners();
-      this.socket.destroy();
-      this.socket = null;
+    const socket = this.socket;
+
+    if (!socket) {
+      return;
     }
+
+    this.socket = null;
+    socket.removeAllListeners();
+    socket.destroy();
 
     this.callbacks.onDisconnected();
   }
 
   send(data: string): boolean {
-    if (!this.isOpen || !this.socket) {
+    const socket = this.socket;
+
+    if (!this.isOpen || !socket) {
       logError(
         "DCC-EX TCP send failed: no active connection."
       );
       return false;
     }
 
-    this.socket.write(data);
+    socket.write(data, error => {
+      if (error) {
+        logError("DCC-EX TCP write failed:", error.message);
+        this.callbacks.onError(error);
+      }
+    });
+
     return true;
   }
 
@@ -97,6 +109,10 @@ export class TcpClient {
     });
 
     socket.on("close", () => {
+      if (this.socket === socket) {
+        this.socket = null;
+      }
+
       this.callbacks.onDisconnected();
 
       if (!this.stopped) {
@@ -109,6 +125,10 @@ export class TcpClient {
     if (this.reconnectTimer) {
       return;
     }
+
+    log(
+      `DCC-EX TCP reconnect scheduled in ${this.reconnectDelayMs}ms`
+    );
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
