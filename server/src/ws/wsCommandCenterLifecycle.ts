@@ -69,6 +69,17 @@ function broadcastCommandCenterUnavailable(): void {
   });
 }
 
+function broadcastCommandCenterUnlocked(): void {
+  broadcast?.({
+    type: "commandCenterLockChanged",
+    data: {
+      locked: false,
+      lockOwner: null,
+      reason: null,
+    },
+  });
+}
+
 function clearCurrentCommandCenter(): void {
   if (!commandCenter) {
     return;
@@ -128,10 +139,14 @@ export async function initializeCommandCenter(
     ++commandCenterInitializationVersion;
 
   broadcastCommandCenterUnavailable();
+  broadcastCommandCenterUnlocked();
 
   const previousCommandCenter = commandCenter;
 
   if (previousCommandCenter) {
+    previousCommandCenter.locked = false;
+    previousCommandCenter.lockOwnerUUID = null;
+
     try {
       await previousCommandCenter.stop();
       log("Previous command center stopped");
