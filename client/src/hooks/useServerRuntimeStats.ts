@@ -13,7 +13,7 @@ export function useServerRuntimeStats(): ServerRuntimeStatsSnapshot | null {
     useState<ServerRuntimeStatsSnapshot | null>(null);
 
   useEffect(() => {
-    const unsubscribe = wsClient.on<ServerRuntimeStatsSnapshot>(
+    const unsubscribe = wsClient.on(
       "serverRuntimeStatsChanged",
       data => {
         setStats(data);
