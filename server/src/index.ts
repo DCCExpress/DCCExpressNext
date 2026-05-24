@@ -11,7 +11,7 @@ async function bootstrap() {
 
   const server = http.createServer(app);
 
-  setupWebSocketServer(server);
+  await setupWebSocketServer(server);
 
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server listening on http://0.0.0.0:${PORT}`);
