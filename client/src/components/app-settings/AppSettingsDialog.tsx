@@ -34,6 +34,7 @@ import {
 } from "../../helpers";
 
 import AppModal from "../common/AppModal";
+import CommandCenterSettingsTab from "./CommandCenterSettingsTab";
 import FastClockSettingsTab from "./FastClockSettingsTab";
 
 type AppSettingsDialogProps = {
@@ -157,12 +158,28 @@ export default function AppSettingsDialog({
             <Tabs.Tab value="fastClock">
               Fast clock
             </Tabs.Tab>
+
+            <Tabs.Tab value="commandCenter">
+              Command center
+            </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="fastClock" pt="md">
             <FastClockSettingsTab
               settings={settings}
               onChange={setSettings}
+            />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="commandCenter" pt="md">
+            <CommandCenterSettingsTab
+              commandCenter={settings.commandCenter}
+              onChange={commandCenter => {
+                setSettings(current => ({
+                  ...current,
+                  commandCenter,
+                }));
+              }}
             />
           </Tabs.Panel>
         </Tabs>
