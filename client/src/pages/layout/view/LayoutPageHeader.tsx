@@ -55,7 +55,6 @@ type LayoutPageHeaderProps = {
   undo: () => void;
   redo: () => void;
 
-  onSettingsClick: () => void;
   onOpenAppSettingsDialog: () => void;
   onFitLayout: () => void;
 };
@@ -89,7 +88,6 @@ export default function LayoutPageHeader({
   undo,
   redo,
 
-  onSettingsClick,
   onOpenAppSettingsDialog,
   onFitLayout,
 }: LayoutPageHeaderProps) {
@@ -176,7 +174,6 @@ export default function LayoutPageHeader({
             canRedo={canRedo}
             onUndo={undo}
             onRedo={redo}
-            onSettingsClick={onSettingsClick}
             onOpenAppSettingsDialog={onOpenAppSettingsDialog}
             onDeleteToolClick={() =>
               setTool({
