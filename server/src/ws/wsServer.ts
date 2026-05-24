@@ -215,21 +215,45 @@ export async function setupWebSocketServer(
       const currentCommandCenter =
         getCurrentCommandCenter();
 
-      if (
-        !currentCommandCenter &&
-        !canHandleWithoutCommandCenter(msg.type)
-      ) {
-        logError(
-          "WebSocket message rejected: no command center available for type",
-          msg.type
-        );
+      if (!currentCommandCenter) {
+        if (!canHandleWithoutCommandCenter(msg.type)) {
+          logError(
+            "WebSocket message rejected: no command center available for type",
+            msg.type
+          );
 
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: "No command center available",
-          },
-        });
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "No command center available",
+            },
+          });
+
+          return;
+        }
+
+        try {
+          await routeIncomingWebSocketMessage({
+            ws,
+            msg,
+            commandCenter: getCurrentCommandCenter()!,
+            sendToClient,
+            broadcast: broadcastAll,
+          });
+        } catch (error) {
+          logError(
+            "WebSocket route failed:",
+            msg.type,
+            error
+          );
+
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: String(error),
+            },
+          });
+        }
 
         return;
       }
