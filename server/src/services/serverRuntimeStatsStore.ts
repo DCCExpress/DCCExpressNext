@@ -18,6 +18,28 @@ type CpuSample = {
   timestampMs: number;
 };
 
+const DEFAULT_UPDATE_MS = 5000;
+const MIN_UPDATE_MS = 1000;
+
+function readUpdateIntervalMs(): number {
+  const raw = process.env.DCCEXPRESS_RUNTIME_STATS_MS;
+
+  if (!raw) {
+    return DEFAULT_UPDATE_MS;
+  }
+
+  const parsed = Number(raw);
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_UPDATE_MS;
+  }
+
+  return Math.max(
+    MIN_UPDATE_MS,
+    Math.round(parsed)
+  );
+}
+
 function bytesToMb(value: number): number {
   return Math.round(value / 1024 / 1024);
 }
@@ -67,7 +89,7 @@ class ServerRuntimeStatsStore {
     this.broadcast = params.broadcast;
   }
 
-  start(updateMs = 1000): void {
+  start(updateMs = readUpdateIntervalMs()): void {
     if (this.timer) {
       return;
     }
