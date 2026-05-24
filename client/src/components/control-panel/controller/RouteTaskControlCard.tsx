@@ -4,18 +4,21 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from "react";
 
 import {
+  ActionIcon,
   Badge,
   Button,
   Group,
   Select,
+  Tooltip,
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import {
-  IconCheck,
+  IconPlayerPause,
   IconPlayerPlay,
   IconPlayerSkipForward,
   IconPlayerStop,
@@ -122,6 +125,22 @@ export default function RouteTaskControlCard({
     );
   }, [blockOptions]);
 
+  const hasRunningTasks =
+    snapshot.tasks.some(task => task.status === "running");
+
+  const hasPausableOrFinishableTasks =
+    snapshot.tasks.some(task =>
+      task.status === "running" ||
+      task.status === "paused"
+    );
+
+  const hasActiveTasks =
+    snapshot.tasks.some(task =>
+      task.status === "running" ||
+      task.status === "paused" ||
+      task.status === "finishing"
+    );
+
   const handleStartAllTasks = async (): Promise<void> => {
     const result =
       await taskManager.startAllTasks();
@@ -134,6 +153,21 @@ export default function RouteTaskControlCard({
     showOkMessage(
       t("common.success"),
       t("routeTask.allStarted")
+    );
+  };
+
+  const handlePauseAllTasks = async (): Promise<void> => {
+    const result =
+      await taskManager.pauseAllTasks();
+
+    if (!result.ok) {
+      showErrorMessage(t("common.error"), result.error);
+      return;
+    }
+
+    showOkMessage(
+      t("common.success"),
+      t("routeTask.allPaused", { defaultValue: "All tasks paused." })
     );
   };
 
@@ -276,71 +310,90 @@ export default function RouteTaskControlCard({
         </Button>
       </Group>
 
-      <Group grow>
-        <Button
-          size="xs"
-          variant="light"
+      <Group gap="xs">
+        <RouteTaskActionButton
+          tooltip={t("routeTask.taskManager")}
           color="violet"
-          leftSection={<IconRoute size={16} />}
           onClick={onOpenTaskManager}
         >
-          {t("routeTask.taskManager")}
-        </Button>
+          <IconRoute size={16} />
+        </RouteTaskActionButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <RouteTaskActionButton
+          tooltip={t("routeTask.startAll")}
           color="green"
-          leftSection={
-            <IconPlayerPlay size={16} />
-          }
           onClick={() => {
             void handleStartAllTasks();
           }}
           disabled={snapshot.tasks.length === 0}
         >
-          {t("routeTask.startAll")}
-        </Button>
+          <IconPlayerPlay size={16} />
+        </RouteTaskActionButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <RouteTaskActionButton
+          tooltip={t("routeTask.allPaused", { defaultValue: "Pause all running tasks" })}
+          color="yellow"
+          onClick={() => {
+            void handlePauseAllTasks();
+          }}
+          disabled={!hasRunningTasks}
+        >
+          <IconPlayerPause size={16} />
+        </RouteTaskActionButton>
+
+        <RouteTaskActionButton
+          tooltip={t("routeTask.finishAll")}
           color="orange"
-          leftSection={<IconPlayerSkipForward size={16} />}
           onClick={() => {
             void handleFinishAllTasks();
           }}
-          disabled={
-            !snapshot.tasks.some(task =>
-              task.status === "running" ||
-              task.status === "paused"
-            )
-          }
+          disabled={!hasPausableOrFinishableTasks}
         >
-          {t("routeTask.finishAll")}
-        </Button>
+          <IconPlayerSkipForward size={16} />
+        </RouteTaskActionButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <RouteTaskActionButton
+          tooltip={t("routeTask.abortAll")}
           color="red"
-          leftSection={
-            <IconPlayerStop size={16} />
-          }
           onClick={() => {
             void handleAbortAllTasks();
           }}
-          disabled={
-            !snapshot.tasks.some(task =>
-              task.status === "running" ||
-              task.status === "paused" ||
-              task.status === "finishing"
-            )
-          }
+          disabled={!hasActiveTasks}
         >
-          {t("routeTask.abortAll")}
-        </Button>
+          <IconPlayerStop size={16} />
+        </RouteTaskActionButton>
       </Group>
     </CollapsiblePanelCard>
+  );
+}
+
+type RouteTaskActionButtonProps = {
+  tooltip: string;
+  color: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+};
+
+function RouteTaskActionButton({
+  tooltip,
+  color,
+  disabled = false,
+  onClick,
+  children,
+}: RouteTaskActionButtonProps) {
+  return (
+    <Tooltip label={tooltip} withArrow>
+      <ActionIcon
+        size="sm"
+        variant="light"
+        color={color}
+        disabled={disabled}
+        onClick={onClick}
+        aria-label={tooltip}
+      >
+        {children}
+      </ActionIcon>
+    </Tooltip>
   );
 }
