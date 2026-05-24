@@ -155,37 +155,15 @@ export default function GraphDialog({
 
         return (
             <Group gap={6} wrap="wrap">
-                {items.map(item => {
-                    const label = item.label || item.name || item.id;
-
-                    return (
-                        <Badge
-                            key={item.id}
-                            color={color}
-                            variant="light"
-                            styles={{
-                                label: {
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                },
-                            }}
-                        >
-                            <span>{label}</span>
-
-                            {item.address !== undefined && (
-                                <Badge
-                                    size="xs"
-                                    color="gray"
-                                    variant="filled"
-                                    radius="xs"
-                                >
-                                    {item.address}
-                                </Badge>
-                            )}
-                        </Badge>
-                    );
-                })}
+                {items.map(item => (
+                    <Badge
+                        key={item.id}
+                        color={color}
+                        variant="light"
+                    >
+                        {item.label || item.name || item.id}
+                    </Badge>
+                ))}
             </Group>
         );
     };
