@@ -30,6 +30,14 @@ npm run typecheck:server
 npm run check
 ```
 
+## Preflight verification
+
+```bash
+npm run preflight
+```
+
+This is the recommended quick verification command before hardware testing. Currently it runs the same full TypeScript and build verification as `npm run check`.
+
 ## Clean rebuild
 
 ```bash
