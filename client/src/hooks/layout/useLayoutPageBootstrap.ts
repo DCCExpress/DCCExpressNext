@@ -20,11 +20,6 @@ import {
 } from "../../api/layoutWsApi";
 
 import {
-  CommandCenter,
-  loadCommandCenters,
-} from "../../api/commandCentersApi";
-
-import {
   showErrorMessage,
   showOkMessage,
 } from "../../helpers";
@@ -77,9 +72,6 @@ type LayoutSetter =
 type LocoSetter =
   Dispatch<SetStateAction<Loco[]>>;
 
-type CommandCenterSetter =
-  Dispatch<SetStateAction<CommandCenter>>;
-
 function serializeLayoutView(
   layout: LayoutView
 ): SerializedLayoutDto {
@@ -93,7 +85,6 @@ export type UseLayoutPageBootstrapParams = {
   layoutLoadedRef: MutableRefObject<boolean>;
   setLayout: LayoutSetter;
   setLocos: LocoSetter;
-  setCommandCenter: CommandCenterSetter;
   setUndoStack: StringStackSetter;
   setRedoStack: StringStackSetter;
   setInvalidateCounter: NumberSetter;
@@ -111,7 +102,6 @@ export function useLayoutPageBootstrap({
   layoutLoadedRef,
   setLayout,
   setLocos,
-  setCommandCenter,
   setUndoStack,
   setRedoStack,
   setInvalidateCounter,
@@ -256,37 +246,6 @@ export function useLayoutPageBootstrap({
     }
   }, [layoutRef, setInvalidateCounter, t]);
 
-  const loadCommandCentersFromServer = useCallback(async (): Promise<void> => {
-    try {
-      const data =
-        await loadCommandCenters();
-
-      if (!data) {
-        setCommandCenter(
-          new CommandCenter()
-        );
-
-        return;
-      }
-
-      setCommandCenter(
-        new CommandCenter(data)
-      );
-    } catch (error) {
-      console.error(
-        "Nem sikerült betölteni a parancsközpontot:",
-        error
-      );
-
-      showErrorMessage(
-        t("common.error"),
-        t("commandCenter.messages.loadFailedWithError", {
-          error: String(error),
-        })
-      );
-    }
-  }, [setCommandCenter, t]);
-
   const loadScriptFromServer = useCallback((): void => {
     scriptEngine.loadScript();
   }, []);
@@ -294,12 +253,10 @@ export function useLayoutPageBootstrap({
   const loadPartsFromServer = useCallback(async (): Promise<void> => {
     await loadLocos();
     await loadLayoutFromServer();
-    await loadCommandCentersFromServer();
     loadScriptFromServer();
 
     setInvalidateCounter(prev => prev + 1);
   }, [
-    loadCommandCentersFromServer,
     loadLayoutFromServer,
     loadLocos,
     loadScriptFromServer,
