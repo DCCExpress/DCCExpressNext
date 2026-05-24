@@ -1,25 +1,25 @@
-import type { BaseElementView } from "../models/editor/core/BaseElementView";
-
+import { BaseElementView } from "../models/editor/core/BaseElementView";
+import { wsApi } from "./wsApi";
+import { wsClient } from "./wsClient";
 import type {
   ScriptDocumentDto,
   ScriptRunSource,
   ScriptStateDto,
-  ScriptStatus,
 } from "../../../common/src/types";
-import { getScript, saveScript } from "../api/domainApi";
-import { wsApi } from "./wsApi";
-import { wsClient } from "./wsClient";
 
-const MAX_SCRIPT_LOG_ITEMS = 500;
+export type ScriptStatus =
+  | "idle"
+  | "running"
+  | "stopping"
+  | "finished"
+  | "error";
 
-export type ScriptContext = {
-  source?: ScriptRunSource;
-  element?: BaseElementView | null;
-};
+export type ScriptLogLevel = "info" | "warn" | "error";
 
 export type ScriptLogEntry = {
   time: Date;
-  source: ScriptRunSource;
+  level?: ScriptLogLevel;
+  source?: ScriptRunSource;
   message: string;
 };
 
@@ -29,248 +29,163 @@ export type ScriptState = {
   source: ScriptRunSource;
   startedAt?: Date;
   finishedAt?: Date;
-  error?: string;
   logs: ScriptLogEntry[];
+  error?: string;
 };
 
-export type ScriptDocument =
-  ScriptDocumentDto;
-
-type ScriptStateListener = (
-  state: ScriptState
-) => void;
-
-type CurrentSessionListener = (
-  session: ScriptSession | null
-) => void;
-
-type ScriptDocumentListener = (
-  script: ScriptDocument
-) => void;
+export type ScriptContext = {
+  source?: ScriptRunSource;
+  element?: BaseElementView | null;
+};
 
 export class ScriptSession {
-  private state: ScriptState;
+  constructor(
+    public readonly state: ScriptState
+  ) {}
+}
 
-  private readonly listeners =
-    new Set<ScriptStateListener>();
+type Listener = () => void;
 
-  constructor(initialState: ScriptState) {
-    this.state = initialState;
+function toDate(
+  value: string | Date | undefined
+): Date | undefined {
+  if (!value) {
+    return undefined;
   }
 
-  getState(): ScriptState {
-    return {
-      ...this.state,
-      logs: [...this.state.logs],
-    };
-  }
+  return value instanceof Date
+    ? value
+    : new Date(value);
+}
 
-  updateState(nextState: ScriptState): void {
-    this.state = nextState;
-    this.emit();
-  }
-
-  subscribe(listener: ScriptStateListener) {
-    this.listeners.add(listener);
-    listener(this.getState());
-
-    return () => {
-      this.listeners.delete(listener);
-    };
-  }
-
-  stop(): void {
-    wsApi.stopScript();
-  }
-
-  private emit(): void {
-    const snapshot = this.getState();
-
-    for (const listener of this.listeners) {
-      listener(snapshot);
-    }
-  }
+function fromServerState(
+  state: ScriptStateDto
+): ScriptState {
+  return {
+    id: state.sessionId,
+    status: state.status,
+    source: state.source,
+    startedAt: toDate(state.startedAt),
+    finishedAt: toDate(state.finishedAt),
+    logs: state.logs.map(log => ({
+      time: toDate(log.timestamp) ?? new Date(),
+      level: log.level,
+      source: log.source,
+      message: log.message,
+    })),
+    error: state.error,
+  };
 }
 
 class ScriptEngine {
-  private currentSession:
-    | ScriptSession
-    | null = null;
-
-  private readonly listeners =
-    new Set<CurrentSessionListener>();
-
-  private readonly scriptListeners =
-    new Set<ScriptDocumentListener>();
-
-  private script: ScriptDocument = {
+  private currentSession: ScriptSession | null = null;
+  private listeners = new Set<Listener>();
+  private scriptListeners = new Set<Listener>();
+  private script: ScriptDocumentDto = {
     content: "",
     autoStart: false,
   };
 
   constructor() {
-    wsClient.on(
-      "scriptDocumentChanged",
-      data => {
-        this.script =
-          this.createScriptDocument({
-            content: data.content ?? "",
-            autoStart: data.autoStart === true,
-            updatedAt: data.updatedAt,
-          });
+    wsClient.on("scriptStateChanged", state => {
+      this.currentSession = state
+        ? new ScriptSession(fromServerState(state))
+        : null;
 
-        this.emitScript();
-      }
-    );
+      this.emit();
+    });
 
-    wsClient.on(
-      "scriptStateChanged",
-      data => {
-        if (!data) {
-          this.currentSession = null;
-          this.emit();
-          return;
-        }
+    wsClient.on("scriptDocumentChanged", document => {
+      this.script = {
+        content: document.content ?? "",
+        autoStart: document.autoStart === true,
+        updatedAt: document.updatedAt,
+      };
 
-        const mapped =
-          this.mapServerState(data);
-
-        if (!this.currentSession) {
-          this.currentSession =
-            new ScriptSession(mapped);
-        } else {
-          this.currentSession.updateState(
-            mapped
-          );
-        }
-
-        this.emit();
-      }
-    );
-
-    wsClient.on(
-      "scriptRejected",
-      data => {
-        const previous =
-          this.currentSession?.getState();
-
-        if (!previous) {
-          return;
-        }
-
-        this.currentSession?.updateState({
-          ...previous,
-          status: "error",
-          error: data.reason,
-          finishedAt: new Date(),
-          logs: [
-            ...previous.logs,
-            {
-              time: new Date(),
-              source: previous.source,
-              message:
-                `Script rejected: ${data.reason}`,
-            },
-          ].slice(-MAX_SCRIPT_LOG_ITEMS),
-        });
-
-        this.emit();
-      }
-    );
-
-    wsClient.subscribeStatus(status => {
-      if (status === "connected") {
-        wsApi.getScriptRuntimeState();
-      }
+      this.emitScript();
     });
   }
 
-  subscribe(listener: CurrentSessionListener) {
+  subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
-    listener(this.currentSession);
 
     return () => {
       this.listeners.delete(listener);
     };
   }
 
-  subscribeScript(listener: ScriptDocumentListener) {
+  subscribeScript(listener: Listener): () => void {
     this.scriptListeners.add(listener);
-    listener(this.getScriptDocument());
 
     return () => {
       this.scriptListeners.delete(listener);
     };
   }
 
-  getScript(): string {
-    return this.script.content;
+  private emit() {
+    for (const listener of this.listeners) {
+      listener();
+    }
   }
 
-  getAutoStart(): boolean {
-    return this.script.autoStart;
+  private emitScript() {
+    for (const listener of this.scriptListeners) {
+      listener();
+    }
+  }
+
+  getCurrentSession() {
+    return this.currentSession;
+  }
+
+  getScriptDocument(): ScriptDocumentDto {
+    return { ...this.script };
+  }
+
+  updateScript(content: string) {
+    this.script = {
+      ...this.script,
+      content,
+    };
+
+    this.emitScript();
   }
 
   setAutoStart(autoStart: boolean) {
     this.script = {
       ...this.script,
       autoStart,
-      updatedAt: new Date().toISOString(),
     };
 
     this.emitScript();
   }
 
-  getScriptDocument(): ScriptDocument {
-    return {
-      ...this.script,
-    };
-  }
+  async loadScript(): Promise<ScriptDocumentDto> {
+    const { loadScriptDocumentWs } = await import("../api/scriptDocumentWsApi");
 
-  setScript(content: string) {
+    const loaded = await loadScriptDocumentWs();
+
     this.script = {
-      ...this.script,
-      content,
-      updatedAt: new Date().toISOString(),
+      content: loaded.content ?? "",
+      autoStart: loaded.autoStart === true,
+      updatedAt: loaded.updatedAt,
     };
-
-    this.emitScript();
-  }
-
-  async loadScript() {
-    const scriptFile =
-      await getScript();
-
-    this.script =
-      this.createScriptDocument({
-        content: scriptFile.content ?? "",
-        autoStart: scriptFile.autoStart === true,
-        updatedAt: scriptFile.updatedAt,
-      });
 
     this.emitScript();
 
     return this.getScriptDocument();
   }
 
-  async saveScript() {
-    const payload = {
-      content: this.script.content,
-      autoStart: this.script.autoStart,
-      ...(this.script.updatedAt
-        ? { updatedAt: this.script.updatedAt }
-        : {}),
+  async saveScript(): Promise<ScriptDocumentDto> {
+    const { saveScriptDocumentWs } = await import("../api/scriptDocumentWsApi");
+
+    const saved = await saveScriptDocumentWs(this.script);
+
+    this.script = {
+      content: saved.content ?? "",
+      autoStart: saved.autoStart === true,
+      updatedAt: saved.updatedAt,
     };
-
-    const saved =
-      await saveScript(payload);
-
-    this.script =
-      this.createScriptDocument({
-        content: saved.content ?? "",
-        autoStart: saved.autoStart === true,
-        updatedAt: saved.updatedAt,
-      });
 
     this.emitScript();
 
@@ -300,10 +215,11 @@ class ScriptEngine {
 
     this.emit();
 
-    wsApi.runScript(script, {
-      source: context.source ?? "unknown",
-      elementId: context.element?.id ?? null,
-    });
+    wsApi.runScript(
+      script,
+      context.source ?? "unknown",
+      context.element?.id ?? null
+    );
 
     return this.currentSession;
   }
@@ -318,71 +234,8 @@ class ScriptEngine {
   }
 
   stopCurrent() {
-    this.currentSession?.stop();
-  }
-
-  getCurrentSession() {
-    return this.currentSession;
-  }
-
-  private emitScript() {
-    const snapshot =
-      this.getScriptDocument();
-
-    for (const listener of this.scriptListeners) {
-      listener(snapshot);
-    }
-  }
-
-  private emit() {
-    for (const listener of this.listeners) {
-      listener(this.currentSession);
-    }
-  }
-
-  private createScriptDocument(input: {
-content: string;
-  autoStart: boolean;
-  updatedAt: string | undefined;  }): ScriptDocument {
-    return {
-      content: input.content,
-      autoStart: input.autoStart,
-      ...(input.updatedAt
-        ? { updatedAt: input.updatedAt }
-        : {}),
-    };
-  }
-
-  private mapServerState(
-    state: ScriptStateDto
-  ): ScriptState {
-    const mappedLogs = (state.logs ?? []).map(log => ({
-      time: new Date(log.time),
-      source: log.source,
-      message: log.message,
-    })).slice(-MAX_SCRIPT_LOG_ITEMS);
-
-    return {
-      id: state.id,
-      status: state.status,
-      source: state.source,
-
-      ...(state.startedAt
-        ? { startedAt: new Date(state.startedAt) }
-        : {}),
-
-      ...(state.finishedAt
-        ? { finishedAt: new Date(state.finishedAt) }
-        : {}),
-
-      ...(state.error
-        ? { error: state.error }
-        : {}),
-
-      logs: mappedLogs,
-    };
+    wsApi.stopScript();
   }
 }
 
-export const scriptEngine =
-  new ScriptEngine();
+export const scriptEngine = new ScriptEngine();
