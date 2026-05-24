@@ -66,6 +66,36 @@ export function getCurrentCommandCenter(): CommandCenter | null {
   return commandCenter;
 }
 
+function withOptionalString(
+  info: CommandCenterInfoPayload,
+  key: "ip" | "serialPort" | "connectionString",
+  value: string | undefined
+): CommandCenterInfoPayload {
+  if (!value) {
+    return info;
+  }
+
+  return {
+    ...info,
+    [key]: value,
+  };
+}
+
+function withOptionalNumber(
+  info: CommandCenterInfoPayload,
+  key: "port",
+  value: number | undefined
+): CommandCenterInfoPayload {
+  if (typeof value !== "number") {
+    return info;
+  }
+
+  return {
+    ...info,
+    [key]: value,
+  };
+}
+
 function createCommandCenterInfoFromConfig(
   conf: CommandCenterConfig | null,
   alive: boolean
@@ -79,35 +109,55 @@ function createCommandCenterInfoFromConfig(
         connectionString: "simulator://local",
       };
 
-    case "z21":
-      return {
+    case "z21": {
+      let info: CommandCenterInfoPayload = {
         alive,
         type: "z21",
         name: conf.name ?? "Z21",
-        ip: conf.z21.host,
-        port: conf.z21.port,
         connectionString: `z21://${conf.z21.host ?? ""}:${conf.z21.port ?? ""}`,
       };
 
-    case "dcc-ex-tcp":
-      return {
+      info = withOptionalString(info, "ip", conf.z21.host);
+      info = withOptionalNumber(info, "port", conf.z21.port);
+
+      return info;
+    }
+
+    case "dcc-ex-tcp": {
+      let info: CommandCenterInfoPayload = {
         alive,
         type: "dcc-ex-tcp",
         name: conf.name ?? "DCC-EX TCP",
-        ip: conf.dccexTcp.host,
-        port: conf.dccexTcp.port,
         connectionString: `tcp://${conf.dccexTcp.host ?? ""}:${conf.dccexTcp.port ?? ""}`,
       };
 
-    case "dcc-ex-serial":
-      return {
+      info = withOptionalString(info, "ip", conf.dccexTcp.host);
+      info = withOptionalNumber(info, "port", conf.dccexTcp.port);
+
+      return info;
+    }
+
+    case "dcc-ex-serial": {
+      let info: CommandCenterInfoPayload = {
         alive,
         type: "dcc-ex-serial",
         name: conf.name ?? "DCC-EX Serial",
-        serialPort: conf.dccexSerial.serialPort,
-        port: conf.dccexSerial.baudRate,
         connectionString: `serial://${conf.dccexSerial.serialPort ?? ""}@${conf.dccexSerial.baudRate ?? ""}`,
       };
+
+      info = withOptionalString(
+        info,
+        "serialPort",
+        conf.dccexSerial.serialPort
+      );
+      info = withOptionalNumber(
+        info,
+        "port",
+        conf.dccexSerial.baudRate
+      );
+
+      return info;
+    }
 
     default:
       return {
