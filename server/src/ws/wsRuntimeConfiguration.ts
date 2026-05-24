@@ -24,10 +24,13 @@ import {
   fastClockRuntimeStore,
 } from "../services/fastClockRuntimeStore.js";
 
+import {
+  serverRuntimeStatsStore,
+} from "../services/serverRuntimeStatsStore.js";
+
 import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
-
 
 import {
   runtimeVariableService,
@@ -54,6 +57,14 @@ export function configureWebSocketRuntimes({
   runtimeVariableService.setBroadcast(message => {
     broadcast(message);
   });
+
+  serverRuntimeStatsStore.configure({
+    broadcast: message => {
+      broadcast(message);
+    },
+  });
+
+  serverRuntimeStatsStore.start();
 
   scriptRuntimeStore.configure({
     broadcast: message => {
