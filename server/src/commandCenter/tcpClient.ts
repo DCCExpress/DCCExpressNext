@@ -88,7 +88,7 @@ export class TcpClient {
     });
 
     socket.on("data", data => {
-      this.callbacks.onData(data);
+      this.callbacks.onData(Buffer.from(data));
     });
 
     socket.on("error", error => {
