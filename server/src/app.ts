@@ -6,6 +6,7 @@ import express, {
 import cors from "cors";
 import path from "node:path";
 import { clientDir } from "./paths.js";
+import { logError } from "./utility.js";
 
 export const app = express();
 
@@ -42,4 +43,22 @@ app.use(express.static(clientDir));
 
 app.get(/.*/, (_req, res) => {
   res.sendFile(path.join(clientDir, "index.html"));
+});
+
+app.use((
+  error: unknown,
+  _req: Request,
+  res: Response,
+  _next: NextFunction
+) => {
+  logError("Unhandled Express error:", error);
+
+  if (res.headersSent) {
+    return;
+  }
+
+  res.status(500).json({
+    ok: false,
+    message: "Internal server error.",
+  });
 });
