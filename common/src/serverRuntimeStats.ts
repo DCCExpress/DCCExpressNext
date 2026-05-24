@@ -12,4 +12,8 @@ export type ServerRuntimeStatsSnapshot = {
   systemLoadPercent: number | null;
   cpuCount: number;
   uptimeSec: number;
+  wsRxKbps: number;
+  wsTxKbps: number;
+  wsRxBytesTotal: number;
+  wsTxBytesTotal: number;
 };
