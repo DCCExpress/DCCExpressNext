@@ -13,7 +13,12 @@
     "build:client": "npm --workspace client run build",
     "build:server": "npm --workspace server run build",
     "build": "npm run build:client && npm run build:server",
-    "start":  "node ./dist/server/server/src/index.js"
+    "check": "npm run build",
+    "clean": "node -e \"import('node:fs').then(fs => fs.rmSync('dist', { recursive: true, force: true }))\"",
+    "rebuild": "npm run clean && npm run build",
+    "preview:client": "npm --workspace client run preview",
+    "start:server": "node ./dist/server/server/src/index.js",
+    "start": "npm run start:server"
   },
   "dependencies": {
     "@mantine/core": "^9.1.1",
