@@ -68,6 +68,15 @@ function broadcastCommandCenterUnavailable(): void {
   });
 }
 
+function clearCurrentCommandCenter(): void {
+  if (!commandCenter) {
+    return;
+  }
+
+  commandCenter.dispose();
+  commandCenter = null;
+}
+
 function createCommandCenter(
   conf: CommandCenterConfig | null
 ): CommandCenter | null {
@@ -127,6 +136,7 @@ export async function initializeCommandCenter(
       );
     } finally {
       previousCommandCenter.dispose();
+      commandCenter = null;
     }
   }
 
@@ -147,6 +157,7 @@ export async function initializeCommandCenter(
         conf?.type
       );
 
+      clearCurrentCommandCenter();
       broadcastCommandCenterUnavailable();
       return;
     }
@@ -160,6 +171,7 @@ export async function initializeCommandCenter(
       error
     );
 
+    clearCurrentCommandCenter();
     broadcastCommandCenterUnavailable();
   }
 }
