@@ -11,6 +11,17 @@ import type {
 const DAY_MS =
   24 * 60 * 60 * 1000;
 
+function getCurrentSystemDayTimeMs(): number {
+  const now = new Date();
+
+  return (
+    now.getHours() * 60 * 60 * 1000 +
+    now.getMinutes() * 60 * 1000 +
+    now.getSeconds() * 1000 +
+    now.getMilliseconds()
+  );
+}
+
 type FastClockBroadcast =
   (message: TypedServerWsMessage<"fastClockChanged">) => void;
 
@@ -19,7 +30,7 @@ type FastClockRuntimeStoreParams = {
 };
 
 class FastClockRuntimeStore {
-  private timeMs = 0;
+  private timeMs = getCurrentSystemDayTimeMs();
   private speed = 1;
   private running = true;
   private lastRealTimestampMs = Date.now();
@@ -58,7 +69,7 @@ class FastClockRuntimeStore {
   }
 
   reset(): FastClockSnapshot {
-    this.timeMs = 0;
+    this.timeMs = getCurrentSystemDayTimeMs();
     this.running = false;
     this.lastRealTimestampMs = Date.now();
 
