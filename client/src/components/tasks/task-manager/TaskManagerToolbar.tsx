@@ -1,14 +1,17 @@
 // client/src/components/tasks/task-manager/TaskManagerToolbar.tsx
 
 import {
+  ActionIcon,
   Badge,
-  Button,
   Group,
   Text,
+  Tooltip,
 } from "@mantine/core";
 
 import {
   IconCheck,
+  IconDeviceFloppy,
+  IconFolderOpen,
   IconPlayerPause,
   IconPlayerPlay,
   IconPlayerStop,
@@ -66,76 +69,97 @@ export default function TaskManagerToolbar({
       </Group>
 
       <Group gap="xs">
-        <Button
-          size="xs"
-          leftSection={<IconPlus size={16} />}
+        <TaskToolbarIconButton
+          tooltip="Tasks / add task"
+          color="blue"
           onClick={onAddTask}
         >
-          Add task
-        </Button>
+          <IconPlus size={16} />
+        </TaskToolbarIconButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <TaskToolbarIconButton
+          tooltip="Start all tasks"
           color="green"
-          leftSection={<IconPlayerPlay size={16} />}
           onClick={onStartAllTasks}
           disabled={tasks.length === 0}
         >
-          Start all
-        </Button>
+          <IconPlayerPlay size={16} />
+        </TaskToolbarIconButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <TaskToolbarIconButton
+          tooltip="Pause all running tasks"
           color="yellow"
-          leftSection={<IconPlayerPause size={16} />}
           onClick={onPauseAllTasks}
           disabled={!hasRunningTasks}
         >
-          Pause all
-        </Button>
+          <IconPlayerPause size={16} />
+        </TaskToolbarIconButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <TaskToolbarIconButton
+          tooltip="Set all active tasks to finishing"
           color="orange"
-          leftSection={<IconCheck size={16} />}
           onClick={onFinishAllTasks}
           disabled={!hasActiveTasks}
         >
-          Finish all
-        </Button>
+          <IconCheck size={16} />
+        </TaskToolbarIconButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <TaskToolbarIconButton
+          tooltip="Abort all active tasks"
           color="red"
-          leftSection={<IconPlayerStop size={16} />}
           onClick={onAbortAllTasks}
           disabled={!hasActiveTasks}
         >
-          Abort all
-        </Button>
+          <IconPlayerStop size={16} />
+        </TaskToolbarIconButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <TaskToolbarIconButton
+          tooltip="Load tasks"
           color="blue"
           onClick={onLoadTasks}
         >
-          Load
-        </Button>
+          <IconFolderOpen size={16} />
+        </TaskToolbarIconButton>
 
-        <Button
-          size="xs"
-          variant="light"
+        <TaskToolbarIconButton
+          tooltip="Save tasks"
           color="green"
           onClick={onSaveTasks}
         >
-          Save
-        </Button>
+          <IconDeviceFloppy size={16} />
+        </TaskToolbarIconButton>
       </Group>
     </Group>
+  );
+}
+
+type TaskToolbarIconButtonProps = {
+  tooltip: string;
+  color: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+};
+
+function TaskToolbarIconButton({
+  tooltip,
+  color,
+  disabled = false,
+  onClick,
+  children,
+}: TaskToolbarIconButtonProps) {
+  return (
+    <Tooltip label={tooltip} withArrow>
+      <ActionIcon
+        size="sm"
+        variant="light"
+        color={color}
+        disabled={disabled}
+        onClick={onClick}
+        aria-label={tooltip}
+      >
+        {children}
+      </ActionIcon>
+    </Tooltip>
   );
 }
