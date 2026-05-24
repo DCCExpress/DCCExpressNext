@@ -219,6 +219,19 @@ export function sendInitialWebSocketSnapshots({
     });
   }
 
+  const sensors =
+    commandCenter.getSensors();
+
+  for (const sensor of sensors) {
+    sendToClient(ws, {
+      type: "sensorChanged",
+      data: {
+        address: sensor.address,
+        on: sensor.active,
+      },
+    });
+  }
+
   commandCenter.getBlocks();
 
   const accessories =
