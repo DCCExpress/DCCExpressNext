@@ -1,52 +1,46 @@
-import { Accordion, Group, Text, useMantineColorScheme } from "@mantine/core";
-import { useState } from "react";
+import { Group, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
+import CollapsiblePanelCard from "../../components/common/CollapsiblePanelCard";
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 
 type PropertyPanelHelpProps = {
   selectedElement: BaseElementView | null;
 };
 
+const PROPERTY_PANEL_HELP_COLLAPSED_KEY =
+  "dcc-express.property-panel.help.collapsed";
+
 export default function PropertyPanelHelp({
   selectedElement,
 }: PropertyPanelHelpProps) {
   const { t } = useTranslation();
-  const [opened, setOpened] = useState<string | null>("help");
-  const { colorScheme } = useMantineColorScheme();
 
   return (
-    <Accordion
-      value={opened}
-      onChange={setOpened}
-      mr={0}
-      mt={10}
-      chevronPosition="right"
-      variant="contained"
-    >
-      <Accordion.Item value="help">
-        <Accordion.Control
-          style={theme => ({
-            backgroundColor:
-              colorScheme === "dark"
-                ? theme.colors.dark[8]
-                : theme.colors.gray[3],
-          })}
-        >
-          <Group gap={0}>
-            <Text>❓</Text>
-            <Text>{t("help.title")}</Text>
+    <div style={{ marginTop: 10, marginRight: 16 }}>
+      <CollapsiblePanelCard
+        title={
+          <Group gap="xs" wrap="nowrap">
+            <Text component="span">❓</Text>
+            <Text size="sm" fw={700} component="span">
+              {t("help.title")}
+            </Text>
           </Group>
-        </Accordion.Control>
-
-        <Accordion.Panel>
-          <div
-            dangerouslySetInnerHTML={{
-              __html: selectedElement ? selectedElement.getHelp() : t("help.general"),
-            }}
-          />
-        </Accordion.Panel>
-      </Accordion.Item>
-    </Accordion>
+        }
+        collapsedStorageKey={PROPERTY_PANEL_HELP_COLLAPSED_KEY}
+        expandTooltip={t("common.expand", { defaultValue: "Expand" })}
+        collapseTooltip={t("common.collapse", { defaultValue: "Collapse" })}
+        cardPadding="xs"
+        bodyGap="xs"
+      >
+        <div
+          dangerouslySetInnerHTML={{
+            __html: selectedElement
+              ? selectedElement.getHelp()
+              : t("help.general"),
+          }}
+        />
+      </CollapsiblePanelCard>
+    </div>
   );
 }
