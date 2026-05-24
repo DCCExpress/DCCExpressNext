@@ -70,7 +70,7 @@ class FastClockRuntimeStore {
 
   reset(): FastClockSnapshot {
     this.timeMs = getCurrentSystemDayTimeMs();
-    this.running = false;
+    this.running = true;
     this.lastRealTimestampMs = Date.now();
 
     return this.broadcastSnapshot();
