@@ -3,6 +3,7 @@
 import { AppShell } from "@mantine/core";
 import type { Dispatch, SetStateAction } from "react";
 import type { Loco } from "../../../../common/src/types";
+import type { CommandCenter } from "../../api/commandCentersApi";
 import type { RightPanelMode } from "../../hooks/layout/useLayoutPageUiState";
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { LayoutView } from "../../models/editor/core/LayoutView";
@@ -27,6 +28,10 @@ export type LayoutPageViewProps = {
   canvasBusyText: string;
   setCanvasBusy: BooleanSetter;
   setCanvasBusyText: Dispatch<SetStateAction<string>>;
+  commandCenterOpened?: boolean;
+  setCommandCenterOpened?: BooleanSetter;
+  commandCenter?: CommandCenter;
+  onCommandCenterSaved?: (commandCenter: CommandCenter) => void;
   locoDialogOpened: boolean;
   setLocoDialogOpened: BooleanSetter;
   onLocosSaved: () => Promise<void>;
