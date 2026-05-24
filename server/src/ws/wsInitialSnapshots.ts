@@ -39,6 +39,10 @@ import {
 } from "../services/runtimeVariableService.js";
 
 import {
+  serverRuntimeStatsStore,
+} from "../services/serverRuntimeStatsStore.js";
+
+import {
   log,
 } from "../utility.js";
 
@@ -125,6 +129,11 @@ export function sendInitialWebSocketSnapshots({
   sendToClient(ws, {
     type: "runtimeVariablesSnapshot",
     data: runtimeVariableService.getSnapshot(),
+  });
+
+  sendToClient(ws, {
+    type: "serverRuntimeStatsChanged",
+    data: serverRuntimeStatsStore.getSnapshot(),
   });
 
   sendRouteReservationSnapshots(
