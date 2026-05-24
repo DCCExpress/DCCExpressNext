@@ -256,6 +256,10 @@ export abstract class DccExCommandCenter extends CommandCenter {
       return Promise.resolve(false);
     }
 
+    if (this.isBasicAccessoryStateAlreadySet(address, active)) {
+      return Promise.resolve(true);
+    }
+
     const command =
       `<a ${address} ${active ? 1 : 0}>`;
 
@@ -263,9 +267,7 @@ export abstract class DccExCommandCenter extends CommandCenter {
     this.enqueue(command);
 
     const accessory =
-      this.getOrCreateAccessory(address);
-
-    accessory.active = active;
+      this.setBasicAccessoryRuntimeState(address, active);
 
     broadcastAll({
       type: "accessoryChanged",
