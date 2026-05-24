@@ -20,15 +20,23 @@ export type DiagnosticTurnoutItem = {
   closed: boolean;
 };
 
+export type DiagnosticAccessorySource = {
+  elementId: string;
+  elementType: string;
+  elementName: string;
+};
+
 export type DiagnosticAccessoryItem = {
   address: number;
   active: boolean;
+  sources: DiagnosticAccessorySource[];
+  hasConflict: boolean;
 };
 
 type ConfiguredRuntimeAddresses = {
   sensors: number[];
   turnouts: number[];
-  accessories: number[];
+  accessories: Record<number, DiagnosticAccessorySource[]>;
 };
 
 function sortByAddress<T extends { address: number }>(items: T[]): T[] {
@@ -40,15 +48,99 @@ function uniqueSorted(values: number[]): number[] {
     .sort((a, b) => a - b);
 }
 
+function getElementName(item: any): string {
+  if (typeof item.name === "string" && item.name.trim().length > 0) {
+    return item.name.trim();
+  }
+
+  if (typeof item.id === "string" && item.id.trim().length > 0) {
+    return item.id.trim();
+  }
+
+  return "-";
+}
+
+function getElementTypeLabel(type: unknown): string {
+  if (typeof type !== "string") {
+    return "Unknown";
+  }
+
+  switch (type) {
+    case ELEMENT_TYPES.TRACK_SIGNAL2:
+    case ELEMENT_TYPES.TRACK_SIGNAL3:
+    case ELEMENT_TYPES.TRACK_SIGNAL4:
+      return "Signal";
+
+    case ELEMENT_TYPES.TRACK_TURNOUT_LEFT:
+      return "Turnout left";
+
+    case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT:
+      return "Turnout right";
+
+    case ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY:
+      return "Turnout two-way";
+
+    case ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE:
+      return "Turnout double";
+
+    case ELEMENT_TYPES.TRACK_TURNOUT_THREE_WAY:
+      return "Turnout three-way";
+
+    case ELEMENT_TYPES.BUTTON:
+      return "Button";
+
+    case ELEMENT_TYPES.BUTTON_SCRIPT:
+      return "Script button";
+
+    case ELEMENT_TYPES.BUTTON_AUDIO:
+      return "Audio button";
+
+    case ELEMENT_TYPES.BUTTON_ROUTE:
+      return "Route button";
+
+    case ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED:
+      return "Extended route button";
+
+    default:
+      return type;
+  }
+}
+
+function createSource(item: any): DiagnosticAccessorySource {
+  return {
+    elementId: typeof item.id === "string" ? item.id : "-",
+    elementType: getElementTypeLabel(item.type),
+    elementName: getElementName(item),
+  };
+}
+
+function addAccessorySource(
+  target: Record<number, DiagnosticAccessorySource[]>,
+  address: number,
+  source: DiagnosticAccessorySource
+): void {
+  if (!Number.isFinite(address)) {
+    return;
+  }
+
+  const current = target[address] ?? [];
+
+  target[address] = [
+    ...current,
+    source,
+  ];
+}
+
 function addAddressRange(
-  target: number[],
+  target: Record<number, DiagnosticAccessorySource[]>,
   startAddress: number,
-  length: number
+  length: number,
+  source: DiagnosticAccessorySource
 ): void {
   const safeLength = Math.max(0, Math.floor(length));
 
   for (let offset = 0; offset < safeLength; offset++) {
-    target.push(startAddress + offset);
+    addAccessorySource(target, startAddress + offset, source);
   }
 }
 
@@ -60,12 +152,32 @@ function isSignalElementType(type: unknown): boolean {
   );
 }
 
+function isTurnoutElementType(type: unknown): boolean {
+  return (
+    type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT ||
+    type === ELEMENT_TYPES.TRACK_TURNOUT_RIGHT ||
+    type === ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY ||
+    type === ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE ||
+    type === ELEMENT_TYPES.TRACK_TURNOUT_THREE_WAY
+  );
+}
+
+function isButtonAccessoryElementType(type: unknown): boolean {
+  return (
+    type === ELEMENT_TYPES.BUTTON ||
+    type === ELEMENT_TYPES.BUTTON_SCRIPT ||
+    type === ELEMENT_TYPES.BUTTON_AUDIO ||
+    type === ELEMENT_TYPES.BUTTON_ROUTE ||
+    type === ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED
+  );
+}
+
 function readConfiguredAddresses(): ConfiguredRuntimeAddresses {
   const elements = layoutStore.getElements();
 
   const sensors: number[] = [];
   const turnouts: number[] = [];
-  const accessories: number[] = [];
+  const accessories: Record<number, DiagnosticAccessorySource[]> = {};
 
   for (const element of elements) {
     const item = element as any;
@@ -78,28 +190,26 @@ function readConfiguredAddresses(): ConfiguredRuntimeAddresses {
     }
 
     if (
-      (
-        item.type === ELEMENT_TYPES.TRACK_TURNOUT_LEFT ||
-        item.type === ELEMENT_TYPES.TRACK_TURNOUT_RIGHT ||
-        item.type === ELEMENT_TYPES.TRACK_TURNOUT_TWO_WAY ||
-        item.type === ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE
-      ) &&
+      isTurnoutElementType(item.type) &&
       typeof item.turnoutAddress === "number"
     ) {
       turnouts.push(item.turnoutAddress);
+      addAccessorySource(
+        accessories,
+        item.turnoutAddress,
+        createSource(item)
+      );
     }
 
     if (
-      typeof item.address === "number" &&
-      (
-        item.type === ELEMENT_TYPES.BUTTON ||
-        item.type === ELEMENT_TYPES.BUTTON_SCRIPT ||
-        item.type === ELEMENT_TYPES.BUTTON_AUDIO ||
-        item.type === ELEMENT_TYPES.BUTTON_ROUTE ||
-        item.type === ELEMENT_TYPES.BUTTON_ROUTE_EXTENDED
-      )
+      isButtonAccessoryElementType(item.type) &&
+      typeof item.address === "number"
     ) {
-      accessories.push(item.address);
+      addAccessorySource(
+        accessories,
+        item.address,
+        createSource(item)
+      );
     }
 
     if (
@@ -111,7 +221,8 @@ function readConfiguredAddresses(): ConfiguredRuntimeAddresses {
         item.address,
         typeof item.addressLength === "number"
           ? item.addressLength
-          : 1
+          : 1,
+        createSource(item)
       );
     }
   }
@@ -119,7 +230,7 @@ function readConfiguredAddresses(): ConfiguredRuntimeAddresses {
   return {
     sensors: uniqueSorted(sensors),
     turnouts: uniqueSorted(turnouts),
-    accessories: uniqueSorted(accessories),
+    accessories,
   };
 }
 
@@ -164,20 +275,34 @@ function mergeConfiguredTurnouts(
 }
 
 function mergeConfiguredAccessories(
-  configured: number[],
+  configured: Record<number, DiagnosticAccessorySource[]>,
   runtime: Record<number, DiagnosticAccessoryItem>
 ): DiagnosticAccessoryItem[] {
   const result = new Map<number, DiagnosticAccessoryItem>();
 
-  for (const address of configured) {
+  for (const [addressText, sources] of Object.entries(configured)) {
+    const address = Number(addressText);
+
+    if (!Number.isFinite(address)) {
+      continue;
+    }
+
     result.set(address, {
       address,
       active: false,
+      sources,
+      hasConflict: sources.length > 1,
     });
   }
 
   for (const item of Object.values(runtime)) {
-    result.set(item.address, item);
+    const sources = result.get(item.address)?.sources ?? item.sources ?? [];
+
+    result.set(item.address, {
+      ...item,
+      sources,
+      hasConflict: sources.length > 1,
+    });
   }
 
   return sortByAddress(Array.from(result.values()));
@@ -224,6 +349,8 @@ export function useRailwayDiagnostics() {
         [data.address]: {
           address: data.address,
           active: data.active,
+          sources: [],
+          hasConflict: false,
         },
       }));
     });
