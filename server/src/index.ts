@@ -22,7 +22,30 @@ import {
   logError,
 } from "./utility.js";
 
-const PORT = 3000;
+const DEFAULT_PORT = 3000;
+
+function readPort(): number {
+  const raw = process.env.PORT ?? process.env.DCCEXPRESS_PORT;
+
+  if (!raw) {
+    return DEFAULT_PORT;
+  }
+
+  const parsed = Number(raw);
+
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+    logError(
+      "Invalid PORT/DCCEXPRESS_PORT value, falling back to default:",
+      raw
+    );
+
+    return DEFAULT_PORT;
+  }
+
+  return parsed;
+}
+
+const PORT = readPort();
 
 let shuttingDown = false;
 
