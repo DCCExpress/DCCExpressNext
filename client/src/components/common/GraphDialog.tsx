@@ -39,6 +39,14 @@ type GraphDialogProps = {
     onTestRoute?: (solution: RouteSolution) => void | Promise<void>;
 };
 
+type SectionObjectItem = {
+    id: string;
+    label: string;
+    address?: number;
+    name?: string;
+    trackName?: string;
+};
+
 export default function GraphDialog({
     graph,
     opened,
@@ -132,6 +140,90 @@ export default function GraphDialog({
             </Group>
         );
     };
+
+    const renderSectionObjectBadges = (
+        items: SectionObjectItem[],
+        color: string
+    ) => {
+        if (items.length === 0) {
+            return (
+                <Text size="sm" c="dimmed">
+                    —
+                </Text>
+            );
+        }
+
+        return (
+            <Group gap={6} wrap="wrap">
+                {items.map(item => {
+                    const label = item.label || item.name || item.id;
+
+                    return (
+                        <Badge
+                            key={item.id}
+                            color={color}
+                            variant="light"
+                            styles={{
+                                label: {
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                },
+                            }}
+                        >
+                            <span>{label}</span>
+
+                            {item.address !== undefined && (
+                                <Badge
+                                    size="xs"
+                                    color="gray"
+                                    variant="filled"
+                                    radius="xs"
+                                >
+                                    {item.address}
+                                </Badge>
+                            )}
+                        </Badge>
+                    );
+                })}
+            </Group>
+        );
+    };
+
+    const sectionRows =
+        graph?.nodes.map((node, index) => (
+            <Table.Tr key={node.name}>
+                <Table.Td>{index + 1}</Table.Td>
+
+                <Table.Td>
+                    <Badge variant="light" color="blue">
+                        {node.name}
+                    </Badge>
+                </Table.Td>
+
+                <Table.Td>
+                    {node.trackName ? (
+                        <Text size="sm">{node.trackName}</Text>
+                    ) : (
+                        <Text size="sm" c="dimmed">
+                            —
+                        </Text>
+                    )}
+                </Table.Td>
+
+                <Table.Td>
+                    {renderSectionObjectBadges(node.detectors, "cyan")}
+                </Table.Td>
+
+                <Table.Td>
+                    {renderSectionObjectBadges(node.signals, "yellow")}
+                </Table.Td>
+
+                <Table.Td>
+                    {renderSectionObjectBadges(node.blocks, "violet")}
+                </Table.Td>
+            </Table.Tr>
+        )) ?? [];
 
     const edgeRows =
         graph?.edges.map((edge, index) => (
@@ -611,6 +703,15 @@ export default function GraphDialog({
                     <Tabs.List>
                         <Tabs.Tab value="graph">{t("graph.tabs.graph")}</Tabs.Tab>
 
+                        <Tabs.Tab value="sections">
+                            {t("graph.tabs.sections", { defaultValue: "Sections" })}
+                            {graph && (
+                                <Badge ml="xs" size="xs" variant="light">
+                                    {graph.nodes.length}
+                                </Badge>
+                            )}
+                        </Tabs.Tab>
+
                         <Tabs.Tab value="connections">
                             {t("graph.tabs.connections")}
                             {graph && (
@@ -645,6 +746,40 @@ export default function GraphDialog({
                             />
                         ) : (
                             <Text c="dimmed">{t("graph.emptyGraph")}</Text>
+                        )}
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="sections" pt="md">
+                        {graph && graph.nodes.length > 0 ? (
+                            <ScrollArea h="calc(100vh - 280px)">
+                                <Table
+                                    striped
+                                    highlightOnHover
+                                    withTableBorder
+                                    withColumnBorders
+                                >
+                                    <Table.Thead>
+                                        <Table.Tr>
+                                            <Table.Th>#</Table.Th>
+                                            <Table.Th>
+                                                {t("graph.headers.section", { defaultValue: "Section" })}
+                                            </Table.Th>
+                                            <Table.Th>
+                                                {t("graph.headers.track", { defaultValue: "Track" })}
+                                            </Table.Th>
+                                            <Table.Th>{t("graph.items.detectors")}</Table.Th>
+                                            <Table.Th>{t("graph.items.signals")}</Table.Th>
+                                            <Table.Th>{t("graph.items.blocks")}</Table.Th>
+                                        </Table.Tr>
+                                    </Table.Thead>
+
+                                    <Table.Tbody>{sectionRows}</Table.Tbody>
+                                </Table>
+                            </ScrollArea>
+                        ) : (
+                            <Text c="dimmed">
+                                {t("graph.emptySections", { defaultValue: "No section to display." })}
+                            </Text>
                         )}
                     </Tabs.Panel>
 
