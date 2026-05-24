@@ -33,6 +33,10 @@ import {
 } from "../services/railwayTopologyStore.js";
 
 import {
+  routeGraphRuntimeStore,
+} from "../services/routeGraphRuntimeStore.js";
+
+import {
   log,
   logError,
 } from "../utility.js";
@@ -140,6 +144,7 @@ export async function initializeCommandCenter(
 
   broadcastCommandCenterUnavailable();
   broadcastCommandCenterUnlocked();
+  routeGraphRuntimeStore.clearAllBusy();
 
   const previousCommandCenter = commandCenter;
 
