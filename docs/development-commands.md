@@ -36,6 +36,14 @@ npm run check
 npm run rebuild
 ```
 
+## Dependency audit
+
+```bash
+npm run audit
+```
+
+This runs npm audit for all workspaces with a moderate severity threshold. It is intentionally separate from `npm run check`, so normal builds are not blocked by advisory noise.
+
 ## Development mode
 
 Start the backend:
