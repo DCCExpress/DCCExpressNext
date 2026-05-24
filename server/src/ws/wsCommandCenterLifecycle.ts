@@ -104,15 +104,19 @@ function createCommandCenter(
 export async function initializeCommandCenter(
   conf: CommandCenterConfig | null
 ): Promise<void> {
-  if (commandCenter) {
+  const previousCommandCenter = commandCenter;
+
+  if (previousCommandCenter) {
     try {
-      await commandCenter.stop();
+      await previousCommandCenter.stop();
       log("Previous command center stopped");
     } catch (error) {
       console.error(
         "Failed to stop previous command center:",
         error
       );
+    } finally {
+      previousCommandCenter.dispose();
     }
   }
 
