@@ -5,6 +5,7 @@ import type http from "node:http";
 import {
   WebSocketServer,
   WebSocket,
+  type RawData,
 } from "ws";
 
 import type {
@@ -65,10 +66,23 @@ import {
   registerCommandCenterConfigLoadedCallback,
 } from "./wsCommandCenterLifecycle.js";
 
-function getByteLength(value: Buffer | string): number {
-  return typeof value === "string"
-    ? Buffer.byteLength(value, "utf8")
-    : value.byteLength;
+function getByteLength(value: RawData): number {
+  if (typeof value === "string") {
+    return Buffer.byteLength(value, "utf8");
+  }
+
+  if (Buffer.isBuffer(value)) {
+    return value.byteLength;
+  }
+
+  if (Array.isArray(value)) {
+    return value.reduce(
+      (total, item) => total + item.byteLength,
+      0
+    );
+  }
+
+  return value.byteLength;
 }
 
 function sendTextToClient(
