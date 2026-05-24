@@ -58,8 +58,6 @@ type LayoutPageHeaderProps = {
   onSettingsClick: () => void;
   onOpenAppSettingsDialog: () => void;
   onFitLayout: () => void;
-
-  setCommandCenterOpened: BooleanSetter;
 };
 
 export default function LayoutPageHeader({
@@ -94,8 +92,6 @@ export default function LayoutPageHeader({
   onSettingsClick,
   onOpenAppSettingsDialog,
   onFitLayout,
-
-  setCommandCenterOpened,
 }: LayoutPageHeaderProps) {
   return (
     <>
@@ -189,9 +185,6 @@ export default function LayoutPageHeader({
               })
             }
             onFitLayout={onFitLayout}
-            onOpenCommandCenterDialog={() =>
-              setCommandCenterOpened(true)
-            }
           />
         </Box>
       </AppShell.Header>
