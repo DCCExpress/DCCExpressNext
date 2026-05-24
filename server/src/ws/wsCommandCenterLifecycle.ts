@@ -127,6 +127,8 @@ export async function initializeCommandCenter(
   const initializationVersion =
     ++commandCenterInitializationVersion;
 
+  broadcastCommandCenterUnavailable();
+
   const previousCommandCenter = commandCenter;
 
   if (previousCommandCenter) {
