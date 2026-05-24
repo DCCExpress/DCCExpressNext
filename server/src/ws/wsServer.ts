@@ -25,6 +25,10 @@ import {
 } from "../utility.js";
 
 import {
+  appSettingsStore,
+} from "../services/appSettingsStore.js";
+
+import {
   scriptRuntimeStore,
 } from "../services/scriptRuntimeStore.js";
 
@@ -90,6 +94,7 @@ function canHandleWithoutCommandCenter(type: string): boolean {
     type === "locosCommand" ||
     type === "scriptDocumentCommand" ||
     type === "commandCenterConfigCommand" ||
+    type === "appSettingsCommand" ||
     type === "taskManagerCommand" ||
     type === "fastClockCommand" ||
     type === "fileCommand"
@@ -136,6 +141,7 @@ export function setupWebSocketServer(
         conf
       );
 
+      await appSettingsStore.initialize();
       await initializeCommandCenter(conf);
 
       await scriptRuntimeStore.initialize();
