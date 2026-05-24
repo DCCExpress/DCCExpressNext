@@ -112,6 +112,13 @@ function normalizeString(
     : fallback;
 }
 
+function normalizeTrimmedString(
+  value: unknown,
+  fallback: string
+): string {
+  return normalizeString(value, fallback).trim();
+}
+
 function normalizeNumber(
   value: unknown,
   fallback: number
@@ -177,7 +184,7 @@ export function normalizeCommandCenterSettings(
       ? value.type
       : DEFAULT_COMMAND_CENTER_SETTINGS.type,
     z21: {
-      host: normalizeString(
+      host: normalizeTrimmedString(
         value?.z21?.host,
         "192.168.1.100"
       ),
@@ -187,7 +194,7 @@ export function normalizeCommandCenterSettings(
       ),
     },
     dccexTcp: {
-      host: normalizeString(
+      host: normalizeTrimmedString(
         value?.dccexTcp?.host,
         ""
       ),
@@ -201,7 +208,7 @@ export function normalizeCommandCenterSettings(
       ),
     },
     dccexSerial: {
-      serialPort: normalizeString(
+      serialPort: normalizeTrimmedString(
         value?.dccexSerial?.serialPort,
         ""
       ),
