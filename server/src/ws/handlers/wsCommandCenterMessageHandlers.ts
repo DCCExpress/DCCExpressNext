@@ -10,18 +10,38 @@ import {
 } from "../../utility.js";
 
 import type {
+  WsHandlerContext,
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
 
-export const handleCommandCenterMessage: WsMessageHandler = ({
+function rejectMissingCommandCenter({
   ws,
-  msg,
-  commandCenter,
   sendToClient,
-  broadcast,
-}) => {
+}: WsHandlerContext): void {
+  sendToClient(ws, {
+    type: "error",
+    data: {
+      message: "No command center available",
+    },
+  });
+}
+
+export const handleCommandCenterMessage: WsMessageHandler = context => {
+  const {
+    ws,
+    msg,
+    commandCenter,
+    sendToClient,
+    broadcast,
+  } = context;
+
   switch (msg.type) {
     case "setLoco": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         locoAddress,
         speed,
@@ -55,12 +75,26 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
               },
             });
           }
+        })
+        .catch(error => {
+          logError("Failed to set loco:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to set loco",
+            },
+          });
         });
 
       return true;
     }
 
     case "setLocoFunction": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         locoAddress,
         functionNumber,
@@ -98,11 +132,25 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
               },
             });
           }
+        })
+        .catch(error => {
+          logError("Failed to set loco function:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to set loco function",
+            },
+          });
         });
 
       return true;
     }
     case "getLoco": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         locoAddress,
       } = msg.data;
@@ -143,6 +191,11 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
 
 
     case "setTurnout": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         address,
         closed,
@@ -193,12 +246,26 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
           } else {
             commandCenter.saveRuntimeState();
           }
+        })
+        .catch(error => {
+          logError("Failed to set turnout:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to set turnout",
+            },
+          });
         });
 
       return true;
     }
 
     case "setSensor": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         address,
         on,
@@ -217,12 +284,26 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
               },
             });
           }
+        })
+        .catch(error => {
+          logError("Failed to set sensor:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to set sensor",
+            },
+          });
         });
 
       return true;
     }
 
     case "setBasicAccessory": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         address,
         active,
@@ -241,12 +322,26 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
               },
             });
           }
+        })
+        .catch(error => {
+          logError("Failed to set basic accessory:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to set basic accessory",
+            },
+          });
         });
 
       return true;
     }
 
     case "setTrackPower": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         on,
       } = msg.data;
@@ -264,12 +359,26 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
               },
             });
           }
+        })
+        .catch(error => {
+          logError("Failed to set track power:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to set track power",
+            },
+          });
         });
 
       return true;
     }
 
     case "setProgrammingPower": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         on,
       } = msg.data;
@@ -287,12 +396,26 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
               },
             });
           }
+        })
+        .catch(error => {
+          logError("Failed to set programming power:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to set programming power",
+            },
+          });
         });
 
       return true;
     }
 
     case "writeDccExDirectCommand": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       const {
         command,
       } = msg.data;
@@ -310,12 +433,26 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
               },
             });
           }
+        })
+        .catch(error => {
+          logError("Failed to write DCC-EX direct command:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to write DCC-EX direct command",
+            },
+          });
         });
 
       return true;
     }
 
     case "emergencyStop": {
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       commandCenter
         .emergencyStop()
         .then(success => {
@@ -329,27 +466,56 @@ export const handleCommandCenterMessage: WsMessageHandler = ({
               },
             });
           }
+        })
+        .catch(error => {
+          logError("Failed to emergency stop:", error);
+          sendToClient(ws, {
+            type: "error",
+            data: {
+              message: "Failed to emergency stop",
+            },
+          });
         });
 
       return true;
     }
 
     case "setBlock":
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       log("Setting block:", msg.data);
       commandCenter.setBlock(msg.data);
       return true;
 
     case "setBlockRemove":
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       log("Removing loco from block:", msg.data);
       commandCenter.setBlockRemove(msg.data);
       return true;
 
     case "setBlocksReset":
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       log("Resetting blocks");
       commandCenter.setBlocksReset();
       return true;
 
     case "getBlocks":
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
       log("Getting blocks");
       commandCenter.getBlocks();
       return true;
