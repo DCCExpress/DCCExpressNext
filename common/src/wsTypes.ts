@@ -41,6 +41,10 @@ import type {
 } from "./appSettings.js";
 
 import type {
+  ServerRuntimeStatsSnapshot,
+} from "./serverRuntimeStats.js";
+
+import type {
   RouteReservationChangedPayload,
   RouteReservationRejectedPayload,
   RouteReservationReleasedPayload,
@@ -375,6 +379,8 @@ export type ServerWsPayloadMap = {
   runtimeVariableChanged: RuntimeVariableChangedPayload;
   runtimeVariableRejected: RuntimeVariableRejectedPayload;
   runtimeVariablesSnapshot: RuntimeVariablesSnapshotPayload;
+
+  serverRuntimeStatsChanged: ServerRuntimeStatsSnapshot;
 
   editorEditModeRejected: EditorEditModeRejectedPayload;
 
