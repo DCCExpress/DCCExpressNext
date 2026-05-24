@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { wsClient } from "../services/wsClient";
 
 import type {
+  CommandCenterInfoPayload,
   CommandCenterLockChangedPayload,
   WsPowerInfoPayload as PowerInfo,
   Z21SystemStatePayload as Z21SystemState,
@@ -52,6 +53,20 @@ const emptyCommandCenterInfo: CommandCenterInfoState = {
   serialPort: null,
   connectionString: null,
 };
+
+function toCommandCenterInfoState(
+  data: CommandCenterInfoPayload
+): CommandCenterInfoState {
+  return {
+    alive: data.alive,
+    type: data.type ?? null,
+    name: data.name ?? null,
+    ip: data.ip ?? null,
+    port: data.port ?? null,
+    serialPort: data.serialPort ?? null,
+    connectionString: data.connectionString ?? null,
+  };
+}
 
 const CommandCenterContext = createContext<CommandCenterContextValue>({
   locked: false,
@@ -121,21 +136,13 @@ export function CommandCenterProvider({
     const unsubscribeCommandCenterInfo = wsClient.on(
       "commandCenterInfo",
       (data) => {
-        if (!data.alive) {
-          clearRuntimeState();
-          return;
-        }
+        setCommandCenterInfo(toCommandCenterInfoState(data));
 
-        setCommandCenterInfo((prev) => ({
-          alive: true,
-          type: data.type ?? prev.type ?? null,
-          name: data.name ?? prev.name ?? null,
-          ip: data.ip ?? prev.ip ?? null,
-          port: data.port ?? prev.port ?? null,
-          serialPort: data.serialPort ?? prev.serialPort ?? null,
-          connectionString:
-            data.connectionString ?? prev.connectionString ?? null,
-        }));
+        if (!data.alive) {
+          setPowerInfo(null);
+          setZ21SystemState(null);
+          setLockState(emptyLockState);
+        }
       }
     );
 
