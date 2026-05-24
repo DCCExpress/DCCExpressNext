@@ -40,6 +40,7 @@ import ScriptEditorDialog from "../components/ScriptEditorDialog";
 import { useCommandCenter } from "../context/CommandCenterContext";
 import { useBrowserStats } from "../hooks/useBrowserStats";
 import { useScriptStatus } from "../hooks/useScriptStatus";
+import { useServerRuntimeStats } from "../hooks/useServerRuntimeStats";
 import { useWsStatus } from "../hooks/useWsStatus";
 import { scriptEngine } from "../services/scriptEngine";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
@@ -63,6 +64,9 @@ export default function StatusBar({
 
   const browserStats =
     useBrowserStats(1000);
+
+  const serverStats =
+    useServerRuntimeStats();
 
   const {
     alive,
@@ -419,6 +423,24 @@ export default function StatusBar({
           <StatusBadge color="blue">
             CPU {browserStats.cpuThreads ?? "-"}
           </StatusBadge>
+
+          <Divider orientation="vertical" />
+
+          <StatusBadge
+            color={getMemoryColor(
+              serverStats?.memoryRssMb ?? null
+            )}
+          >
+            SRV MEM {serverStats?.memoryRssMb ?? "-"} MB
+          </StatusBadge>
+
+          <StatusBadge
+            color={getCpuLoadColor(
+              serverStats?.systemLoadPercent ?? null
+            )}
+          >
+            SRV CPU {serverStats?.systemLoadPercent ?? "-"}%
+          </StatusBadge>
         </Group>
       </Group>
 
@@ -570,6 +592,22 @@ function getFpsColor(value: number | null): string {
   }
 
   if (value < 45) {
+    return "orange";
+  }
+
+  return "green";
+}
+
+function getCpuLoadColor(value: number | null): string {
+  if (value === null) {
+    return "gray";
+  }
+
+  if (value > 85) {
+    return "red";
+  }
+
+  if (value > 65) {
     return "orange";
   }
 
