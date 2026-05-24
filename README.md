@@ -39,14 +39,11 @@ DCCExpressNext can run on any system where **Node.js** is available. This makes 
 
 # Requirements
 
-Before running the project, install:
+Before running the project, install a recent version of **Node.js**.
 
-- **Node.js**
-- **npm**
+The npm command used below is normally included with Node.js installations.
 
-A recent Node.js version is recommended.
-
-Because the application is Node.js-based, it is not tied to a specific operating system. It can be installed on Windows, Linux, macOS, small server machines, and Android/Termux environments, as long as Node.js and npm are available.
+Because the application is Node.js-based, it is not tied to a specific operating system. It can be installed on Windows, Linux, macOS, small server machines, and Android/Termux environments, as long as Node.js is available.
 
 ---
 
