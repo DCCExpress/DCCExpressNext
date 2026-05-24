@@ -121,6 +121,44 @@ function normalizeNumber(
     : fallback;
 }
 
+function normalizeIntegerRange(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number
+): number {
+  const numeric = normalizeNumber(value, fallback);
+  const integer = Math.round(numeric);
+
+  return integer >= min && integer <= max
+    ? integer
+    : fallback;
+}
+
+function normalizePort(
+  value: unknown,
+  fallback: number
+): number {
+  return normalizeIntegerRange(
+    value,
+    fallback,
+    1,
+    65535
+  );
+}
+
+function normalizeBaudRate(
+  value: unknown,
+  fallback: number
+): number {
+  return normalizeIntegerRange(
+    value,
+    fallback,
+    1,
+    10000000
+  );
+}
+
 export function normalizeGeneralSettings(
   value: Partial<GeneralSettings> | null | undefined
 ): GeneralSettings {
@@ -143,7 +181,7 @@ export function normalizeCommandCenterSettings(
         value?.z21?.host,
         "192.168.1.100"
       ),
-      port: normalizeNumber(
+      port: normalizePort(
         value?.z21?.port,
         21105
       ),
@@ -153,7 +191,7 @@ export function normalizeCommandCenterSettings(
         value?.dccexTcp?.host,
         ""
       ),
-      port: normalizeNumber(
+      port: normalizePort(
         value?.dccexTcp?.port,
         2560
       ),
@@ -167,7 +205,7 @@ export function normalizeCommandCenterSettings(
         value?.dccexSerial?.serialPort,
         ""
       ),
-      baudRate: normalizeNumber(
+      baudRate: normalizeBaudRate(
         value?.dccexSerial?.baudRate,
         115200
       ),
