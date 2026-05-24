@@ -8,6 +8,10 @@ import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
 
+import {
+  appSettingsStore,
+} from "./appSettingsStore.js";
+
 const DAY_MS =
   24 * 60 * 60 * 1000;
 
@@ -20,6 +24,15 @@ function getCurrentSystemDayTimeMs(): number {
     now.getSeconds() * 1000 +
     now.getMilliseconds()
   );
+}
+
+function getConfiguredResetTimeMs(): number {
+  const settings =
+    appSettingsStore.getSettings();
+
+  return settings.fastClock.resetSource === "configured"
+    ? settings.fastClock.resetTimeMs
+    : getCurrentSystemDayTimeMs();
 }
 
 type FastClockBroadcast =
@@ -69,7 +82,7 @@ class FastClockRuntimeStore {
   }
 
   reset(): FastClockSnapshot {
-    this.timeMs = getCurrentSystemDayTimeMs();
+    this.timeMs = getConfiguredResetTimeMs();
     this.running = true;
     this.lastRealTimestampMs = Date.now();
 
