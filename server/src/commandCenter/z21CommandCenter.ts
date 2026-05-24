@@ -110,6 +110,10 @@ export class Z21CommandCenter extends CommandCenter {
         });
     }
 
+    override isAlive(): boolean {
+        return this.udpClient.isOpen;
+    }
+
     getConnectionString(): string {
         return `z21://${this.ip}:${this.port}`;
     }
@@ -176,7 +180,7 @@ export class Z21CommandCenter extends CommandCenter {
 
     clientConnected(): void {
 
-        this.broadcastCommandCenterInfo(this.udpClient.isOpen);
+        this.broadcastCommandCenterInfo(this.isAlive());
 
         // if (this.lastSystemState) {
         //     this.broadcastWs("z21SystemState", this.lastSystemState);
