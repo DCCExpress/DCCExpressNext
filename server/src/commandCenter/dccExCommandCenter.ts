@@ -14,6 +14,7 @@ import {
 
 import {
   log,
+  logError,
 } from "../utility.js";
 
 import {
@@ -59,17 +60,26 @@ export abstract class DccExCommandCenter extends CommandCenter {
     this.buffer.push(trimmed);
   }
 
-  protected async markConnected(): Promise<void> {
+  protected markConnected(): void {
     this.alive = true;
-    await this.init();
-    this.broadcastCommandCenterInfo();
-    this.broadcastPowerInfo();
 
-    for (const line of this.initCommands.split(/\r?\n/u)) {
-      this.enqueue(line);
-    }
+    void this.init()
+      .catch(error => {
+        logError(
+          "DCC-EX init failed after connect:",
+          error
+        );
+      })
+      .finally(() => {
+        this.broadcastCommandCenterInfo();
+        this.broadcastPowerInfo();
 
-    this.enqueue("<s>");
+        for (const line of this.initCommands.split(/\r?\n/u)) {
+          this.enqueue(line);
+        }
+
+        this.enqueue("<s>");
+      });
   }
 
   protected markDisconnected(): void {
