@@ -339,7 +339,7 @@ class WebSocketApi {
     elementId: string | null = null
   ): boolean {
     return this.send("runScript", {
-      script,
+      ...(script !== undefined ? { script } : {}),
       source,
       elementId,
     });
