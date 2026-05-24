@@ -87,7 +87,7 @@ export default function BasicPropertyEditor({
                   onClick={event => {
                     event.preventDefault();
                     event.stopPropagation();
-                    fileButtonProps.onClick?.(event as any);
+                    fileButtonProps.onClick?.();
                   }}
                 >
                   <IconFolderOpen size={16} />
