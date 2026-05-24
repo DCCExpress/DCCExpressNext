@@ -1,5 +1,9 @@
 import http from "node:http";
 
+import type {
+  WebSocketServer,
+} from "ws";
+
 import {
   app,
 } from "./app.js";
@@ -58,7 +62,25 @@ process.on("uncaughtException", error => {
   logError("Uncaught exception:", error);
 });
 
-function registerGracefulShutdown(server: http.Server): void {
+function closeWebSocketServer(wss: WebSocketServer): void {
+  for (const client of wss.clients) {
+    client.close();
+  }
+
+  wss.close(error => {
+    if (error) {
+      logError("WebSocket server close failed:", error);
+      return;
+    }
+
+    log("WebSocket server closed.");
+  });
+}
+
+function registerGracefulShutdown(
+  server: http.Server,
+  wss: WebSocketServer
+): void {
   const shutdown = (signal: NodeJS.Signals) => {
     if (shuttingDown) {
       return;
@@ -66,20 +88,22 @@ function registerGracefulShutdown(server: http.Server): void {
 
     shuttingDown = true;
 
-    log(`Received ${signal}, closing HTTP server...`);
+    log(`Received ${signal}, closing servers...`);
 
-    const forceExitTimer = setTimeout(() => {
+    const closeTimer = setTimeout(() => {
       logError(
-        `HTTP server did not close within ${SHUTDOWN_TIMEOUT_MS}ms, forcing shutdown.`
+        `Server did not close within ${SHUTDOWN_TIMEOUT_MS}ms.`
       );
 
-      process.exit(1);
+      process.exitCode = 1;
     }, SHUTDOWN_TIMEOUT_MS);
 
-    forceExitTimer.unref?.();
+    closeTimer.unref?.();
+
+    closeWebSocketServer(wss);
 
     server.close(error => {
-      clearTimeout(forceExitTimer);
+      clearTimeout(closeTimer);
 
       if (error) {
         logError("HTTP server close failed:", error);
@@ -100,9 +124,10 @@ async function bootstrap(): Promise<void> {
 
   const server = http.createServer(app);
 
-  await setupWebSocketServer(server);
+  const wss =
+    await setupWebSocketServer(server);
 
-  registerGracefulShutdown(server);
+  registerGracefulShutdown(server, wss);
 
   server.listen(PORT, "0.0.0.0", () => {
     log(`Server listening on http://0.0.0.0:${PORT}`);
