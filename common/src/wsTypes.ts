@@ -125,9 +125,11 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "stopScript",
   "getScriptRuntimeState",
   "startTask",
+  "startAllTasks",
   "finishTask",
   "abortTask",
   "pauseTask",
+  "pauseAllTasks",
   "resumeTask",
   "finishAllTasks",
   "abortAllTasks",
@@ -263,6 +265,7 @@ export type TaskManagerResponsePayload = {
     | "finish"
     | "abort"
     | "startAll"
+    | "pauseAll"
     | "finishAll"
     | "abortAll";
   ok: boolean;
