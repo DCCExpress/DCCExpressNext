@@ -58,8 +58,8 @@ class AppSettingsStore {
   getSettings(): AppSettings {
     return {
       ...this.settings,
-      fastClock: {
-        ...this.settings.fastClock,
+      general: {
+        ...this.settings.general,
       },
       commandCenter: {
         ...this.settings.commandCenter,
@@ -73,6 +73,9 @@ class AppSettingsStore {
           ...this.settings.commandCenter.dccexSerial,
         },
       },
+      fastClock: {
+        ...this.settings.fastClock,
+      },
     };
   }
 
@@ -84,9 +87,9 @@ class AppSettingsStore {
     this.settings = normalizeAppSettings({
       ...this.settings,
       ...input,
-      fastClock: {
-        ...this.settings.fastClock,
-        ...input.fastClock,
+      general: {
+        ...this.settings.general,
+        ...input.general,
       },
       commandCenter: {
         ...this.settings.commandCenter,
@@ -103,6 +106,10 @@ class AppSettingsStore {
           ...this.settings.commandCenter.dccexSerial,
           ...input.commandCenter?.dccexSerial,
         },
+      },
+      fastClock: {
+        ...this.settings.fastClock,
+        ...input.fastClock,
       },
     });
 
