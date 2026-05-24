@@ -39,7 +39,6 @@ type TopMenuBarProps = {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  onSettingsClick: () => void;
   onOpenAppSettingsDialog: () => void;
   onDeleteToolClick: () => void;
   onFitLayout: () => void;
@@ -63,7 +62,6 @@ export default function TopMenuBar({
   canRedo,
   onUndo,
   onRedo,
-  onSettingsClick,
   onOpenAppSettingsDialog,
   onDeleteToolClick,
   onFitLayout,
@@ -81,7 +79,6 @@ export default function TopMenuBar({
             onOpenLocos={onOpenLocos}
             onSaveLayout={onSaveLayout}
             onLoadLayout={onLoadLayout}
-            onSettingsClick={onSettingsClick}
             onOpenAppSettingsDialog={onOpenAppSettingsDialog}
             onOpenHelp={() => setHelpOpened(true)}
           />
