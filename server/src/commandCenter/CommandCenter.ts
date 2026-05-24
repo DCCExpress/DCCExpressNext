@@ -194,6 +194,8 @@ export abstract class CommandCenter {
       data: Object.fromEntries(this.blocks),
       uuid: null,
     });
+
+    void this.saveRuntimeState();
   }
 
   public broadcastBlocks(): void {
