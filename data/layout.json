@@ -355,6 +355,22 @@
           "alignment": "center",
           "offsetY": 21,
           "offsetX": 20
+        },
+        {
+          "id": "cc06b84-6f14-4352-87ab-bd839f61",
+          "type": "audiobutton",
+          "name": "element",
+          "layerName": "buildings",
+          "x": 31,
+          "y": 9,
+          "w": 1,
+          "h": 1,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "#fab005",
+          "fg": "white",
+          "fileName": "SzbattyanIndul.mp3",
+          "label": "Audio"
         }
       ]
     },
