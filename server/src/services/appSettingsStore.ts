@@ -61,6 +61,18 @@ class AppSettingsStore {
       fastClock: {
         ...this.settings.fastClock,
       },
+      commandCenter: {
+        ...this.settings.commandCenter,
+        z21: {
+          ...this.settings.commandCenter.z21,
+        },
+        dccexTcp: {
+          ...this.settings.commandCenter.dccexTcp,
+        },
+        dccexSerial: {
+          ...this.settings.commandCenter.dccexSerial,
+        },
+      },
     };
   }
 
@@ -75,6 +87,22 @@ class AppSettingsStore {
       fastClock: {
         ...this.settings.fastClock,
         ...input.fastClock,
+      },
+      commandCenter: {
+        ...this.settings.commandCenter,
+        ...input.commandCenter,
+        z21: {
+          ...this.settings.commandCenter.z21,
+          ...input.commandCenter?.z21,
+        },
+        dccexTcp: {
+          ...this.settings.commandCenter.dccexTcp,
+          ...input.commandCenter?.dccexTcp,
+        },
+        dccexSerial: {
+          ...this.settings.commandCenter.dccexSerial,
+          ...input.commandCenter?.dccexSerial,
+        },
       },
     });
 
