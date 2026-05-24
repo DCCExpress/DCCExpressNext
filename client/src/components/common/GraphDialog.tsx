@@ -22,6 +22,7 @@ import {
 import CanvasElement from "../common/CanvasElement";
 import type {
     BlockRouteSolution,
+    Edge,
     Graph,
     GraphNode,
     RouteSolution,
@@ -42,9 +43,7 @@ type GraphDialogProps = {
 type SectionObjectItem = {
     id: string;
     label: string;
-    address?: number;
     name?: string;
-    trackName?: string;
 };
 
 export default function GraphDialog({
@@ -61,7 +60,6 @@ export default function GraphDialog({
     const [routeSearched, setRouteSearched] = useState(false);
     const graphRendererRef = useRef(new GraphRenderer());
 
-
     useEffect(() => {
         setFromBlockId(null);
         setToBlockId(null);
@@ -71,6 +69,18 @@ export default function GraphDialog({
 
     const blockSelectData = useMemo(() => {
         return getGraphBlockSelectData(graph);
+    }, [graph]);
+
+    const blockConnectionPaths = useMemo(() => {
+        if (!graph) {
+            return [];
+        }
+
+        return buildBlockConnectionPaths(graph);
+    }, [graph]);
+
+    const runnableBlockRoutes = useMemo(() => {
+        return graph?.getRunnableBlockRoutes() ?? [];
     }, [graph]);
 
     const handleSolveRoute = () => {
@@ -98,22 +108,36 @@ export default function GraphDialog({
                 return;
             }
 
-            graphRendererRef.current.draw(
-                ctx,
-                graph,
-                width,
-                height
-            );
+            graphRendererRef.current.draw(ctx, graph, width, height);
         },
         [graph]
     );
 
-    const renderNodeItems = (
+    function renderSectionObjectBadges(
+        items: SectionObjectItem[],
+        color: string
+    ) {
+        if (items.length === 0) {
+            return <Text size="sm" c="dimmed">—</Text>;
+        }
+
+        return (
+            <Group gap={6} wrap="wrap">
+                {items.map(item => (
+                    <Badge key={item.id} color={color} variant="light">
+                        {item.label || item.name || item.id}
+                    </Badge>
+                ))}
+            </Group>
+        );
+    }
+
+    function renderNodeItems(
         nodeName: string,
         title: string,
         color: string,
         items: { id: string; label: string }[]
-    ) => {
+    ) {
         if (items.length === 0) {
             return null;
         }
@@ -139,161 +163,67 @@ export default function GraphDialog({
                 ))}
             </Group>
         );
-    };
+    }
 
-    const renderSectionObjectBadges = (
-        items: SectionObjectItem[],
-        color: string
-    ) => {
-        if (items.length === 0) {
-            return (
-                <Text size="sm" c="dimmed">
-                    —
-                </Text>
-            );
+    function renderEdgeSectionObjects(edge: Edge) {
+        if (
+            edge.from.detectors.length === 0 &&
+            edge.to.detectors.length === 0 &&
+            edge.from.signals.length === 0 &&
+            edge.to.signals.length === 0 &&
+            edge.from.blocks.length === 0 &&
+            edge.to.blocks.length === 0
+        ) {
+            return <Text size="sm" c="dimmed">—</Text>;
         }
 
         return (
-            <Group gap={6} wrap="wrap">
-                {items.map(item => (
-                    <Badge
-                        key={item.id}
-                        color={color}
-                        variant="light"
-                    >
-                        {item.label || item.name || item.id}
-                    </Badge>
-                ))}
-            </Group>
+            <Stack gap={6}>
+                {renderNodeItems(
+                    edge.from.name,
+                    t("graph.items.detectors"),
+                    "cyan",
+                    edge.from.detectors
+                )}
+                {renderNodeItems(
+                    edge.from.name,
+                    t("graph.items.signals"),
+                    "yellow",
+                    edge.from.signals
+                )}
+                {renderNodeItems(
+                    edge.from.name,
+                    t("graph.items.blocks"),
+                    "violet",
+                    edge.from.blocks
+                )}
+                {renderNodeItems(
+                    edge.to.name,
+                    t("graph.items.detectors"),
+                    "cyan",
+                    edge.to.detectors
+                )}
+                {renderNodeItems(
+                    edge.to.name,
+                    t("graph.items.signals"),
+                    "yellow",
+                    edge.to.signals
+                )}
+                {renderNodeItems(
+                    edge.to.name,
+                    t("graph.items.blocks"),
+                    "violet",
+                    edge.to.blocks
+                )}
+            </Stack>
         );
-    };
+    }
 
-    const sectionRows =
-        graph?.nodes.map((node, index) => (
-            <Table.Tr key={node.name}>
-                <Table.Td>{index + 1}</Table.Td>
-
-                <Table.Td>
-                    <Badge variant="light" color="blue">
-                        {node.name}
-                    </Badge>
-                </Table.Td>
-
-                <Table.Td>
-                    {node.trackName ? (
-                        <Text size="sm">{node.trackName}</Text>
-                    ) : (
-                        <Text size="sm" c="dimmed">
-                            —
-                        </Text>
-                    )}
-                </Table.Td>
-
-                <Table.Td>
-                    {renderSectionObjectBadges(node.detectors, "cyan")}
-                </Table.Td>
-
-                <Table.Td>
-                    {renderSectionObjectBadges(node.signals, "yellow")}
-                </Table.Td>
-
-                <Table.Td>
-                    {renderSectionObjectBadges(node.blocks, "violet")}
-                </Table.Td>
-            </Table.Tr>
-        )) ?? [];
-
-    const edgeRows =
-        graph?.edges.map((edge, index) => (
-            <Table.Tr key={index}>
-                <Table.Td>{index + 1}</Table.Td>
-
-                <Table.Td>
-                    <Badge variant="light">{edge.from.name}</Badge>
-                </Table.Td>
-
-                <Table.Td>→</Table.Td>
-
-                <Table.Td>
-                    <Badge variant="light">{edge.to.name}</Badge>
-                </Table.Td>
-
-                <Table.Td>
-                    {edge.from.detectors.length === 0 &&
-                        edge.to.detectors.length === 0 &&
-                        edge.from.signals.length === 0 &&
-                        edge.to.signals.length === 0 &&
-                        edge.from.blocks.length === 0 &&
-                        edge.to.blocks.length === 0 ? (
-                        <Text size="sm" c="dimmed">
-                            —
-                        </Text>
-                    ) : (
-                        <Stack gap={6}>
-                            {renderNodeItems(
-                                edge.from.name,
-                                t("graph.items.detectors"),
-                                "cyan",
-                                edge.from.detectors
-                            )}
-
-                            {renderNodeItems(
-                                edge.from.name,
-                                t("graph.items.signals"),
-                                "yellow",
-                                edge.from.signals
-                            )}
-
-                            {renderNodeItems(
-                                edge.from.name,
-                                t("graph.items.blocks"),
-                                "violet",
-                                edge.from.blocks
-                            )}
-
-                            {renderNodeItems(
-                                edge.to.name,
-                                t("graph.items.detectors"),
-                                "cyan",
-                                edge.to.detectors
-                            )}
-
-                            {renderNodeItems(
-                                edge.to.name,
-                                t("graph.items.signals"),
-                                "yellow",
-                                edge.to.signals
-                            )}
-
-                            {renderNodeItems(
-                                edge.to.name,
-                                t("graph.items.blocks"),
-                                "violet",
-                                edge.to.blocks
-                            )}
-                        </Stack>
-                    )}
-                </Table.Td>
-
-                <Table.Td>
-                    {renderTurnoutRequirementBadges(edge.turnoutStates)}
-                </Table.Td>
-            </Table.Tr>
-        )) ?? [];
-
-
-    //=====================
-    // HELPERS
-    //=====================
     function renderTurnoutRequirementBadges(
         turnoutStates: { address: number; closed: boolean }[]
     ) {
         if (turnoutStates.length === 0) {
-            return (
-                <Text size="sm" c="dimmed">
-                    —
-                </Text>
-            );
+            return <Text size="sm" c="dimmed">—</Text>;
         }
 
         return (
@@ -301,7 +231,6 @@ export default function GraphDialog({
                 {turnoutStates.map((turnoutState, index) => (
                     <Badge
                         key={`turnout-${turnoutState.address}-${turnoutState.closed}-${index}`}
-
                         variant="light"
                         styles={{
                             label: {
@@ -311,14 +240,13 @@ export default function GraphDialog({
                             },
                         }}
                     >
-                        <span>{t("graph.items.turnout")} {turnoutState.address}</span>
+                        <span>T {turnoutState.address}</span>
 
                         <Badge
                             size="xs"
                             color={turnoutState.closed ? "green" : "orange"}
                             variant="filled"
                             radius="xs"
-
                         >
                             {turnoutState.closed ? "C" : "T"}
                         </Badge>
@@ -328,9 +256,6 @@ export default function GraphDialog({
         );
     }
 
-    //=============================
-    // Block Tab
-    // ========================
     function isBlockNode(node: GraphNode): boolean {
         return node.blocks.length > 0;
     }
@@ -342,7 +267,6 @@ export default function GraphDialog({
             adjacency.set(node.name, []);
         }
 
-        // A block-kapcsolati nézethez kétirányú kapcsolatként járjuk be a gráfot
         for (const edge of graph.edges) {
             adjacency.get(edge.from.name)?.push(edge.to);
             adjacency.get(edge.to.name)?.push(edge.from);
@@ -350,7 +274,6 @@ export default function GraphDialog({
 
         const paths: GraphNode[][] = [];
         const createdPathKeys = new Set<string>();
-
         const blockNodes = graph.nodes.filter(isBlockNode);
 
         for (const startNode of blockNodes) {
@@ -359,12 +282,12 @@ export default function GraphDialog({
                 path: GraphNode[];
                 visitedNodeNames: Set<string>;
             }[] = [
-                    {
-                        currentNode: startNode,
-                        path: [startNode],
-                        visitedNodeNames: new Set([startNode.name]),
-                    },
-                ];
+                {
+                    currentNode: startNode,
+                    path: [startNode],
+                    visitedNodeNames: new Set([startNode.name]),
+                },
+            ];
 
             while (stack.length > 0) {
                 const state = stack.pop()!;
@@ -377,8 +300,6 @@ export default function GraphDialog({
 
                     const nextPath = [...state.path, nextNode];
 
-                    // Ha újabb blokkos node-hoz értünk:
-                    // ez egy érvényes block connection, és ITT megállunk.
                     if (isBlockNode(nextNode)) {
                         const forwardKey = nextPath
                             .map(node => node.name)
@@ -400,7 +321,6 @@ export default function GraphDialog({
                         continue;
                     }
 
-                    // Ha nem blokkos node, mehetünk tovább rajta keresztül
                     const nextVisitedNodeNames = new Set(state.visitedNodeNames);
                     nextVisitedNodeNames.add(nextNode.name);
 
@@ -419,8 +339,7 @@ export default function GraphDialog({
     function renderBlockConnectionPath(path: GraphNode[]) {
         const items: React.ReactNode[] = [];
 
-        path.forEach((node) => {
-
+        path.forEach(node => {
             if (node.blocks.length > 0) {
                 node.blocks.forEach(block => {
                     items.push(
@@ -448,47 +367,8 @@ export default function GraphDialog({
             }
         });
 
-        return (
-            <Group gap="xs" wrap="wrap">
-                {items}
-            </Group>
-        );
+        return <Group gap="xs" wrap="wrap">{items}</Group>;
     }
-
-    const blockConnectionPaths = useMemo(() => {
-        if (!graph) {
-            return [];
-        }
-
-        return buildBlockConnectionPaths(graph);
-    }, [graph]);
-
-    const blockConnectionRows = blockConnectionPaths.map((path, index) => {
-        const sectionChainLabel = path
-            .map(node => node.name)
-            .join(" = ");
-
-        return (
-            <Table.Tr key={`block-connection-${index}`}>
-                <Table.Td>{index + 1}</Table.Td>
-
-                <Table.Td>
-                    {renderBlockConnectionPath(path)}
-                </Table.Td>
-
-                <Table.Td>
-                    <Text size="sm" c="dimmed">
-                        {sectionChainLabel}
-                    </Text>
-                </Table.Td>
-            </Table.Tr>
-        );
-    });
-
-    const runnableBlockRoutes = useMemo(() => {
-        return graph?.getRunnableBlockRoutes() ?? [];
-    }, [graph]);
-
 
     function renderBlockRoutePath(
         solution: BlockRouteSolution,
@@ -496,11 +376,9 @@ export default function GraphDialog({
     ) {
         const firstItem = solution.path[0];
         const lastItem = solution.path[solution.path.length - 1];
-
         const segmentItems = solution.path.filter(
             item => item.type === "segment"
         );
-
         const firstSegment = segmentItems[0];
         const lastSegment = segmentItems[segmentItems.length - 1];
 
@@ -516,19 +394,9 @@ export default function GraphDialog({
         }
 
         const middleSegments = segmentItems.slice(1, -1);
-
         const items: React.ReactNode[] = [];
 
-        // Induló blokk + saját szegmense
         items.push(
-            // <Badge
-            //     key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
-            //     size={badgeSize}
-            //     color="violet"
-            //     variant="filled"
-            // >
-            //     {firstItem.block.name} - {firstSegment.node.name}
-            // </Badge>
             <Badge
                 key={`from-block-${firstItem.block.id}-${firstSegment.node.name}`}
                 size={badgeSize}
@@ -543,19 +411,12 @@ export default function GraphDialog({
                 }}
             >
                 <span>{firstItem.block.name}</span>
-
-                <Badge
-                    size="xs"
-                    color="black"
-                    variant="filled"
-                    radius="xs"
-                >
+                <Badge size="xs" color="black" variant="filled" radius="xs">
                     {firstSegment.node.name}
                 </Badge>
             </Badge>
         );
 
-        // Köztes szegmensek
         for (const segment of middleSegments) {
             items.push(
                 <Badge
@@ -569,16 +430,7 @@ export default function GraphDialog({
             );
         }
 
-        // Cél blokk + saját szegmense
         items.push(
-            // <Badge
-            //     key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
-            //     size={badgeSize}
-            //     color="violet"
-            //     variant="filled"
-            // >
-            //     {lastItem.block.name} - {lastSegment.node.name}
-            // </Badge>
             <Badge
                 key={`to-block-${lastItem.block.id}-${lastSegment.node.name}`}
                 size={badgeSize}
@@ -593,13 +445,7 @@ export default function GraphDialog({
                 }}
             >
                 <span>{lastItem.block.name}</span>
-
-                <Badge
-                    size="xs"
-                    color="black"
-                    variant="filled"
-                    radius="xs"
-                >
+                <Badge size="xs" color="black" variant="filled" radius="xs">
                     {lastSegment.node.name}
                 </Badge>
             </Badge>
@@ -610,15 +456,75 @@ export default function GraphDialog({
                 {items.map((item, index) => (
                     <Group key={`route-path-item-${index}`} gap="xs">
                         {item}
-
-                        {index < items.length - 1 && (
-                            <Text fw={700}>→</Text>
-                        )}
+                        {index < items.length - 1 && <Text fw={700}>→</Text>}
                     </Group>
                 ))}
             </Group>
         );
     }
+
+    const sectionRows =
+        graph?.nodes.map((node, index) => (
+            <Table.Tr key={node.name}>
+                <Table.Td>{index + 1}</Table.Td>
+                <Table.Td>
+                    <Badge variant="light" color="blue">
+                        {node.name}
+                    </Badge>
+                </Table.Td>
+                <Table.Td>
+                    {node.trackName ? (
+                        <Text size="sm">{node.trackName}</Text>
+                    ) : (
+                        <Text size="sm" c="dimmed">—</Text>
+                    )}
+                </Table.Td>
+                <Table.Td>
+                    {renderSectionObjectBadges(node.detectors, "cyan")}
+                </Table.Td>
+                <Table.Td>
+                    {renderSectionObjectBadges(node.signals, "yellow")}
+                </Table.Td>
+                <Table.Td>
+                    {renderSectionObjectBadges(node.blocks, "violet")}
+                </Table.Td>
+            </Table.Tr>
+        )) ?? [];
+
+    const edgeRows =
+        graph?.edges.map((edge, index) => (
+            <Table.Tr key={index}>
+                <Table.Td>{index + 1}</Table.Td>
+                <Table.Td>
+                    <Badge variant="light">{edge.from.name}</Badge>
+                </Table.Td>
+                <Table.Td>→</Table.Td>
+                <Table.Td>
+                    <Badge variant="light">{edge.to.name}</Badge>
+                </Table.Td>
+                <Table.Td>
+                    {renderTurnoutRequirementBadges(edge.turnoutStates)}
+                </Table.Td>
+            </Table.Tr>
+        )) ?? [];
+
+    const blockConnectionRows = blockConnectionPaths.map((path, index) => {
+        const sectionChainLabel = path
+            .map(node => node.name)
+            .join(" = ");
+
+        return (
+            <Table.Tr key={`block-connection-${index}`}>
+                <Table.Td>{index + 1}</Table.Td>
+                <Table.Td>{renderBlockConnectionPath(path)}</Table.Td>
+                <Table.Td>
+                    <Text size="sm" c="dimmed">
+                        {sectionChainLabel}
+                    </Text>
+                </Table.Td>
+            </Table.Tr>
+        );
+    });
 
     const runnableBlockRouteRows = runnableBlockRoutes.map((route, index) => {
         const solution = route.solution;
@@ -626,25 +532,18 @@ export default function GraphDialog({
         return (
             <Table.Tr key={`runnable-block-route-${index}`}>
                 <Table.Td>{index + 1}</Table.Td>
-
                 <Table.Td>
                     <Badge color="violet" variant="light">
                         {route.fromBlock.label}
                     </Badge>
                 </Table.Td>
-
                 <Table.Td>→</Table.Td>
-
                 <Table.Td>
                     <Badge color="violet" variant="light">
                         {route.toBlock.label}
                     </Badge>
                 </Table.Td>
-
-                <Table.Td>
-                    {renderBlockRoutePath(solution)}
-                </Table.Td>
-
+                <Table.Td>{renderBlockRoutePath(solution)}</Table.Td>
                 <Table.Td>
                     <Badge
                         color={
@@ -659,7 +558,6 @@ export default function GraphDialog({
                         {solution.locoDirection.toUpperCase()}
                     </Badge>
                 </Table.Td>
-
                 <Table.Td>
                     {renderTurnoutRequirementBadges(solution.turnoutStates)}
                 </Table.Td>
@@ -709,7 +607,6 @@ export default function GraphDialog({
                                 </Badge>
                             )}
                         </Tabs.Tab>
-
 
                         <Tabs.Tab value="solver">
                             {t("graph.tabs.solver")}
@@ -776,7 +673,6 @@ export default function GraphDialog({
                                             <Table.Th>{t("graph.headers.from")}</Table.Th>
                                             <Table.Th></Table.Th>
                                             <Table.Th>{t("graph.headers.to")}</Table.Th>
-                                            <Table.Th>{t("graph.headers.sectionObjects")}</Table.Th>
                                             <Table.Th>{t("graph.headers.turnoutRequirement")}</Table.Th>
                                         </Table.Tr>
                                     </Table.Thead>
@@ -837,9 +733,7 @@ export default function GraphDialog({
                                         </Table.Tr>
                                     </Table.Thead>
 
-                                    <Table.Tbody>
-                                        {runnableBlockRouteRows}
-                                    </Table.Tbody>
+                                    <Table.Tbody>{runnableBlockRouteRows}</Table.Tbody>
                                 </Table>
                             </ScrollArea>
                         ) : (
@@ -1004,6 +898,7 @@ export default function GraphDialog({
                                                     </Text>
                                                 )}
                                             </Stack>
+
                                             <Stack gap="xs">
                                                 <Text fw={600}>{t("graph.solver.edgesTitle")}</Text>
 
@@ -1029,101 +924,11 @@ export default function GraphDialog({
                                                                 <Table.Td>{index + 1}</Table.Td>
                                                                 <Table.Td>{edge.from.name}</Table.Td>
                                                                 <Table.Td>{edge.to.name}</Table.Td>
-
                                                                 <Table.Td>
-                                                                    {edge.from.detectors.length === 0 &&
-                                                                        edge.to.detectors.length === 0 &&
-                                                                        edge.from.signals.length === 0 &&
-                                                                        edge.to.signals.length === 0 &&
-                                                                        edge.from.blocks.length === 0 &&
-                                                                        edge.to.blocks.length === 0 ? (
-                                                                        <Text size="sm" c="dimmed">
-                                                                            —
-                                                                        </Text>
-                                                                    ) : (
-                                                                        <Stack gap={6}>
-                                                                            {renderNodeItems(
-                                                                                edge.from.name,
-                                                                                t("graph.items.detectors"),
-                                                                                "cyan",
-                                                                                edge.from.detectors
-                                                                            )}
-
-                                                                            {renderNodeItems(
-                                                                                edge.from.name,
-                                                                                t("graph.items.signals"),
-                                                                                "yellow",
-                                                                                edge.from.signals
-                                                                            )}
-
-                                                                            {renderNodeItems(
-                                                                                edge.from.name,
-                                                                                t("graph.items.blocks"),
-                                                                                "violet",
-                                                                                edge.from.blocks
-                                                                            )}
-
-                                                                            {renderNodeItems(
-                                                                                edge.to.name,
-                                                                                t("graph.items.detectors"),
-                                                                                "cyan",
-                                                                                edge.to.detectors
-                                                                            )}
-
-                                                                            {renderNodeItems(
-                                                                                edge.to.name,
-                                                                                t("graph.items.signals"),
-                                                                                "yellow",
-                                                                                edge.to.signals
-                                                                            )}
-
-                                                                            {renderNodeItems(
-                                                                                edge.to.name,
-                                                                                t("graph.items.blocks"),
-                                                                                "violet",
-                                                                                edge.to.blocks
-                                                                            )}
-                                                                        </Stack>
-                                                                    )}
+                                                                    {renderEdgeSectionObjects(edge)}
                                                                 </Table.Td>
-
                                                                 <Table.Td>
-                                                                    {edge.turnoutStates.length > 0 ? (
-                                                                        <Group gap="xs">
-                                                                            {edge.turnoutStates.map(
-                                                                                (turnoutState, tsIndex) => (
-                                                                                    <Group
-                                                                                        key={`${turnoutState.address}-${tsIndex}`}
-                                                                                        gap={4}
-                                                                                    >
-                                                                                        <Badge
-                                                                                            color="orange"
-                                                                                            variant="light"
-                                                                                        >
-                                                                                            {turnoutState.address}
-                                                                                        </Badge>
-
-                                                                                        <Badge
-                                                                                            color={
-                                                                                                turnoutState.closed
-                                                                                                    ? "green"
-                                                                                                    : "red"
-                                                                                            }
-                                                                                            variant="light"
-                                                                                        >
-                                                                                            {turnoutState.closed
-                                                                                                ? "C"
-                                                                                                : "T"}
-                                                                                        </Badge>
-                                                                                    </Group>
-                                                                                )
-                                                                            )}
-                                                                        </Group>
-                                                                    ) : (
-                                                                        <Text size="sm" c="dimmed">
-                                                                            —
-                                                                        </Text>
-                                                                    )}
+                                                                    {renderTurnoutRequirementBadges(edge.turnoutStates)}
                                                                 </Table.Td>
                                                             </Table.Tr>
                                                         ))}
