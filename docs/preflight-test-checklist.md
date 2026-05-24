@@ -7,8 +7,10 @@ Use this checklist before live Z21 or DCC-EX testing.
 ```bash
 git pull origin dev
 npm install
-npm run check
+npm run preflight
 ```
+
+`npm run preflight` currently runs the full TypeScript and build verification.
 
 ## 2. Clean rebuild
 
@@ -152,5 +154,5 @@ If a test machine has unexpected local changes:
 git status
 git reset --hard origin/dev
 npm install
-npm run check
+npm run preflight
 ```
