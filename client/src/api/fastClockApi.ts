@@ -1,72 +1,66 @@
 // client/src/api/fastClockApi.ts
 
 import type {
+  FastClockCommandAction,
+} from "../../../common/src/clientWsCommands";
+
+import type {
   FastClockSnapshot,
   SetFastClockSpeedRequest,
 } from "../../../common/src/fastClock";
 
-async function readFastClockResponse(
-  response: Response,
-  fallbackError: string
-): Promise<FastClockSnapshot> {
-  if (!response.ok) {
-    const body =
-      await response
-        .json()
-        .catch(() => null) as
-          | { error?: string }
-          | null;
+import {
+  requestWsCommand,
+} from "./wsRequest";
 
-    throw new Error(
-      body?.error ?? fallbackError
-    );
+async function sendFastClockCommand(
+  action: FastClockCommandAction,
+  fallbackError: string,
+  speed?: number
+): Promise<FastClockSnapshot> {
+  const response = await requestWsCommand(
+    "fastClockCommand",
+    {
+      action,
+      ...(speed !== undefined
+        ? { speed }
+        : {}),
+    },
+    "fastClockResponse",
+    fallbackError
+  );
+
+  if (!response.snapshot) {
+    throw new Error(fallbackError);
   }
 
-  return (await response.json()) as FastClockSnapshot;
+  return response.snapshot;
 }
 
 export async function getFastClockSnapshot(): Promise<FastClockSnapshot> {
-  const response =
-    await fetch("/api/fast-clock");
-
-  return readFastClockResponse(
-    response,
+  return sendFastClockCommand(
+    "snapshot",
     "Could not load fast clock state."
   );
 }
 
 export async function runFastClock(): Promise<FastClockSnapshot> {
-  const response =
-    await fetch("/api/fast-clock/run", {
-      method: "POST",
-    });
-
-  return readFastClockResponse(
-    response,
+  return sendFastClockCommand(
+    "run",
     "Could not start fast clock."
   );
 }
 
 export async function pauseFastClock(): Promise<FastClockSnapshot> {
-  const response =
-    await fetch("/api/fast-clock/pause", {
-      method: "POST",
-    });
-
-  return readFastClockResponse(
-    response,
+  return sendFastClockCommand(
+    "pause",
     "Could not pause fast clock."
   );
 }
 
 export async function resetFastClock(): Promise<FastClockSnapshot> {
-  const response =
-    await fetch("/api/fast-clock/reset", {
-      method: "POST",
-    });
-
-  return readFastClockResponse(
-    response,
+  return sendFastClockCommand(
+    "reset",
     "Could not reset fast clock."
   );
 }
@@ -78,17 +72,9 @@ export async function setFastClockSpeed(
     speed,
   };
 
-  const response =
-    await fetch("/api/fast-clock/speed", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-  return readFastClockResponse(
-    response,
-    "Could not update fast clock speed."
+  return sendFastClockCommand(
+    "setSpeed",
+    "Could not update fast clock speed.",
+    body.speed
   );
 }
