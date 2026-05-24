@@ -161,5 +161,7 @@ export class SerialClient {
       this.reconnectTimer = null;
       this.open();
     }, this.reconnectDelayMs);
+
+    this.reconnectTimer.unref?.();
   }
 }
