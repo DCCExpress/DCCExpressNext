@@ -1,5 +1,5 @@
-import { ActionIcon, Badge, Group, ScrollArea, Stack, Table, Tabs, Text } from "@mantine/core";
-import { IconRefresh } from "@tabler/icons-react";
+import { Alert, Badge, Button, Group, NumberInput, ScrollArea, SegmentedControl, Stack, Table, Tabs, Text } from "@mantine/core";
+import { useState } from "react";
 
 import AppModal from "../common/AppModal";
 import { useRailwayDiagnostics } from "../../hooks/useRailwayDiagnostics";
@@ -20,14 +20,20 @@ type RuntimeTableProps<T extends RuntimeItem> = {
   stateLabel: string;
   getStateText: (item: T) => string;
   getStateColor: (item: T) => string;
-  onToggle: (item: T) => void;
+  onSet: (item: T, active: boolean) => void;
 };
 
-function TabLabel({ label, count }: { label: string; count: number }) {
+type CommandKind = "basicAccessory" | "sensor" | "turnout";
+
+function TabLabel({ label, count }: { label: string; count?: number }) {
   return (
     <Group gap={6} wrap="nowrap">
       <Text size="sm">{label}</Text>
-      <Badge size="xs" variant="light">{count}</Badge>
+      {count !== undefined && (
+        <Badge size="xs" variant="light">
+          {count}
+        </Badge>
+      )}
     </Group>
   );
 }
@@ -38,14 +44,14 @@ function RuntimeTable<T extends RuntimeItem>({
   stateLabel,
   getStateText,
   getStateColor,
-  onToggle,
+  onSet,
 }: RuntimeTableProps<T>) {
   if (items.length === 0) {
     return <Text size="sm" c="dimmed">{emptyText}</Text>;
   }
 
   return (
-    <ScrollArea h={500} type="auto" offsetScrollbars>
+    <ScrollArea h={460} type="auto" offsetScrollbars>
       <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
         <Table.Thead>
           <Table.Tr>
@@ -64,9 +70,14 @@ function RuntimeTable<T extends RuntimeItem>({
                 </Badge>
               </Table.Td>
               <Table.Td>
-                <ActionIcon size="sm" variant="light" color="blue" title="Toggle test" onClick={() => onToggle(item)}>
-                  <IconRefresh size={14} />
-                </ActionIcon>
+                <Group gap="xs" wrap="nowrap">
+                  <Button size="compact-xs" variant="light" color="green" onClick={() => onSet(item, true)}>
+                    ON
+                  </Button>
+                  <Button size="compact-xs" variant="light" color="gray" onClick={() => onSet(item, false)}>
+                    OFF
+                  </Button>
+                </Group>
               </Table.Td>
             </Table.Tr>
           ))}
@@ -76,17 +87,81 @@ function RuntimeTable<T extends RuntimeItem>({
   );
 }
 
+function CommandTab() {
+  const [kind, setKind] = useState<CommandKind>("basicAccessory");
+  const [address, setAddress] = useState<number | string>(1);
+
+  const numericAddress = typeof address === "number" ? address : Number(address);
+  const validAddress = Number.isFinite(numericAddress) && numericAddress > 0;
+
+  const send = (active: boolean): void => {
+    if (!validAddress) return;
+
+    if (kind === "basicAccessory") {
+      wsApi.setBasicAccessory(numericAddress, active);
+      return;
+    }
+
+    if (kind === "sensor") {
+      wsApi.setSensor(numericAddress, active);
+      return;
+    }
+
+    wsApi.setTurnout(numericAddress, active);
+  };
+
+  return (
+    <Stack gap="md" maw={520}>
+      <Alert color="blue" variant="light">
+        Basic accessory sends a raw physical accessory ON/OFF command. A turnout can also be tested as a basic accessory address if needed.
+      </Alert>
+
+      <SegmentedControl
+        value={kind}
+        onChange={value => setKind(value as CommandKind)}
+        data={[
+          { label: "Basic accessory", value: "basicAccessory" },
+          { label: "Sensor", value: "sensor" },
+          { label: "Turnout", value: "turnout" },
+        ]}
+      />
+
+      <NumberInput
+        label="Address"
+        value={address}
+        min={1}
+        allowDecimal={false}
+        onChange={setAddress}
+      />
+
+      <Group gap="sm">
+        <Button color="green" disabled={!validAddress} onClick={() => send(true)}>
+          ON
+        </Button>
+        <Button color="gray" variant="light" disabled={!validAddress} onClick={() => send(false)}>
+          OFF
+        </Button>
+      </Group>
+    </Stack>
+  );
+}
+
 export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialogProps) {
   const { sensors, turnouts, accessories } = useRailwayDiagnostics();
 
   return (
-    <AppModal opened={opened} onClose={onClose} title="Diagnostics" size="min(900px, 95vw)" centered draggable>
-      <Stack gap="md" h="min(640px, calc(100vh - 130px))">
+    <AppModal opened={opened} onClose={onClose} title="Diagnostics" size="min(940px, 95vw)" centered draggable>
+      <Stack gap="md" h="min(680px, calc(100vh - 130px))">
+        <Alert color="yellow" variant="light">
+          Values shown here are physical command-center values, not logical layout values. Sensor values are simulated/test values when changed from this dialog.
+        </Alert>
+
         <Tabs defaultValue="sensors" style={{ flex: 1, minHeight: 0 }}>
           <Tabs.List>
             <Tabs.Tab value="sensors"><TabLabel label="Sensors" count={sensors.length} /></Tabs.Tab>
             <Tabs.Tab value="turnouts"><TabLabel label="Turnouts" count={turnouts.length} /></Tabs.Tab>
             <Tabs.Tab value="accessories"><TabLabel label="Basic accessories" count={accessories.length} /></Tabs.Tab>
+            <Tabs.Tab value="command"><TabLabel label="Command" /></Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="sensors" pt="md">
@@ -96,7 +171,7 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
               stateLabel="State"
               getStateText={item => item.on ? "ON" : "OFF"}
               getStateColor={item => item.on ? "green" : "gray"}
-              onToggle={item => wsApi.setSensor(item.address, !item.on)}
+              onSet={(item, active) => wsApi.setSensor(item.address, active)}
             />
           </Tabs.Panel>
 
@@ -104,10 +179,10 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
             <RuntimeTable
               items={turnouts}
               emptyText="No configured turnouts found in the current layout."
-              stateLabel="State"
-              getStateText={item => item.closed ? "CLOSED" : "THROWN"}
+              stateLabel="Physical state"
+              getStateText={item => item.closed ? "ON / CLOSED" : "OFF / THROWN"}
               getStateColor={item => item.closed ? "green" : "orange"}
-              onToggle={item => wsApi.setTurnout(item.address, !item.closed)}
+              onSet={(item, active) => wsApi.setTurnout(item.address, active)}
             />
           </Tabs.Panel>
 
@@ -115,11 +190,15 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
             <RuntimeTable
               items={accessories}
               emptyText="No basic accessory runtime data yet."
-              stateLabel="State"
-              getStateText={item => item.active ? "ACTIVE" : "INACTIVE"}
+              stateLabel="Physical state"
+              getStateText={item => item.active ? "ON" : "OFF"}
               getStateColor={item => item.active ? "green" : "gray"}
-              onToggle={item => wsApi.setBasicAccessory(item.address, !item.active)}
+              onSet={(item, active) => wsApi.setBasicAccessory(item.address, active)}
             />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="command" pt="md">
+            <CommandTab />
           </Tabs.Panel>
         </Tabs>
       </Stack>
