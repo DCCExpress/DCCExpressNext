@@ -11,6 +11,7 @@ import {
 import {
   IconEdit,
   IconListDetails,
+  IconPlayerPause,
   IconPlayerPlayFilled,
   IconPlayerSkipForward,
   IconPlayerStopFilled,
@@ -41,6 +42,7 @@ import { useBrowserStats } from "../hooks/useBrowserStats";
 import { useScriptStatus } from "../hooks/useScriptStatus";
 import { useWsStatus } from "../hooks/useWsStatus";
 import { scriptEngine } from "../services/scriptEngine";
+import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
 import { getWsColor } from "./TopMenuBar";
@@ -138,6 +140,12 @@ export default function StatusBar({
         task.status === "finishing"
     ).length ?? 0;
 
+  const hasRunningTasks =
+    taskSnapshot?.tasks.some(task => task.status === "running") === true;
+
+  const hasTasks =
+    (taskSnapshot?.tasks.length ?? 0) > 0;
+
   const taskBadgeColor =
     runningTaskCount > 0
       ? "green"
@@ -186,15 +194,22 @@ export default function StatusBar({
     setTaskDialogOpened(true);
     wsApi.getTaskRuntimeState();
   };
+
   const handleStartTasks = (): void => {
-    wsApi.startAllTasks();
-  };;
+    void taskManager.startAllTasks();
+  };
+
+  const handlePauseTasks = (): void => {
+    void taskManager.pauseAllTasks();
+  };
+
   const handleCompleteTasks = (): void => {
-    wsApi.finishAllTasks();
-  };;
+    void taskManager.finishAllTasks();
+  };
+
   const handleStopTasks = (): void => {
-    wsApi.abortAllTasks();
-  };;
+    void taskManager.abortAllTasks();
+  };
 
   return (
     <>
@@ -302,6 +317,10 @@ export default function StatusBar({
 
           <Divider orientation="vertical" />
 
+          <StatusBadge color={taskBadgeColor}>
+            TASKS {activeTaskCount}
+          </StatusBadge>
+
           <StatusActionIcon
             tooltip="Open tasks"
             color="blue"
@@ -313,10 +332,19 @@ export default function StatusBar({
           <StatusActionIcon
             tooltip="Start all tasks"
             color="green"
-            disabled={!wsConnected || taskSnapshot?.tasks.length === 0}
+            disabled={!wsConnected || !hasTasks}
             onClick={handleStartTasks}
           >
             <IconPlayerPlayFilled size={14} />
+          </StatusActionIcon>
+
+          <StatusActionIcon
+            tooltip="Pause all running tasks"
+            color="yellow"
+            disabled={!wsConnected || !hasRunningTasks}
+            onClick={handlePauseTasks}
+          >
+            <IconPlayerPause size={14} />
           </StatusActionIcon>
 
           <StatusActionIcon
@@ -429,6 +457,15 @@ export default function StatusBar({
               onClick={handleStartTasks}
             >
               <IconPlayerPlayFilled size={14} />
+            </StatusActionIcon>
+
+            <StatusActionIcon
+              tooltip="Pause all running tasks"
+              color="yellow"
+              disabled={!hasRunningTasks}
+              onClick={handlePauseTasks}
+            >
+              <IconPlayerPause size={14} />
             </StatusActionIcon>
 
             <StatusActionIcon
