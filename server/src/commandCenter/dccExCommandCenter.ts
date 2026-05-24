@@ -40,6 +40,10 @@ export abstract class DccExCommandCenter extends CommandCenter {
 
   protected abstract isTransportConnected(): boolean;
 
+  override isAlive(): boolean {
+    return this.alive && this.isTransportConnected();
+  }
+
   protected enqueue(command: string): void {
     const trimmed =
       command.trim();
@@ -55,8 +59,9 @@ export abstract class DccExCommandCenter extends CommandCenter {
     this.buffer.push(trimmed);
   }
 
-  protected markConnected(): void {
+  protected async markConnected(): Promise<void> {
     this.alive = true;
+    await this.init();
     this.broadcastCommandCenterInfo();
     this.broadcastPowerInfo();
 
@@ -548,7 +553,7 @@ export abstract class DccExCommandCenter extends CommandCenter {
     broadcastAll({
       type: "commandCenterInfo",
       data: {
-        alive: this.alive,
+        alive: this.isAlive(),
         power: this.powerInfo.trackVoltageOn,
         type: this.commandCenterType,
         name: this.getName(),
