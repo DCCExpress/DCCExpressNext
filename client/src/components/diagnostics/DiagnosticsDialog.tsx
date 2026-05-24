@@ -25,6 +25,12 @@ type RuntimeTableProps<T extends RuntimeItem> = {
 
 type CommandKind = "basicAccessory" | "sensor" | "turnout";
 
+const diagnosticsPanelStyle = {
+  flex: 1,
+  minHeight: 0,
+  overflow: "hidden",
+} as const;
+
 function TabLabel({ label, count }: { label: string; count?: number }) {
   return (
     <Group gap={6} wrap="nowrap">
@@ -51,7 +57,7 @@ function RuntimeTable<T extends RuntimeItem>({
   }
 
   return (
-    <ScrollArea h={460} type="auto" offsetScrollbars>
+    <ScrollArea h="100%" type="auto" offsetScrollbars>
       <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
         <Table.Thead>
           <Table.Tr>
@@ -97,7 +103,7 @@ function BasicAccessoryTable({
   }
 
   return (
-    <ScrollArea h={460} type="auto" offsetScrollbars>
+    <ScrollArea h="100%" type="auto" offsetScrollbars>
       <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
         <Table.Thead>
           <Table.Tr>
@@ -228,7 +234,7 @@ function CommandTab() {
 
 function InfoHelpTab() {
   return (
-    <ScrollArea h={500} type="auto" offsetScrollbars>
+    <ScrollArea h="100%" type="auto" offsetScrollbars>
       <Stack gap="md" maw={820}>
         <Alert color="blue" variant="light" title="Diagnostics value model">
           This dialog shows physical command-center values. These values are useful for low-level testing, but they are not always the same as the logical layout state.
@@ -287,12 +293,20 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
 
   return (
     <AppModal opened={opened} onClose={onClose} title="Diagnostics" size="min(1120px, 96vw)" centered draggable>
-      <Stack gap="md" h="min(680px, calc(100vh - 130px))">
+      <Stack gap="md" h="min(760px, calc(100vh - 100px))" style={{ overflow: "hidden" }}>
         <Alert color="yellow" variant="light">
           Values shown here are physical command-center values, not logical layout values. Sensor values are simulated/test values when changed from this dialog.
         </Alert>
 
-        <Tabs defaultValue="sensors" style={{ flex: 1, minHeight: 0 }}>
+        <Tabs
+          defaultValue="sensors"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <Tabs.List>
             <Tabs.Tab value="sensors"><TabLabel label="Sensors" count={sensors.length} /></Tabs.Tab>
             <Tabs.Tab value="turnouts"><TabLabel label="Turnouts" count={turnouts.length} /></Tabs.Tab>
@@ -301,7 +315,7 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
             <Tabs.Tab value="info"><TabLabel label="Info / Help" /></Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="sensors" pt="md">
+          <Tabs.Panel value="sensors" pt="md" style={diagnosticsPanelStyle}>
             <RuntimeTable
               items={sensors}
               emptyText="No configured sensors found in the current layout."
@@ -312,7 +326,7 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
             />
           </Tabs.Panel>
 
-          <Tabs.Panel value="turnouts" pt="md">
+          <Tabs.Panel value="turnouts" pt="md" style={diagnosticsPanelStyle}>
             <RuntimeTable
               items={turnouts}
               emptyText="No configured turnouts found in the current layout."
@@ -323,15 +337,15 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
             />
           </Tabs.Panel>
 
-          <Tabs.Panel value="accessories" pt="md">
+          <Tabs.Panel value="accessories" pt="md" style={diagnosticsPanelStyle}>
             <BasicAccessoryTable items={accessories} />
           </Tabs.Panel>
 
-          <Tabs.Panel value="command" pt="md">
+          <Tabs.Panel value="command" pt="md" style={diagnosticsPanelStyle}>
             <CommandTab />
           </Tabs.Panel>
 
-          <Tabs.Panel value="info" pt="md">
+          <Tabs.Panel value="info" pt="md" style={diagnosticsPanelStyle}>
             <InfoHelpTab />
           </Tabs.Panel>
         </Tabs>
