@@ -42,6 +42,7 @@ import {
 } from "../utility.js";
 
 import type {
+  CommandCenterInfoPayload,
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
 
@@ -50,6 +51,7 @@ type BroadcastMessage = (
 ) => void;
 
 let commandCenter: CommandCenter | null = null;
+let selectedCommandCenterInfo: CommandCenterInfoPayload | null = null;
 let broadcast: BroadcastMessage | null = null;
 let configLoadedCallbackRegistered = false;
 let commandCenterInitializationVersion = 0;
@@ -64,12 +66,75 @@ export function getCurrentCommandCenter(): CommandCenter | null {
   return commandCenter;
 }
 
-function broadcastCommandCenterUnavailable(): void {
+function createCommandCenterInfoFromConfig(
+  conf: CommandCenterConfig | null,
+  alive: boolean
+): CommandCenterInfoPayload {
+  switch (conf?.type) {
+    case "simulator":
+      return {
+        alive,
+        type: "simulator",
+        name: conf.name ?? "Simulator",
+        connectionString: "simulator://local",
+      };
+
+    case "z21":
+      return {
+        alive,
+        type: "z21",
+        name: conf.name ?? "Z21",
+        ip: conf.z21.host,
+        port: conf.z21.port,
+        connectionString: `z21://${conf.z21.host ?? ""}:${conf.z21.port ?? ""}`,
+      };
+
+    case "dcc-ex-tcp":
+      return {
+        alive,
+        type: "dcc-ex-tcp",
+        name: conf.name ?? "DCC-EX TCP",
+        ip: conf.dccexTcp.host,
+        port: conf.dccexTcp.port,
+        connectionString: `tcp://${conf.dccexTcp.host ?? ""}:${conf.dccexTcp.port ?? ""}`,
+      };
+
+    case "dcc-ex-serial":
+      return {
+        alive,
+        type: "dcc-ex-serial",
+        name: conf.name ?? "DCC-EX Serial",
+        serialPort: conf.dccexSerial.serialPort,
+        port: conf.dccexSerial.baudRate,
+        connectionString: `serial://${conf.dccexSerial.serialPort ?? ""}@${conf.dccexSerial.baudRate ?? ""}`,
+      };
+
+    default:
+      return {
+        alive,
+        type: "none",
+        name: "No command center",
+      };
+  }
+}
+
+function broadcastCommandCenterInfo(
+  info: CommandCenterInfoPayload
+): void {
   broadcast?.({
     type: "commandCenterInfo",
-    data: {
+    data: info,
+  });
+}
+
+function broadcastSelectedCommandCenterUnavailable(): void {
+  broadcastCommandCenterInfo({
+    ...(selectedCommandCenterInfo ?? {
       alive: false,
-    },
+      type: "none",
+      name: "No command center",
+    }),
+    alive: false,
   });
 }
 
@@ -99,12 +164,14 @@ function createCommandCenter(
   switch (conf?.type) {
     case "simulator":
       log("Starting command center:", conf.type);
-      return new CommandCenterSimulator("Simulator");
+      return new CommandCenterSimulator(
+        conf.name ?? "Simulator"
+      );
 
     case "z21":
       log("Starting command center:", "Z21");
       return new Z21CommandCenter(
-        "Z21",
+        conf.name ?? "Z21",
         conf.z21.host!,
         conf.z21.port!,
         (message: TypedServerWsMessage) => {
@@ -115,7 +182,7 @@ function createCommandCenter(
     case "dcc-ex-tcp":
       log("Starting command center:", "DCC-EX TCP");
       return new DccExTcpCommandCenter(
-        "DCC-EX TCP",
+        conf.name ?? "DCC-EX TCP",
         conf.dccexTcp.host!,
         conf.dccexTcp.port!,
         conf.dccexTcp.init ?? ""
@@ -124,7 +191,7 @@ function createCommandCenter(
     case "dcc-ex-serial":
       log("Starting command center:", "DCC-EX Serial");
       return new DccExSerialCommandCenter(
-        "DCC-EX Serial",
+        conf.name ?? "DCC-EX Serial",
         conf.dccexSerial.serialPort!,
         conf.dccexSerial.baudRate!,
         conf.dccexSerial.init ?? ""
@@ -142,7 +209,12 @@ export async function initializeCommandCenter(
   const initializationVersion =
     ++commandCenterInitializationVersion;
 
-  broadcastCommandCenterUnavailable();
+  selectedCommandCenterInfo = createCommandCenterInfoFromConfig(
+    conf,
+    false
+  );
+
+  broadcastSelectedCommandCenterUnavailable();
   broadcastCommandCenterUnlocked();
   routeGraphRuntimeStore.clearAllBusy();
 
@@ -176,7 +248,7 @@ export async function initializeCommandCenter(
   commandCenter = nextCommandCenter;
 
   if (!commandCenter) {
-    broadcastCommandCenterUnavailable();
+    broadcastSelectedCommandCenterUnavailable();
     return;
   }
 
@@ -197,9 +269,16 @@ export async function initializeCommandCenter(
       );
 
       clearCurrentCommandCenter();
-      broadcastCommandCenterUnavailable();
+      broadcastSelectedCommandCenterUnavailable();
       return;
     }
+
+    selectedCommandCenterInfo = {
+      ...selectedCommandCenterInfo,
+      alive: commandCenter.isAlive(),
+      name: commandCenter.getName(),
+      connectionString: commandCenter.getConnectionString(),
+    };
 
     await commandCenter.loadRuntimeState();
     commandCenter.broadcastBlocks();
@@ -211,7 +290,7 @@ export async function initializeCommandCenter(
     );
 
     clearCurrentCommandCenter();
-    broadcastCommandCenterUnavailable();
+    broadcastSelectedCommandCenterUnavailable();
   }
 }
 
