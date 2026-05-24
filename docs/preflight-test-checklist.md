@@ -37,7 +37,34 @@ $env:DCCEXPRESS_PORT="3001"
 npm start
 ```
 
-## 4. Optional debug logs
+## 4. Health check
+
+Default port:
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+Custom port example:
+
+```bash
+curl http://localhost:3001/api/health
+```
+
+Expected response contains:
+
+```json
+{
+  "ok": true,
+  "app": "DCCExpressNext",
+  "nodeVersion": "v...",
+  "platform": "...",
+  "timestamp": "...",
+  "uptimeSec": 1
+}
+```
+
+## 5. Optional debug logs
 
 Z21:
 
@@ -67,7 +94,7 @@ $env:DCCEXPRESS_DEBUG="1"
 npm start
 ```
 
-## 5. Browser checks
+## 6. Browser checks
 
 1. Open the client.
 2. Confirm WebSocket connection is established.
@@ -76,7 +103,7 @@ npm start
 5. Confirm no stale command center lock remains after reconnect or config change.
 6. Confirm route busy state is cleared after command center reinitialization.
 
-## 6. Z21 smoke test
+## 7. Z21 smoke test
 
 1. Select or save the Z21 command center configuration.
 2. Confirm command center status becomes alive only after real communication.
@@ -88,7 +115,7 @@ npm start
 8. Trigger emergency stop.
 9. Confirm power and loco state updates are reflected in the UI.
 
-## 7. DCC-EX smoke test
+## 8. DCC-EX smoke test
 
 1. Select or save the DCC-EX TCP or serial command center configuration.
 2. Confirm command center status becomes alive only after transport connection.
@@ -100,7 +127,7 @@ npm start
 8. Trigger emergency stop.
 9. Confirm DCC-EX command logs only appear when DCCEXPRESS_LOG_DCCEX or DCCEXPRESS_DEBUG is enabled.
 
-## 8. Route and reservation checks
+## 9. Route and reservation checks
 
 1. Build or refresh route graph.
 2. Reserve a route.
@@ -110,14 +137,14 @@ npm start
 6. Change command center configuration.
 7. Confirm stale route busy state does not remain on the server.
 
-## 9. Shutdown check
+## 10. Shutdown check
 
 1. Press Ctrl+C in the server terminal.
 2. Confirm the HTTP server closes.
 3. Confirm WebSocket clients are closed.
 4. Confirm shutdown does not hang indefinitely.
 
-## 10. Quick rollback reminder
+## 11. Quick rollback reminder
 
 If a test machine has unexpected local changes:
 
