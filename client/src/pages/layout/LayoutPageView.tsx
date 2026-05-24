@@ -37,8 +37,6 @@ export type LayoutPageViewProps = {
   onLocosSaved: () => Promise<void>;
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
-  settingsDialogOpened: boolean;
-  setSettingsDialogOpened: BooleanSetter;
   appSettingsDialogOpened: boolean;
   setAppSettingsDialogOpened: BooleanSetter;
   editMode: boolean;
@@ -57,7 +55,6 @@ export type LayoutPageViewProps = {
   canRedo: boolean;
   undo: () => void;
   redo: () => void;
-  onSettingsClick: () => void;
   onOpenAppSettingsDialog: () => void;
   onFitLayout: () => void;
   locos: Loco[];
@@ -79,12 +76,12 @@ export function LayoutPageView(props: LayoutPageViewProps) {
   const {
     onGoHome, toolbarOpened, setToolbarOpened, canvasBusy, canvasBusyText,
     setCanvasBusy, setCanvasBusyText, locoDialogOpened, setLocoDialogOpened,
-    onLocosSaved, pickerOpened, setPickerOpened, settingsDialogOpened,
-    setSettingsDialogOpened, appSettingsDialogOpened, setAppSettingsDialogOpened,
+    onLocosSaved, pickerOpened, setPickerOpened,
+    appSettingsDialogOpened, setAppSettingsDialogOpened,
     editMode, setEditMode, locoPanelCollapsed, setLocoPanelCollapsed,
     propertyPanelCollapsed, setPropertyPanelCollapsed, rightPanelMode,
     setRightPanelMode, tool, setTool, saveLayoutToServer,
-    loadLayoutFromServer, canUndo, canRedo, undo, redo, onSettingsClick,
+    loadLayoutFromServer, canUndo, canRedo, undo, redo,
     onOpenAppSettingsDialog, onFitLayout, locos, layout, onLayoutChange,
     onBeforeLayoutChange, selectedElement, onSelectedElementChange,
     invalidateCounter, setInvalidateCounter, fitCounter, turnoutSelection,
@@ -101,8 +98,6 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         onLocosSaved={onLocosSaved}
         pickerOpened={pickerOpened}
         setPickerOpened={setPickerOpened}
-        settingsDialogOpened={settingsDialogOpened}
-        setSettingsDialogOpened={setSettingsDialogOpened}
         appSettingsDialogOpened={appSettingsDialogOpened}
         setAppSettingsDialogOpened={setAppSettingsDialogOpened}
         setTool={setTool}
@@ -133,7 +128,6 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           canRedo={canRedo}
           undo={undo}
           redo={redo}
-          onSettingsClick={onSettingsClick}
           onOpenAppSettingsDialog={onOpenAppSettingsDialog}
           onFitLayout={onFitLayout}
         />
