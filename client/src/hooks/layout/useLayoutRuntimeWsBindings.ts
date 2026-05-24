@@ -75,16 +75,14 @@ export type UseLayoutRuntimeWsBindingsParams = {
   setInvalidateCounter: InvalidateSetter;
 };
 
-const TASK_WAITING_NOTIFICATION_THROTTLE_MS = 15000;
-
 export function useLayoutRuntimeWsBindings({
   layoutRef,
   locosRef,
   setInvalidateCounter,
 }: UseLayoutRuntimeWsBindingsParams): void {
   const { t } = useTranslation();
-  const taskWaitingNotificationRef =
-    useRef(new Map<string, number>());
+  const shownTaskWaitingNotificationsRef =
+    useRef(new Set<string>());
 
   useEffect(() => {
     const invalidateLayout = (): void => {
@@ -147,15 +145,11 @@ export function useLayoutRuntimeWsBindings({
     const shouldShowTaskWaitingNotification = (
       key: string
     ): boolean => {
-      const now = Date.now();
-      const previous =
-        taskWaitingNotificationRef.current.get(key) ?? 0;
-
-      if (now - previous < TASK_WAITING_NOTIFICATION_THROTTLE_MS) {
+      if (shownTaskWaitingNotificationsRef.current.has(key)) {
         return false;
       }
 
-      taskWaitingNotificationRef.current.set(key, now);
+      shownTaskWaitingNotificationsRef.current.add(key);
       return true;
     };
 
@@ -167,7 +161,7 @@ export function useLayoutRuntimeWsBindings({
           status === "error"
         ) {
           layoutStore.clearRuntimeOverlays();
-          taskWaitingNotificationRef.current.clear();
+          shownTaskWaitingNotificationsRef.current.clear();
           invalidateLayout();
         }
       });
@@ -361,7 +355,7 @@ export function useLayoutRuntimeWsBindings({
         "allRouteReservationsCleared",
         () => {
           layoutStore.clearRuntimeOverlays();
-          taskWaitingNotificationRef.current.clear();
+          shownTaskWaitingNotificationsRef.current.clear();
         }
       );
 
