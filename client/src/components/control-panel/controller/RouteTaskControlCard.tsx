@@ -128,6 +128,12 @@ export default function RouteTaskControlCard({
   const hasRunningTasks =
     snapshot.tasks.some(task => task.status === "running");
 
+  const hasPausedTasks =
+    snapshot.tasks.some(task => task.status === "paused");
+
+  const hasFinishingTasks =
+    snapshot.tasks.some(task => task.status === "finishing");
+
   const hasPausableOrFinishableTasks =
     snapshot.tasks.some(task =>
       task.status === "running" ||
@@ -314,6 +320,7 @@ export default function RouteTaskControlCard({
         <RouteTaskActionButton
           tooltip={t("routeTask.taskManager")}
           color="violet"
+          active={hasActiveTasks}
           onClick={onOpenTaskManager}
         >
           <IconRoute size={16} />
@@ -322,6 +329,7 @@ export default function RouteTaskControlCard({
         <RouteTaskActionButton
           tooltip={t("routeTask.startAll")}
           color="green"
+          active={hasRunningTasks}
           onClick={() => {
             void handleStartAllTasks();
           }}
@@ -333,6 +341,7 @@ export default function RouteTaskControlCard({
         <RouteTaskActionButton
           tooltip={t("routeTask.allPaused", { defaultValue: "Pause all running tasks" })}
           color="yellow"
+          active={hasPausedTasks}
           onClick={() => {
             void handlePauseAllTasks();
           }}
@@ -344,6 +353,7 @@ export default function RouteTaskControlCard({
         <RouteTaskActionButton
           tooltip={t("routeTask.finishAll")}
           color="orange"
+          active={hasFinishingTasks}
           onClick={() => {
             void handleFinishAllTasks();
           }}
@@ -370,6 +380,7 @@ export default function RouteTaskControlCard({
 type RouteTaskActionButtonProps = {
   tooltip: string;
   color: string;
+  active?: boolean;
   disabled?: boolean;
   onClick: () => void;
   children: ReactNode;
@@ -378,6 +389,7 @@ type RouteTaskActionButtonProps = {
 function RouteTaskActionButton({
   tooltip,
   color,
+  active = false,
   disabled = false,
   onClick,
   children,
@@ -386,7 +398,7 @@ function RouteTaskActionButton({
     <Tooltip label={tooltip} withArrow>
       <ActionIcon
         size="sm"
-        variant="light"
+        variant={active ? "filled" : "light"}
         color={color}
         disabled={disabled}
         onClick={onClick}
