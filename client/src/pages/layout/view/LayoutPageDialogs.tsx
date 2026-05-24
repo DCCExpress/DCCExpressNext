@@ -11,7 +11,6 @@ import AppSettingsDialog from "../../../components/app-settings/AppSettingsDialo
 import ElementPickerDialog from "../../../components/editor/ElementPickerDialog";
 import FullscreenLoader from "../../../components/FullscreenLoader";
 import LocoDialog from "../../../components/LocoDialog";
-import SettingDialog from "../../../components/SettingsDialog";
 
 type BooleanSetter =
   Dispatch<SetStateAction<boolean>>;
@@ -30,9 +29,6 @@ type LayoutPageDialogsProps = {
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
 
-  settingsDialogOpened: boolean;
-  setSettingsDialogOpened: BooleanSetter;
-
   appSettingsDialogOpened: boolean;
   setAppSettingsDialogOpened: BooleanSetter;
 
@@ -49,9 +45,6 @@ export default function LayoutPageDialogs({
 
   pickerOpened,
   setPickerOpened,
-
-  settingsDialogOpened,
-  setSettingsDialogOpened,
 
   appSettingsDialogOpened,
   setAppSettingsDialogOpened,
@@ -84,13 +77,6 @@ export default function LayoutPageDialogs({
             elementType,
           });
         }}
-      />
-
-      <SettingDialog
-        opened={settingsDialogOpened}
-        onClose={() =>
-          setSettingsDialogOpened(false)
-        }
       />
 
       <AppSettingsDialog
