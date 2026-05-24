@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Loco } from "../../../common/src/types";
-import { CommandCenter } from "../api/commandCentersApi";
 import { useLayoutHistory } from "../hooks/layout/useLayoutHistory";
 import { useLayoutPageUiState } from "../hooks/layout/useLayoutPageUiState";
 import { useLayoutEditModeRuntime } from "../hooks/layout/useLayoutEditModeRuntime";
@@ -66,20 +65,6 @@ export default function LayoutPage({
     setFitCounter,
   ] =
     useState(0);
-
-  const [
-    commandCenterOpened,
-    setCommandCenterOpened,
-  ] =
-    useState(false);
-
-  const [
-    commandCenter,
-    setCommandCenter,
-  ] =
-    useState<CommandCenter>(
-      new CommandCenter()
-    );
 
   const [routesString] =
     useState<string>("");
@@ -175,7 +160,6 @@ export default function LayoutPage({
     layoutLoadedRef,
     setLayout,
     setLocos,
-    setCommandCenter,
     setUndoStack,
     setRedoStack,
     setInvalidateCounter,
@@ -227,14 +211,6 @@ export default function LayoutPage({
     setFitCounter(previous => previous + 1);
   };
 
-  const handleCommandCenterSaved = (
-    nextCommandCenter: CommandCenter
-  ): void => {
-    setCommandCenter(
-      nextCommandCenter
-    );
-  };
-
   const handleLayoutChange:
     React.Dispatch<
       React.SetStateAction<LayoutView>
@@ -253,14 +229,6 @@ export default function LayoutPage({
       canvasBusyText={canvasBusyText}
       setCanvasBusy={setCanvasBusy}
       setCanvasBusyText={setCanvasBusyText}
-      commandCenterOpened={commandCenterOpened}
-      setCommandCenterOpened={
-        setCommandCenterOpened
-      }
-      commandCenter={commandCenter}
-      onCommandCenterSaved={
-        handleCommandCenterSaved
-      }
       locoDialogOpened={locoDialogOpened}
       setLocoDialogOpened={
         setLocoDialogOpened
