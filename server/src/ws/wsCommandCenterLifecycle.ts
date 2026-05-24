@@ -124,6 +124,8 @@ export async function initializeCommandCenter(
 
   try {
     await commandCenter.start();
+    await commandCenter.loadRuntimeState();
+    commandCenter.broadcastBlocks();
     log("Command center started:", conf?.type);
   } catch (error) {
     console.error(
