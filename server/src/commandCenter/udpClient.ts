@@ -1,6 +1,6 @@
 import dgram, { type RemoteInfo, type Socket } from "node:dgram";
 import { EventEmitter } from "node:events";
-import { log, logError } from "../utility.js";
+import { logError, logZ21 } from "../utility.js";
 
 export type UdpClientOptions = {
   host: string;
@@ -40,7 +40,7 @@ export class UdpClient extends EventEmitter {
   }
 
   async open(): Promise<void> {
-    log("UDP open requested");
+    logZ21("UDP open requested");
 
     if (this.socket) return;
 
@@ -53,7 +53,7 @@ export class UdpClient extends EventEmitter {
       this.lastReceivedMessage = Date.now();
 
       if (this.debug) {
-        log(
+        logZ21(
           "UDP receive",
           `${remote.address}:${remote.port}`,
           bufferToHex(data)
@@ -73,7 +73,7 @@ export class UdpClient extends EventEmitter {
 
     socket.on("close", () => {
       if (this.debug) {
-        log("UDP socket closed");
+        logZ21("UDP socket closed");
       }
 
       this.emit("close");
@@ -114,7 +114,7 @@ export class UdpClient extends EventEmitter {
     const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
 
     if (this.debug) {
-      log("UDP send", `${this.host}:${this.port}`, bufferToHex(buffer));
+      logZ21("UDP send", `${this.host}:${this.port}`, bufferToHex(buffer));
     }
 
     await new Promise<void>((resolve, reject) => {
