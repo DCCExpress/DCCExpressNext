@@ -87,6 +87,7 @@ type SimulationSession = {
 };
 
 const TICK_MS = 250;
+const LOCO_RESOLVE_RETRY_MS = 2000;
 
 /**
  * Mennyi ideig álljon a köztes blokkban,
@@ -111,6 +112,7 @@ class TrainSimulatorRuntimeStore {
   private timer: NodeJS.Timeout | null = null;
   private tickRunning = false;
   private readonly sessions = new Map<string, SimulationSession>();
+  private readonly lastLocoResolveAttemptByTaskId = new Map<string, number>();
 
   configure(params: TrainSimulatorConfigureParams): void {
     this.params = params;
@@ -137,6 +139,7 @@ class TrainSimulatorRuntimeStore {
     }
 
     this.sessions.clear();
+    this.lastLocoResolveAttemptByTaskId.clear();
     log("[TrainSimulator] Runtime loop stopped.");
   }
 
@@ -156,10 +159,18 @@ class TrainSimulatorRuntimeStore {
 
       if (!simulator) {
         this.sessions.clear();
+        this.lastLocoResolveAttemptByTaskId.clear();
         return;
       }
 
       const tasks = this.params.getTasks();
+      const activeTaskIds = new Set(tasks.map(task => task.id));
+
+      for (const taskId of this.lastLocoResolveAttemptByTaskId.keys()) {
+        if (!activeTaskIds.has(taskId)) {
+          this.lastLocoResolveAttemptByTaskId.delete(taskId);
+        }
+      }
 
       /**
        * Már nem aktív sessionök kipucolása.
@@ -176,6 +187,7 @@ class TrainSimulatorRuntimeStore {
         ) {
           await this.stopLocoIfKnown(simulator, task);
           this.sessions.delete(session.taskId);
+          this.lastLocoResolveAttemptByTaskId.delete(session.taskId);
         }
       }
 
@@ -188,33 +200,25 @@ class TrainSimulatorRuntimeStore {
           task.status !== "paused" &&
           task.status !== "finishing"
         ) {
+          this.lastLocoResolveAttemptByTaskId.delete(task.id);
           continue;
         }
 
         /**
          * Running task, de még nincs hozzárendelt mozdony.
          * Nézzük meg újra, bekerült-e már az induló blokkba.
+         * Fontos: ezt nem szabad 250 ms-onként broadcastolni,
+         * különben task waiting állapotban teleszemeteli a WebSocketet.
          */
         if (!task.runtime.loco) {
           if (task.status === "running") {
-            await this.params.tryResolveTaskLoco(task.id);
-
-            await this.params.updateTaskSimulationProgress(
-              task.id,
-              {
-                phase: "waitingForLoco",
-                legIndex: 0,
-                legCount: 0,
-                fromBlockId: task.fromBlockId,
-                fromBlockName: task.transition.fromBlock.name,
-                toBlockId: null,
-                toBlockName: null,
-              }
-            );
+            await this.tryResolveTaskLocoThrottled(task);
           }
 
           continue;
         }
+
+        this.lastLocoResolveAttemptByTaskId.delete(task.id);
 
         let session =
           this.sessions.get(task.id);
@@ -324,6 +328,41 @@ class TrainSimulatorRuntimeStore {
     } finally {
       this.tickRunning = false;
     }
+  }
+
+  private async tryResolveTaskLocoThrottled(
+    task: TrainTask
+  ): Promise<void> {
+    const params = this.params;
+
+    if (!params) {
+      return;
+    }
+
+    const now = Date.now();
+    const lastAttemptAt =
+      this.lastLocoResolveAttemptByTaskId.get(task.id) ?? 0;
+
+    if (now - lastAttemptAt < LOCO_RESOLVE_RETRY_MS) {
+      return;
+    }
+
+    this.lastLocoResolveAttemptByTaskId.set(task.id, now);
+
+    await params.tryResolveTaskLoco(task.id);
+
+    await params.updateTaskSimulationProgress(
+      task.id,
+      {
+        phase: "waitingForLoco",
+        legIndex: 0,
+        legCount: 0,
+        fromBlockId: task.fromBlockId,
+        fromBlockName: task.transition.fromBlock.name,
+        toBlockId: null,
+        toBlockName: null,
+      }
+    );
   }
 
   private async pauseSession(
