@@ -320,6 +320,13 @@ export abstract class CommandCenter {
 
   abstract emergencyStop(): Promise<boolean>;
 
+  setSensor(
+    _address: number,
+    _on: boolean
+  ): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
   abstract getSensor(
     address: number
   ): Promise<SensorInfo | null>;
@@ -415,14 +422,14 @@ export abstract class CommandCenter {
     return Array.from(this.accessories.values());
   }
 
+  getSensors(): SensorInfo[] {
+    return Array.from(this.sensors.values());
+  }
+
   getTurnouts(): TurnoutInfo[] {
     return Array.from(this.turnouts.values());
   }
 
-  /**
-   * Command center indulásakor a felvett mozdonyok aktuális
-   * állapotát is bekérjük az implementációtól.
-   */
   async init(): Promise<void> {
     log("========================================");
     log("COMMANDCENTER INIT");
