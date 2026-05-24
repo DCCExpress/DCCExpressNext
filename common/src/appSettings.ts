@@ -84,6 +84,24 @@ function isValidCommandCenterType(
   );
 }
 
+function normalizeString(
+  value: unknown,
+  fallback: string
+): string {
+  return typeof value === "string"
+    ? value
+    : fallback;
+}
+
+function normalizeNumber(
+  value: unknown,
+  fallback: number
+): number {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : fallback;
+}
+
 export function normalizeCommandCenterSettings(
   value: Partial<ICommandCenter> | null | undefined
 ): ICommandCenter {
@@ -95,38 +113,46 @@ export function normalizeCommandCenterSettings(
       ? value.type
       : DEFAULT_COMMAND_CENTER_SETTINGS.type,
     z21: {
-      host: typeof value?.z21?.host === "string"
-        ? value.z21.host
-        : DEFAULT_COMMAND_CENTER_SETTINGS.z21.host,
-      port: typeof value?.z21?.port === "number"
-        ? value.z21.port
-        : DEFAULT_COMMAND_CENTER_SETTINGS.z21.port,
+      host: normalizeString(
+        value?.z21?.host,
+        "192.168.1.100"
+      ),
+      port: normalizeNumber(
+        value?.z21?.port,
+        21105
+      ),
     },
     dccexTcp: {
-      host: typeof value?.dccexTcp?.host === "string"
-        ? value.dccexTcp.host
-        : DEFAULT_COMMAND_CENTER_SETTINGS.dccexTcp.host,
-      port: typeof value?.dccexTcp?.port === "number"
-        ? value.dccexTcp.port
-        : DEFAULT_COMMAND_CENTER_SETTINGS.dccexTcp.port,
-      init: typeof value?.dccexTcp?.init === "string"
-        ? value.dccexTcp.init
-        : DEFAULT_COMMAND_CENTER_SETTINGS.dccexTcp.init,
+      host: normalizeString(
+        value?.dccexTcp?.host,
+        ""
+      ),
+      port: normalizeNumber(
+        value?.dccexTcp?.port,
+        2560
+      ),
+      init: normalizeString(
+        value?.dccexTcp?.init,
+        ""
+      ),
     },
     dccexSerial: {
-      serialPort: typeof value?.dccexSerial?.serialPort === "string"
-        ? value.dccexSerial.serialPort
-        : DEFAULT_COMMAND_CENTER_SETTINGS.dccexSerial.serialPort,
-      baudRate: typeof value?.dccexSerial?.baudRate === "number"
-        ? value.dccexSerial.baudRate
-        : DEFAULT_COMMAND_CENTER_SETTINGS.dccexSerial.baudRate,
-      init: typeof value?.dccexSerial?.init === "string"
-        ? value.dccexSerial.init
-        : DEFAULT_COMMAND_CENTER_SETTINGS.dccexSerial.init,
+      serialPort: normalizeString(
+        value?.dccexSerial?.serialPort,
+        ""
+      ),
+      baudRate: normalizeNumber(
+        value?.dccexSerial?.baudRate,
+        115200
+      ),
+      init: normalizeString(
+        value?.dccexSerial?.init,
+        ""
+      ),
     },
     autoConnect: typeof value?.autoConnect === "boolean"
       ? value.autoConnect
-      : DEFAULT_COMMAND_CENTER_SETTINGS.autoConnect,
+      : false,
   };
 }
 
