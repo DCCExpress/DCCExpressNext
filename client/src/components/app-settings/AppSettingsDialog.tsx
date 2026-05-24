@@ -9,6 +9,8 @@ import {
   Tabs,
 } from "@mantine/core";
 
+import i18n from "i18next";
+
 import {
   useEffect,
   useState,
@@ -36,6 +38,9 @@ import {
 import AppModal from "../common/AppModal";
 import CommandCenterSettingsTab from "./CommandCenterSettingsTab";
 import FastClockSettingsTab from "./FastClockSettingsTab";
+import GeneralSettingsTab from "./GeneralSettingsTab";
+
+const LANG_KEY = "lang";
 
 type AppSettingsDialogProps = {
   opened: boolean;
@@ -108,10 +113,18 @@ export default function AppSettingsDialog({
     setError(null);
 
     try {
-      const savedSettings =
-        await storeAppSettingsWs(settings);
+      const savedSettings = normalizeAppSettings(
+        await storeAppSettingsWs(settings)
+      );
 
-      setSettings(normalizeAppSettings(savedSettings));
+      setSettings(savedSettings);
+      localStorage.setItem(
+        LANG_KEY,
+        savedSettings.general.language
+      );
+      await i18n.changeLanguage(
+        savedSettings.general.language
+      );
 
       showOkMessage(
         "App settings",
@@ -153,23 +166,20 @@ export default function AppSettingsDialog({
           </Alert>
         )}
 
-        <Tabs defaultValue="fastClock">
+        <Tabs defaultValue="commandCenter">
           <Tabs.List>
-            <Tabs.Tab value="fastClock">
-              Fast clock
-            </Tabs.Tab>
-
             <Tabs.Tab value="commandCenter">
               Command center
             </Tabs.Tab>
-          </Tabs.List>
 
-          <Tabs.Panel value="fastClock" pt="md">
-            <FastClockSettingsTab
-              settings={settings}
-              onChange={setSettings}
-            />
-          </Tabs.Panel>
+            <Tabs.Tab value="general">
+              General
+            </Tabs.Tab>
+
+            <Tabs.Tab value="fastClock">
+              Fast clock
+            </Tabs.Tab>
+          </Tabs.List>
 
           <Tabs.Panel value="commandCenter" pt="md">
             <CommandCenterSettingsTab
@@ -180,6 +190,25 @@ export default function AppSettingsDialog({
                   commandCenter,
                 }));
               }}
+            />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="general" pt="md">
+            <GeneralSettingsTab
+              settings={settings.general}
+              onChange={general => {
+                setSettings(current => ({
+                  ...current,
+                  general,
+                }));
+              }}
+            />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="fastClock" pt="md">
+            <FastClockSettingsTab
+              settings={settings}
+              onChange={setSettings}
             />
           </Tabs.Panel>
         </Tabs>
