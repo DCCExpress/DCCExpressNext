@@ -39,6 +39,8 @@ export type LayoutPageViewProps = {
   setPickerOpened: BooleanSetter;
   settingsDialogOpened: boolean;
   setSettingsDialogOpened: BooleanSetter;
+  appSettingsDialogOpened: boolean;
+  setAppSettingsDialogOpened: BooleanSetter;
   editMode: boolean;
   setEditMode: BooleanSetter;
   locoPanelCollapsed: boolean;
@@ -56,6 +58,7 @@ export type LayoutPageViewProps = {
   undo: () => void;
   redo: () => void;
   onSettingsClick: () => void;
+  onOpenAppSettingsDialog: () => void;
   onFitLayout: () => void;
   locos: Loco[];
   layout: LayoutView;
@@ -78,14 +81,15 @@ export function LayoutPageView(props: LayoutPageViewProps) {
     setCanvasBusy, setCanvasBusyText, commandCenterOpened, setCommandCenterOpened,
     commandCenter, onCommandCenterSaved, locoDialogOpened, setLocoDialogOpened,
     onLocosSaved, pickerOpened, setPickerOpened, settingsDialogOpened,
-    setSettingsDialogOpened, editMode, setEditMode, locoPanelCollapsed,
-    setLocoPanelCollapsed, propertyPanelCollapsed, setPropertyPanelCollapsed,
-    rightPanelMode, setRightPanelMode, tool, setTool, saveLayoutToServer,
+    setSettingsDialogOpened, appSettingsDialogOpened, setAppSettingsDialogOpened,
+    editMode, setEditMode, locoPanelCollapsed, setLocoPanelCollapsed,
+    propertyPanelCollapsed, setPropertyPanelCollapsed, rightPanelMode,
+    setRightPanelMode, tool, setTool, saveLayoutToServer,
     loadLayoutFromServer, canUndo, canRedo, undo, redo, onSettingsClick,
-    onFitLayout, locos, layout, onLayoutChange, onBeforeLayoutChange,
-    selectedElement, onSelectedElementChange, invalidateCounter,
-    setInvalidateCounter, fitCounter, turnoutSelection, setTurnoutSelection,
-    onUpdateSelectedElement, routesString,
+    onOpenAppSettingsDialog, onFitLayout, locos, layout, onLayoutChange,
+    onBeforeLayoutChange, selectedElement, onSelectedElementChange,
+    invalidateCounter, setInvalidateCounter, fitCounter, turnoutSelection,
+    setTurnoutSelection, onUpdateSelectedElement, routesString,
   } = props;
 
   return (
@@ -104,6 +108,8 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         setPickerOpened={setPickerOpened}
         settingsDialogOpened={settingsDialogOpened}
         setSettingsDialogOpened={setSettingsDialogOpened}
+        appSettingsDialogOpened={appSettingsDialogOpened}
+        setAppSettingsDialogOpened={setAppSettingsDialogOpened}
         setTool={setTool}
       />
 
@@ -133,6 +139,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           undo={undo}
           redo={redo}
           onSettingsClick={onSettingsClick}
+          onOpenAppSettingsDialog={onOpenAppSettingsDialog}
           onFitLayout={onFitLayout}
           setCommandCenterOpened={setCommandCenterOpened}
         />
