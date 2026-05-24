@@ -93,7 +93,6 @@ function canHandleWithoutCommandCenter(type: string): boolean {
     type === "layoutCommand" ||
     type === "locosCommand" ||
     type === "scriptDocumentCommand" ||
-    type === "commandCenterConfigCommand" ||
     type === "appSettingsCommand" ||
     type === "taskManagerCommand" ||
     type === "fastClockCommand" ||
@@ -108,9 +107,28 @@ export function broadcastAll(
   broadcast(message, exclude);
 }
 
-export function setupWebSocketServer(
+async function initializeWebSocketRuntimeStores(): Promise<void> {
+  await appSettingsStore.initialize();
+
+  const conf =
+    await readCommandCenter();
+
+  log(
+    "Initial command center config:",
+    conf
+  );
+
+  await initializeCommandCenter(conf);
+
+  await taskRuntimeStore.initialize();
+
+  await scriptRuntimeStore.initialize();
+  await scriptRuntimeStore.autoStartIfEnabled();
+}
+
+export async function setupWebSocketServer(
   server: http.Server
-): WebSocketServer {
+): Promise<WebSocketServer> {
   wss =
     new WebSocketServer({
       server,
@@ -134,27 +152,7 @@ export function setupWebSocketServer(
     getLogicalTurnoutState,
   });
 
-  readCommandCenter()
-    .then(async conf => {
-      log(
-        "Initial command center config:",
-        conf
-      );
-
-      await appSettingsStore.initialize();
-      await initializeCommandCenter(conf);
-
-      await scriptRuntimeStore.initialize();
-      await scriptRuntimeStore.autoStartIfEnabled();
-
-      await taskRuntimeStore.initialize();
-    })
-    .catch(err => {
-      logError(
-        "Failed to read initial command center config:",
-        err
-      );
-    });
+  await initializeWebSocketRuntimeStores();
 
   wss.on("connection", (ws, req) => {
     log(
