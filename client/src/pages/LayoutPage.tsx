@@ -125,6 +125,12 @@ export default function LayoutPage({
   ] =
     useState(false);
 
+  const [
+    appSettingsDialogOpened,
+    setAppSettingsDialogOpened,
+  ] =
+    useState(false);
+
   useEffect(() => {
     const unsubscribe =
       layoutStore.subscribe(() => {
@@ -274,6 +280,12 @@ export default function LayoutPage({
       setSettingsDialogOpened={
         setSettingsDialogOpened
       }
+      appSettingsDialogOpened={
+        appSettingsDialogOpened
+      }
+      setAppSettingsDialogOpened={
+        setAppSettingsDialogOpened
+      }
       editMode={editMode}
       setEditMode={setEditMode}
       locoPanelCollapsed={
@@ -304,6 +316,9 @@ export default function LayoutPage({
       redo={redo}
       onSettingsClick={() =>
         setSettingsDialogOpened(true)
+      }
+      onOpenAppSettingsDialog={() =>
+        setAppSettingsDialogOpened(true)
       }
       onFitLayout={onFitLayout}
       locos={locos}
