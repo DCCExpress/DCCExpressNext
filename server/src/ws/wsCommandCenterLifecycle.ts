@@ -69,7 +69,7 @@ function createCommandCenter(
     case "z21":
       log("Starting command center:", "Z21");
       return new Z21CommandCenter(
-        conf.name || "Z21",
+        "Z21",
         conf.z21.host!,
         conf.z21.port!,
         (message: TypedServerWsMessage) => {
@@ -80,7 +80,7 @@ function createCommandCenter(
     case "dcc-ex-tcp":
       log("Starting command center:", "DCC-EX TCP");
       return new DccExTcpCommandCenter(
-        conf.name || "DCC-EX TCP",
+        "DCC-EX TCP",
         conf.dccexTcp.host!,
         conf.dccexTcp.port!,
         conf.dccexTcp.init ?? ""
@@ -89,7 +89,7 @@ function createCommandCenter(
     case "dcc-ex-serial":
       log("Starting command center:", "DCC-EX Serial");
       return new DccExSerialCommandCenter(
-        conf.name || "DCC-EX Serial",
+        "DCC-EX Serial",
         conf.dccexSerial.serialPort!,
         conf.dccexSerial.baudRate!,
         conf.dccexSerial.init ?? ""
