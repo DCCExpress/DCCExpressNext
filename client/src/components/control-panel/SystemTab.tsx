@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { Badge, Button, Group, ScrollArea, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Badge, Box, Button, Group, ScrollArea, SimpleGrid, Stack, Text } from "@mantine/core";
 import { IconAlertTriangle, IconPower } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -23,6 +23,14 @@ type SystemTabProps = {
 };
 
 type RowProps = { label: string; value: string | number | null | undefined; suffix?: string; color?: string };
+
+type TrafficSample = {
+  timestamp: number;
+  rx: number;
+  tx: number;
+};
+
+const MAX_TRAFFIC_SAMPLES = 60;
 
 function rowValue(value: RowProps["value"], suffix = "") {
   return value === null || value === undefined || value === "" ? "-" : `${value}${suffix}`;
@@ -68,6 +76,93 @@ function yesNo(value: boolean, t: (key: string) => string) {
   return value ? t("commandCenter.yes") : t("commandCenter.no");
 }
 
+function createSparklinePoints(
+  values: number[],
+  width: number,
+  height: number
+): string {
+  if (values.length === 0) {
+    return "";
+  }
+
+  if (values.length === 1) {
+    return `0,${height}`;
+  }
+
+  const max = Math.max(1, ...values);
+  const stepX = width / (values.length - 1);
+
+  return values
+    .map((value, index) => {
+      const x = index * stepX;
+      const y = height - (value / max) * height;
+
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+
+function TrafficSparkline({ samples }: { samples: TrafficSample[] }) {
+  const width = 240;
+  const height = 52;
+  const rxValues = samples.map(sample => sample.rx);
+  const txValues = samples.map(sample => sample.tx);
+  const maxTraffic = Math.max(0, ...rxValues, ...txValues);
+  const rxPoints = createSparklinePoints(rxValues, width, height);
+  const txPoints = createSparklinePoints(txValues, width, height);
+
+  return (
+    <Box
+      mt={4}
+      p={6}
+      style={{
+        border: "1px solid var(--mantine-color-default-border)",
+        borderRadius: 8,
+      }}
+    >
+      <Group justify="space-between" mb={4} gap="xs">
+        <Text size="xs" c="dimmed">WS traffic</Text>
+        <Text size="xs" c="dimmed">max {maxTraffic} kbit/s</Text>
+      </Group>
+
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width="100%"
+        height={height}
+        role="img"
+        aria-label="WebSocket traffic graph"
+        preserveAspectRatio="none"
+      >
+        <line x1="0" y1={height} x2={width} y2={height} stroke="currentColor" opacity="0.18" />
+        <line x1="0" y1={height / 2} x2={width} y2={height / 2} stroke="currentColor" opacity="0.10" />
+        {rxPoints && (
+          <polyline
+            points={rxPoints}
+            fill="none"
+            stroke="var(--mantine-color-blue-6)"
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {txPoints && (
+          <polyline
+            points={txPoints}
+            fill="none"
+            stroke="var(--mantine-color-orange-6)"
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+      </svg>
+
+      <Group gap="xs" mt={4}>
+        <Badge size="xs" variant="light" color="blue">RX</Badge>
+        <Badge size="xs" variant="light" color="orange">TX</Badge>
+      </Group>
+    </Box>
+  );
+}
+
 export default function SystemTab(p: SystemTabProps) {
   const { t } = useTranslation();
   const browserStats = useBrowserStats(1000);
@@ -75,6 +170,22 @@ export default function SystemTab(p: SystemTabProps) {
   const cc = useCommandCenter();
   const powerInfo = cc.powerInfo;
   const [diagnosticsOpened, setDiagnosticsOpened] = useState(false);
+  const [trafficSamples, setTrafficSamples] = useState<TrafficSample[]>([]);
+
+  useEffect(() => {
+    if (!serverStats) {
+      return;
+    }
+
+    setTrafficSamples(prev => [
+      ...prev,
+      {
+        timestamp: serverStats.timestamp,
+        rx: serverStats.wsRxKbps,
+        tx: serverStats.wsTxKbps,
+      },
+    ].slice(-MAX_TRAFFIC_SAMPLES));
+  }, [serverStats]);
 
   return (
     <>
@@ -136,6 +247,7 @@ export default function SystemTab(p: SystemTabProps) {
                 <SmallRow label="Process CPU" value={serverStats?.processCpuPercent} suffix="%" color={percentColor(serverStats?.processCpuPercent)} />
                 <SmallRow label="WS RX" value={serverStats?.wsRxKbps} suffix=" kbit/s" color={trafficColor(serverStats?.wsRxKbps)} />
                 <SmallRow label="WS TX" value={serverStats?.wsTxKbps} suffix=" kbit/s" color={trafficColor(serverStats?.wsTxKbps)} />
+                <TrafficSparkline samples={trafficSamples} />
               </Stack>
             </SimpleGrid>
           </CollapsiblePanelCard>
