@@ -5,6 +5,14 @@ import type {
   ICommandCenter,
 } from "./domainTypes.js";
 
+export type AppLanguage =
+  | "en"
+  | "hu";
+
+export type GeneralSettings = {
+  language: AppLanguage;
+};
+
 export type FastClockResetSource =
   | "system"
   | "configured";
@@ -16,8 +24,9 @@ export type FastClockSettings = {
 
 export type AppSettings = {
   version: 1;
-  fastClock: FastClockSettings;
+  general: GeneralSettings;
   commandCenter: ICommandCenter;
+  fastClock: FastClockSettings;
 };
 
 export const DAY_MS =
@@ -26,8 +35,11 @@ export const DAY_MS =
 export const DEFAULT_FAST_CLOCK_RESET_TIME_MS =
   0;
 
+export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
+  language: "en",
+};
+
 export const DEFAULT_COMMAND_CENTER_SETTINGS: ICommandCenter = {
-  name: "Simulator",
   type: "simulator",
   z21: {
     host: "192.168.1.100",
@@ -48,11 +60,12 @@ export const DEFAULT_COMMAND_CENTER_SETTINGS: ICommandCenter = {
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   version: 1,
+  general: DEFAULT_GENERAL_SETTINGS,
+  commandCenter: DEFAULT_COMMAND_CENTER_SETTINGS,
   fastClock: {
     resetSource: "system",
     resetTimeMs: DEFAULT_FAST_CLOCK_RESET_TIME_MS,
   },
-  commandCenter: DEFAULT_COMMAND_CENTER_SETTINGS,
 };
 
 export function normalizeDayTimeMs(value: unknown): number {
@@ -84,6 +97,12 @@ function isValidCommandCenterType(
   );
 }
 
+function isValidAppLanguage(
+  value: unknown
+): value is AppLanguage {
+  return value === "en" || value === "hu";
+}
+
 function normalizeString(
   value: unknown,
   fallback: string
@@ -102,13 +121,20 @@ function normalizeNumber(
     : fallback;
 }
 
+export function normalizeGeneralSettings(
+  value: Partial<GeneralSettings> | null | undefined
+): GeneralSettings {
+  return {
+    language: isValidAppLanguage(value?.language)
+      ? value.language
+      : DEFAULT_GENERAL_SETTINGS.language,
+  };
+}
+
 export function normalizeCommandCenterSettings(
   value: Partial<ICommandCenter> | null | undefined
 ): ICommandCenter {
   return {
-    name: typeof value?.name === "string" && value.name.trim().length > 0
-      ? value.name
-      : DEFAULT_COMMAND_CENTER_SETTINGS.name,
     type: isValidCommandCenterType(value?.type)
       ? value.type
       : DEFAULT_COMMAND_CENTER_SETTINGS.type,
@@ -166,15 +192,18 @@ export function normalizeAppSettings(
 
   return {
     version: 1,
+    general: normalizeGeneralSettings(
+      value?.general
+    ),
+    commandCenter: normalizeCommandCenterSettings(
+      value?.commandCenter
+    ),
     fastClock: {
       resetSource,
       resetTimeMs: normalizeDayTimeMs(
         value?.fastClock?.resetTimeMs
       ),
     },
-    commandCenter: normalizeCommandCenterSettings(
-      value?.commandCenter
-    ),
   };
 }
 
