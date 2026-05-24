@@ -374,6 +374,24 @@ export default function TaskManagerDialog({
     );
   };
 
+  const handlePauseAllTasks = async () => {
+    setActionError(null);
+
+    const result =
+      await taskManager.pauseAllTasks();
+
+    if (!result.ok) {
+      setActionError(result.error);
+      showErrorMessage(t("common.error"), result.error);
+      return;
+    }
+
+    showOkMessage(
+      t("common.success"),
+      t("routeTask.allPaused", { defaultValue: "All tasks paused." })
+    );
+  };
+
   const handleFinishAllTasks = async () => {
     setActionError(null);
 
@@ -591,6 +609,9 @@ export default function TaskManagerDialog({
               onAddTask={() => setAddTaskOpened(true)}
               onStartAllTasks={() => {
                 void handleStartAllTasks();
+              }}
+              onPauseAllTasks={() => {
+                void handlePauseAllTasks();
               }}
               onFinishAllTasks={() => {
                 void handleFinishAllTasks();
