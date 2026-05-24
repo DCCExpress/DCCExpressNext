@@ -1,6 +1,7 @@
 import { Group } from "@mantine/core";
 import { useState } from "react";
 import type { EditorTool } from "../models/editor/types/EditorTypes";
+import DiagnosticsDialog from "../components/diagnostics/DiagnosticsDialog";
 import EditorToolbar from "./top-menu/EditorToolbar";
 import FullscreenToggleButton from "./top-menu/FullscreenToggleButton";
 import MainMenuActions from "./top-menu/MainMenuActions";
@@ -67,6 +68,7 @@ export default function TopMenuBar({
   onFitLayout,
 }: TopMenuBarProps) {
   const [helpOpened, setHelpOpened] = useState(false);
+  const [diagnosticsOpened, setDiagnosticsOpened] = useState(false);
 
   return (
     <>
@@ -77,6 +79,7 @@ export default function TopMenuBar({
           <MainMenuActions
             onGoHome={onGoHome}
             onOpenLocos={onOpenLocos}
+            onOpenDiagnostics={() => setDiagnosticsOpened(true)}
             onSaveLayout={onSaveLayout}
             onLoadLayout={onLoadLayout}
             onOpenAppSettingsDialog={onOpenAppSettingsDialog}
@@ -109,6 +112,11 @@ export default function TopMenuBar({
       <QuickHelpDialog
         opened={helpOpened}
         onClose={() => setHelpOpened(false)}
+      />
+
+      <DiagnosticsDialog
+        opened={diagnosticsOpened}
+        onClose={() => setDiagnosticsOpened(false)}
       />
     </>
   );
