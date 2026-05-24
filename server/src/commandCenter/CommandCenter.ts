@@ -19,6 +19,7 @@ import {
 
 import {
   log,
+  logError,
 } from "../utility.js";
 
 import {
@@ -100,7 +101,7 @@ export abstract class CommandCenter {
           );
         })
         .catch(err => {
-          log(
+          logError(
             "Failed to load runtime state after loco change:",
             err
           );
@@ -450,7 +451,7 @@ export abstract class CommandCenter {
         try {
           await this.getLoco(loco.address);
         } catch (error) {
-          log(
+          logError(
             "Failed to query loco during init:",
             loco.address,
             error
@@ -495,13 +496,11 @@ export abstract class CommandCenter {
         "utf-8"
       );
 
-      console.log(
-        `[CommandCenter] Runtime state saved: ${this.runtimeStateFile}`
-      );
-    } catch (err) {
-      console.error(
-        "[CommandCenter] Failed to save runtime state:",
-        err
+      log("Command center runtime state saved:", this.runtimeStateFile);
+    } catch (error) {
+      logError(
+        "Failed to save command center runtime state:",
+        error
       );
     }
   }
@@ -515,42 +514,41 @@ export abstract class CommandCenter {
         );
 
       const state =
-        JSON.parse(raw) as PersistedCommandCenterState;
+        JSON.parse(raw) as Partial<PersistedCommandCenterState>;
 
       if (state.version !== 1) {
-        console.warn(
-          `[CommandCenter] Unsupported runtime state version: ${state.version}`
+        logError(
+          "Unsupported command center runtime state version:",
+          state.version
         );
 
         return;
       }
 
       this.blocks =
-        new Map(state.blocks ?? []);
+        new Map(Array.isArray(state.blocks) ? state.blocks : []);
 
       this.turnouts =
-        new Map(state.turnouts ?? []);
+        new Map(Array.isArray(state.turnouts) ? state.turnouts : []);
 
-      console.log(
-        `[CommandCenter] Runtime state loaded: ${this.blocks.size} blocks, ${this.turnouts.size} turnouts`
-      );
+      log("Command center runtime state loaded:", {
+        blocks: this.blocks.size,
+        turnouts: this.turnouts.size,
+      });
 
       await this.runtimeStateLoadedCallback?.(
         this.blocks,
         this.turnouts
       );
-    } catch (err: any) {
-      if (err?.code === "ENOENT") {
-        console.log(
-          "[CommandCenter] No previous runtime state file found."
-        );
-
+    } catch (error: any) {
+      if (error?.code === "ENOENT") {
+        log("No previous command center runtime state file found.");
         return;
       }
 
-      console.error(
-        "[CommandCenter] Failed to load runtime state:",
-        err
+      logError(
+        "Failed to load command center runtime state:",
+        error
       );
     }
   }
