@@ -17,6 +17,7 @@
     "build:server": "npm --workspace server run build",
     "build": "npm run build:client && npm run build:server",
     "check": "npm run typecheck && npm run build",
+    "audit": "npm audit --workspaces --audit-level=moderate",
     "clean": "node -e \"import('node:fs').then(fs => fs.rmSync('dist', { recursive: true, force: true }))\"",
     "rebuild": "npm run clean && npm run build",
     "preview:client": "npm --workspace client run preview",
