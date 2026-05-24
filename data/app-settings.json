@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "general": {
+    "language": "hu"
+  },
+  "commandCenter": {
+    "type": "simulator",
+    "z21": {
+      "host": "192.168.1.100",
+      "port": 21105
+    },
+    "dccexTcp": {
+      "host": "",
+      "port": 2560,
+      "init": ""
+    },
+    "dccexSerial": {
+      "serialPort": "",
+      "baudRate": 115200,
+      "init": ""
+    },
+    "autoConnect": false
+  },
+  "fastClock": {
+    "resetSource": "system",
+    "resetTimeMs": 11460000
+  }
+}
