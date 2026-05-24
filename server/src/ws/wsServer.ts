@@ -38,6 +38,10 @@ import {
 } from "../services/taskRuntimeStore.js";
 
 import {
+  wsTrafficStatsStore,
+} from "../services/wsTrafficStatsStore.js";
+
+import {
   configureWebSocketRuntimes,
 } from "./wsRuntimeConfiguration.js";
 
@@ -61,6 +65,12 @@ import {
   registerCommandCenterConfigLoadedCallback,
 } from "./wsCommandCenterLifecycle.js";
 
+function getByteLength(value: Buffer | string): number {
+  return typeof value === "string"
+    ? Buffer.byteLength(value, "utf8")
+    : value.byteLength;
+}
+
 function sendTextToClient(
   ws: WebSocket,
   text: string
@@ -68,6 +78,10 @@ function sendTextToClient(
   if (ws.readyState !== WebSocket.OPEN) {
     return;
   }
+
+  wsTrafficStatsStore.recordSentBytes(
+    Buffer.byteLength(text, "utf8")
+  );
 
   ws.send(text, error => {
     if (error) {
@@ -183,6 +197,10 @@ export async function setupWebSocketServer(
     });
 
     ws.on("message", async message => {
+      wsTrafficStatsStore.recordReceivedBytes(
+        getByteLength(message)
+      );
+
       const text =
         message.toString();
 
