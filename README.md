@@ -17,6 +17,8 @@ The project is built with:
 - **Node.js + Express + WebSocket** on the server,
 - shared TypeScript models in the `common` folder.
 
+DCCExpressNext can run on any system where **Node.js** is available. This makes it suitable for desktop PCs, small home servers, Raspberry Pi style devices, and even Android tablets or phones running **Termux**.
+
 ## Main Features
 
 - Visual track layout editing
@@ -35,69 +37,6 @@ The project is built with:
 
 ---
 
-# Communication Architecture
-
-DCCExpressNext uses **WebSocket-only application communication** between the browser client and the Node.js server.
-
-The client does not use HTTP GET/PUT/POST endpoints for application data anymore. Runtime and persisted application operations are sent through the WebSocket endpoint:
-
-```text
-/ws
-```
-
-The Express HTTP server is still used for:
-
-- serving the production frontend,
-- the health check endpoint:
-
-```text
-/api/health
-```
-
-Application data commands are WebSocket request/response messages, including:
-
-- layout load/save/runtime refresh,
-- locomotive load/save,
-- command center configuration load/save,
-- route graph requests,
-- script document load/save and script runtime commands,
-- train task manager commands,
-- fast clock commands,
-- file read/write commands,
-- command center runtime control.
-
-The client-side domain entry point is:
-
-```text
-client/src/api/domainApi.ts
-```
-
-Lower-level WebSocket-specific API files are kept in:
-
-```text
-client/src/api/*WsApi.ts
-```
-
-Shared WebSocket request plumbing is centralized in:
-
-```text
-client/src/api/wsRequest.ts
-```
-
-Server-side WebSocket message handling lives under:
-
-```text
-server/src/ws
-```
-
-Server-side storage and domain helpers live under:
-
-```text
-server/src/services
-```
-
----
-
 # Requirements
 
 Before running the project, install:
@@ -106,6 +45,8 @@ Before running the project, install:
 - **npm**
 
 A recent Node.js version is recommended.
+
+Because the application is Node.js-based, it is not tied to a specific operating system. It can be installed on Windows, Linux, macOS, small server machines, and Android/Termux environments, as long as Node.js and npm are available.
 
 ---
 
@@ -264,8 +205,7 @@ A common usage flow is:
 # Notes
 
 - Layout, locomotive, task, script and command center data are stored by the server in local project data files.
-- Application data communication is WebSocket-based; do not add new HTTP data endpoints unless there is a deliberate reason.
-- Keep `/api/health` small and side-effect free.
+- The application uses WebSocket-based communication between the browser client and the Node.js server.
 - Simulator mode is recommended for initial testing before connecting real hardware.
 - The project is under active development, so some workflows and file formats may still evolve.
 
