@@ -136,6 +136,7 @@ function canHandleWithoutCommandCenter(type: string): boolean {
     type === "locosCommand" ||
     type === "scriptDocumentCommand" ||
     type === "appSettingsCommand" ||
+    type === "signalLogicCommand" ||
     type === "taskManagerCommand" ||
     type === "fastClockCommand" ||
     type === "fileCommand"
@@ -259,65 +260,26 @@ export async function setupWebSocketServer(
         sendToClient(ws, {
           type: "error",
           data: {
-            message: "No command center available",
+            message: `No command center available for ${msg.type}.`,
           },
         });
 
         return;
       }
 
-      try {
-        await routeIncomingWebSocketMessage({
-          ws,
-          msg,
-          commandCenter: currentCommandCenter,
-          sendToClient,
-          broadcast: broadcastAll,
-        });
-      } catch (error) {
-        logError(
-          "WebSocket route failed:",
-          msg.type,
-          error
-        );
-
-        sendToClient(ws, {
-          type: "error",
-          data: {
-            message: String(error),
-          },
-        });
-      }
+      await routeIncomingWebSocketMessage({
+        ws,
+        msg,
+        clientUUID,
+        commandCenter: currentCommandCenter,
+        sendToClient,
+        broadcast,
+      });
     });
 
     ws.on("close", () => {
-      logWs("WebSocket client disconnected");
-
-      editorEditModeStore.removeClient(clientUUID);
-
-      const currentCommandCenter =
-        getCurrentCommandCenter();
-
-      if (
-        currentCommandCenter &&
-        clientUUID &&
-        currentCommandCenter.lockOwnerUUID === clientUUID
-      ) {
-        currentCommandCenter.locked = false;
-        currentCommandCenter.lockOwnerUUID = null;
-
-        broadcastAll({
-          type: "commandCenterLockChanged",
-          data: {
-            locked: false,
-            lockOwner: null,
-          },
-        });
-      }
-    });
-
-    ws.on("error", error => {
-      logError("WebSocket client error:", error);
+      logWs("WebSocket client disconnected:", clientUUID);
+      editorEditModeStore.release(clientUUID);
     });
   });
 
