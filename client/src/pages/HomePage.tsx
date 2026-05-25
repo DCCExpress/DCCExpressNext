@@ -93,11 +93,19 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
         aria-hidden="true"
       />
       <Box
+        className="home-bg-glow home-bg-glow-cyan"
+        aria-hidden="true"
+      />
+      <Box
         className="home-bg-glow home-bg-glow-dark"
         aria-hidden="true"
       />
       <Box
         className="home-bg-glow home-bg-glow-green"
+        aria-hidden="true"
+      />
+      <Box
+        className="home-bg-glow home-bg-glow-amber"
         aria-hidden="true"
       />
 
