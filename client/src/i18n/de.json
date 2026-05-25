@@ -1,0 +1,620 @@
+{
+  "CommandCenter": "Zentrale",
+  "File": "Datei",
+  "Home": "Startseite",
+  "Load": "Laden",
+  "Locomotives": "Lokomotiven",
+  "Railway": "Bahn",
+  "Routes": "Routen",
+  "Save": "Speichern",
+  "Trains": "Züge",
+  "UI": "UI",
+  "common": {
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "offline": "Offline",
+    "close": "Schließen",
+    "remove": "Entfernen",
+    "removeAll": "Alle entfernen",
+    "error": "Fehler",
+    "warning": "Warnung",
+    "success": "Erfolgreich",
+    "loading": "Laden..."
+  },
+  "home": {
+    "heroTitle": "Bahnsteuerung einfach,\nvisuell und leistungsstark.",
+    "heroDescription": "Willkommen bei DCCExpress - einem modernen Modellbahn-Steuerungssystem zum Bearbeiten von Gleisplänen, Programmieren von Bahnelementen und Steuern von Zügen auf Desktop- und Mobilgeräten.",
+    "startLayout": "Mit dem LayoutView-Editor starten",
+    "comingSoon": "Demnächst",
+    "cards": {
+      "layout": {
+        "title": "LayoutView & Steuerung",
+        "description": "Entwirf deinen Gleisplan und steuere ihn live mit Weichen, Signalen, Sensoren, Blöcken, Routen und Lok-Bedienfeldern.",
+        "button": "LayoutView & Steuerung öffnen"
+      },
+      "programmer": {
+        "title": "Programmer",
+        "description": "Konfiguriere Lokomotiven, Zubehör, Funktionen, Decoderwerte und Automatisierungseinstellungen in einer übersichtlichen Programmieroberfläche."
+      },
+      "mobile": {
+        "title": "Mobiler Controller",
+        "description": "Steuere deine Züge über eine touchfreundliche Oberfläche mit Geschwindigkeit, Richtung, Not-Aus und Funktionstasten."
+      }
+    }
+  },
+  "locodialog": {
+    "close": "Schließen",
+    "couldnotloadlocos": "Lokomotiven konnten nicht geladen werden!",
+    "delete": "Löschen",
+    "extended_params": "Erweiterte Einstellungen",
+    "function_momentary": "Momentkontakt",
+    "function_number": "Funktionsnr.",
+    "function_test": "Test",
+    "functionname": "Name",
+    "functions_empty": "Keine Funktionen definiert",
+    "loco_direction_invert": "Richtung invertieren",
+    "loco_functions": "Funktionen",
+    "loco_length_mm": "Länge (mm)",
+    "loco_max_speed": "Maximale Geschwindigkeit",
+    "loco_speed_max": "Max.",
+    "locoaddress": "Adresse",
+    "locomotives": "Lokomotiven",
+    "loconame": "Name",
+    "mozdonylista": "Lokomotivliste",
+    "new_function": "Neue Funktion",
+    "newloco": "Neue Lokomotive",
+    "noimage": "Kein Bild",
+    "save": "Speichern",
+    "selectimage": "Bild auswählen"
+  },
+  "locopanel": {
+    "nolocos": "Keine Lokomotive"
+  },
+  "settings": {
+    "language": "Sprache",
+    "languagePlaceholder": "Sprache auswählen",
+    "languages": {
+      "en": "Englisch",
+      "hu": "Ungarisch",
+      "de": "Deutsch"
+    },
+    "title": "Einstellungen"
+  },
+  "topMenu": {
+    "settings": "Einstellungen",
+    "help": "Hilfe"
+  },
+  "quickHelp": {
+    "title": "Kurzhilfe"
+  },
+  "block": {
+    "typePlaceholder": "Blocktyp auswählen",
+    "types": {
+      "normal": "Normaler / Durchfahrtsblock",
+      "station": "Bahnhof / Halt",
+      "terminal": "Kopfbahnhof",
+      "staging": "Schattenbahnhof / Abstellbereich",
+      "siding": "Nebengleis / Ausweichgleis",
+      "yard": "Rangierbahnhof / Rangierbereich"
+    }
+  },
+  "help": {
+    "title": "Hilfe",
+    "general": "Wähle ein Element aus, um Hilfe anzuzeigen.",
+    "block": {
+      "title": "Blockelement",
+      "description": "Ein Block ist ein betrieblicher Bahnabschnitt, der vom automatischen Routen- und Zugverfolgungssystem verwendet wird.",
+      "occupancyDescription": "In DCCExpress ist der Block hauptsächlich für den Betrieb mit einem Belegungssensor vorgesehen. Der Sensor meldet, ob der Block belegt oder frei ist.",
+      "fields": {
+        "name": {
+          "title": "Name",
+          "description": "Der sichtbare Blockname, der im Layout und in der Routenauswahl angezeigt wird."
+        },
+        "blockType": {
+          "title": "Blocktyp",
+          "description": "Die betriebliche Rolle des Blocks."
+        },
+        "length": {
+          "title": "Länge",
+          "description": "Die geschätzte physische Länge des Blocks. Dies hilft später bei automatischen Brems- und Halteberechnungen."
+        },
+        "sensorAddress": {
+          "title": "Adresse des Belegungssensors",
+          "description": "Die Detektoradresse, die meldet, ob dieser Block belegt ist."
+        }
+      },
+      "types": {
+        "title": "Blocktypen",
+        "normal": {
+          "title": "Normaler / Durchfahrtsblock",
+          "description": "Ein normaler Streckenblock, der hauptsächlich zum Durchfahren verwendet wird."
+        },
+        "station": {
+          "title": "Bahnhof / Halt",
+          "description": "Ein Block, in dem Züge planmäßig halten können."
+        },
+        "terminal": {
+          "title": "Kopfbahnhof",
+          "description": "Ein Endpunktblock, in dem ein Zug später die Richtung wechseln oder eine Rückfahrt starten kann."
+        },
+        "staging": {
+          "title": "Schattenbahnhof / Abstellbereich",
+          "description": "Ein Speicher- oder verdeckter Abstellblock für Züge, die in das sichtbare Layout einfahren oder es verlassen."
+        },
+        "siding": {
+          "title": "Nebengleis / Ausweichgleis",
+          "description": "Ein Block zum Warten, Kreuzen oder Überholen."
+        },
+        "yard": {
+          "title": "Rangierbahnhof / Rangierbereich",
+          "description": "Ein betrieblicher Block für Rangier- oder Bahnhofsvorgänge."
+        }
+      }
+    }
+  },
+  "loco": {
+    "direction": {
+      "forward": "Vorwärts",
+      "reverse": "Rückwärts",
+      "stop": "Stopp"
+    },
+    "unnamed": "Unbenannte Lokomotive",
+    "stateTitle": "Lokzustand",
+    "dccAddress": "DCC-Adresse",
+    "maxSpeedShort": "Max. Geschwindigkeit",
+    "address": "Adresse",
+    "noSelectable": "Keine auswählbare Lokomotive.",
+    "errors": {
+      "stateConvertFailed": "locoState konnte nicht konvertiert werden!"
+    }
+  },
+  "toolbar": {
+    "themeToggle": "Theme umschalten",
+    "showLocoPanel": "Lok-Bedienfeld anzeigen",
+    "hideLocoPanel": "Lok-Bedienfeld ausblenden",
+    "showPropertyPanel": "Eigenschaften anzeigen",
+    "hidePropertyPanel": "Eigenschaften ausblenden"
+  },
+  "visibility": {
+    "title": "Sichtbarkeit",
+    "showOccupancyAddress": "Belegungsadresse anzeigen",
+    "showSensorAddress": "Sensoradresse anzeigen",
+    "showTurnoutAddress": "Weichenadresse anzeigen",
+    "showSignalAddress": "Signaladresse anzeigen",
+    "showSegments": "Segmente anzeigen",
+    "showBlockNames": "Blocknamen anzeigen",
+    "showGrid": "Raster anzeigen"
+  },
+  "controlPanel": {
+    "tabs": {
+      "commandCenter": "Zentrale",
+      "controller": "Controller",
+      "routes": "Routen",
+      "visibility": "Sichtbarkeit",
+      "log": "Protokoll"
+    }
+  },
+  "commandCenter": {
+    "title": "Zentrale",
+    "name": "Name",
+    "connectionType": "Verbindungstyp",
+    "types": {
+      "simulator": "Simulator",
+      "z21": "Z21",
+      "dccExTcp": "DCC-EX TCP",
+      "dccExSerial": "DCC-EX Seriell"
+    },
+    "simulatorDescription": "Die Simulator-Zentrale ist eine eingebaute Zentrale, die eine Verbindung simuliert. Sie kann für Tests und Entwicklung verwendet werden.",
+    "host": "Host",
+    "port": "Port",
+    "serialPort": "Serieller Port",
+    "serialPortPlaceholder": "COM3 oder /dev/ttyUSB0",
+    "baudRate": "Baudrate",
+    "dccExInit": "DCC-EX Initialisierung",
+    "dccExInitDescription": "Ein DCC-EX-Befehl pro Zeile, der nach dem Verbinden gesendet wird.",
+    "autoConnect": "Automatisch verbinden",
+    "powerOn": "Strom EIN",
+    "powerOff": "Strom AUS",
+    "emergencyStop": "NOT-AUS",
+    "online": "ONLINE",
+    "offline": "OFFLINE",
+    "connection": "Verbindung",
+    "connectionString": "Verbindung",
+    "type": "Typ",
+    "lock": "Sperre",
+    "state": "Zustand",
+    "locked": "GESPERRT",
+    "free": "FREI",
+    "owner": "Besitzer",
+    "thisClient": "Dieser Client",
+    "reason": "Grund",
+    "power": "Strom",
+    "trackPower": "Gleisstrom",
+    "emergencyStopState": "Not-Aus",
+    "shortCircuit": "Kurzschluss",
+    "programming": "Programmierung",
+    "z21System": "Z21-System",
+    "mainCurrent": "Hauptstrom",
+    "progCurrent": "Programmierstrom",
+    "filteredCurrent": "Gefilterter Strom",
+    "temperature": "Temperatur",
+    "supplyVoltage": "Versorgungsspannung",
+    "vccVoltage": "VCC-Spannung",
+    "centralState": "Zentralenzustand",
+    "centralStateEx": "Zentralenzustand EX",
+    "capabilities": "Fähigkeiten",
+    "z21Flags": "Z21-Flags",
+    "highTemp": "Hohe Temperatur",
+    "powerLost": "Stromausfall",
+    "shortExternal": "Externer Kurzschluss",
+    "shortInternal": "Interner Kurzschluss",
+    "locoCmds": "Lokbefehle",
+    "accessoryCmds": "Zubehörbefehle",
+    "detectorCmds": "Detektorbefehle",
+    "needsUnlock": "Entsperrung erforderlich",
+    "yes": "JA",
+    "no": "NEIN",
+    "messages": {
+      "loadFailed": "Zentrale konnte nicht geladen werden!",
+      "loadFailedWithError": "Zentrale konnte nicht geladen werden: {{error}}",
+      "saveOk": "Zentrale gespeichert!",
+      "saveFailed": "Zentralen konnten nicht gespeichert werden."
+    }
+  },
+  "layout": {
+    "runtimeTitle": "Runtime-Layout",
+    "messages": {
+      "loadLocosFailed": "Lokomotiven konnten nicht geladen werden: {{error}}",
+      "loadLayoutFailed": "Layout konnte nicht geladen werden: {{error}}",
+      "saved": "LayoutView gespeichert!",
+      "runtimeRefreshed": "Server-Runtime-Layout aktualisiert.",
+      "runtimeRefreshFailed": "Server-Runtime-Layout konnte nicht aktualisiert werden."
+    }
+  },
+  "programmer": {
+    "title": "Decoder-Programmer",
+    "subtitle": "CV-Programmierung für Lok- und Zubehördecoder",
+    "commandCenter": "Zentrale",
+    "experimental": "Experimentell",
+    "powerShort": "PWR",
+    "panelTitle": "Programmer",
+    "decoderType": "Decodertyp",
+    "decoderTypes": {
+      "loco": "Lokdecoder",
+      "accessory": "Zubehördecoder"
+    },
+    "programmingMode": "Programmiermodus",
+    "modes": {
+      "serviceTrack": "Programmiergleis",
+      "pomLoco": "POM - Lok",
+      "pomAccessory": "POM - Zubehör"
+    },
+    "address": "Adresse",
+    "cv": "CV",
+    "value": "Wert",
+    "readCv": "CV lesen",
+    "writeCv": "CV schreiben",
+    "logTitle": "CV-Protokoll",
+    "readLog": "CV {{cv}} lesen...",
+    "writeLog": "CV {{cv}} = {{value}} schreiben...",
+    "help": {
+      "title": "CV-Hilfe",
+      "databaseError": "Datenbankfehler",
+      "empty": "Gib eine CV-Nummer ein; bekannte Informationen erscheinen hier.",
+      "unknown": "Unbekannt",
+      "unknownDescription": "Für diese CV gibt es in der Datenbank noch keine Beschreibung.",
+      "known": "Bekannt",
+      "min": "Min.",
+      "max": "Max.",
+      "default": "Standard",
+      "bits": "Bits",
+      "notes": "Notizen"
+    }
+  },
+  "graph": {
+    "title": "Graph",
+    "tabs": {
+      "graph": "Graph",
+      "connections": "Verbindungen",
+      "blocks": "Blöcke",
+      "runnableBlocks": "Befahrbare Blöcke",
+      "solver": "Routensuche"
+    },
+    "emptyGraph": "Noch kein Graph erzeugt.",
+    "emptyConnections": "Keine Verbindung zum Anzeigen.",
+    "emptyBlockConnections": "Keine Blockverbindung zum Anzeigen.",
+    "emptyRunnableBlocks": "Keine tatsächlich befahrbare Blockroute.",
+    "noSearchableGraph": "Es gibt keinen Graphen, in dem Routen gesucht werden können.",
+    "headers": {
+      "from": "Von",
+      "to": "Nach",
+      "sectionObjects": "Abschnittsobjekte",
+      "turnoutRequirement": "Weichenanforderung",
+      "blockConnection": "Blockverbindung",
+      "sectionChain": "Abschnittskette",
+      "fromBlock": "Von Block",
+      "toBlock": "Nach Block",
+      "runnablePath": "Befahrbarer Weg",
+      "locoDirection": "Lokrichtung"
+    },
+    "items": {
+      "detectors": "Detektoren",
+      "signals": "Signale",
+      "blocks": "Blöcke",
+      "turnout": "Weiche"
+    },
+    "solver": {
+      "fromPlaceholder": "Startblock auswählen",
+      "toPlaceholder": "Zielblock auswählen",
+      "search": "Route suchen",
+      "intro": "Wähle einen Start- und Zielblock aus und starte dann die Suche.",
+      "notFoundTitle": "Keine befahrbare Route",
+      "notFound": "Zwischen den ausgewählten Blöcken wurde keine Route gefunden, die mit konsistenten Weichenstellungen befahren werden kann.",
+      "foundTitle": "Route gefunden",
+      "found": "Zwischen den ausgewählten Blöcken existiert eine befahrbare Route.",
+      "testRoute": "Route testen",
+      "directionTitle": "Lokomotivrichtung",
+      "directionForward": "Die Lokomotive fährt die Route vorwärts.",
+      "directionReverse": "Die Lokomotive fährt die Route rückwärts.",
+      "directionUnknown": "Die Richtung kann aus der im Layout markierten Fahrtrichtung nicht bestimmt werden.",
+      "blockPathTitle": "Blockroute mit Segmentkette",
+      "turnoutsTitle": "Erforderliche Weichenstellungen",
+      "noTurnouts": "Diese Route erfordert keine Weichenänderungen.",
+      "edgesTitle": "Kanten im Detail"
+    }
+  },
+  "routesPanel": {
+    "title": "Routengraph",
+    "generate": "Erzeugen",
+    "openGraph": "Graph öffnen",
+    "generateHint": "Erzeuge den Graphen, um Segmentverbindungen anzuzeigen.",
+    "segmentConnections": "Segmentverbindungen",
+    "connectionCount_one": "{{count}} Verbindung",
+    "connectionCount_other": "{{count}} Verbindungen",
+    "required": "Erforderlich",
+    "test": "Test",
+    "noTurnoutRequired": "Keine Weiche erforderlich",
+    "noActiveGraph": "Noch kein aktiver Routengraph auf dem Server.",
+    "graphRefreshed": "Server-Routengraph aktualisiert: {{nodes}} Knoten, {{edges}} Kante.",
+    "reloadFailed": "Server-Routengraph konnte nicht neu geladen werden.",
+    "turnoutNotFound": "Weiche für Adresse nicht gefunden: {{address}}",
+    "routeTestSent": "Routentest gesendet: {{route}}",
+    "routeConnectionTestFailed": "Routenverbindung konnte nicht getestet werden.",
+    "routeTestFailed": "Route konnte nicht getestet werden.",
+    "selectBothBlocks": "Wähle zuerst Von-Block und Nach-Block aus.",
+    "noServerGraph": "Kein Server-Routengraph verfügbar.",
+    "selectedBlocksMissing": "Die ausgewählten Routenblöcke wurden im Servergraphen nicht gefunden.",
+    "routeRequestSent": "Routenanfrage gesendet: {{from}} -> {{to}}",
+    "routeRequest": "Routenanfrage",
+    "reservationRequested": "Reservierung angefragt: {{from}} -> {{to}}",
+    "reservationFailed": "Routenreservierung konnte nicht angefragt werden.",
+    "releaseRequest": "Routenfreigabe",
+    "releaseRequested": "Freigabe angefragt: {{from}} -> {{to}}",
+    "automaticRouteMissingBlocks": "Dem automatischen Routenknopf fehlen Von-/Nach-Block.",
+    "configuredBlocksMissing": "Der konfigurierte Von-/Nach-Block wurde im Servergraphen nicht gefunden.",
+    "commandCenterBusy": "Die Zentrale ist belegt. Route kann nicht gestartet werden.",
+    "routeIsBeingSet": "Route wird gestellt...",
+    "automaticRouteFailed": "Automatische Route konnte nicht angefragt werden.",
+    "automaticRouteTest": "Automatischer Routentest",
+    "refreshSegments": "Segmente aktualisieren",
+    "selectBlock": "Block auswählen",
+    "noRouteGraph": "Kein Routengraph verfügbar.",
+    "noBlocks": "Keine Blöcke im erzeugten Routengraphen verfügbar.",
+    "releasePartiallyRetained": "{{from}} -> {{to}} freigegeben, aber einige Elemente sind weiterhin reserviert.",
+    "released": "{{from}} -> {{to}} freigegeben."
+  },
+  "propertyPanel": {
+    "title": "Eigenschaften"
+  },
+  "turnout": {
+    "closed": "gerade",
+    "thrown": "abzweigend"
+  },
+  "task": {
+    "title": "Aufgabe",
+    "status": {
+      "queued": "Wartend",
+      "running": "Läuft",
+      "paused": "Pausiert",
+      "finishing": "Wird beendet",
+      "aborted": "Abgebrochen",
+      "completed": "Abgeschlossen",
+      "error": "Fehler"
+    },
+    "progress": {
+      "arrived": "Angekommen",
+      "aborted": "Abgebrochen",
+      "waitingForLoco": "Warten auf Lokomotive",
+      "waitingForRoute": "Warten auf Routenreservierung",
+      "waitingForSensor": "Warten, bis Sensor #{{sensorAddress}} frei wird",
+      "waitingForNextBlock": "Warten, bis der nächste Block frei wird",
+      "departing": "Abfahrtsphase",
+      "transit": "Fahrt zwischen zwei Blöcken",
+      "leftFromBlock": "Startblock verlassen",
+      "queued": "Wartet auf Start",
+      "running": "Läuft",
+      "paused": "Pausiert",
+      "finishing": "Wird beendet",
+      "error": "Fehler"
+    },
+    "list": {
+      "title": "Aufgabenliste",
+      "expand": "Aufgabenliste erweitern",
+      "collapse": "Aufgabenliste einklappen",
+      "count": "Aufgabe",
+      "empty": "Keine aktive oder wartende Aufgabe.",
+      "emptyNew": "Es wurde noch keine Aufgabe hinzugefügt."
+    },
+    "table": {
+      "index": "#",
+      "task": "Aufgabe",
+      "loco": "Lok",
+      "speed": "Geschwindigkeit",
+      "route": "Route",
+      "status": "Status",
+      "progress": "Fortschritt",
+      "turnouts": "Weichen",
+      "controls": "Steuerung"
+    },
+    "actions": {
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "start": "Start",
+      "pause": "Pause",
+      "finish": "Beenden",
+      "abort": "Abbrechen",
+      "resume": "Fortsetzen",
+      "startAgain": "Erneut starten",
+      "editDisabled": "Laufende, pausierte oder beendende Aufgaben können nicht bearbeitet werden"
+    },
+    "form": {
+      "name": "Aufgabenname",
+      "namePlaceholder": "z. B. B1 → C1",
+      "fromBlock": "Von Block",
+      "fromPlaceholder": "Von Block",
+      "toBlock": "Nach Block",
+      "toPlaceholder": "Nach Block",
+      "targetSpeed": "Zielgeschwindigkeit"
+    },
+    "add": {
+      "title": "Neue Aufgabe",
+      "notAddable": "Aufgabe kann nicht hinzugefügt werden",
+      "selectedRoute": "Ausgewählte befahrbare Blockverbindung",
+      "submit": "Hinzufügen"
+    },
+    "edit": {
+      "title": "Aufgabe bearbeiten",
+      "notEditable": "Aufgabe kann nicht bearbeitet werden"
+    },
+    "delete": {
+      "title": "Aufgabe löschen",
+      "confirm": "Möchtest du diese Aufgabe wirklich löschen?"
+    },
+    "manager": {
+      "title": "Aufgaben-Manager",
+      "alerts": {
+        "noGraphTitle": "Kein Routengraph",
+        "noGraph": "Erzeuge zuerst den Graphen, bevor du Aufgaben hinzufügst.",
+        "noLayoutTitle": "Kein aktives Layout",
+        "noLayout": "Der Layoutspeicher enthält derzeit kein Layout.",
+        "actionFailedTitle": "Aktion kann nicht abgeschlossen werden"
+      },
+      "errors": {
+        "selectBlocks": "Wähle Start- und Zielblock aus.",
+        "invalidTargetSpeed": "Gib eine gültige Zielgeschwindigkeit ein."
+      },
+      "messages": {
+        "updated": "Aufgabe aktualisiert.",
+        "saved": "Aufgaben gespeichert.",
+        "loaded_one": "{{count}} Aufgabe geladen.",
+        "loaded_other": "{{count}} Aufgaben geladen.",
+        "waiting": "Aufgabe wartet",
+        "completed": "Aufgabe abgeschlossen",
+        "startedWaitingForLoco": "Die Aufgabe wurde gestartet, aber im Startblock befindet sich noch keine Lokomotive. Warten...",
+        "completedWithoutActiveRun": "Die Aufgabe wurde ohne aktive Fahrt abgeschlossen.",
+        "finishedInDestinationBlock": "Die Aufgabe wurde im Zielblock beendet.",
+        "cycleCompletedWaitingForLoco": "Der Aufgabenzyklus ist abgeschlossen und wartet erneut auf eine Lokomotive im Startblock."
+      }
+    }
+  },
+  "editor": {
+    "mode": "Editor-Modus",
+    "cursorEsc": "Cursor (Esc)",
+    "cursorMode": "Cursor-Modus",
+    "pickElement": "Element auswählen",
+    "elements": {
+      "direction": "Richtung",
+      "straight": "Gerade",
+      "trackEnd": "Gleisende",
+      "corner": "Ecke",
+      "curve": "Kurve",
+      "crossing": "Kreuzung",
+      "turnoutLeft": "Linke Weiche",
+      "turnoutRight": "Rechte Weiche",
+      "turnoutY": "Y-Weiche",
+      "turnoutDouble": "Doppelweiche",
+      "signal2": "Signal 2",
+      "signal3": "Signal 3",
+      "signal4": "Signal 4",
+      "sensor": "Sensor",
+      "label": "Beschriftung",
+      "button": "Knopf",
+      "scriptButton": "Script-Knopf",
+      "route": "Route",
+      "autoRoute": "Automatische Route",
+      "audio": "Audio",
+      "clock": "Uhr",
+      "block": "Block",
+      "tree": "Baum"
+    },
+    "top": {
+      "editMode": "Bearbeitungsmodus (E)",
+      "fitLayout": "Layout einpassen (F)",
+      "cursorEsc": "Cursor (Esc)",
+      "cursorMode": "Cursor-Modus",
+      "elements": "Elemente",
+      "element": "Element",
+      "deleteDel": "Löschen (Entf)",
+      "undo": "Rückgängig (Ctrl+Z)",
+      "undoShort": "Rückgängig",
+      "redo": "Wiederholen (Ctrl+Y / Ctrl+Shift+Z)",
+      "redoShort": "Wiederholen"
+    },
+    "messages": {
+      "alreadyHasElement": "Hier befindet sich bereits ein Element!",
+      "routeTurnoutRemoved": "Die Weiche wurde gelöscht und daher auch aus dem zugehörigen Routenknopf entfernt."
+    }
+  },
+  "runtimeVariable": {
+    "title": "Runtime-Variable"
+  },
+  "audio": {
+    "messages": {
+      "fileNameMissing": "Der Audiodateiname fehlt."
+    }
+  },
+  "fastClock": {
+    "title": "Schnelluhr",
+    "expand": "Schnelluhr erweitern",
+    "collapse": "Schnelluhr einklappen",
+    "running": "LÄUFT",
+    "paused": "PAUSIERT",
+    "pause": "Pause",
+    "run": "Start",
+    "reset": "Zurücksetzen",
+    "speedMultiplier": "Geschwindigkeitsfaktor",
+    "minimum": "Minimum 1×",
+    "setSpeed": "Geschwindigkeit setzen",
+    "serverDisconnected": "Server getrennt. Die Schnelluhr-Anzeige ist eingefroren.",
+    "serverSynced": "Server-synchronisiert über WebSocket, im Client flüssig dargestellt.",
+    "errors": {
+      "actionFailed": "Schnelluhr-Aktion fehlgeschlagen.",
+      "minSpeed": "Der Geschwindigkeitsfaktor muss mindestens 1× sein."
+    },
+    "status": {
+      "serverDisconnected": "Schnelluhr-Server getrennt"
+    },
+    "runningLower": "läuft",
+    "pausedLower": "pausiert",
+    "pauseAction": "Schnelluhr pausieren",
+    "runAction": "Schnelluhr starten",
+    "resetAction": "Schnelluhr zurücksetzen"
+  },
+  "routeTask": {
+    "title": "Routen- & Aufgabensteuerung",
+    "expand": "Routen- und Aufgabensteuerung erweitern",
+    "collapse": "Routen- und Aufgabensteuerung einklappen",
+    "fromPlaceholder": "A1",
+    "toPlaceholder": "C1",
+    "setRoute": "Reservieren",
+    "releaseRoute": "Freigeben",
+    "clearAllBusy": "Belegungen löschen",
+    "taskManager": "Aufgaben...",
+    "startAll": "Alle starten",
+    "finishAll": "Alle beenden",
+    "abortAll": "Alle abbrechen",
+    "allStarted": "Alle Aufgaben gestartet.",
+    "allFinishing": "Alle Aufgaben zum Beenden markiert.",
+    "allAborted": "Alle aktiven Aufgaben abgebrochen."
+  }
+}
