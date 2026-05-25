@@ -20,8 +20,8 @@ import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 
 import type { LayoutView } from "../../models/editor/core/LayoutView";
-import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { isTurnoutElement } from "../../models/editor/core/LayoutView";
+import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { generateId } from "../../helpers";
 
 type SignalAspect = "red" | "yellow" | "green" | "white";
@@ -108,25 +108,22 @@ function aspectToMethod(aspect: SignalAspect): string {
 }
 
 function buildGeneratedScript(groups: SignalRuleGroup[]): string {
-  const lines: string[] = [
-    "while (true) {",
-    "",
-  ];
+  const lines: string[] = ["while (true) {", ""];
 
   const turnoutAddresses = Array.from(
     new Set(
-      groups.flatMap(group =>
-        group.rules.flatMap(rule =>
-          rule.conditions.map(condition => condition.turnoutAddress)
+      groups
+        .flatMap(group =>
+          group.rules.flatMap(rule =>
+            rule.conditions.map(condition => condition.turnoutAddress)
+          )
         )
-      ).filter(address => address > 0)
+        .filter(address => address > 0)
     )
   ).sort((a, b) => a - b);
 
   for (const address of turnoutAddresses) {
-    lines.push(
-      `  const t${address}Closed = getTurnoutState(${address});`
-    );
+    lines.push(`  const t${address}Closed = getTurnoutState(${address});`);
   }
 
   if (turnoutAddresses.length > 0) {
@@ -138,28 +135,23 @@ function buildGeneratedScript(groups: SignalRuleGroup[]): string {
 
     group.rules.forEach((rule, ruleIndex) => {
       const keyword = ruleIndex === 0 ? "if" : "else if";
-      const expression = rule.conditions.length === 0
-        ? "true"
-        : rule.conditions
-          .map(condition => {
-            const variableName = `t${condition.turnoutAddress}Closed`;
-            return condition.closed
-              ? variableName
-              : `!${variableName}`;
-          })
-          .join(" && ");
+      const expression =
+        rule.conditions.length === 0
+          ? "true"
+          : rule.conditions
+              .map(condition => {
+                const variableName = `t${condition.turnoutAddress}Closed`;
+                return condition.closed ? variableName : `!${variableName}`;
+              })
+              .join(" && ");
 
       lines.push(`  ${keyword} (${expression}) {`);
-      lines.push(
-        `    await ${aspectToMethod(rule.aspect)}(${group.signalAddress});`
-      );
+      lines.push(`    await ${aspectToMethod(rule.aspect)}(${group.signalAddress});`);
       lines.push("  }");
     });
 
     lines.push("  else {");
-    lines.push(
-      `    await ${aspectToMethod(group.defaultAspect)}(${group.signalAddress});`
-    );
+    lines.push(`    await ${aspectToMethod(group.defaultAspect)}(${group.signalAddress});`);
     lines.push("  }");
     lines.push("");
   }
@@ -210,49 +202,33 @@ export default function SignalLogicDialog({
   const [groups, setGroups] = useState<SignalRuleGroup[]>(() => {
     const firstSignalAddress = Number(signalOptions[0]?.value ?? 0);
 
-    return firstSignalAddress > 0
-      ? [createRule(firstSignalAddress)]
-      : [];
+    return firstSignalAddress > 0 ? [createRule(firstSignalAddress)] : [];
   });
 
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
     groups[0]?.id ?? null
   );
 
-  const selectedGroup = groups.find(group => group.id === selectedGroupId)
-    ?? groups[0]
-    ?? null;
+  const selectedGroup =
+    groups.find(group => group.id === selectedGroupId) ?? groups[0] ?? null;
 
-  const generatedScript = useMemo(
-    () => buildGeneratedScript(groups),
-    [groups]
-  );
+  const generatedScript = useMemo(() => buildGeneratedScript(groups), [groups]);
 
   const updateGroup = (
     groupId: string,
     update: (group: SignalRuleGroup) => SignalRuleGroup
   ): void => {
     setGroups(previous =>
-      previous.map(group =>
-        group.id === groupId
-          ? update(group)
-          : group
-      )
+      previous.map(group => (group.id === groupId ? update(group) : group))
     );
   };
 
   const addSignalRuleGroup = (): void => {
-    const usedAddresses = new Set(
-      groups.map(group => group.signalAddress)
-    );
-
+    const usedAddresses = new Set(groups.map(group => group.signalAddress));
     const nextSignal = signalOptions.find(
       option => !usedAddresses.has(Number(option.value))
     );
-
-    const signalAddress = Number(
-      nextSignal?.value ?? signalOptions[0]?.value ?? 0
-    );
+    const signalAddress = Number(nextSignal?.value ?? signalOptions[0]?.value ?? 0);
 
     if (signalAddress <= 0) {
       return;
@@ -345,151 +321,137 @@ export default function SignalLogicDialog({
       opened={opened}
       onClose={onClose}
       title="Signal Logic Editor"
-      size="95%"
+      size={1200}
       centered
-      scrollAreaComponent={ScrollArea.Autosize}
+      styles={{
+        content: {
+          height: "min(820px, calc(100vh - 48px))",
+          maxHeight: "min(820px, calc(100vh - 48px))",
+          display: "flex",
+          flexDirection: "column",
+        },
+        body: {
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        },
+      }}
     >
-      <Tabs defaultValue="rules">
-        <Tabs.List>
+      <Tabs
+        defaultValue="rules"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Tabs.List style={{ flex: "0 0 auto" }}>
           <Tabs.Tab value="rules">Rules</Tabs.Tab>
           <Tabs.Tab value="preview">Live preview</Tabs.Tab>
           <Tabs.Tab value="script">Generated script</Tabs.Tab>
         </Tabs.List>
 
-        <Tabs.Panel value="rules" pt="md">
-          <Group align="flex-start" wrap="nowrap">
-            <Card withBorder w={260} p="sm">
-              <Group justify="space-between" mb="sm">
-                <Title order={5}>Signals</Title>
-                <Button size="xs" leftSection={<IconPlus size={14} />} onClick={addSignalRuleGroup}>
-                  Add
-                </Button>
-              </Group>
-
-              <Stack gap="xs">
-                {groups.length === 0 && (
-                  <Text size="sm" c="dimmed">
-                    No signal rule yet. Add a signal rule to start.
-                  </Text>
-                )}
-
-                {groups.map(group => (
+        <Tabs.Panel value="rules" style={{ flex: 1, minHeight: 0 }}>
+          <ScrollArea h="100%" pt="md" type="auto" offsetScrollbars>
+            <Group align="stretch" wrap="nowrap" h="100%">
+              <Card withBorder w={260} p="sm" style={{ flex: "0 0 260px" }}>
+                <Group justify="space-between" mb="sm">
+                  <Title order={5}>Signals</Title>
                   <Button
-                    key={group.id}
-                    variant={group.id === selectedGroup?.id ? "filled" : "light"}
-                    justify="space-between"
-                    onClick={() => setSelectedGroupId(group.id)}
+                    size="xs"
+                    leftSection={<IconPlus size={14} />}
+                    onClick={addSignalRuleGroup}
                   >
-                    <span>Signal #{group.signalAddress}</span>
-                    <Badge size="xs" variant="light">
-                      {group.rules.length}
-                    </Badge>
+                    Add
                   </Button>
-                ))}
-              </Stack>
-            </Card>
+                </Group>
 
-            <Box flex={1}>
-              {!selectedGroup ? (
-                <Card withBorder p="lg">
-                  <Text c="dimmed">
-                    Select or add a signal rule group.
-                  </Text>
-                </Card>
-              ) : (
-                <Stack gap="md">
-                  <Card withBorder>
-                    <Group justify="space-between" align="flex-end">
-                      <Group align="flex-end">
-                        <Select
-                          label="Signal"
-                          data={signalOptions}
-                          value={selectedGroup.signalAddress.toString()}
-                          onChange={value => {
-                            const signalAddress = Number(value ?? 0);
-                            updateGroup(selectedGroup.id, group => ({
-                              ...group,
-                              signalAddress,
-                            }));
-                          }}
-                          w={220}
-                        />
+                <ScrollArea h={620} type="auto" offsetScrollbars>
+                  <Stack gap="xs">
+                    {groups.length === 0 && (
+                      <Text size="sm" c="dimmed">
+                        No signal rule yet. Add a signal rule to start.
+                      </Text>
+                    )}
 
-                        <Select
-                          label="Default aspect"
-                          data={aspectOptions}
-                          value={selectedGroup.defaultAspect}
-                          onChange={value => {
-                            updateGroup(selectedGroup.id, group => ({
-                              ...group,
-                              defaultAspect: (value ?? "red") as SignalAspect,
-                            }));
-                          }}
-                          w={180}
-                        />
-                      </Group>
-
-                      <ActionIcon
-                        color="red"
-                        variant="light"
-                        onClick={() => deleteSignalRuleGroup(selectedGroup.id)}
-                        aria-label="Delete signal rule group"
+                    {groups.map(group => (
+                      <Button
+                        key={group.id}
+                        variant={group.id === selectedGroup?.id ? "filled" : "light"}
+                        justify="space-between"
+                        onClick={() => setSelectedGroupId(group.id)}
                       >
-                        <IconTrash size={16} />
-                      </ActionIcon>
-                    </Group>
-                  </Card>
+                        <span>Signal #{group.signalAddress}</span>
+                        <Badge size="xs" variant="light">
+                          {group.rules.length}
+                        </Badge>
+                      </Button>
+                    ))}
+                  </Stack>
+                </ScrollArea>
+              </Card>
 
-                  {selectedGroup.rules.map((rule, ruleIndex) => (
-                    <Card key={rule.id} withBorder>
-                      <Group justify="space-between" mb="sm">
-                        <Group>
-                          <Badge>Rule {ruleIndex + 1}</Badge>
-                          <Text fw={600}>IF conditions match THEN</Text>
+              <Box flex={1} style={{ minWidth: 0 }}>
+                {!selectedGroup ? (
+                  <Card withBorder p="lg">
+                    <Text c="dimmed">Select or add a signal rule group.</Text>
+                  </Card>
+                ) : (
+                  <Stack gap="md" pb="md">
+                    <Card withBorder>
+                      <Group justify="space-between" align="flex-end">
+                        <Group align="flex-end">
                           <Select
+                            label="Signal"
+                            data={signalOptions}
+                            value={selectedGroup.signalAddress.toString()}
+                            onChange={value => {
+                              const signalAddress = Number(value ?? 0);
+                              updateGroup(selectedGroup.id, group => ({
+                                ...group,
+                                signalAddress,
+                              }));
+                            }}
+                            w={220}
+                          />
+
+                          <Select
+                            label="Default aspect"
                             data={aspectOptions}
-                            value={rule.aspect}
+                            value={selectedGroup.defaultAspect}
                             onChange={value => {
                               updateGroup(selectedGroup.id, group => ({
                                 ...group,
-                                rules: group.rules.map(currentRule =>
-                                  currentRule.id === rule.id
-                                    ? {
-                                        ...currentRule,
-                                        aspect: (value ?? "red") as SignalAspect,
-                                      }
-                                    : currentRule
-                                ),
+                                defaultAspect: (value ?? "red") as SignalAspect,
                               }));
                             }}
-                            w={160}
+                            w={180}
                           />
                         </Group>
 
                         <ActionIcon
                           color="red"
                           variant="light"
-                          onClick={() => deleteRule(selectedGroup.id, rule.id)}
-                          aria-label="Delete rule"
+                          onClick={() => deleteSignalRuleGroup(selectedGroup.id)}
+                          aria-label="Delete signal rule group"
                         >
                           <IconTrash size={16} />
                         </ActionIcon>
                       </Group>
+                    </Card>
 
-                      <Stack gap="xs">
-                        {rule.conditions.map((condition, conditionIndex) => (
-                          <Group key={condition.id} align="flex-end">
-                            <Text w={36} size="sm" c="dimmed">
-                              {conditionIndex === 0 ? "IF" : "AND"}
-                            </Text>
-
+                    {selectedGroup.rules.map((rule, ruleIndex) => (
+                      <Card key={rule.id} withBorder>
+                        <Group justify="space-between" mb="sm">
+                          <Group>
+                            <Badge>Rule {ruleIndex + 1}</Badge>
+                            <Text fw={600}>IF conditions match THEN</Text>
                             <Select
-                              label={conditionIndex === 0 ? "Turnout" : undefined}
-                              data={turnoutOptions}
-                              value={condition.turnoutAddress > 0
-                                ? condition.turnoutAddress.toString()
-                                : null}
-                              placeholder="Select turnout"
+                              data={aspectOptions}
+                              value={rule.aspect}
                               onChange={value => {
                                 updateGroup(selectedGroup.id, group => ({
                                   ...group,
@@ -497,41 +459,7 @@ export default function SignalLogicDialog({
                                     currentRule.id === rule.id
                                       ? {
                                           ...currentRule,
-                                          conditions: currentRule.conditions.map(currentCondition =>
-                                            currentCondition.id === condition.id
-                                              ? {
-                                                  ...currentCondition,
-                                                  turnoutAddress: Number(value ?? 0),
-                                                }
-                                              : currentCondition
-                                          ),
-                                        }
-                                      : currentRule
-                                  ),
-                                }));
-                              }}
-                              w={220}
-                            />
-
-                            <Select
-                              label={conditionIndex === 0 ? "State" : undefined}
-                              data={booleanOptions}
-                              value={condition.closed.toString()}
-                              onChange={value => {
-                                updateGroup(selectedGroup.id, group => ({
-                                  ...group,
-                                  rules: group.rules.map(currentRule =>
-                                    currentRule.id === rule.id
-                                      ? {
-                                          ...currentRule,
-                                          conditions: currentRule.conditions.map(currentCondition =>
-                                            currentCondition.id === condition.id
-                                              ? {
-                                                  ...currentCondition,
-                                                  closed: value === "true",
-                                                }
-                                              : currentCondition
-                                          ),
+                                          aspect: (value ?? "red") as SignalAspect,
                                         }
                                       : currentRule
                                   ),
@@ -539,94 +467,182 @@ export default function SignalLogicDialog({
                               }}
                               w={160}
                             />
-
-                            <ActionIcon
-                              color="red"
-                              variant="subtle"
-                              onClick={() => deleteCondition(selectedGroup.id, rule.id, condition.id)}
-                              aria-label="Delete condition"
-                            >
-                              <IconTrash size={16} />
-                            </ActionIcon>
                           </Group>
-                        ))}
 
-                        <Button
-                          size="xs"
-                          variant="light"
-                          leftSection={<IconPlus size={14} />}
-                          onClick={() => addCondition(selectedGroup.id, rule.id)}
-                          w={180}
-                        >
-                          Add condition
-                        </Button>
-                      </Stack>
-                    </Card>
-                  ))}
+                          <ActionIcon
+                            color="red"
+                            variant="light"
+                            onClick={() => deleteRule(selectedGroup.id, rule.id)}
+                            aria-label="Delete rule"
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Group>
 
-                  <Button
-                    variant="light"
-                    leftSection={<IconPlus size={14} />}
-                    onClick={() => addRule(selectedGroup.id)}
-                  >
-                    Add rule
-                  </Button>
-                </Stack>
-              )}
-            </Box>
-          </Group>
+                        <Stack gap="xs">
+                          {rule.conditions.map((condition, conditionIndex) => (
+                            <Group key={condition.id} align="flex-end">
+                              <Text w={36} size="sm" c="dimmed">
+                                {conditionIndex === 0 ? "IF" : "AND"}
+                              </Text>
+
+                              <Select
+                                label={conditionIndex === 0 ? "Turnout" : undefined}
+                                data={turnoutOptions}
+                                value={
+                                  condition.turnoutAddress > 0
+                                    ? condition.turnoutAddress.toString()
+                                    : null
+                                }
+                                placeholder="Select turnout"
+                                onChange={value => {
+                                  updateGroup(selectedGroup.id, group => ({
+                                    ...group,
+                                    rules: group.rules.map(currentRule =>
+                                      currentRule.id === rule.id
+                                        ? {
+                                            ...currentRule,
+                                            conditions: currentRule.conditions.map(
+                                              currentCondition =>
+                                                currentCondition.id === condition.id
+                                                  ? {
+                                                      ...currentCondition,
+                                                      turnoutAddress: Number(value ?? 0),
+                                                    }
+                                                  : currentCondition
+                                            ),
+                                          }
+                                        : currentRule
+                                    ),
+                                  }));
+                                }}
+                                w={220}
+                              />
+
+                              <Select
+                                label={conditionIndex === 0 ? "State" : undefined}
+                                data={booleanOptions}
+                                value={condition.closed.toString()}
+                                onChange={value => {
+                                  updateGroup(selectedGroup.id, group => ({
+                                    ...group,
+                                    rules: group.rules.map(currentRule =>
+                                      currentRule.id === rule.id
+                                        ? {
+                                            ...currentRule,
+                                            conditions: currentRule.conditions.map(
+                                              currentCondition =>
+                                                currentCondition.id === condition.id
+                                                  ? {
+                                                      ...currentCondition,
+                                                      closed: value === "true",
+                                                    }
+                                                  : currentCondition
+                                            ),
+                                          }
+                                        : currentRule
+                                    ),
+                                  }));
+                                }}
+                                w={160}
+                              />
+
+                              <ActionIcon
+                                color="red"
+                                variant="subtle"
+                                onClick={() =>
+                                  deleteCondition(selectedGroup.id, rule.id, condition.id)
+                                }
+                                aria-label="Delete condition"
+                              >
+                                <IconTrash size={16} />
+                              </ActionIcon>
+                            </Group>
+                          ))}
+
+                          <Button
+                            size="xs"
+                            variant="light"
+                            leftSection={<IconPlus size={14} />}
+                            onClick={() => addCondition(selectedGroup.id, rule.id)}
+                            w={180}
+                          >
+                            Add condition
+                          </Button>
+                        </Stack>
+                      </Card>
+                    ))}
+
+                    <Button
+                      variant="light"
+                      leftSection={<IconPlus size={14} />}
+                      onClick={() => addRule(selectedGroup.id)}
+                    >
+                      Add rule
+                    </Button>
+                  </Stack>
+                )}
+              </Box>
+            </Group>
+          </ScrollArea>
         </Tabs.Panel>
 
-        <Tabs.Panel value="preview" pt="md">
-          <Stack>
-            {groups.map(group => (
-              <Card key={group.id} withBorder>
-                <Group justify="space-between" mb="sm">
-                  <Title order={5}>Signal #{group.signalAddress}</Title>
-                  <Badge color="red" variant="light">
-                    Default: {group.defaultAspect}
-                  </Badge>
-                </Group>
+        <Tabs.Panel value="preview" style={{ flex: 1, minHeight: 0 }}>
+          <ScrollArea h="100%" pt="md" type="auto" offsetScrollbars>
+            <Stack pb="md">
+              {groups.map(group => (
+                <Card key={group.id} withBorder>
+                  <Group justify="space-between" mb="sm">
+                    <Title order={5}>Signal #{group.signalAddress}</Title>
+                    <Badge color="red" variant="light">
+                      Default: {group.defaultAspect}
+                    </Badge>
+                  </Group>
 
-                <Stack gap="xs">
-                  {group.rules.map((rule, index) => (
-                    <Group key={rule.id} align="center">
-                      <Badge>Rule {index + 1}</Badge>
-                      <Text size="sm">
-                        {rule.conditions.map(formatCondition).join(" AND ") || "Always"}
-                      </Text>
-                      <Text size="sm" fw={700}>
-                        → {rule.aspect.toUpperCase()}
-                      </Text>
-                    </Group>
-                  ))}
-                </Stack>
-              </Card>
-            ))}
-          </Stack>
+                  <Stack gap="xs">
+                    {group.rules.map((rule, index) => (
+                      <Group key={rule.id} align="center">
+                        <Badge>Rule {index + 1}</Badge>
+                        <Text size="sm">
+                          {rule.conditions.map(formatCondition).join(" AND ") || "Always"}
+                        </Text>
+                        <Text size="sm" fw={700}>
+                          → {rule.aspect.toUpperCase()}
+                        </Text>
+                      </Group>
+                    ))}
+                  </Stack>
+                </Card>
+              ))}
+            </Stack>
+          </ScrollArea>
         </Tabs.Panel>
 
-        <Tabs.Panel value="script" pt="md">
-          <Stack>
+        <Tabs.Panel value="script" style={{ flex: 1, minHeight: 0 }}>
+          <Stack h="100%" pt="md">
             <Text size="sm" c="dimmed">
               This is the JavaScript-style output generated from the visual rules. It is only a preview for now.
             </Text>
 
             <Textarea
               value={generatedScript}
-              autosize
-              minRows={18}
               readOnly
+              style={{ flex: 1, minHeight: 0 }}
               styles={{
+                wrapper: {
+                  height: "100%",
+                },
                 input: {
+                  height: "100%",
                   fontFamily: "monospace",
+                  resize: "none",
                 },
               }}
             />
 
             <Divider />
 
-            <Group justify="space-between">
+            <Group justify="space-between" pb="xs">
               <Text size="sm" c="dimmed">
                 Found {signalOptions.length} signals and {turnoutOptions.length} turnouts in the current layout.
               </Text>
