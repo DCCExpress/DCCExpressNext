@@ -15,6 +15,8 @@ import {
   IconPlayerPlayFilled,
   IconPlayerSkipForward,
   IconPlayerStopFilled,
+  IconSpeakerphone,
+  IconSpeakerphoneOff,
   IconTrain,
 } from "@tabler/icons-react";
 
@@ -42,6 +44,7 @@ import { useBrowserStats } from "../hooks/useBrowserStats";
 import { useScriptStatus } from "../hooks/useScriptStatus";
 import { useServerRuntimeStats } from "../hooks/useServerRuntimeStats";
 import { useWsStatus } from "../hooks/useWsStatus";
+import { isServerAudioPlaybackEnabled, subscribeServerAudioPlaybackChanged, toggleServerAudioPlaybackEnabled } from "../services/audioPlaybackSettings";
 import { scriptEngine } from "../services/scriptEngine";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { wsApi } from "../services/wsApi";
@@ -94,6 +97,12 @@ export default function StatusBar({
     setTaskSnapshot,
   ] =
     useState<TaskManagerSnapshot | null>(null);
+
+  const [
+    serverAudioEnabled,
+    setServerAudioEnabled,
+  ] =
+    useState(() => isServerAudioPlaybackEnabled());
 
   const wsConnected =
     wsStatus === "connected";
@@ -171,6 +180,10 @@ export default function StatusBar({
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    return subscribeServerAudioPlaybackChanged(setServerAudioEnabled);
+  }, []);
+
   const handleStartScript = (): void => {
     scriptEngine.runCurrent({
       source: "control-panel",
@@ -213,6 +226,10 @@ export default function StatusBar({
 
   const handleStopTasks = (): void => {
     void taskManager.abortAllTasks();
+  };
+
+  const handleToggleServerAudio = (): void => {
+    setServerAudioEnabled(toggleServerAudioPlaybackEnabled());
   };
 
   return (
@@ -279,6 +296,18 @@ export default function StatusBar({
           >
             {locked ? "LOCK" : "FREE"}
           </StatusBadge>
+
+          <StatusActionIcon
+            tooltip={serverAudioEnabled ? "Server audio playback enabled" : "Server audio playback disabled"}
+            color={serverAudioEnabled ? "green" : "gray"}
+            onClick={handleToggleServerAudio}
+          >
+            {serverAudioEnabled ? (
+              <IconSpeakerphone size={16} />
+            ) : (
+              <IconSpeakerphoneOff size={16} />
+            )}
+          </StatusActionIcon>
 
           <Divider orientation="vertical" />
 
