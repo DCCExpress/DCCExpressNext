@@ -235,6 +235,7 @@ export default function SignalLogicDialog({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
+  const [warningText, setWarningText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [serverIssues, setServerIssues] = useState<SignalLogicValidationIssue[]>([]);
 
@@ -266,13 +267,22 @@ export default function SignalLogicDialog({
     setLoading(true);
     setErrorText(null);
     setStatusText(null);
+    setWarningText(null);
 
     try {
       const result = await loadSignalLogicRulesWs();
       setGroups(result.document.groups);
       setSelectedGroupId(result.document.groups[0]?.id ?? null);
       setServerIssues(result.issues);
-      setStatusText("Signal logic rules loaded.");
+
+      if (result.created) {
+        setWarningText(
+          result.message ??
+          "No signal-rules.json file existed yet. The system created an empty file and will save your rules there."
+        );
+      } else {
+        setStatusText("Signal logic rules loaded.");
+      }
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
     } finally {
@@ -289,6 +299,7 @@ export default function SignalLogicDialog({
     setSaving(true);
     setErrorText(null);
     setStatusText(null);
+    setWarningText(null);
 
     try {
       const result = await saveSignalLogicRulesWs(document);
@@ -308,6 +319,7 @@ export default function SignalLogicDialog({
     update: (group: SignalLogicRuleGroupDto) => SignalLogicRuleGroupDto
   ): void => {
     setStatusText(null);
+    setWarningText(null);
     setErrorText(null);
     setGroups(previous =>
       previous.map(group => (group.id === groupId ? update(group) : group))
@@ -333,6 +345,7 @@ export default function SignalLogicDialog({
     }));
 
     setStatusText(null);
+    setWarningText(null);
     setErrorText(null);
     setGroups(previous => [...previous, group]);
     setSelectedGroupId(group.id);
@@ -340,6 +353,7 @@ export default function SignalLogicDialog({
 
   const deleteSignalRuleGroup = (groupId: string): void => {
     setStatusText(null);
+    setWarningText(null);
     setErrorText(null);
     setGroups(previous => {
       const next = previous.filter(group => group.id !== groupId);
@@ -441,7 +455,7 @@ export default function SignalLogicDialog({
       }}
     >
       <Stack h="100%" gap="xs">
-        {loading && (
+        {loading && groups.length === 0 && !warningText && (
           <Group gap="xs">
             <Loader size="xs" />
             <Text size="sm" c="dimmed">Loading signal logic rules...</Text>
@@ -454,7 +468,13 @@ export default function SignalLogicDialog({
           </Alert>
         )}
 
-        {statusText && !errorText && (
+        {warningText && !errorText && (
+          <Alert color="yellow" icon={<IconAlertTriangle size={16} />} py="xs">
+            {warningText}
+          </Alert>
+        )}
+
+        {statusText && !warningText && !errorText && (
           <Alert color="green" py="xs">
             {statusText}
           </Alert>
