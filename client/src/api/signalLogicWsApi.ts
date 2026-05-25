@@ -16,14 +16,14 @@ export type SignalLogicLoadResult = {
   message?: string;
 };
 
-export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
-  const response = await requestWsCommand(
-    "signalLogicCommand",
-    { action: "load" },
-    "signalLogicResponse",
-    "Could not load signal logic rules."
-  );
-
+function toSignalLogicLoadResult(
+  response: {
+    document?: SignalLogicDocumentDto;
+    issues?: SignalLogicValidationIssue[];
+    created?: boolean;
+    message?: string;
+  }
+): SignalLogicLoadResult {
   if (!response.document) {
     throw new Error("Missing signal logic document in response.");
   }
@@ -32,8 +32,21 @@ export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
     document: response.document,
     issues: response.issues ?? [],
     created: response.created ?? false,
-    message: response.message,
+    ...(response.message
+      ? { message: response.message }
+      : {}),
   };
+}
+
+export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
+  const response = await requestWsCommand(
+    "signalLogicCommand",
+    { action: "load" },
+    "signalLogicResponse",
+    "Could not load signal logic rules."
+  );
+
+  return toSignalLogicLoadResult(response);
 }
 
 export async function saveSignalLogicRulesWs(
@@ -49,14 +62,5 @@ export async function saveSignalLogicRulesWs(
     "Could not save signal logic rules."
   );
 
-  if (!response.document) {
-    throw new Error("Missing signal logic document in response.");
-  }
-
-  return {
-    document: response.document,
-    issues: response.issues ?? [],
-    created: response.created ?? false,
-    message: response.message,
-  };
+  return toSignalLogicLoadResult(response);
 }
