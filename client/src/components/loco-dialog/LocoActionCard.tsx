@@ -9,6 +9,7 @@ import {
   NumberInput,
   Select,
   Stack,
+  TextInput,
 } from "@mantine/core";
 
 import {
@@ -18,10 +19,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 
-import type {
-  LocoAction,
-  LocoActionHook,
-} from "../../../../common/src/types";
+import type { LocoAction } from "../../../../common/src/types";
 
 import {
   ACTION_TYPE_OPTIONS,
@@ -30,42 +28,24 @@ import {
   type LocoActionType,
 } from "./locoDialogHelpers";
 
-type FunctionOption = {
-  value: string;
-  label: string;
-};
+type FunctionOption = { value: string; label: string };
 
-type LocoActionCardProps = {
+type Props = {
   action: LocoAction;
-  hook: LocoActionHook;
   actionIndex: number;
   actionCount: number;
   draggedActionId: string | null;
   functionOptions: FunctionOption[];
-  onDragStart: (
-    event: DragEvent<HTMLDivElement>,
-    actionId: string
-  ) => void;
+  onDragStart: (event: DragEvent<HTMLDivElement>, actionId: string) => void;
   onDragEnd: () => void;
-  onDragOverAction: (
-    event: DragEvent<HTMLDivElement>,
-    actionId: string,
-    actionIndex: number
-  ) => void;
-  onMoveByOffset: (
-    actionId: string,
-    offset: number
-  ) => void;
-  onUpdateAction: (
-    actionId: string,
-    nextAction: LocoAction
-  ) => void;
+  onDragOverAction: (event: DragEvent<HTMLDivElement>, actionId: string, actionIndex: number) => void;
+  onMoveByOffset: (actionId: string, offset: number) => void;
+  onUpdateAction: (actionId: string, nextAction: LocoAction) => void;
   onDeleteAction: (actionId: string) => void;
 };
 
 export default function LocoActionCard({
   action,
-  hook,
   actionIndex,
   actionCount,
   draggedActionId,
@@ -76,7 +56,7 @@ export default function LocoActionCard({
   onMoveByOffset,
   onUpdateAction,
   onDeleteAction,
-}: LocoActionCardProps) {
+}: Props) {
   const updateCurrentAction = (nextAction: LocoAction): void => {
     onUpdateAction(action.id, nextAction);
   };
@@ -90,60 +70,32 @@ export default function LocoActionCard({
       onDragStart={event => onDragStart(event, action.id)}
       onDragEnd={onDragEnd}
       onDragOver={event => onDragOverAction(event, action.id, actionIndex)}
-      style={{
-        opacity: draggedActionId === action.id ? 0.35 : 1,
-        transition: "opacity 120ms ease, transform 120ms ease",
-      }}
+      style={{ opacity: draggedActionId === action.id ? 0.35 : 1, transition: "opacity 120ms ease, transform 120ms ease" }}
     >
       <Stack gap="sm">
         <Group justify="space-between" wrap="nowrap">
           <Group gap="xs" wrap="nowrap">
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              style={{ cursor: "grab", touchAction: "none" }}
-            >
+            <ActionIcon variant="subtle" color="gray" style={{ cursor: "grab", touchAction: "none" }}>
               <IconGripVertical size={18} />
             </ActionIcon>
 
-            <Badge
-              variant="filled"
-              color={draggedActionId === action.id ? "orange" : "blue"}
-              miw={draggedActionId === action.id ? 58 : 34}
-              ta="center"
-            >
-              {draggedActionId === action.id
-                ? `→ #${actionIndex + 1}`
-                : `#${actionIndex + 1}`}
+            <Badge variant="filled" color={draggedActionId === action.id ? "orange" : "blue"} miw={draggedActionId === action.id ? 58 : 34} ta="center">
+              {draggedActionId === action.id ? `→ #${actionIndex + 1}` : `#${actionIndex + 1}`}
             </Badge>
 
             <Badge variant="light">{getActionSummary(action)}</Badge>
           </Group>
 
           <Group gap="xs" wrap="nowrap">
-            <ActionIcon
-              color="gray"
-              variant="light"
-              disabled={actionIndex === 0}
-              onClick={() => onMoveByOffset(action.id, -1)}
-            >
+            <ActionIcon color="gray" variant="light" disabled={actionIndex === 0} onClick={() => onMoveByOffset(action.id, -1)}>
               <IconArrowUp size={16} />
             </ActionIcon>
 
-            <ActionIcon
-              color="gray"
-              variant="light"
-              disabled={actionIndex >= actionCount - 1}
-              onClick={() => onMoveByOffset(action.id, 1)}
-            >
+            <ActionIcon color="gray" variant="light" disabled={actionIndex >= actionCount - 1} onClick={() => onMoveByOffset(action.id, 1)}>
               <IconArrowDown size={16} />
             </ActionIcon>
 
-            <ActionIcon
-              color="red"
-              variant="light"
-              onClick={() => onDeleteAction(action.id)}
-            >
+            <ActionIcon color="red" variant="light" onClick={() => onDeleteAction(action.id)}>
               <IconTrash size={16} />
             </ActionIcon>
           </Group>
@@ -157,13 +109,8 @@ export default function LocoActionCard({
             w={210}
             allowDeselect={false}
             onChange={value => {
-              if (!value) {
-                return;
-              }
-
-              updateCurrentAction(
-                convertActionType(action, value as LocoActionType)
-              );
+              if (!value) return;
+              updateCurrentAction(convertActionType(action, value as LocoActionType));
             }}
           />
 
@@ -176,24 +123,9 @@ export default function LocoActionCard({
                 w={220}
                 searchable
                 allowDeselect={false}
-                onChange={value => {
-                  updateCurrentAction({
-                    ...action,
-                    functionNumber: Number(value) || 0,
-                  });
-                }}
+                onChange={value => updateCurrentAction({ ...action, functionNumber: Number(value) || 0 })}
               />
-
-              <Checkbox
-                label="Active"
-                checked={action.active}
-                onChange={event => {
-                  updateCurrentAction({
-                    ...action,
-                    active: event.currentTarget.checked,
-                  });
-                }}
-              />
+              <Checkbox label="Active" checked={action.active} onChange={event => updateCurrentAction({ ...action, active: event.currentTarget.checked })} />
             </>
           )}
 
@@ -206,28 +138,27 @@ export default function LocoActionCard({
                 w={220}
                 searchable
                 allowDeselect={false}
-                onChange={value => {
-                  updateCurrentAction({
-                    ...action,
-                    functionNumber: Number(value) || 0,
-                  });
-                }}
+                onChange={value => updateCurrentAction({ ...action, functionNumber: Number(value) || 0 })}
               />
-
               <NumberInput
                 label="Duration (ms)"
                 value={action.ms}
                 min={1}
                 step={100}
                 w={150}
-                onChange={value => {
-                  updateCurrentAction({
-                    ...action,
-                    ms: Number(value) || 1,
-                  });
-                }}
+                onChange={value => updateCurrentAction({ ...action, ms: Number(value) || 1 })}
               />
             </>
+          )}
+
+          {action.type === "playAudio" && (
+            <TextInput
+              label="Audio file"
+              value={action.fileName}
+              placeholder="station.mp3"
+              w={260}
+              onChange={event => updateCurrentAction({ ...action, fileName: event.currentTarget.value })}
+            />
           )}
 
           {action.type === "wait" && (
@@ -237,12 +168,7 @@ export default function LocoActionCard({
               min={1}
               step={100}
               w={150}
-              onChange={value => {
-                updateCurrentAction({
-                  ...action,
-                  ms: Number(value) || 1,
-                });
-              }}
+              onChange={value => updateCurrentAction({ ...action, ms: Number(value) || 1 })}
             />
           )}
         </Group>
