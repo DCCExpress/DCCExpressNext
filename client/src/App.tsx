@@ -11,7 +11,7 @@ import "@mantine/notifications/styles.css";
 import { getDefaultWsUrl } from "./services/defaultWsUrl";
 import { wsApi } from "./services/wsApi";
 import { wsClient } from "./services/wsClient";
-import { audioManager } from "./services/audioManager";
+import { playServerAudio } from "./services/serverAudioPlayback";
 import { LayoutContextProvider } from "./context/LayoutContextProvider";
 
 export type AppPage = "home" | "layout" | "programmer";
@@ -42,7 +42,7 @@ export default function App() {
       const fileName = data.fileName?.trim();
 
       if (fileName) {
-        audioManager.play(fileName);
+        playServerAudio(fileName);
       }
     });
 
