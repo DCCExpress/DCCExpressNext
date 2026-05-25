@@ -40,7 +40,7 @@ import type {
   SignalLogicRuleGroupDto,
   SignalLogicValidationIssue,
 } from "../../../../common/src/signalLogic";
-import { getAllowedSignalAspects, validateSignalLogicDocument } from "../../../../common/src/signalLogic";
+import { getAllowedSignalAspects, isSignalAspect, validateSignalLogicDocument } from "../../../../common/src/signalLogic";
 
 type SignalLogicDialogProps = {
   opened: boolean;
@@ -201,6 +201,20 @@ function formatCondition(t: Translate, condition: SignalLogicConditionDto): stri
     address: condition.turnoutAddress,
     state: t(condition.closed ? "signalLogic.turnoutStates.closed" : "signalLogic.turnoutStates.thrown"),
   });
+}
+
+function translateValidationIssue(t: Translate, issue: SignalLogicValidationIssue): string {
+  if (!issue.messageKey) {
+    return issue.message;
+  }
+
+  const params = { ...(issue.messageParams ?? {}) };
+
+  if (typeof params.aspect === "string" && isSignalAspect(params.aspect)) {
+    params.aspect = getAspectLabel(t, params.aspect);
+  }
+
+  return t(issue.messageKey, params);
 }
 
 export default function SignalLogicDialog({ opened, onClose, layout }: SignalLogicDialogProps) {
@@ -483,7 +497,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                 <Text key={`${issue.message}-${index}`} size="sm">
                   {t("signalLogic.validationLine", {
                     level: issue.level.toUpperCase(),
-                    message: issue.message,
+                    message: translateValidationIssue(t, issue),
                   })}
                 </Text>
               ))}
