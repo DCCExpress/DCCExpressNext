@@ -6,11 +6,13 @@ import type {
 import type {
   EditorTool,
 } from "../../../models/editor/types/EditorTypes";
+import type { LayoutView } from "../../../models/editor/core/LayoutView";
 
 import AppSettingsDialog from "../../../components/app-settings/AppSettingsDialog";
 import ElementPickerDialog from "../../../components/editor/ElementPickerDialog";
 import FullscreenLoader from "../../../components/FullscreenLoader";
 import LocoDialog from "../../../components/LocoDialog";
+import SignalLogicDialog from "../../../components/signal-logic/SignalLogicDialog";
 
 type BooleanSetter =
   Dispatch<SetStateAction<boolean>>;
@@ -26,12 +28,16 @@ type LayoutPageDialogsProps = {
   setLocoDialogOpened: BooleanSetter;
   onLocosSaved: () => Promise<void>;
 
+  signalLogicDialogOpened: boolean;
+  setSignalLogicDialogOpened: BooleanSetter;
+
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
 
   appSettingsDialogOpened: boolean;
   setAppSettingsDialogOpened: BooleanSetter;
 
+  layout: LayoutView;
   setTool: EditorToolSetter;
 };
 
@@ -43,12 +49,16 @@ export default function LayoutPageDialogs({
   setLocoDialogOpened,
   onLocosSaved,
 
+  signalLogicDialogOpened,
+  setSignalLogicDialogOpened,
+
   pickerOpened,
   setPickerOpened,
 
   appSettingsDialogOpened,
   setAppSettingsDialogOpened,
 
+  layout,
   setTool,
 }: LayoutPageDialogsProps) {
   return (
@@ -64,6 +74,14 @@ export default function LayoutPageDialogs({
           setLocoDialogOpened(false)
         }
         onSaved={onLocosSaved}
+      />
+
+      <SignalLogicDialog
+        opened={signalLogicDialogOpened}
+        onClose={() =>
+          setSignalLogicDialogOpened(false)
+        }
+        layout={layout}
       />
 
       <ElementPickerDialog
