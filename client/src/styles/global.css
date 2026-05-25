@@ -9,6 +9,43 @@
   animation: blinkBadge 0.5s infinite;
 }
 
+.home-bg-glow {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.home-bg-glow-light {
+  top: -140px;
+  right: -90px;
+  width: 460px;
+  height: 460px;
+  background: radial-gradient(circle, rgba(70, 180, 255, 0.26) 0%, rgba(70, 180, 255, 0.11) 36%, rgba(70, 180, 255, 0) 72%);
+  filter: blur(42px);
+  animation: homeGlowFloatLight 18s ease-in-out infinite;
+}
+
+.home-bg-glow-dark {
+  left: -140px;
+  bottom: -160px;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(0, 8, 22, 0.68) 0%, rgba(0, 16, 38, 0.34) 46%, rgba(0, 16, 38, 0) 76%);
+  filter: blur(56px);
+  animation: homeGlowFloatDark 24s ease-in-out infinite;
+}
+
+.home-bg-glow-green {
+  top: 42%;
+  left: 54%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(95, 255, 180, 0.10) 0%, rgba(95, 255, 180, 0.045) 42%, rgba(95, 255, 180, 0) 75%);
+  filter: blur(40px);
+  animation: homeGlowFloatGreen 21s ease-in-out infinite;
+}
+
 @keyframes blinkBadge {
   0% {
     opacity: 1;
@@ -20,5 +57,50 @@
 
   100% {
     opacity: 1;
+  }
+}
+
+@keyframes homeGlowFloatLight {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-34px, 26px, 0) scale(1.08);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes homeGlowFloatDark {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(42px, -24px, 0) scale(1.07);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes homeGlowFloatGreen {
+  0% {
+    opacity: 0.72;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate3d(-22px, 20px, 0) scale(1.14);
+  }
+
+  100% {
+    opacity: 0.72;
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
