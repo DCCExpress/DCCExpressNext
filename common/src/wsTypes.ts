@@ -218,11 +218,11 @@ export type LocosResponsePayload = {
 };
 
 export type ScriptDocumentResponsePayload = {
-  document?: Partial<ScriptDocumentDto>;
+  document?: ScriptDocumentDto;
 };
 
 export type CommandCenterConfigResponsePayload = {
-  config?: Partial<ICommandCenter> | null;
+  config?: ICommandCenter | null;
 };
 
 export type AppSettingsResponsePayload = {
