@@ -78,6 +78,13 @@ function createRule(signalAddress: number): SignalLogicRuleGroupDto {
   };
 }
 
+function withFixedRedFallback(groups: SignalLogicRuleGroupDto[]): SignalLogicRuleGroupDto[] {
+  return groups.map(group => ({
+    ...group,
+    defaultAspect: "red",
+  }));
+}
+
 function aspectToMethod(aspect: SignalAspect): string {
   switch (aspect) {
     case "green": return "setSignalGreen";
@@ -256,14 +263,14 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   );
 
   const selectedGroup = groups.find(group => group.id === selectedGroupId) ?? groups[0] ?? null;
-  const document = useMemo(() => ({ version: 1 as const, groups }), [groups]);
+  const document = useMemo(() => ({ version: 1 as const, groups: withFixedRedFallback(groups) }), [groups]);
   const validationIssues = useMemo(
     () => validateSignalLogicDocument(document, knownSignals, knownTurnouts, knownSensors),
     [document, knownSignals, knownTurnouts, knownSensors]
   );
   const issueList = validationIssues.length > 0 ? validationIssues : serverIssues;
   const hasValidationErrors = validationIssues.some(issue => issue.level === "error");
-  const generatedScript = useMemo(() => buildGeneratedScript(groups), [groups]);
+  const generatedScript = useMemo(() => buildGeneratedScript(withFixedRedFallback(groups)), [groups]);
   const aspectOptionsFor = (signalAddress: number) => getAspectOptions(t, signalOptions, signalAddress);
 
   const clearMessages = (): void => {
@@ -277,8 +284,9 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     clearMessages();
     try {
       const result = await loadSignalLogicRulesWs();
-      setGroups(result.document.groups);
-      setSelectedGroupId(result.document.groups[0]?.id ?? null);
+      const loadedGroups = withFixedRedFallback(result.document.groups);
+      setGroups(loadedGroups);
+      setSelectedGroupId(loadedGroups[0]?.id ?? null);
       setServerIssues(result.issues);
       if (result.created) {
         setWarningText(result.message ?? t("signalLogic.createdWarning"));
@@ -301,8 +309,9 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     clearMessages();
     try {
       const result = await saveSignalLogicRulesWs(document);
-      setGroups(result.document.groups);
-      setSelectedGroupId(previous => previous ?? result.document.groups[0]?.id ?? null);
+      const savedGroups = withFixedRedFallback(result.document.groups);
+      setGroups(savedGroups);
+      setSelectedGroupId(previous => previous ?? savedGroups[0]?.id ?? null);
       setServerIssues(result.issues);
       setStatusText(t("signalLogic.saved"));
     } catch (error) {
@@ -317,7 +326,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     update: (group: SignalLogicRuleGroupDto) => SignalLogicRuleGroupDto
   ): void => {
     clearMessages();
-    setGroups(previous => previous.map(group => group.id === groupId ? update(group) : group));
+    setGroups(previous => previous.map(group => group.id === groupId ? { ...update(group), defaultAspect: "red" } : group));
   };
 
   const addSignalRuleGroup = (): void => {
@@ -327,7 +336,6 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     if (signalAddress <= 0) return;
 
     const group = createRule(signalAddress);
-    group.defaultAspect = normalizeAspectForSignal(signalOptions, signalAddress, group.defaultAspect);
     group.rules = group.rules.map(rule => ({
       ...rule,
       aspect: normalizeAspectForSignal(signalOptions, signalAddress, rule.aspect),
@@ -533,7 +541,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                                 updateGroup(selectedGroup.id, group => ({
                                   ...group,
                                   signalAddress,
-                                  defaultAspect: normalizeAspectForSignal(signalOptions, signalAddress, group.defaultAspect),
+                                  defaultAspect: "red",
                                   rules: group.rules.map(rule => ({
                                     ...rule,
                                     aspect: normalizeAspectForSignal(signalOptions, signalAddress, rule.aspect),
@@ -543,16 +551,14 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                               w={260}
                             />
 
-                            <Select
-                              label={t("signalLogic.defaultAspect")}
-                              data={aspectOptionsFor(selectedGroup.signalAddress)}
-                              value={selectedGroup.defaultAspect}
-                              onChange={value => updateGroup(selectedGroup.id, group => ({
-                                ...group,
-                                defaultAspect: (value ?? "red") as SignalAspect,
-                              }))}
-                              w={180}
-                            />
+                            <Box>
+                              <Text size="sm" fw={500} mb={4}>
+                                {t("signalLogic.defaultAspect")}
+                              </Text>
+                              <Badge color="red" variant="filled" size="lg">
+                                {getAspectLabel(t, "red")}
+                              </Badge>
+                            </Box>
                           </Group>
 
                           <ActionIcon
@@ -700,8 +706,8 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                   <Card key={group.id} withBorder>
                     <Group justify="space-between" mb="sm">
                       <Title order={5}>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</Title>
-                      <Badge color={aspectBadgeColor(group.defaultAspect)} variant="light">
-                        {t("signalLogic.default", { aspect: getAspectLabel(t, group.defaultAspect) })}
+                      <Badge color="red" variant="light">
+                        {t("signalLogic.default", { aspect: getAspectLabel(t, "red") })}
                       </Badge>
                     </Group>
 
