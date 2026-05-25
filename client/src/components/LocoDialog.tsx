@@ -460,7 +460,8 @@ export default function LocoDialog({
 
   const renderActionEditor = (
     action: LocoAction,
-    hook: LocoActionHook
+    hook: LocoActionHook,
+    actionIndex: number
   ) => {
     const updateCurrentAction = (nextAction: LocoAction): void => {
       updateAction(hook, action.id, nextAction);
@@ -497,6 +498,15 @@ export default function LocoDialog({
               >
                 <IconGripVertical size={18} />
               </ActionIcon>
+
+              <Badge
+                variant="filled"
+                color="blue"
+                miw={34}
+                ta="center"
+              >
+                #{actionIndex + 1}
+              </Badge>
 
               <Badge variant="light">{getActionSummary(action)}</Badge>
             </Group>
@@ -885,7 +895,9 @@ export default function LocoDialog({
                             >
                               <ScrollArea style={{ height: "100%" }}>
                                 <Stack gap="sm">
-                                  {actions.map(action => renderActionEditor(action, hook.value))}
+                                  {actions.map((action, actionIndex) =>
+                                    renderActionEditor(action, hook.value, actionIndex)
+                                  )}
 
                                   {actions.length === 0 && (
                                     <Card withBorder p="md">
