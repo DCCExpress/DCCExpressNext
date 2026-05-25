@@ -209,7 +209,7 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                       inset: 0,
                       pointerEvents: "none",
                       background:
-                        "linear-gradient(180deg, transparent 58%, rgba(4, 12, 24, 0.22) 100%), radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.14) 0%, transparent 48%)",
+                        "linear-gradient(180deg, transparent 36%, rgba(8, 22, 39, 0.18) 58%, rgba(6, 16, 31, 0.62) 82%, rgba(6, 16, 31, 0.94) 100%), radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.14) 0%, transparent 48%)",
                     }}
                   />
                 </Card.Section>
