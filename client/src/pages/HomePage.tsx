@@ -87,16 +87,20 @@ function normalizeLanguage(language: string): string {
   return "en";
 }
 
+function trimTrailingSlash(url: string): string {
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+}
+
 function withLanguage(url: string, language: string): string {
   const separator = url.includes("?") ? "&" : "?";
   const lang = encodeURIComponent(normalizeLanguage(language));
 
-  return `${url}${separator}lang=${lang}`;
+  return `${trimTrailingSlash(url)}${separator}lang=${lang}`;
 }
 
 function createFallbackDesktopUrl(): string {
   const protocol = window.location.protocol;
-  return `${protocol}//${window.location.hostname}:3000/`;
+  return `${protocol}//${window.location.hostname}:3000`;
 }
 
 function activateCard(item: HomeCardItem): void {
@@ -175,8 +179,8 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
 
   const primaryUrls = useMemo(() => {
     const primary = networkUrls[0];
-    const desktop = primary?.desktop ?? createFallbackDesktopUrl();
-    const mobileBase = primary?.mobile ?? `${createFallbackDesktopUrl()}mobile/`;
+    const desktop = trimTrailingSlash(primary?.desktop ?? createFallbackDesktopUrl());
+    const mobileBase = primary?.mobile ?? `${createFallbackDesktopUrl()}/mobile`;
 
     return {
       desktop,
@@ -310,19 +314,15 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                 {t("home.heroDescription")}
               </Text>
 
-              <Stack gap="xs" maw={520}>
-                <Group>
-                  <Button
-                    size="md"
-                    rightSection={<IconArrowRight size={16} />}
-                    onClick={onOpenLayout}
-                  >
-                    {t("home.startLayout")}
-                  </Button>
-                </Group>
-
-                <UrlPill label="LAN desktop URL" url={primaryUrls.desktop} />
-              </Stack>
+              <Group>
+                <Button
+                  size="md"
+                  rightSection={<IconArrowRight size={16} />}
+                  onClick={onOpenLayout}
+                >
+                  {t("home.startLayout")}
+                </Button>
+              </Group>
             </Stack>
           </Paper>
 
@@ -470,7 +470,7 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                           "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                       }}
                     >
-                      {item.mobile}
+                      {trimTrailingSlash(item.mobile)}
                     </Text>
                   </Group>
                 ))}
