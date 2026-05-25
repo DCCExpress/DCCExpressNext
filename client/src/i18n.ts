@@ -12,11 +12,25 @@ const savedLang = localStorage.getItem("lang") || "en";
 
 const enTranslation = {
   ...en,
+  settings: {
+    ...en.settings,
+    languages: {
+      ...en.settings.languages,
+      de: "German",
+    },
+  },
   ...signalLogicEn,
 };
 
 const huTranslation = {
   ...hu,
+  settings: {
+    ...hu.settings,
+    languages: {
+      ...hu.settings.languages,
+      de: "Német",
+    },
+  },
   ...signalLogicHu,
 };
 
