@@ -13,29 +13,44 @@ import {
 
 import { dataDir } from "../paths.js";
 
+type SignalLogicRulesInitializeResult = {
+  created: boolean;
+};
+
 class SignalLogicRulesStore {
   private initialized = false;
+  private createdOnInitialize = false;
   private document: SignalLogicDocumentDto = DEFAULT_SIGNAL_LOGIC_DOCUMENT;
   private readonly filePath = path.resolve(dataDir, "signal-rules.json");
 
-  async initialize(): Promise<void> {
-    if (this.initialized) return;
+  async initialize(): Promise<SignalLogicRulesInitializeResult> {
+    if (this.initialized) {
+      return {
+        created: false,
+      };
+    }
 
     await fs.mkdir(path.dirname(this.filePath), { recursive: true });
 
     try {
       const raw = await fs.readFile(this.filePath, "utf8");
       this.document = normalizeSignalLogicDocument(JSON.parse(raw));
+      this.createdOnInitialize = false;
     } catch (error: any) {
       if (error?.code !== "ENOENT") {
         console.error("[SignalLogicRulesStore] Failed to read signal rules:", error);
       }
 
       this.document = normalizeSignalLogicDocument(DEFAULT_SIGNAL_LOGIC_DOCUMENT);
+      this.createdOnInitialize = true;
       await this.persist();
     }
 
     this.initialized = true;
+
+    return {
+      created: this.createdOnInitialize,
+    };
   }
 
   getDocument(): SignalLogicDocumentDto {
@@ -56,6 +71,7 @@ class SignalLogicRulesStore {
 
     this.document = normalizeSignalLogicDocument(input);
     await this.persist();
+    this.createdOnInitialize = false;
 
     return this.getDocument();
   }
