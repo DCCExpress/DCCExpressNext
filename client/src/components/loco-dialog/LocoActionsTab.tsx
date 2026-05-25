@@ -25,6 +25,7 @@ import type {
   LocoActionHook,
 } from "../../../../common/src/types";
 
+import { audioManager } from "../../services/audioManager";
 import { wsApi } from "../../services/wsApi";
 import LocoActionCard from "./LocoActionCard";
 import {
@@ -194,6 +195,12 @@ export default function LocoActionsTab({
             );
             break;
 
+          case "playAudio":
+            if (action.fileName.trim()) {
+              audioManager.play(action.fileName.trim());
+            }
+            break;
+
           case "wait":
             await sleep(action.ms);
             break;
@@ -272,6 +279,14 @@ export default function LocoActionsTab({
                 size="xs"
                 variant="light"
                 leftSection={<IconPlus size={14} />}
+                onClick={() => addAction(activeActionHook, "playAudio")}
+              >
+                Audio
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconPlus size={14} />}
                 onClick={() => addAction(activeActionHook, "wait")}
               >
                 Wait
@@ -296,7 +311,6 @@ export default function LocoActionsTab({
                     <LocoActionCard
                       key={action.id}
                       action={action}
-                      hook={hook.value}
                       actionIndex={actionIndex}
                       actionCount={actions.length}
                       draggedActionId={draggedActionId}
