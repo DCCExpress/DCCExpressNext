@@ -21,6 +21,10 @@ import {
 } from "../utility.js";
 
 import {
+  railwayTopologyStore,
+} from "./railwayTopologyStore.js";
+
+import {
   signalLogicRulesStore,
 } from "./signalLogicRulesStore.js";
 
@@ -252,17 +256,42 @@ class SignalLogicRuntimeService {
       return;
     }
 
-    this.lastAppliedAspects.set(signalAddress, aspect);
+    const topology = railwayTopologyStore.getTopology();
 
-    const active = aspect !== "red";
-    const ok = await commandCenter.setBasicAccessory(signalAddress, active);
-
-    if (!ok) {
-      logError(
-        `[SignalLogicRuntime] failed to set signal #${signalAddress} to ${aspect}`
-      );
+    if (!topology) {
+      logError("[SignalLogicRuntime] no server-side topology is available.");
       return;
     }
+
+    const signal = topology.getSignals().find(item => item.address === signalAddress);
+
+    if (!signal) {
+      logError(`[SignalLogicRuntime] signal not found for address ${signalAddress}.`);
+      return;
+    }
+
+    const bits = aspect === "green"
+      ? signal.valueGreen
+      : aspect === "yellow"
+        ? signal.valueYellow
+        : aspect === "red"
+          ? signal.valueRed
+          : signal.valueWhite;
+
+    for (let i = 0; i < signal.addressLength; i++) {
+      const active = ((bits >> i) & 1) === 1;
+      const accessoryAddress = signal.address + i;
+      const ok = await commandCenter.setBasicAccessory(accessoryAddress, active);
+
+      if (!ok) {
+        logError(
+          `[SignalLogicRuntime] failed to set signal accessory #${accessoryAddress} for signal #${signalAddress} to ${aspect}`
+        );
+        return;
+      }
+    }
+
+    this.lastAppliedAspects.set(signalAddress, aspect);
 
     log(
       `[SignalLogicRuntime] signal #${signalAddress} => ${aspect}`
