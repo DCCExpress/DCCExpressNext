@@ -67,6 +67,7 @@ export function configureWebSocketRuntimes({
       broadcast(message);
     },
     getCommandCenter,
+    getLogicalTurnoutState,
   });
 
   serverRuntimeStatsStore.configure({
