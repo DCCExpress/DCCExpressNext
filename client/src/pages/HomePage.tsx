@@ -5,7 +5,6 @@ import {
   Container,
   Group,
   Image,
-  Overlay,
   Paper,
   SimpleGrid,
   Stack,
@@ -21,6 +20,7 @@ import {
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import LanguageSelector from "../components/common/LanguageSelector";
 
 type HomePageProps = {
   onOpenLayout: () => void;
@@ -87,11 +87,28 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
               "linear-gradient(135deg, rgba(34,139,230,0.14) 0%, rgba(64,192,87,0.10) 100%)",
           }}
         >
+          <Paper
+            radius="md"
+            p={4}
+            withBorder
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              zIndex: 2,
+              background: "color-mix(in srgb, var(--mantine-color-body) 78%, transparent)",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            <LanguageSelector variant="light" size="lg" width={68} />
+          </Paper>
+
           <Stack
             gap="md"
             style={{
               position: "relative",
               zIndex: 1,
+              paddingRight: 96,
             }}
           >
             <Badge variant="light" size="lg" radius="sm" w="fit-content">
