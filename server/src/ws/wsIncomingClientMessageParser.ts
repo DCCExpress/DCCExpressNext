@@ -73,8 +73,7 @@ function isTaskManagerCommandAction(value: unknown): value is TaskManagerCommand
     value === "snapshot" || value === "add" || value === "update" || value === "delete" ||
     value === "save" || value === "reload" || value === "start" || value === "pause" ||
     value === "resume" || value === "finish" || value === "abort" || value === "startAll" ||
-    value === "pauseAll" || value === "finishAll" || value === "abortAll" ||
-    value === "testLocoActionList"
+    value === "pauseAll" || value === "finishAll" || value === "abortAll"
   );
 }
 
@@ -98,7 +97,6 @@ function parseEmptyPayload<TType extends ClientWsMessageType>(type: TType, data:
 function parseTaskManagerCommand<TType extends ClientWsMessageType>(type: TType, data: unknown): PayloadParseResult<TType> {
   if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
   if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
-  if (!isTaskManagerCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
 
   if (data.action === "testLocoActionList") {
     if (typeof data.locoId !== "string" || data.locoId.trim().length === 0) return invalidPayload(type, "locoId must be string.");
@@ -114,6 +112,8 @@ function parseTaskManagerCommand<TType extends ClientWsMessageType>(type: TType,
       } as unknown as ClientWsPayloadMap[TType],
     };
   }
+
+  if (!isTaskManagerCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
 
   if ((data.action === "update" || data.action === "delete" || data.action === "start" || data.action === "pause" || data.action === "resume" || data.action === "finish" || data.action === "abort") && typeof data.taskId !== "string") {
     return invalidPayload(type, "taskId must be string for this action.");
