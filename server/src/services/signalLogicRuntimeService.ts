@@ -21,6 +21,14 @@ import {
 } from "../utility.js";
 
 import {
+  layoutRuntimeStore,
+} from "./layoutRuntimeStore.js";
+
+import {
+  railwayTopologyStore,
+} from "./railwayTopologyStore.js";
+
+import {
   setSignalAspectFromCommandCenter,
 } from "./railwayCommandHelpers.js";
 
@@ -50,6 +58,7 @@ class SignalLogicRuntimeService {
   private tickTimer: ReturnType<typeof setTimeout> | null = null;
   private tickInProgress = false;
   private configured = false;
+  private autoStartAttempted = false;
   private getCommandCenter: () => CommandCenter | null = () => null;
   private getLogicalTurnoutState: (address: number) => boolean | null = () => null;
   private broadcast: BroadcastFn = () => undefined;
@@ -74,6 +83,51 @@ class SignalLogicRuntimeService {
       running: this.running,
       autostart: document.autostart,
     };
+  }
+
+  async autoStartIfEnabled(): Promise<SignalLogicRuntimeStateDto> {
+    await signalLogicRulesStore.initialize();
+
+    const document = signalLogicRulesStore.getDocument();
+
+    if (!document.autostart) {
+      log("[SignalLogicRuntime] autostart disabled");
+      return this.getState();
+    }
+
+    if (this.running) {
+      return this.getState();
+    }
+
+    if (this.autoStartAttempted) {
+      return this.getState();
+    }
+
+    if (!this.configured) {
+      log("[SignalLogicRuntime] autostart skipped: runtime is not configured");
+      return this.getState();
+    }
+
+    if (!layoutRuntimeStore.hasLayout()) {
+      log("[SignalLogicRuntime] autostart skipped: no layout loaded");
+      return this.getState();
+    }
+
+    if (!railwayTopologyStore.hasTopology()) {
+      log("[SignalLogicRuntime] autostart skipped: no topology available");
+      return this.getState();
+    }
+
+    if (!this.getCommandCenter()) {
+      log("[SignalLogicRuntime] autostart skipped: no command center available");
+      return this.getState();
+    }
+
+    this.autoStartAttempted = true;
+
+    log("[SignalLogicRuntime] autostart enabled, starting");
+
+    return this.start();
   }
 
   async start(): Promise<SignalLogicRuntimeStateDto> {
