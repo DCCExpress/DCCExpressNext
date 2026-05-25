@@ -29,6 +29,10 @@ import {
 } from "./handlers/wsAppSettingsMessageHandlers.js";
 
 import {
+  handleSignalLogicMessage,
+} from "./handlers/wsSignalLogicMessageHandlers.js";
+
+import {
   handleTaskManagerMessage,
 } from "./handlers/wsTaskManagerMessageHandlers.js";
 
@@ -78,6 +82,7 @@ const handlers = [
   handleScriptDocumentMessage,
   handleCommandCenterConfigMessage,
   handleAppSettingsMessage,
+  handleSignalLogicMessage,
   handleTaskManagerMessage,
   handleFastClockMessage,
   handleFileMessage,
