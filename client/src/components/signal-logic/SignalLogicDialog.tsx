@@ -39,7 +39,6 @@ import AppModal from "../common/AppModal";
 import {
   loadSignalLogicRulesWs,
   saveSignalLogicRulesWs,
-  setSignalLogicAutostartWs,
   startSignalLogicWs,
   stopSignalLogicWs,
 } from "../../api/signalLogicWsApi";
@@ -255,7 +254,6 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [runtimeBusy, setRuntimeBusy] = useState(false);
-  const [autostartBusy, setAutostartBusy] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [warningText, setWarningText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -351,7 +349,10 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     setGroups(nextGroups);
     setSelectedGroupId(previous => previous ?? nextGroups[0]?.id ?? null);
     setServerIssues(result.issues);
-    setRuntimeState(result.state);
+    setRuntimeState({
+      running: result.state.running,
+      autostart: result.document.autostart,
+    });
   };
 
   const loadRules = async (): Promise<void> => {
@@ -418,18 +419,12 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     }
   };
 
-  const setAutostart = async (autostart: boolean): Promise<void> => {
-    setAutostartBusy(true);
+  const setAutostart = (autostart: boolean): void => {
     clearMessages();
-    try {
-      const result = await setSignalLogicAutostartWs(autostart);
-      applyResponse(result);
-      setStatusText(t("signalLogic.autostartSaved"));
-    } catch (error) {
-      setErrorText(error instanceof Error ? error.message : String(error));
-    } finally {
-      setAutostartBusy(false);
-    }
+    setRuntimeState(previous => ({
+      ...previous,
+      autostart,
+    }));
   };
 
   const updateGroup = (
@@ -890,10 +885,8 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
           <Group>
             <Checkbox
               checked={runtimeState.autostart}
-              disabled={autostartBusy}
               label={t("signalLogic.autostart")}
-              onClick={event => event.stopPropagation()}
-              onChange={event => void setAutostart(event.currentTarget.checked)}
+              onChange={event => setAutostart(event.currentTarget.checked)}
             />
             <Button
               color="green"
