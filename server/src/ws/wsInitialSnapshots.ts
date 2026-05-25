@@ -27,24 +27,12 @@ import {
 } from "../services/fastClockRuntimeStore.js";
 
 import {
-  locoReservationStore,
-} from "../services/locoReservationStore.js";
-
-import {
-  routeGraphRuntimeStore,
-} from "../services/routeGraphRuntimeStore.js";
-
-import {
   runtimeVariableService,
 } from "../services/runtimeVariableService.js";
 
 import {
   serverRuntimeStatsStore,
 } from "../services/serverRuntimeStatsStore.js";
-
-import {
-  log,
-} from "../utility.js";
 
 type SendToClient = (
   ws: WebSocket,
@@ -67,31 +55,6 @@ function toWsPowerInfoPayload(
     shortCircuit: powerInfo.shortCircuit,
     programmingModeActive: false,
   };
-}
-
-function sendRouteReservationSnapshots(
-  ws: WebSocket,
-  sendToClient: SendToClient
-): void {
-  const reservations =
-    routeGraphRuntimeStore.getActiveReservations();
-
-  for (const reservation of reservations) {
-    sendToClient(ws, {
-      type: "routeReservationChanged",
-      data: {
-        busy: true,
-        sectionNames: reservation.sectionNames,
-        elementIds:
-          routeGraphRuntimeStore.getElementIdsForSections(
-            reservation.sectionNames
-          ),
-        turnoutAddresses: reservation.turnoutAddresses,
-        fromBlockName: reservation.fromBlockName,
-        toBlockName: reservation.toBlockName,
-      },
-    });
-  }
 }
 
 export function sendInitialWebSocketSnapshots({
@@ -136,11 +99,6 @@ export function sendInitialWebSocketSnapshots({
     data: serverRuntimeStatsStore.getSnapshot(),
   });
 
-  sendRouteReservationSnapshots(
-    ws,
-    sendToClient
-  );
-
   if (!commandCenter) {
     sendToClient(ws, {
       type: "commandCenterInfo",
@@ -181,69 +139,4 @@ export function sendInitialWebSocketSnapshots({
         : null,
     },
   });
-
-  const locos =
-    commandCenter.getLocos();
-
-  for (const loco of locos) {
-    sendToClient(ws, {
-      type: "locoState",
-      data: {
-        loco,
-      },
-    });
-  }
-
-  for (const reservation of locoReservationStore.getAll()) {
-    sendToClient(ws, {
-      type: "locoReservationChanged",
-      data: {
-        locoAddress: reservation.locoAddress,
-        reservation,
-      },
-    });
-  }
-
-  const turnouts =
-    commandCenter.getTurnouts();
-
-  log("Turnouts", turnouts);
-
-  for (const turnout of turnouts) {
-    sendToClient(ws, {
-      type: "turnoutChanged",
-      data: {
-        address: turnout.address,
-        closed: turnout.closed,
-      },
-    });
-  }
-
-  const sensors =
-    commandCenter.getSensors();
-
-  for (const sensor of sensors) {
-    sendToClient(ws, {
-      type: "sensorChanged",
-      data: {
-        address: sensor.address,
-        on: sensor.active,
-      },
-    });
-  }
-
-  commandCenter.getBlocks();
-
-  const accessories =
-    commandCenter.getAccessories();
-
-  for (const accessory of accessories) {
-    sendToClient(ws, {
-      type: "accessoryChanged",
-      data: {
-        address: accessory.address,
-        active: accessory.active,
-      },
-    });
-  }
 }
