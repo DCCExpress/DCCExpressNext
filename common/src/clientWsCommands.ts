@@ -160,14 +160,12 @@ export type SignalLogicCommandAction =
   | "save"
   | "start"
   | "stop"
-  | "state"
-  | "setAutostart";
+  | "state";
 
 export type SignalLogicCommandPayload = {
   requestId: string;
   action: SignalLogicCommandAction;
   document?: SignalLogicDocumentDto;
-  autostart?: boolean;
 };
 
 export type TaskManagerCommandAction =
