@@ -15,9 +15,9 @@ import {
   IconPlayerPlayFilled,
   IconPlayerSkipForward,
   IconPlayerStopFilled,
-  IconSpeakerphone,
-  IconSpeakerphoneOff,
   IconTrain,
+  IconVolume,
+  IconVolumeOff,
 } from "@tabler/icons-react";
 
 import {
@@ -303,9 +303,9 @@ export default function StatusBar({
             onClick={handleToggleServerAudio}
           >
             {serverAudioEnabled ? (
-              <IconSpeakerphone size={16} />
+              <IconVolume size={16} />
             ) : (
-              <IconSpeakerphoneOff size={16} />
+              <IconVolumeOff size={16} />
             )}
           </StatusActionIcon>
 
