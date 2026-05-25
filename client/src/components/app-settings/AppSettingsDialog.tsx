@@ -36,6 +36,7 @@ import {
 } from "../../helpers";
 
 import AppModal from "../common/AppModal";
+import AudioSettingsTab from "./AudioSettingsTab";
 import CommandCenterSettingsTab from "./CommandCenterSettingsTab";
 import FastClockSettingsTab from "./FastClockSettingsTab";
 import GeneralSettingsTab from "./GeneralSettingsTab";
@@ -185,6 +186,10 @@ export default function AppSettingsDialog({
               Command center
             </Tabs.Tab>
 
+            <Tabs.Tab value="audio">
+              Audio
+            </Tabs.Tab>
+
             <Tabs.Tab value="general">
               General
             </Tabs.Tab>
@@ -207,6 +212,17 @@ export default function AppSettingsDialog({
                   commandCenter,
                 }));
               }}
+            />
+          </Tabs.Panel>
+
+          <Tabs.Panel
+            value="audio"
+            pt="md"
+            style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
+          >
+            <AudioSettingsTab
+              settings={settings}
+              onChange={setSettings}
             />
           </Tabs.Panel>
 
