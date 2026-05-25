@@ -208,37 +208,45 @@ export type RouteReservationReleaseRejectedMessage = {
   data: RouteReservationReleaseRejectedPayload;
 };
 
-export type LayoutResponsePayload = {
+export type WsCommandResponseMeta = {
+  requestId: string;
+  action: string;
+  ok: boolean;
+  message?: string;
+};
+
+export type LayoutResponsePayload = WsCommandResponseMeta & {
   layout?: SerializedLayoutDto;
   routeGraph?: RouteGraphResponseDto;
 };
 
-export type LocosResponsePayload = {
+export type LocosResponsePayload = WsCommandResponseMeta & {
   locos?: Loco[];
 };
 
-export type ScriptDocumentResponsePayload = {
+export type ScriptDocumentResponsePayload = WsCommandResponseMeta & {
   document?: ScriptDocumentDto;
 };
 
-export type CommandCenterConfigResponsePayload = {
+export type CommandCenterConfigResponsePayload = WsCommandResponseMeta & {
   config?: ICommandCenter | null;
 };
 
-export type AppSettingsResponsePayload = {
+export type AppSettingsResponsePayload = WsCommandResponseMeta & {
   settings?: AppSettings;
 };
 
-export type FastClockResponsePayload = {
+export type FastClockResponsePayload = WsCommandResponseMeta & {
   snapshot?: FastClockSnapshot;
+  speed?: number;
 };
 
-export type FileResponsePayload = {
+export type FileResponsePayload = WsCommandResponseMeta & {
   content?: string;
   data?: unknown;
 };
 
-export type TaskManagerResponsePayload = {
+export type TaskManagerResponsePayload = WsCommandResponseMeta & {
   snapshot?: TaskManagerSnapshot;
   addResult?: AddTrainTaskResult;
   actionResult?: TaskManagerActionResult;
