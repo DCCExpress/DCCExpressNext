@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { dataDir } from "../paths.js";
 import { layoutRuntimeStore } from "./layoutRuntimeStore.js";
 import { railwayTopologyStore } from "./railwayTopologyStore.js";
+import { setSignalAspectWithAccessorySetter } from "./railwayCommandHelpers.js";
 
 import type {
     SerializedLayoutDto,
@@ -623,55 +624,14 @@ return (async () => {
     ): Promise<void> {
         await this.check();
 
-        const topology =
-            railwayTopologyStore.getTopology();
-
-        if (!topology) {
-            throw new Error(
-                "No server-side topology is available."
-            );
-        }
-
-        const signal =
-            topology.getSignals().find(
-                item => item.address === address
-            );
-
-        if (!signal) {
-            throw new Error(
-                `Signal not found for address ${address}.`
-            );
-        }
-
-        const bits =
-            aspect === "green"
-                ? signal.valueGreen
-                : aspect === "yellow"
-                    ? signal.valueYellow
-                    : aspect === "red"
-                        ? signal.valueRed
-                        : signal.valueWhite;
-
-        for (
-            let i = 0;
-            i < signal.addressLength;
-            i++
-        ) {
-            const active =
-                ((bits >> i) & 1) === 1;
-
-            const ok =
-                await this.commands.setBasicAccessory(
-                    signal.address + i,
-                    active
-                );
-
-            if (!ok) {
-                throw new Error(
-                    `Could not set signal accessory ${signal.address + i}.`
-                );
-            }
-        }
+        await setSignalAspectWithAccessorySetter(
+            (accessoryAddress, active) => this.commands.setBasicAccessory(
+                accessoryAddress,
+                active
+            ),
+            address,
+            aspect
+        );
 
         await this.check();
     }
