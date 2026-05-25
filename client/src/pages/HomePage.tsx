@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Card,
-  Code,
   Container,
   Group,
   Image,
@@ -100,16 +99,44 @@ function createFallbackDesktopUrl(): string {
   return `${protocol}//${window.location.hostname}:3000/`;
 }
 
-function createFallbackMobileUrl(language: string): string {
-  return withLanguage(`${createFallbackDesktopUrl()}mobile/`, language);
-}
-
 function activateCard(item: HomeCardItem): void {
   if (item.disabled === true) {
     return;
   }
 
   item.onClick?.();
+}
+
+function UrlPill({ label, url }: { label: string; url: string }) {
+  return (
+    <Box
+      p="xs"
+      style={{
+        border: "1px solid rgba(120, 220, 255, 0.24)",
+        borderRadius: 12,
+        background:
+          "linear-gradient(135deg, rgba(34, 139, 230, 0.18), rgba(4, 12, 24, 0.10))",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+      }}
+    >
+      <Text size="xs" fw={700} c="cyan.2" mb={4} tt="uppercase">
+        {label}
+      </Text>
+      <Text
+        size="sm"
+        fw={700}
+        c="blue.1"
+        style={{
+          wordBreak: "break-all",
+          lineHeight: 1.25,
+          fontFamily:
+            "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        }}
+      >
+        {url}
+      </Text>
+    </Box>
+  );
 }
 
 export default function HomePage({ onOpenLayout }: HomePageProps) {
@@ -283,7 +310,7 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                 {t("home.heroDescription")}
               </Text>
 
-              <Stack gap="xs">
+              <Stack gap="xs" maw={520}>
                 <Group>
                   <Button
                     size="md"
@@ -294,9 +321,7 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                   </Button>
                 </Group>
 
-                <Text size="xs" c="gray.4">
-                  LAN desktop URL: <Code>{primaryUrls.desktop}</Code>
-                </Text>
+                <UrlPill label="LAN desktop URL" url={primaryUrls.desktop} />
               </Stack>
             </Stack>
           </Paper>
@@ -396,27 +421,7 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                     </Text>
 
                     {item.url && (
-                      <Box
-                        p="xs"
-                        style={{
-                          border: "1px solid rgba(120, 220, 255, 0.14)",
-                          borderRadius: 8,
-                          background: "rgba(0, 0, 0, 0.16)",
-                        }}
-                      >
-                        <Text size="xs" c="dimmed" mb={4}>
-                          Full URL
-                        </Text>
-                        <Code
-                          block
-                          style={{
-                            whiteSpace: "normal",
-                            wordBreak: "break-all",
-                          }}
-                        >
-                          {item.url}
-                        </Code>
-                      </Box>
+                      <UrlPill label="Full URL" url={item.url} />
                     )}
 
                     <Button
@@ -455,7 +460,18 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                 {networkUrls.map(item => (
                   <Group key={`${item.name}-${item.address}`} justify="space-between" gap="xs">
                     <Badge variant="light">{item.name}</Badge>
-                    <Code style={{ wordBreak: "break-all" }}>{item.mobile}</Code>
+                    <Text
+                      size="sm"
+                      fw={700}
+                      c="blue.1"
+                      style={{
+                        wordBreak: "break-all",
+                        fontFamily:
+                          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                      }}
+                    >
+                      {item.mobile}
+                    </Text>
                   </Group>
                 ))}
               </Stack>
