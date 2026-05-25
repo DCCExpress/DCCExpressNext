@@ -113,6 +113,25 @@ function parseTaskManagerCommand<TType extends ClientWsMessageType>(type: TType,
     };
   }
 
+  if (data.action === "testBlockActionList") {
+    if (typeof data.blockId !== "string" || data.blockId.trim().length === 0) return invalidPayload(type, "blockId must be string.");
+    if (data.hook !== "onTrainEnter" && data.hook !== "onTrainLeave") return invalidPayload(type, "hook is invalid.");
+    if (!Array.isArray(data.actions)) return invalidPayload(type, "actions must be an array.");
+    if (data.blockName !== undefined && typeof data.blockName !== "string") return invalidPayload(type, "blockName must be string when present.");
+
+    return {
+      ok: true,
+      data: {
+        requestId: data.requestId,
+        action: data.action,
+        blockId: data.blockId,
+        hook: data.hook,
+        actions: data.actions,
+        ...(typeof data.blockName === "string" ? { blockName: data.blockName } : {}),
+      } as unknown as ClientWsPayloadMap[TType],
+    };
+  }
+
   if (!isTaskManagerCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
 
   if ((data.action === "update" || data.action === "delete" || data.action === "start" || data.action === "pause" || data.action === "resume" || data.action === "finish" || data.action === "abort") && typeof data.taskId !== "string") {
