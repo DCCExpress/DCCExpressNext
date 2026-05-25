@@ -175,16 +175,35 @@ function getAspectLabel(t: Translate, aspect: SignalAspect): string {
   return t(`signalLogic.aspects.${aspect}`);
 }
 
+function getRuleAspects(signalOptions: SignalOption[], signalAddress: number): SignalAspect[] {
+  return getAllowedSignalAspects(getSignalAspect(signalOptions, signalAddress))
+    .filter(aspect => aspect !== "red");
+}
+
 function getAspectOptions(t: Translate, signalOptions: SignalOption[], signalAddress: number) {
-  return getAllowedSignalAspects(getSignalAspect(signalOptions, signalAddress)).map(aspect => ({
+  return getRuleAspects(signalOptions, signalAddress).map(aspect => ({
     value: aspect,
     label: getAspectLabel(t, aspect),
   }));
 }
 
 function normalizeAspectForSignal(signalOptions: SignalOption[], signalAddress: number, aspect: SignalAspect): SignalAspect {
-  const allowed = getAllowedSignalAspects(getSignalAspect(signalOptions, signalAddress));
-  return allowed.includes(aspect) ? aspect : allowed[0] ?? "red";
+  const allowed = getRuleAspects(signalOptions, signalAddress);
+  return allowed.includes(aspect) ? aspect : allowed[0] ?? "green";
+}
+
+function normalizeRuleAspectsForSignal(
+  groups: SignalLogicRuleGroupDto[],
+  signalOptions: SignalOption[]
+): SignalLogicRuleGroupDto[] {
+  return groups.map(group => ({
+    ...group,
+    defaultAspect: "red",
+    rules: group.rules.map(rule => ({
+      ...rule,
+      aspect: normalizeAspectForSignal(signalOptions, group.signalAddress, rule.aspect),
+    })),
+  }));
 }
 
 function formatCondition(t: Translate, condition: SignalLogicConditionDto): string {
@@ -308,7 +327,10 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     clearMessages();
     try {
       const result = await loadSignalLogicRulesWs();
-      const loadedGroups = withFixedRedFallback(result.document.groups);
+      const loadedGroups = normalizeRuleAspectsForSignal(
+        withFixedRedFallback(result.document.groups),
+        signalOptions
+      );
       setGroups(loadedGroups);
       setSelectedGroupId(loadedGroups[0]?.id ?? null);
       setServerIssues(result.issues);
@@ -333,7 +355,10 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     clearMessages();
     try {
       const result = await saveSignalLogicRulesWs(document);
-      const savedGroups = withFixedRedFallback(result.document.groups);
+      const savedGroups = normalizeRuleAspectsForSignal(
+        withFixedRedFallback(result.document.groups),
+        signalOptions
+      );
       setGroups(savedGroups);
       setSelectedGroupId(previous => previous ?? savedGroups[0]?.id ?? null);
       setServerIssues(result.issues);
@@ -609,7 +634,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                                   ...group,
                                   rules: group.rules.map(currentRule =>
                                     currentRule.id === rule.id
-                                      ? { ...currentRule, aspect: (value ?? "red") as SignalAspect }
+                                      ? { ...currentRule, aspect: (value ?? normalizeAspectForSignal(signalOptions, selectedGroup.signalAddress, "green")) as SignalAspect }
                                       : currentRule
                                   ),
                                 }))}
