@@ -28,6 +28,33 @@ export type LocoFunction = {
   active?: boolean;
 };
 
+export type LocoActionHook =
+  | "beforeStart"
+  | "afterStart"
+  | "beforeStop"
+  | "afterStop";
+
+export type LocoAction =
+  | {
+      id: string;
+      type: "setFunction";
+      functionNumber: number;
+      active: boolean;
+    }
+  | {
+      id: string;
+      type: "momentaryFunction";
+      functionNumber: number;
+      ms: number;
+    }
+  | {
+      id: string;
+      type: "wait";
+      ms: number;
+    };
+
+export type LocoActionHooks = Partial<Record<LocoActionHook, LocoAction[]>>;
+
 export type Loco = {
   id: string;
   name: string;
@@ -37,6 +64,7 @@ export type Loco = {
   image?: string;
   length: number;
   functions: LocoFunction[];
+  actions?: LocoActionHooks;
 };
 
 
