@@ -75,6 +75,19 @@ const sensorStateOptions = [
   { value: "false", label: "Free / inactive" },
 ];
 
+function uniqueByValue<T extends { value: string }>(options: T[]): T[] {
+  const seen = new Set<string>();
+
+  return options.filter(option => {
+    if (seen.has(option.value)) {
+      return false;
+    }
+
+    seen.add(option.value);
+    return true;
+  });
+}
+
 function createTurnoutCondition(turnoutAddress: number): SignalLogicConditionDto {
   return {
     id: generateId(),
@@ -119,12 +132,6 @@ function aspectToMethod(aspect: SignalAspect): string {
     default:
       return "setSignalRed";
   }
-}
-
-function getConditionAddress(condition: SignalLogicConditionDto): number {
-  return condition.type === "sensor"
-    ? condition.sensorAddress
-    : condition.turnoutAddress;
 }
 
 function getConditionExpression(condition: SignalLogicConditionDto): string | null {
@@ -241,7 +248,7 @@ export default function SignalLogicDialog({
   layout,
 }: SignalLogicDialogProps) {
   const signalOptions = useMemo<SignalOption[]>(() => {
-    return layout
+    const options = layout
       .getAllElements()
       .filter((element): element is TrackSignalElementView =>
         element instanceof TrackSignalElementView
@@ -252,10 +259,12 @@ export default function SignalLogicDialog({
         aspect: signal.aspect,
       }))
       .sort((a, b) => Number(a.value) - Number(b.value));
+
+    return uniqueByValue(options);
   }, [layout]);
 
   const turnoutOptions = useMemo<AddressOption[]>(() => {
-    return layout
+    const options = layout
       .getAllElements()
       .filter(isTurnoutElement)
       .map(turnout => ({
@@ -263,10 +272,12 @@ export default function SignalLogicDialog({
         label: `Turnout #${turnout.turnoutAddress}`,
       }))
       .sort((a, b) => Number(a.value) - Number(b.value));
+
+    return uniqueByValue(options);
   }, [layout]);
 
   const sensorOptions = useMemo<AddressOption[]>(() => {
-    return layout
+    const options = layout
       .getAllElements()
       .filter((element): element is TrackSensorElementView =>
         element instanceof TrackSensorElementView
@@ -276,6 +287,8 @@ export default function SignalLogicDialog({
         label: `Sensor #${sensor.address}`,
       }))
       .sort((a, b) => Number(a.value) - Number(b.value));
+
+    return uniqueByValue(options);
   }, [layout]);
 
   const knownSignals = useMemo(
