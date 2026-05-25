@@ -31,8 +31,16 @@ import {
 } from "../services/appSettingsStore.js";
 
 import {
+  layoutRuntimeStore,
+} from "../services/layoutRuntimeStore.js";
+
+import {
   scriptRuntimeStore,
 } from "../services/scriptRuntimeStore.js";
+
+import {
+  signalLogicRuntimeService,
+} from "../services/signalLogicRuntimeService.js";
 
 import {
   taskRuntimeStore,
@@ -153,6 +161,8 @@ export function broadcastAll(
 async function initializeWebSocketRuntimeStores(): Promise<void> {
   await appSettingsStore.initialize();
 
+  await layoutRuntimeStore.initialize();
+
   const conf =
     await readCommandCenter();
 
@@ -164,6 +174,8 @@ async function initializeWebSocketRuntimeStores(): Promise<void> {
   await initializeCommandCenter(conf);
 
   await taskRuntimeStore.initialize();
+
+  await signalLogicRuntimeService.autoStartIfEnabled();
 
   await scriptRuntimeStore.initialize();
   await scriptRuntimeStore.autoStartIfEnabled();
