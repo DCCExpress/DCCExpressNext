@@ -65,6 +65,7 @@ import "../styles/global.css";
 type StatusBarProps = {
   rightPanelMode: RightPanelMode;
   setRightPanelMode: Dispatch<SetStateAction<RightPanelMode>>;
+  onOpenSignalLogicDialog: () => void;
 };
 
 const DEFAULT_DISPATCHER_STATE: SignalLogicRuntimeStateDto = {
@@ -75,15 +76,11 @@ const DEFAULT_DISPATCHER_STATE: SignalLogicRuntimeStateDto = {
 export default function StatusBar({
   rightPanelMode,
   setRightPanelMode,
+  onOpenSignalLogicDialog,
 }: StatusBarProps) {
-  const wsStatus =
-    useWsStatus();
-
-  const browserStats =
-    useBrowserStats(1000);
-
-  const serverStats =
-    useServerRuntimeStats();
+  const wsStatus = useWsStatus();
+  const browserStats = useBrowserStats(1000);
+  const serverStats = useServerRuntimeStats();
 
   const {
     alive,
@@ -91,67 +88,22 @@ export default function StatusBar({
     name,
     powerInfo,
     locked,
-  } =
-    useCommandCenter();
+  } = useCommandCenter();
 
-  const [
-    scriptEditorOpened,
-    setScriptEditorOpened,
-  ] =
-    useState(false);
+  const [scriptEditorOpened, setScriptEditorOpened] = useState(false);
+  const [taskDialogOpened, setTaskDialogOpened] = useState(false);
+  const [taskSnapshot, setTaskSnapshot] = useState<TaskManagerSnapshot | null>(null);
+  const [dispatcherState, setDispatcherState] = useState<SignalLogicRuntimeStateDto>(DEFAULT_DISPATCHER_STATE);
+  const [dispatcherBusy, setDispatcherBusy] = useState(false);
+  const [serverAudioEnabled, setServerAudioEnabled] = useState(() => isServerAudioPlaybackEnabled());
 
-  const [
-    taskDialogOpened,
-    setTaskDialogOpened,
-  ] =
-    useState(false);
+  const wsConnected = wsStatus === "connected";
+  const commandCenterOnline = alive && wsConnected;
+  const trackPowerOn = powerInfo?.trackVoltageOn === true && wsConnected;
 
-  const [
-    taskSnapshot,
-    setTaskSnapshot,
-  ] =
-    useState<TaskManagerSnapshot | null>(null);
-
-  const [
-    dispatcherState,
-    setDispatcherState,
-  ] =
-    useState<SignalLogicRuntimeStateDto>(DEFAULT_DISPATCHER_STATE);
-
-  const [
-    dispatcherBusy,
-    setDispatcherBusy,
-  ] =
-    useState(false);
-
-  const [
-    serverAudioEnabled,
-    setServerAudioEnabled,
-  ] =
-    useState(() => isServerAudioPlaybackEnabled());
-
-  const wsConnected =
-    wsStatus === "connected";
-
-  const commandCenterOnline =
-    alive && wsConnected;
-
-  const trackPowerOn =
-    powerInfo?.trackVoltageOn === true &&
-    wsConnected;
-
-  const {
-    scriptState,
-    stopScript,
-  } =
-    useScriptStatus();
-
-  const scriptStatus =
-    scriptState?.status ?? "idle";
-
-  const scriptIsRunning =
-    scriptStatus === "running" ||
-    scriptStatus === "stopping";
+  const { scriptState, stopScript } = useScriptStatus();
+  const scriptStatus = scriptState?.status ?? "idle";
+  const scriptIsRunning = scriptStatus === "running" || scriptStatus === "stopping";
 
   const scriptBadgeColor =
     scriptStatus === "running"
@@ -164,8 +116,7 @@ export default function StatusBar({
             ? "blue"
             : "gray";
 
-  const dispatcherIsRunning =
-    dispatcherState.running;
+  const dispatcherIsRunning = dispatcherState.running;
 
   const dispatcherBadgeColor =
     dispatcherBusy
@@ -174,26 +125,16 @@ export default function StatusBar({
         ? "green"
         : "gray";
 
-  const runningTaskCount =
-    taskSnapshot?.tasks.filter(
-      task =>
-        task.status === "running" ||
-        task.status === "finishing"
-    ).length ?? 0;
+  const runningTaskCount = taskSnapshot?.tasks.filter(task =>
+    task.status === "running" || task.status === "finishing"
+  ).length ?? 0;
 
-  const activeTaskCount =
-    taskSnapshot?.tasks.filter(
-      task =>
-        task.status === "running" ||
-        task.status === "paused" ||
-        task.status === "finishing"
-    ).length ?? 0;
+  const activeTaskCount = taskSnapshot?.tasks.filter(task =>
+    task.status === "running" || task.status === "paused" || task.status === "finishing"
+  ).length ?? 0;
 
-  const hasRunningTasks =
-    taskSnapshot?.tasks.some(task => task.status === "running") === true;
-
-  const hasTasks =
-    (taskSnapshot?.tasks.length ?? 0) > 0;
+  const hasRunningTasks = taskSnapshot?.tasks.some(task => task.status === "running") === true;
+  const hasTasks = (taskSnapshot?.tasks.length ?? 0) > 0;
 
   const taskBadgeColor =
     runningTaskCount > 0
@@ -203,13 +144,12 @@ export default function StatusBar({
         : "gray";
 
   useEffect(() => {
-    const unsubscribe =
-      wsClient.on(
-        "taskManagerSnapshotChanged",
-        data => {
-          setTaskSnapshot(data);
-        }
-      );
+    const unsubscribe = wsClient.on(
+      "taskManagerSnapshotChanged",
+      data => {
+        setTaskSnapshot(data);
+      }
+    );
 
     wsApi.getTaskRuntimeState();
 
@@ -217,13 +157,12 @@ export default function StatusBar({
   }, []);
 
   useEffect(() => {
-    const unsubscribe =
-      wsClient.on<SignalLogicRuntimeStateDto>(
-        "signalLogicStateChanged",
-        data => {
-          setDispatcherState(data);
-        }
-      );
+    const unsubscribe = wsClient.on(
+      "signalLogicStateChanged",
+      data => {
+        setDispatcherState(data);
+      }
+    );
 
     return unsubscribe;
   }, []);
@@ -323,66 +262,29 @@ export default function StatusBar({
 
   return (
     <>
-      <Group
-        h="100%"
-        px="md"
-        justify="space-between"
-      >
+      <Group h="100%" px="md" justify="space-between">
         <Group gap="md" wrap="nowrap">
-          <StatusBadge
-            color={getWsColor(wsStatus)}
-          >
-            WS
-          </StatusBadge>
+          <StatusBadge color={getWsColor(wsStatus)}>WS</StatusBadge>
 
-          <StatusBadge
-            color={
-              commandCenterOnline
-                ? "green"
-                : "red"
-            }
-          >
+          <StatusBadge color={commandCenterOnline ? "green" : "red"}>
             {type ?? name ?? "CC"}
           </StatusBadge>
 
-          <StatusBadge
-            color={
-              trackPowerOn
-                ? "green"
-                : "red"
-            }
-          >
-            PWR
-          </StatusBadge>
+          <StatusBadge color={trackPowerOn ? "green" : "red"}>PWR</StatusBadge>
 
           <StatusBadge
-            color={
-              powerInfo?.emergencyStop
-                ? "red"
-                : "gray"
-            }
-            blink={
-              powerInfo?.emergencyStop === true
-            }
+            color={powerInfo?.emergencyStop ? "red" : "gray"}
+            blink={powerInfo?.emergencyStop === true}
             onClick={() => {
-              if (!powerInfo) {
-                return;
-              }
-
-              if (powerInfo.emergencyStop) {
-                wsApi.powerOn();
-              } else {
-                wsApi.emergencyStop();
-              }
+              if (!powerInfo) return;
+              if (powerInfo.emergencyStop) wsApi.powerOn();
+              else wsApi.emergencyStop();
             }}
           >
             ESTOP
           </StatusBadge>
 
-          <StatusBadge
-            color={locked ? "orange" : "gray"}
-            blink={locked}
-          >
+          <StatusBadge color={locked ? "orange" : "gray"} blink={locked}>
             {locked ? "LOCK" : "FREE"}
           </StatusBadge>
 
@@ -393,29 +295,16 @@ export default function StatusBar({
             color={serverAudioEnabled ? "green" : "gray"}
             onClick={handleToggleServerAudio}
           >
-            {serverAudioEnabled ? (
-              <IconVolume size={16} />
-            ) : (
-              <IconVolumeOff size={16} />
-            )}
+            {serverAudioEnabled ? <IconVolume size={16} /> : <IconVolumeOff size={16} />}
           </StatusActionIcon>
 
           <StatusActionIcon
-            tooltip={
-              rightPanelMode === "loco"
-                ? "Right panel: loco panel"
-                : "Right panel: property panel"
-            }
-            color={
-              rightPanelMode === "loco"
-                ? "green"
-                : "gray"
-            }
+            tooltip={rightPanelMode === "loco" ? "Right panel: loco panel" : "Right panel: property panel"}
+            color={rightPanelMode === "loco" ? "green" : "gray"}
             onClick={handleToggleRightPanelMode}
           >
             <IconTrain size={16} />
           </StatusActionIcon>
-
 
           <Divider orientation="vertical" />
 
@@ -424,34 +313,18 @@ export default function StatusBar({
           </StatusBadge>
 
           <StatusActionIcon
-            tooltip={
-              scriptIsRunning
-                ? "Stop running script"
-                : "Start script"
-            }
-            color={
-              scriptIsRunning
-                ? "red"
-                : "green"
-            }
-            disabled={
-              scriptStatus === "stopping"
-            }
+            tooltip={scriptIsRunning ? "Stop running script" : "Start script"}
+            color={scriptIsRunning ? "red" : "green"}
+            disabled={scriptStatus === "stopping"}
             onClick={handleToggleScript}
           >
-            {scriptIsRunning ? (
-              <IconPlayerStopFilled size={14} />
-            ) : (
-              <IconPlayerPlayFilled size={14} />
-            )}
+            {scriptIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}
           </StatusActionIcon>
 
           <StatusActionIcon
             tooltip="Edit script"
             color="blue"
-            onClick={() => {
-              setScriptEditorOpened(true);
-            }}
+            onClick={() => setScriptEditorOpened(true)}
           >
             <IconEdit size={14} />
           </StatusActionIcon>
@@ -461,68 +334,42 @@ export default function StatusBar({
           </StatusBadge>
 
           <StatusActionIcon
-            tooltip={
-              dispatcherIsRunning
-                ? "Stop dispatcher"
-                : "Start dispatcher"
-            }
-            color={
-              dispatcherIsRunning
-                ? "red"
-                : "green"
-            }
+            tooltip={dispatcherIsRunning ? "Stop dispatcher" : "Start dispatcher"}
+            color={dispatcherIsRunning ? "red" : "green"}
             disabled={!wsConnected || dispatcherBusy}
             onClick={handleToggleDispatcher}
           >
-            {dispatcherIsRunning ? (
-              <IconPlayerStopFilled size={14} />
-            ) : (
-              <IconPlayerPlayFilled size={14} />
-            )}
+            {dispatcherIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}
+          </StatusActionIcon>
+
+          <StatusActionIcon
+            tooltip="Edit dispatcher rules"
+            color="blue"
+            onClick={onOpenSignalLogicDialog}
+          >
+            <IconEdit size={14} />
           </StatusActionIcon>
 
           <Divider orientation="vertical" />
 
-          <StatusBadge color={taskBadgeColor}>
-            TASKS {activeTaskCount}
-          </StatusBadge>
+          <StatusBadge color={taskBadgeColor}>TASKS {activeTaskCount}</StatusBadge>
 
-          <StatusActionIcon
-            tooltip="Open tasks"
-            color="blue"
-            onClick={handleOpenTasks}
-          >
+          <StatusActionIcon tooltip="Open tasks" color="blue" onClick={handleOpenTasks}>
             <IconListDetails size={14} />
           </StatusActionIcon>
 
-          <StatusActionIcon
-            tooltip="Start all tasks"
-            color="green"
-            disabled={!wsConnected || !hasTasks}
-            onClick={handleStartTasks}
-          >
+          <StatusActionIcon tooltip="Start all tasks" color="green" disabled={!wsConnected || !hasTasks} onClick={handleStartTasks}>
             <IconPlayerPlayFilled size={14} />
           </StatusActionIcon>
 
-          <StatusActionIcon
-            tooltip="Pause all running tasks"
-            color="yellow"
-            disabled={!wsConnected || !hasRunningTasks}
-            onClick={handlePauseTasks}
-          >
+          <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!wsConnected || !hasRunningTasks} onClick={handlePauseTasks}>
             <IconPlayerPause size={14} />
           </StatusActionIcon>
 
           <StatusActionIcon
             tooltip="Complete all tasks"
             color="blue"
-            disabled={
-              !wsConnected ||
-              !taskSnapshot?.tasks.some(task =>
-                task.status === "running" ||
-                task.status === "paused"
-              )
-            }
+            disabled={!wsConnected || !taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")}
             onClick={handleCompleteTasks}
           >
             <IconPlayerSkipForward size={14} />
@@ -531,60 +378,17 @@ export default function StatusBar({
           <StatusActionIcon
             tooltip="Stop all tasks"
             color="red"
-            disabled={
-              !wsConnected ||
-              !taskSnapshot?.tasks.some(task =>
-                task.status === "running" ||
-                task.status === "paused" ||
-                task.status === "finishing"
-              )
-            }
+            disabled={!wsConnected || !taskSnapshot?.tasks.some(task =>
+              task.status === "running" || task.status === "paused" || task.status === "finishing"
+            )}
             onClick={handleStopTasks}
           >
             <IconPlayerStopFilled size={14} />
           </StatusActionIcon>
 
           <Divider orientation="vertical" />
-
           <FastClockStatus />
-
           <Divider orientation="vertical" />
-
-          {/* <StatusBadge
-            color={getMemoryColor(
-              browserStats.memoryUsedMb
-            )}
-          >
-            JS {browserStats.memoryUsedMb ?? "-"} MB
-          </StatusBadge> */}
-
-          {/* <StatusBadge
-            color={getFpsColor(browserStats.fps)}
-          >
-            FPS {browserStats.fps ?? "-"}
-          </StatusBadge> */}
-
-          {/* <StatusBadge color="blue">
-            CPU {browserStats.cpuThreads ?? "-"}
-          </StatusBadge> */}
-
-          {/* <Divider orientation="vertical" /> */}
-
-          {/* <StatusBadge
-            color={getMemoryColor(
-              serverStats?.memoryRssMb ?? null
-            )}
-          >
-            SRV MEM {serverStats?.memoryRssMb ?? "-"} MB
-          </StatusBadge> */}
-
-          {/* <StatusBadge
-            color={getCpuLoadColor(
-              serverStats?.systemLoadPercent ?? null
-            )}
-          >
-            SRV CPU {serverStats?.systemLoadPercent ?? "-"}%
-          </StatusBadge> */}
 
           <StatusBadge color="blue">
             NET ↓{serverStats?.wsRxKbps ?? "-"} ↑{serverStats?.wsTxKbps ?? "-"} kbit/s
@@ -594,59 +398,29 @@ export default function StatusBar({
 
       <ScriptEditorDialog
         opened={scriptEditorOpened}
-        onClose={() => {
-          setScriptEditorOpened(false);
-        }}
+        onClose={() => setScriptEditorOpened(false)}
         title="Script editor"
       />
 
-      <Modal
-        opened={taskDialogOpened}
-        onClose={() => {
-          setTaskDialogOpened(false);
-        }}
-        title="Tasks"
-        size="xl"
-        centered
-      >
+      <Modal opened={taskDialogOpened} onClose={() => setTaskDialogOpened(false)} title="Tasks" size="xl" centered>
         <Stack gap="sm">
           <Group gap="xs">
-            <StatusActionIcon
-              tooltip="Refresh tasks"
-              color="blue"
-              onClick={() => {
-                wsApi.getTaskRuntimeState();
-              }}
-            >
+            <StatusActionIcon tooltip="Refresh tasks" color="blue" onClick={() => wsApi.getTaskRuntimeState()}>
               <IconListDetails size={14} />
             </StatusActionIcon>
 
-            <StatusActionIcon
-              tooltip="Start all tasks"
-              color="green"
-              onClick={handleStartTasks}
-            >
+            <StatusActionIcon tooltip="Start all tasks" color="green" onClick={handleStartTasks}>
               <IconPlayerPlayFilled size={14} />
             </StatusActionIcon>
 
-            <StatusActionIcon
-              tooltip="Pause all running tasks"
-              color="yellow"
-              disabled={!hasRunningTasks}
-              onClick={handlePauseTasks}
-            >
+            <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!hasRunningTasks} onClick={handlePauseTasks}>
               <IconPlayerPause size={14} />
             </StatusActionIcon>
 
             <StatusActionIcon
               tooltip="Complete all tasks"
               color="blue"
-              disabled={
-                !taskSnapshot?.tasks.some(task =>
-                  task.status === "running" ||
-                  task.status === "paused"
-                )
-              }
+              disabled={!taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")}
               onClick={handleCompleteTasks}
             >
               <IconPlayerSkipForward size={14} />
@@ -655,13 +429,9 @@ export default function StatusBar({
             <StatusActionIcon
               tooltip="Stop all tasks"
               color="red"
-              disabled={
-                !taskSnapshot?.tasks.some(task =>
-                  task.status === "running" ||
-                  task.status === "paused" ||
-                  task.status === "finishing"
-                )
-              }
+              disabled={!taskSnapshot?.tasks.some(task =>
+                task.status === "running" || task.status === "paused" || task.status === "finishing"
+              )}
               onClick={handleStopTasks}
             >
               <IconPlayerStopFilled size={14} />
@@ -669,22 +439,12 @@ export default function StatusBar({
           </Group>
 
           {!taskSnapshot ? (
-            <Text size="sm" c="dimmed">
-              No task snapshot yet.
-            </Text>
+            <Text size="sm" c="dimmed">No task snapshot yet.</Text>
           ) : taskSnapshot.tasks.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              No tasks.
-            </Text>
+            <Text size="sm" c="dimmed">No tasks.</Text>
           ) : (
             <ScrollArea h={360}>
-              <Table
-                striped
-                highlightOnHover
-                withTableBorder
-                withColumnBorders
-                stickyHeader
-              >
+              <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>Name</Table.Th>
@@ -715,49 +475,22 @@ export default function StatusBar({
 }
 
 function getMemoryColor(value: number | null): string {
-  if (value === null) {
-    return "gray";
-  }
-
-  if (value > 1000) {
-    return "red";
-  }
-
-  if (value > 500) {
-    return "orange";
-  }
-
+  if (value === null) return "gray";
+  if (value > 1000) return "red";
+  if (value > 500) return "orange";
   return "green";
 }
 
 function getFpsColor(value: number | null): string {
-  if (value === null) {
-    return "gray";
-  }
-
-  if (value < 20) {
-    return "red";
-  }
-
-  if (value < 45) {
-    return "orange";
-  }
-
+  if (value === null) return "gray";
+  if (value < 20) return "red";
+  if (value < 45) return "orange";
   return "green";
 }
 
 function getCpuLoadColor(value: number | null): string {
-  if (value === null) {
-    return "gray";
-  }
-
-  if (value > 85) {
-    return "red";
-  }
-
-  if (value > 65) {
-    return "orange";
-  }
-
+  if (value === null) return "gray";
+  if (value > 85) return "red";
+  if (value > 65) return "orange";
   return "green";
 }
