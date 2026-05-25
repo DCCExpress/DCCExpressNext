@@ -39,6 +39,11 @@ const savedLang = readInitialLanguage();
 
 const enTranslation = {
   ...en,
+  home: {
+    ...en.home,
+    thanksDescription:
+      "DCCExpress stands on the shoulders of excellent open-source tools, modern web technologies, and a good dose of AI-assisted brainstorming.",
+  },
   settings: {
     ...en.settings,
     languages: {
@@ -52,6 +57,11 @@ const enTranslation = {
 
 const huTranslation = {
   ...hu,
+  home: {
+    ...hu.home,
+    thanksDescription:
+      "A DCCExpress kiváló nyílt forráskódú eszközökre, modern webes technológiákra és egy jó adag AI-segített ötletelésre épül.",
+  },
   settings: {
     ...hu.settings,
     languages: {
@@ -65,6 +75,11 @@ const huTranslation = {
 
 const deTranslation = {
   ...de,
+  home: {
+    ...de.home,
+    thanksDescription:
+      "DCCExpress baut auf hervorragenden Open-Source-Werkzeugen, modernen Webtechnologien und einer guten Portion KI-gestütztem Brainstorming auf.",
+  },
   settings: {
     ...de.settings,
     languages: {
