@@ -19,13 +19,13 @@
 
 .home-bg-glow-light {
   top: 22px;
-  right: -180px;
+  right: 200px;
   width: 620px;
   height: 620px;
   opacity: 0.48;
   background: radial-gradient(circle, rgba(76, 190, 255, 0.30) 0%, rgba(76, 190, 255, 0.15) 34%, rgba(76, 190, 255, 0.045) 60%, rgba(76, 190, 255, 0) 78%);
   filter: blur(42px);
-  animation: homeGlowFloatLight 28s ease-in-out infinite;
+  animation: homeGlowFloatLight 6s ease-in-out infinite;
 }
 
 .home-bg-glow-cyan {
@@ -36,7 +36,7 @@
   opacity: 0.34;
   background: radial-gradient(circle, rgba(45, 210, 255, 0.24) 0%, rgba(45, 210, 255, 0.10) 42%, rgba(45, 210, 255, 0.025) 66%, rgba(45, 210, 255, 0) 80%);
   filter: blur(48px);
-  animation: homeGlowFloatCyan 34s ease-in-out infinite;
+  animation: homeGlowFloatCyan 4s ease-in-out infinite;
 }
 
 .home-bg-glow-dark {
@@ -48,7 +48,7 @@
   background: radial-gradient(circle, rgba(0, 4, 16, 0.72) 0%, rgba(0, 12, 30, 0.38) 44%, rgba(0, 12, 30, 0.08) 68%, rgba(0, 12, 30, 0) 82%);
   filter: blur(52px);
   mix-blend-mode: multiply;
-  animation: homeGlowFloatDark 38s ease-in-out infinite;
+  animation: homeGlowFloatDark 8s ease-in-out infinite;
 }
 
 .home-bg-glow-green {
@@ -59,7 +59,7 @@
   opacity: 0.36;
   background: radial-gradient(circle, rgba(95, 255, 180, 0.16) 0%, rgba(95, 255, 180, 0.07) 42%, rgba(95, 255, 180, 0.018) 66%, rgba(95, 255, 180, 0) 80%);
   filter: blur(50px);
-  animation: homeGlowFloatGreen 31s ease-in-out infinite;
+  animation: homeGlowFloatGreen 6s ease-in-out infinite;
 }
 
 .home-bg-glow-amber {
@@ -70,7 +70,7 @@
   opacity: 0.20;
   background: radial-gradient(circle, rgba(255, 196, 87, 0.18) 0%, rgba(255, 196, 87, 0.07) 46%, rgba(255, 196, 87, 0) 78%);
   filter: blur(46px);
-  animation: homeGlowFloatAmber 36s ease-in-out infinite;
+  animation: homeGlowFloatAmber 6s ease-in-out infinite;
 }
 
 @keyframes blinkBadge {

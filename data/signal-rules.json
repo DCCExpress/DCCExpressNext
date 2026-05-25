@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "autostart": true,
+  "groups": [
+    {
+      "id": "451c813-1a8b-4bae-b307-499e8978",
+      "signalAddress": 135,
+      "defaultAspect": "red",
+      "rules": [
+        {
+          "id": "a4bb544-8cfe-49ac-b622-1420bd64",
+          "aspect": "yellow",
+          "conditions": [
+            {
+              "id": "9c449bb-0f27-48ea-9fc4-824b7144",
+              "type": "turnout",
+              "turnoutAddress": 10,
+              "closed": false
+            },
+            {
+              "id": "3e42ae0-a64f-4f3c-bc68-bb580cc7",
+              "type": "turnout",
+              "turnoutAddress": 11,
+              "closed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "99a74f7-bc18-4ca9-8581-2e76aac5",
+      "signalAddress": 120,
+      "defaultAspect": "red",
+      "rules": [
+        {
+          "id": "b943d6d-0571-44e1-8143-0cee9cc4",
+          "aspect": "green",
+          "conditions": [
+            {
+              "id": "5375753-98b4-4506-b2fe-77d23302",
+              "type": "turnout",
+              "turnoutAddress": 10,
+              "closed": true
+            },
+            {
+              "id": "0a6f096-aebc-47c5-b5a6-4520e05e",
+              "type": "turnout",
+              "turnoutAddress": 11,
+              "closed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "58800a8-a60b-4638-91a6-c371f04e",
+      "signalAddress": 140,
+      "defaultAspect": "red",
+      "rules": [
+        {
+          "id": "bc35a37-045e-418c-a208-71f41f17",
+          "aspect": "yellow",
+          "conditions": [
+            {
+              "id": "e242b6f-819d-4699-96e5-1bc856e6",
+              "type": "turnout",
+              "turnoutAddress": 11,
+              "closed": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a5dbf24-b94d-4039-9091-98970934",
+      "signalAddress": 145,
+      "defaultAspect": "red",
+      "rules": [
+        {
+          "id": "cb2e218-0095-4bd9-a254-3fadb529",
+          "aspect": "yellow",
+          "conditions": [
+            {
+              "id": "7ef9443-b1f9-41c6-b807-b19f4149",
+              "type": "turnout",
+              "turnoutAddress": 12,
+              "closed": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5c9a18d-f660-49ca-91b7-9c05be80",
+      "signalAddress": 150,
+      "defaultAspect": "red",
+      "rules": [
+        {
+          "id": "2eda0cc-31a3-4cd0-9b9e-5e95b41e",
+          "aspect": "green",
+          "conditions": [
+            {
+              "id": "e7c1439-5eb5-4838-b918-2a5e456b",
+              "type": "turnout",
+              "turnoutAddress": 12,
+              "closed": true
+            },
+            {
+              "id": "c084ad2-7663-4853-9079-0d16dcb6",
+              "type": "turnout",
+              "turnoutAddress": 13,
+              "closed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7dc1d5e-4f65-4401-8c11-724cd126",
+      "signalAddress": 155,
+      "defaultAspect": "red",
+      "rules": [
+        {
+          "id": "ac0675d-2b7b-40ab-a6dc-6174e0f4",
+          "aspect": "yellow",
+          "conditions": [
+            {
+              "id": "486158a-0880-4259-a5ea-f8fe00e3",
+              "type": "turnout",
+              "turnoutAddress": 12,
+              "closed": true
+            },
+            {
+              "id": "ddcfdf3-c24b-479d-8ad7-a8cfd429",
+              "type": "turnout",
+              "turnoutAddress": 13,
+              "closed": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

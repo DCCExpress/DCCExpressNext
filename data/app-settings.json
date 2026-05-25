@@ -1,7 +1,7 @@
 {
   "version": 1,
   "general": {
-    "language": "hu"
+    "language": "en"
   },
   "commandCenter": {
     "type": "simulator",

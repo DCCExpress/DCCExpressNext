@@ -397,7 +397,8 @@
           "length": 100,
           "locoAddress": 0,
           "sensorAddress": 302,
-          "blockType": "terminal"
+          "blockType": "terminal",
+          "actions": {}
         },
         {
           "id": "389fdf2-889e-44bc-8013-d8aa373d",
@@ -416,7 +417,26 @@
           "length": 100,
           "locoAddress": 0,
           "sensorAddress": 301,
-          "blockType": "terminal"
+          "blockType": "terminal",
+          "actions": {
+            "onTrainEnter": [
+              {
+                "id": "7162a3d-9f09-4314-9174-9f966a8b",
+                "type": "playAudio",
+                "fileName": "Szfvarrol.V3.mp3"
+              },
+              {
+                "id": "c2af598-7317-4d16-a65d-6701d1ea",
+                "type": "wait",
+                "ms": 2000
+              },
+              {
+                "id": "eb655fe-799e-4f66-9b0e-75d03ba8",
+                "type": "playAudio",
+                "fileName": "mav_szignal.mp3"
+              }
+            ]
+          }
         },
         {
           "id": "5bac967-d1d9-42dc-a6e0-7eb4292c",
@@ -435,7 +455,8 @@
           "length": 100,
           "locoAddress": 0,
           "sensorAddress": 303,
-          "blockType": "terminal"
+          "blockType": "terminal",
+          "actions": {}
         },
         {
           "id": "97aa3af-3ac9-4483-815a-d1ead989",
@@ -454,7 +475,8 @@
           "length": 100,
           "locoAddress": 7,
           "sensorAddress": 101,
-          "blockType": "terminal"
+          "blockType": "terminal",
+          "actions": {}
         },
         {
           "id": "6b6786a-1238-4ad4-8ac9-9d2b60c4",
@@ -473,7 +495,8 @@
           "length": 100,
           "locoAddress": 18,
           "sensorAddress": 102,
-          "blockType": "terminal"
+          "blockType": "terminal",
+          "actions": {}
         },
         {
           "id": "373b352-2a53-4318-ba72-bb209d50",
@@ -492,7 +515,8 @@
           "length": 100,
           "locoAddress": 0,
           "sensorAddress": 103,
-          "blockType": "terminal"
+          "blockType": "terminal",
+          "actions": {}
         },
         {
           "id": "518e54e-918c-4add-a05a-37dab832",
@@ -511,7 +535,8 @@
           "length": 100,
           "locoAddress": 0,
           "sensorAddress": 201,
-          "blockType": "normal"
+          "blockType": "normal",
+          "actions": {}
         },
         {
           "id": "5dfc831-fbaa-4c2b-9b12-3874268a",
@@ -530,7 +555,8 @@
           "length": 100,
           "locoAddress": 0,
           "sensorAddress": 0,
-          "blockType": "normal"
+          "blockType": "normal",
+          "actions": {}
         },
         {
           "id": "2135262-c36e-4feb-92ba-c7b8176a",
@@ -549,7 +575,8 @@
           "length": 100,
           "locoAddress": 0,
           "sensorAddress": 0,
-          "blockType": "normal"
+          "blockType": "normal",
+          "actions": {}
         },
         {
           "id": "c546f8e-3716-4cba-9f23-d2672fb0",
@@ -568,7 +595,8 @@
           "length": 100,
           "locoAddress": 0,
           "sensorAddress": 0,
-          "blockType": "normal"
+          "blockType": "normal",
+          "actions": {}
         }
       ]
     },
@@ -741,7 +769,7 @@
         {
           "id": "bb31f1c-9be0-4b31-ab69-283fd9d7",
           "type": "tracksignal2",
-          "name": "element",
+          "name": "Szignál",
           "layerName": "signals",
           "x": 15,
           "y": 6,
