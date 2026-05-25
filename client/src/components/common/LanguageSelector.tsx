@@ -22,6 +22,7 @@ type LanguageCode = typeof LANGUAGES[number]["code"];
 type LanguageSelectorProps = {
   variant?: "subtle" | "light" | "filled";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
+  width?: number;
 };
 
 function normalizeLanguage(language: string): LanguageCode {
@@ -33,6 +34,7 @@ function normalizeLanguage(language: string): LanguageCode {
 export default function LanguageSelector({
   variant = "subtle",
   size = "lg",
+  width = 58,
 }: LanguageSelectorProps) {
   const { i18n, t } = useTranslation();
   const currentLanguage = normalizeLanguage(i18n.language);
@@ -47,8 +49,13 @@ export default function LanguageSelector({
     <Menu shadow="md" width={190} position="bottom-end" withinPortal>
       <Menu.Target>
         <Tooltip label={t("settings.language")} withArrow position="bottom">
-          <ActionIcon variant={variant} size={size} aria-label={t("settings.language")}>
-            <Group gap={4} wrap="nowrap">
+          <ActionIcon
+            variant={variant}
+            size={size}
+            w={width}
+            aria-label={t("settings.language")}
+          >
+            <Group gap={4} wrap="nowrap" justify="center">
               <IconLanguage size={16} />
               <Text size="xs" fw={700} lh={1} tt="uppercase">
                 {currentOption.shortLabel}
