@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Divider,
   Group,
   Loader,
@@ -20,6 +21,8 @@ import {
 import {
   IconAlertTriangle,
   IconDeviceFloppy,
+  IconPlayerPlay,
+  IconPlayerStop,
   IconPlus,
   IconRefresh,
   IconTrash,
@@ -33,11 +36,18 @@ import { TrackSensorElementView } from "../../models/editor/elements/TrackSensor
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { generateId } from "../../helpers";
 import AppModal from "../common/AppModal";
-import { loadSignalLogicRulesWs, saveSignalLogicRulesWs } from "../../api/signalLogicWsApi";
+import {
+  loadSignalLogicRulesWs,
+  saveSignalLogicRulesWs,
+  setSignalLogicAutostartWs,
+  startSignalLogicWs,
+  stopSignalLogicWs,
+} from "../../api/signalLogicWsApi";
 import type {
   SignalAspect,
   SignalLogicConditionDto,
   SignalLogicRuleGroupDto,
+  SignalLogicRuntimeStateDto,
   SignalLogicValidationIssue,
 } from "../../../../common/src/signalLogic";
 import { getAllowedSignalAspects, isSignalAspect, validateSignalLogicDocument } from "../../../../common/src/signalLogic";
@@ -51,6 +61,11 @@ type SignalLogicDialogProps = {
 type AddressOption = { value: string; label: string };
 type SignalOption = AddressOption & { aspect: number };
 type Translate = ReturnType<typeof useTranslation>["t"];
+
+const DEFAULT_RUNTIME_STATE: SignalLogicRuntimeStateDto = {
+  running: false,
+  autostart: false,
+};
 
 function uniqueByValue<T extends { value: string }>(options: T[]): T[] {
   const seen = new Set<string>();
@@ -236,8 +251,10 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
 
   const [groups, setGroups] = useState<SignalLogicRuleGroupDto[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [runtimeState, setRuntimeState] = useState<SignalLogicRuntimeStateDto>(DEFAULT_RUNTIME_STATE);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [runtimeBusy, setRuntimeBusy] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [warningText, setWarningText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -301,7 +318,11 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   );
 
   const selectedGroup = groups.find(group => group.id === selectedGroupId) ?? groups[0] ?? null;
-  const document = useMemo(() => ({ version: 1 as const, groups: withFixedRedFallback(groups) }), [groups]);
+  const document = useMemo(() => ({
+    version: 1 as const,
+    autostart: runtimeState.autostart,
+    groups: withFixedRedFallback(groups),
+  }), [groups, runtimeState.autostart]);
   const validationIssues = useMemo(
     () => validateSignalLogicDocument(document, knownSignals, knownTurnouts, knownSensors),
     [document, knownSignals, knownTurnouts, knownSensors]
@@ -317,18 +338,27 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     setErrorText(null);
   };
 
+  const applyResponse = (result: {
+    document: { autostart: boolean; groups: SignalLogicRuleGroupDto[] };
+    issues: SignalLogicValidationIssue[];
+    state: SignalLogicRuntimeStateDto;
+  }): void => {
+    const nextGroups = normalizeRuleAspectsForSignal(
+      withFixedRedFallback(result.document.groups),
+      signalOptions
+    );
+    setGroups(nextGroups);
+    setSelectedGroupId(previous => previous ?? nextGroups[0]?.id ?? null);
+    setServerIssues(result.issues);
+    setRuntimeState(result.state);
+  };
+
   const loadRules = async (): Promise<void> => {
     setLoading(true);
     clearMessages();
     try {
       const result = await loadSignalLogicRulesWs();
-      const loadedGroups = normalizeRuleAspectsForSignal(
-        withFixedRedFallback(result.document.groups),
-        signalOptions
-      );
-      setGroups(loadedGroups);
-      setSelectedGroupId(loadedGroups[0]?.id ?? null);
-      setServerIssues(result.issues);
+      applyResponse(result);
       if (result.created) {
         setWarningText(result.message ?? t("signalLogic.createdWarning"));
       } else {
@@ -350,18 +380,54 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     clearMessages();
     try {
       const result = await saveSignalLogicRulesWs(document);
-      const savedGroups = normalizeRuleAspectsForSignal(
-        withFixedRedFallback(result.document.groups),
-        signalOptions
-      );
-      setGroups(savedGroups);
-      setSelectedGroupId(previous => previous ?? savedGroups[0]?.id ?? null);
-      setServerIssues(result.issues);
+      applyResponse(result);
       setStatusText(t("signalLogic.saved"));
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const startSignalLogic = async (): Promise<void> => {
+    setRuntimeBusy(true);
+    clearMessages();
+    try {
+      const result = await startSignalLogicWs();
+      applyResponse(result);
+      setStatusText(t("signalLogic.started"));
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRuntimeBusy(false);
+    }
+  };
+
+  const stopSignalLogic = async (): Promise<void> => {
+    setRuntimeBusy(true);
+    clearMessages();
+    try {
+      const result = await stopSignalLogicWs();
+      applyResponse(result);
+      setStatusText(t("signalLogic.stopped"));
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRuntimeBusy(false);
+    }
+  };
+
+  const setAutostart = async (autostart: boolean): Promise<void> => {
+    setRuntimeBusy(true);
+    clearMessages();
+    try {
+      const result = await setSignalLogicAutostartWs(autostart);
+      applyResponse(result);
+      setStatusText(t("signalLogic.autostartSaved"));
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRuntimeBusy(false);
     }
   };
 
@@ -813,8 +879,40 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
         <Divider />
 
         <Group justify="space-between">
-          <Text size="sm" c="dimmed">{t("signalLogic.savePath")}</Text>
+          <Group gap="xs">
+            <Text size="sm" c="dimmed">{t("signalLogic.savePath")}</Text>
+            <Badge color={runtimeState.running ? "green" : "gray"} variant="light">
+              {runtimeState.running ? t("signalLogic.running") : t("signalLogic.stoppedState")}
+            </Badge>
+          </Group>
+
           <Group>
+            <Checkbox
+              checked={runtimeState.autostart}
+              disabled={runtimeBusy}
+              label={t("signalLogic.autostart")}
+              onChange={event => void setAutostart(event.currentTarget.checked)}
+            />
+            <Button
+              color="green"
+              variant="light"
+              leftSection={<IconPlayerPlay size={16} />}
+              onClick={() => void startSignalLogic()}
+              loading={runtimeBusy && !runtimeState.running}
+              disabled={runtimeState.running}
+            >
+              {t("signalLogic.start")}
+            </Button>
+            <Button
+              color="red"
+              variant="light"
+              leftSection={<IconPlayerStop size={16} />}
+              onClick={() => void stopSignalLogic()}
+              loading={runtimeBusy && runtimeState.running}
+              disabled={!runtimeState.running}
+            >
+              {t("signalLogic.stop")}
+            </Button>
             <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={() => void loadRules()} loading={loading}>
               {t("signalLogic.reload")}
             </Button>
