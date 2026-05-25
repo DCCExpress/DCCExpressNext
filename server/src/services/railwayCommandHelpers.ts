@@ -12,6 +12,11 @@ import {
   railwayTopologyStore,
 } from "./railwayTopologyStore.js";
 
+type SetBasicAccessoryFn = (
+  address: number,
+  active: boolean
+) => Promise<boolean>;
+
 export function getLogicalTurnoutStateFromCommandCenter(
   commandCenter: CommandCenter | null,
   address: number
@@ -36,8 +41,8 @@ export function getLogicalTurnoutStateFromCommandCenter(
   return physicalClosed === turnout.turnoutClosedValue;
 }
 
-export async function setSignalAspectFromCommandCenter(
-  commandCenter: CommandCenter,
+export async function setSignalAspectWithAccessorySetter(
+  setBasicAccessory: SetBasicAccessoryFn,
   address: number,
   aspect: SignalAspect
 ): Promise<void> {
@@ -78,7 +83,7 @@ export async function setSignalAspectFromCommandCenter(
       signal.address + i;
 
     const ok =
-      await commandCenter.setBasicAccessory(
+      await setBasicAccessory(
         accessoryAddress,
         active
       );
@@ -89,4 +94,19 @@ export async function setSignalAspectFromCommandCenter(
       );
     }
   }
+}
+
+export async function setSignalAspectFromCommandCenter(
+  commandCenter: CommandCenter,
+  address: number,
+  aspect: SignalAspect
+): Promise<void> {
+  await setSignalAspectWithAccessorySetter(
+    (accessoryAddress, active) => commandCenter.setBasicAccessory(
+      accessoryAddress,
+      active
+    ),
+    address,
+    aspect
+  );
 }
