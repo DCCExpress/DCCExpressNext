@@ -235,6 +235,7 @@ export type TypedServerWsMessage =
   | { type: "ws:welcome"; data: { message: string } }
   | { type: "error"; data: { message: string } }
   | { type: "commandRejected"; uuid?: string | null; data: CommandRejectedPayload }
+  | { type: "editorEditModeRejected"; data: { reason: string } }
   | { type: "commandCenterInfo"; data: CommandCenterInfoPayload }
   | { type: "commandCenterLockChanged"; data: CommandCenterLockChangedPayload }
   | { type: "powerInfo"; data: WsPowerInfoPayload }
