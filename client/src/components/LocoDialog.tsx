@@ -679,7 +679,7 @@ export default function LocoDialog({
       opened={opened}
       onClose={onClose}
       title={t("locodialog.locomotives")}
-      size="min(1180px, 95vw)"
+      size="min(1480px, 95vw)"
       centered
       draggable
       styles={{
