@@ -61,6 +61,13 @@ type HomeCardItem = {
   disabled?: boolean;
 };
 
+function openMobileClient(): void {
+  const protocol = window.location.protocol;
+  const url = `${protocol}//${window.location.hostname}:3000/mobile/`;
+
+  window.location.assign(url);
+}
+
 export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePageProps) {
   const { t } = useTranslation();
 
@@ -89,9 +96,10 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
       title: t("home.cards.mobile.title"),
       description: t("home.cards.mobile.description"),
       image: "/images/mobile-card.png",
-      buttonLabel: t("home.comingSoon"),
+      buttonLabel: "Open mobile",
       icon: <IconDeviceMobile size={18} />,
-      disabled: true,
+      onClick: openMobileClient,
+      disabled: false,
     },
   ];
 
