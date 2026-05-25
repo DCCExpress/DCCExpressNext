@@ -31,6 +31,7 @@ type BroadcastFn = (
 type SignalLogicRuntimeConfiguration = {
   broadcast: BroadcastFn;
   getCommandCenter: () => CommandCenter | null;
+  getLogicalTurnoutState: (address: number) => boolean | null;
 };
 
 type SignalLogicEvaluationContext = {
@@ -46,15 +47,18 @@ class SignalLogicRuntimeService {
   private tickInProgress = false;
   private configured = false;
   private getCommandCenter: () => CommandCenter | null = () => null;
+  private getLogicalTurnoutState: (address: number) => boolean | null = () => null;
   private broadcast: BroadcastFn = () => undefined;
   private readonly lastAppliedAspects = new Map<number, SignalAspect>();
 
   configure({
     broadcast,
     getCommandCenter,
+    getLogicalTurnoutState,
   }: SignalLogicRuntimeConfiguration): void {
     this.broadcast = broadcast;
     this.getCommandCenter = getCommandCenter;
+    this.getLogicalTurnoutState = getLogicalTurnoutState;
     this.configured = true;
   }
 
@@ -153,7 +157,7 @@ class SignalLogicRuntimeService {
     }
 
     const document = signalLogicRulesStore.getDocument();
-    const context = this.createEvaluationContext(commandCenter);
+    const context = this.createEvaluationContext(commandCenter, document);
 
     for (const group of document.groups) {
       if (group.signalAddress <= 0) {
@@ -166,15 +170,33 @@ class SignalLogicRuntimeService {
   }
 
   private createEvaluationContext(
-    commandCenter: CommandCenter
+    commandCenter: CommandCenter,
+    document: SignalLogicDocumentDto
   ): SignalLogicEvaluationContext {
+    const turnoutAddresses = new Set<number>();
+
+    for (const group of document.groups) {
+      for (const rule of group.rules) {
+        for (const condition of rule.conditions) {
+          if (condition.type === "turnout" && condition.turnoutAddress > 0) {
+            turnoutAddresses.add(condition.turnoutAddress);
+          }
+        }
+      }
+    }
+
+    const logicalTurnouts = new Map<number, boolean>();
+
+    for (const address of turnoutAddresses) {
+      const logicalState = this.getLogicalTurnoutState(address);
+
+      if (typeof logicalState === "boolean") {
+        logicalTurnouts.set(address, logicalState);
+      }
+    }
+
     return {
-      turnouts: new Map(
-        commandCenter.getTurnouts().map(turnout => [
-          turnout.address,
-          turnout.closed,
-        ])
-      ),
+      turnouts: logicalTurnouts,
       sensors: new Map(
         commandCenter.getSensors().map(sensor => [
           sensor.address,
