@@ -168,26 +168,42 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
-                  opacity: item.disabled ? 0.72 : 1,
-                  transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
-                  background: "color-mix(in srgb, var(--mantine-color-body) 88%, rgba(6, 16, 31, 0.62))",
-                  borderColor: "rgba(100, 210, 255, 0.14)",
-                  backdropFilter: "blur(8px)",
+                  position: "relative",
+                  overflow: "hidden",
+                  opacity: item.disabled ? 0.78 : 1,
+                  transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease",
+                  background:
+                    "linear-gradient(180deg, rgba(12, 31, 52, 0.58) 0%, rgba(4, 12, 24, 0.36) 100%)",
+                  borderColor: "rgba(120, 220, 255, 0.18)",
+                  backdropFilter: "blur(14px) saturate(1.22)",
+                  boxShadow: "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.045)",
                 }}
                 onMouseEnter={(ev) => {
                   if (item.disabled) return;
 
-                  ev.currentTarget.style.transform = "translateY(-4px)";
-                  ev.currentTarget.style.boxShadow = "0 18px 46px rgba(0, 0, 0, 0.28)";
-                  ev.currentTarget.style.borderColor = "rgba(100, 210, 255, 0.32)";
+                  ev.currentTarget.style.transform = "translateY(-5px)";
+                  ev.currentTarget.style.boxShadow = "0 22px 58px rgba(0, 0, 0, 0.34), 0 0 28px rgba(34, 139, 230, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07)";
+                  ev.currentTarget.style.borderColor = "rgba(120, 220, 255, 0.42)";
+                  ev.currentTarget.style.background = "linear-gradient(180deg, rgba(16, 43, 72, 0.66) 0%, rgba(5, 15, 29, 0.42) 100%)";
                 }}
                 onMouseLeave={(ev) => {
                   ev.currentTarget.style.transform = "translateY(0)";
-                  ev.currentTarget.style.boxShadow = "var(--mantine-shadow-sm)";
-                  ev.currentTarget.style.borderColor = "rgba(100, 210, 255, 0.14)";
+                  ev.currentTarget.style.boxShadow = "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.045)";
+                  ev.currentTarget.style.borderColor = "rgba(120, 220, 255, 0.18)";
+                  ev.currentTarget.style.background = "linear-gradient(180deg, rgba(12, 31, 52, 0.58) 0%, rgba(4, 12, 24, 0.36) 100%)";
                 }}
               >
-                <Card.Section>
+                <Box
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    pointerEvents: "none",
+                    background:
+                      "radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.16) 0%, transparent 38%)",
+                  }}
+                />
+
+                <Card.Section style={{ position: "relative" }}>
                   <Image
                     src={item.image}
                     alt={item.title}
@@ -199,7 +215,7 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                   />
                 </Card.Section>
 
-                <Stack gap="sm" mt="md" style={{ flex: 1 }}>
+                <Stack gap="sm" mt="md" style={{ flex: 1, position: "relative" }}>
                   <Group gap="xs" align="center">
                     <ThemeIcon variant="light" size="lg" radius="md">
                       {item.icon}
