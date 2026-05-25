@@ -48,10 +48,9 @@ function toSignalLogicLoadResult(
 }
 
 async function requestSignalLogic(
-  action: "load" | "save" | "start" | "stop" | "state" | "setAutostart",
+  action: "load" | "save" | "start" | "stop" | "state",
   data: {
     document?: SignalLogicDocumentDto;
-    autostart?: boolean;
   } = {},
   errorMessage = "Signal logic command failed."
 ): Promise<SignalLogicLoadResult> {
@@ -107,15 +106,5 @@ export async function stopSignalLogicWs(): Promise<SignalLogicLoadResult> {
     "stop",
     {},
     "Could not stop signal logic."
-  );
-}
-
-export async function setSignalLogicAutostartWs(
-  autostart: boolean
-): Promise<SignalLogicLoadResult> {
-  return requestSignalLogic(
-    "setAutostart",
-    { autostart },
-    "Could not update signal logic autostart."
   );
 }
