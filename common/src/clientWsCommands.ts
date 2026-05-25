@@ -28,6 +28,10 @@ import type {
   AppSettings,
 } from "./appSettings.js";
 
+import type {
+  SignalLogicDocumentDto,
+} from "./signalLogic.js";
+
 export type EmptyClientWsCommandPayload = {};
 
 export type SetTrackPowerCommandPayload = {
@@ -151,6 +155,16 @@ export type AppSettingsCommandPayload = {
   settings?: Partial<AppSettings>;
 };
 
+export type SignalLogicCommandAction =
+  | "load"
+  | "save";
+
+export type SignalLogicCommandPayload = {
+  requestId: string;
+  action: SignalLogicCommandAction;
+  document?: SignalLogicDocumentDto;
+};
+
 export type TaskManagerCommandAction =
   | "snapshot"
   | "add"
@@ -251,6 +265,7 @@ export type ClientWsPayloadMap = {
   scriptDocumentCommand: ScriptDocumentCommandPayload;
   commandCenterConfigCommand: CommandCenterConfigCommandPayload;
   appSettingsCommand: AppSettingsCommandPayload;
+  signalLogicCommand: SignalLogicCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
   fileCommand: FileCommandPayload;
