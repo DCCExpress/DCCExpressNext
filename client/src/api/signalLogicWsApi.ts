@@ -12,6 +12,8 @@ import {
 export type SignalLogicLoadResult = {
   document: SignalLogicDocumentDto;
   issues: SignalLogicValidationIssue[];
+  created: boolean;
+  message?: string;
 };
 
 export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
@@ -29,6 +31,8 @@ export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
   return {
     document: response.document,
     issues: response.issues ?? [],
+    created: response.created ?? false,
+    message: response.message,
   };
 }
 
@@ -52,5 +56,7 @@ export async function saveSignalLogicRulesWs(
   return {
     document: response.document,
     issues: response.issues ?? [],
+    created: response.created ?? false,
+    message: response.message,
   };
 }
