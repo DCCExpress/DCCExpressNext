@@ -222,6 +222,7 @@ export type LayoutResponsePayload = WsCommandResponseMeta & {
 
 export type LocosResponsePayload = WsCommandResponseMeta & {
   locos?: Loco[];
+  count?: number;
 };
 
 export type ScriptDocumentResponsePayload = WsCommandResponseMeta & {
@@ -242,6 +243,7 @@ export type FastClockResponsePayload = WsCommandResponseMeta & {
 };
 
 export type FileResponsePayload = WsCommandResponseMeta & {
+  fileName?: string;
   content?: string;
   data?: unknown;
 };
