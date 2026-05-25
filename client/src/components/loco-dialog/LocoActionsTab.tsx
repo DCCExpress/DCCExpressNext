@@ -1,5 +1,6 @@
 import {
   type DragEvent,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -25,8 +26,9 @@ import type {
   LocoActionHook,
 } from "../../../../common/src/types";
 
-import { audioManager } from "../../services/audioManager";
+import { generateId } from "../../helpers";
 import { wsApi } from "../../services/wsApi";
+import { wsClient } from "../../services/wsClient";
 import LocoActionCard from "./LocoActionCard";
 import {
   ACTION_HOOKS,
@@ -52,8 +54,15 @@ type LocoActionsTabProps = {
   ) => void;
 };
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise(resolve => window.setTimeout(resolve, Math.max(0, ms)));
+type LocoActionListStatusPayload = {
+  locoId: string;
+  hook: LocoActionHook;
+  running: boolean;
+  currentIndex: number;
+  total: number;
+  message?: string;
+  error?: string;
+};
 
 export default function LocoActionsTab({
   selectedLoco,
@@ -70,6 +79,25 @@ export default function LocoActionsTab({
     () => ACTION_HOOKS.find(item => item.value === activeActionHook) ?? ACTION_HOOKS[0]!,
     [activeActionHook]
   );
+
+  useEffect(() => {
+    return wsClient.subscribeMessages(message => {
+      if (message.type !== "locoActionListStatus") return;
+
+      const data = message.data as LocoActionListStatusPayload;
+
+      if (data.locoId !== selectedLoco.id) return;
+
+      if (data.running) {
+        setTestingHook(data.hook);
+        setTestMessage(`Teszt fut: ${data.currentIndex}/${data.total}`);
+        return;
+      }
+
+      setTestingHook(null);
+      setTestMessage(data.error ? `Hiba: ${data.error}` : "Teszt kész.");
+    });
+  }, [selectedLoco.id]);
 
   const addAction = (
     hook: LocoActionHook,
@@ -159,7 +187,7 @@ export default function LocoActionsTab({
     setDraggedActionId(null);
   };
 
-  const runActionListTest = async (hook: LocoActionHook): Promise<void> => {
+  const runActionListTest = (hook: LocoActionHook): void => {
     const actions = getLocoActions(selectedLoco, hook);
 
     if (actions.length === 0) {
@@ -167,53 +195,15 @@ export default function LocoActionsTab({
       return;
     }
 
-    try {
-      setTestingHook(hook);
-      setTestMessage(`Teszt fut: ${actions.length} lépés...`);
+    setTestingHook(hook);
+    setTestMessage("Teszt indítása a szerveren...");
 
-      for (const action of actions) {
-        switch (action.type) {
-          case "setFunction":
-            await wsApi.setLocoFunction(
-              selectedLoco.address,
-              action.functionNumber,
-              action.active
-            );
-            break;
-
-          case "momentaryFunction":
-            await wsApi.setLocoFunction(
-              selectedLoco.address,
-              action.functionNumber,
-              true
-            );
-            await sleep(action.ms);
-            await wsApi.setLocoFunction(
-              selectedLoco.address,
-              action.functionNumber,
-              false
-            );
-            break;
-
-          case "playAudio":
-            if (action.fileName.trim()) {
-              audioManager.play(action.fileName.trim());
-            }
-            break;
-
-          case "wait":
-            await sleep(action.ms);
-            break;
-        }
-      }
-
-      setTestMessage("Teszt kész.");
-    } catch (error) {
-      console.error(error);
-      setTestMessage("A teszt közben hiba történt.");
-    } finally {
-      setTestingHook(null);
-    }
+    wsApi.send("taskManagerCommand" as any, {
+      requestId: generateId(),
+      action: "testLocoActionList",
+      locoId: selectedLoco.id,
+      hook,
+    } as any);
   };
 
   return (
@@ -241,7 +231,7 @@ export default function LocoActionsTab({
               <Text fw={600}>{selectedHookInfo.label}</Text>
               <Text size="sm" c="dimmed">{selectedHookInfo.description}</Text>
               {testMessage && (
-                <Text size="xs" c={testMessage.includes("hiba") ? "red" : "dimmed"}>
+                <Text size="xs" c={testMessage.includes("Hiba") ? "red" : "dimmed"}>
                   {testMessage}
                 </Text>
               )}
@@ -255,7 +245,7 @@ export default function LocoActionsTab({
                 leftSection={<IconPlayerPlay size={14} />}
                 loading={testingHook === activeActionHook}
                 disabled={testingHook !== null || getLocoActions(selectedLoco, activeActionHook).length === 0}
-                onClick={() => void runActionListTest(activeActionHook)}
+                onClick={() => runActionListTest(activeActionHook)}
               >
                 Test list
               </Button>
