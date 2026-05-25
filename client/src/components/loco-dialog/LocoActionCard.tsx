@@ -65,11 +65,11 @@ export default function LocoActionCard({
   const computedColorScheme = useComputedColorScheme("light");
   const cardBackground = computedColorScheme === "dark"
     ? "var(--mantine-color-dark-5)"
-    : "var(--mantine-color-white)";
+    : "var(--mantine-color-blue-0)";
 
   const cardBorderColor = computedColorScheme === "dark"
     ? "var(--mantine-color-dark-3)"
-    : "var(--mantine-color-gray-3)";
+    : "var(--mantine-color-blue-2)";
 
   const updateCurrentAction = (nextAction: LocoAction): void => {
     onUpdateAction(action.id, nextAction);
