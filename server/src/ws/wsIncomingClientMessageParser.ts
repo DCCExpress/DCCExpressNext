@@ -165,6 +165,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
     case "emergencyStop":
     case "setBlocksReset":
     case "getBlocks":
+    case "getLayoutRuntimeSnapshot":
     case "routeLock":
     case "routeUnlock":
     case "clearAllRouteReservations":
