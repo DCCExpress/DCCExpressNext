@@ -5,6 +5,7 @@ import {
   Badge,
   Card,
   Checkbox,
+  FileButton,
   Group,
   NumberInput,
   Select,
@@ -15,12 +16,15 @@ import {
 import {
   IconArrowDown,
   IconArrowUp,
+  IconFolderOpen,
   IconGripVertical,
+  IconPlayerPlayFilled,
   IconTrash,
 } from "@tabler/icons-react";
 
 import type { LocoAction } from "../../../../common/src/types";
 
+import { audioManager } from "../../services/audioManager";
 import {
   ACTION_TYPE_OPTIONS,
   convertActionType,
@@ -156,8 +160,50 @@ export default function LocoActionCard({
               label="Audio file"
               value={action.fileName}
               placeholder="station.mp3"
-              w={260}
+              w={320}
               onChange={event => updateCurrentAction({ ...action, fileName: event.currentTarget.value })}
+              rightSection={
+                <Group gap={2} wrap="nowrap">
+                  <FileButton
+                    onChange={file => {
+                      if (!file) return;
+                      updateCurrentAction({ ...action, fileName: file.name });
+                    }}
+                    accept="audio/*"
+                  >
+                    {fileButtonProps => (
+                      <ActionIcon
+                        {...fileButtonProps}
+                        size="sm"
+                        variant="subtle"
+                        title="Choose audio file"
+                        onClick={event => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          fileButtonProps.onClick?.();
+                        }}
+                      >
+                        <IconFolderOpen size={16} />
+                      </ActionIcon>
+                    )}
+                  </FileButton>
+
+                  <ActionIcon
+                    size="sm"
+                    variant="subtle"
+                    title="Test audio"
+                    disabled={!action.fileName.trim()}
+                    onClick={event => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      audioManager.play(action.fileName.trim());
+                    }}
+                  >
+                    <IconPlayerPlayFilled size={16} />
+                  </ActionIcon>
+                </Group>
+              }
+              rightSectionWidth={68}
             />
           )}
 
