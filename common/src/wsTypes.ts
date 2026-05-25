@@ -5,12 +5,32 @@ import type {
 } from "./clientWsCommands.js";
 
 import type {
+  AppSettings,
+} from "./appSettings.js";
+
+import type {
+  ICommandCenter,
+  Loco,
+} from "./domainTypes.js";
+
+import type {
+  SerializedLayoutDto,
+} from "./layout/layoutDto.js";
+
+import type {
+  RouteGraphResponseDto,
+} from "./railway/routeGraphDto.js";
+
+import type {
   ScriptDocumentDto,
   ScriptStateDto,
 } from "./scriptTypes.js";
 
 import type {
+  AddTrainTaskResult,
+  LoadTrainTasksResult,
   TaskLifecycleEventPayload,
+  TaskManagerActionResult,
   TaskManagerSnapshot,
   TaskRejectedPayload,
   TaskWaitingForLocoPayload,
@@ -76,8 +96,7 @@ export type {
   ClientWsPayloadMap,
 };
 
-export type ClientWsMessageType =
-  keyof ClientWsPayloadMap;
+export type ClientWsMessageType = keyof ClientWsPayloadMap;
 
 export const CLIENT_WS_MESSAGE_TYPES = [
   "setTrackPower",
@@ -129,18 +148,11 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "getTaskRuntimeState",
 ] as const satisfies readonly ClientWsMessageType[];
 
-export function isClientWsMessageType(
-  value: unknown
-): value is ClientWsMessageType {
-  return (
-    typeof value === "string" &&
-    (CLIENT_WS_MESSAGE_TYPES as readonly string[]).includes(value)
-  );
+export function isClientWsMessageType(value: unknown): value is ClientWsMessageType {
+  return typeof value === "string" && (CLIENT_WS_MESSAGE_TYPES as readonly string[]).includes(value);
 }
 
-export type TypedClientWsMessage<
-  TType extends ClientWsMessageType = ClientWsMessageType
-> = {
+export type TypedClientWsMessage<TType extends ClientWsMessageType = ClientWsMessageType> = {
   [K in TType]: {
     type: K;
     data: ClientWsPayloadMap[K];
@@ -196,14 +208,42 @@ export type RouteReservationReleaseRejectedMessage = {
   data: RouteReservationReleaseRejectedPayload;
 };
 
-export type LayoutResponsePayload = unknown;
-export type LocosResponsePayload = unknown;
-export type ScriptDocumentResponsePayload = unknown;
-export type CommandCenterConfigResponsePayload = unknown;
-export type AppSettingsResponsePayload = unknown;
-export type FastClockResponsePayload = unknown;
-export type FileResponsePayload = unknown;
-export type TaskManagerResponsePayload = unknown;
+export type LayoutResponsePayload = {
+  layout?: SerializedLayoutDto;
+  routeGraph?: RouteGraphResponseDto;
+};
+
+export type LocosResponsePayload = {
+  locos?: Loco[];
+};
+
+export type ScriptDocumentResponsePayload = {
+  document?: Partial<ScriptDocumentDto>;
+};
+
+export type CommandCenterConfigResponsePayload = {
+  config?: Partial<ICommandCenter> | null;
+};
+
+export type AppSettingsResponsePayload = {
+  settings?: AppSettings;
+};
+
+export type FastClockResponsePayload = {
+  snapshot?: FastClockSnapshot;
+};
+
+export type FileResponsePayload = {
+  content?: string;
+  data?: unknown;
+};
+
+export type TaskManagerResponsePayload = {
+  snapshot?: TaskManagerSnapshot;
+  addResult?: AddTrainTaskResult;
+  actionResult?: TaskManagerActionResult;
+  loadResult?: LoadTrainTasksResult;
+};
 
 export type ServerWsPayloadMap = {
   "ws:welcome": { message: string };
@@ -270,9 +310,7 @@ export type ServerWsPayloadMap = {
 
 export type ServerWsMessageType = keyof ServerWsPayloadMap;
 
-export type TypedServerWsMessage<
-  TType extends ServerWsMessageType = ServerWsMessageType
-> = {
+export type TypedServerWsMessage<TType extends ServerWsMessageType = ServerWsMessageType> = {
   [K in TType]: {
     type: K;
     data: ServerWsPayloadMap[K];
