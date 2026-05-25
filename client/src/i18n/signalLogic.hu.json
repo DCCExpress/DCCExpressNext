@@ -37,7 +37,7 @@
     "createdWarning": "Még nem létezett signal-rules.json fájl. A rendszer létrehozott egy üres fájlt, és ide fogja menteni a szabályokat.",
     "scriptDescription": "Ez a vizuális szabályokból generált előnézet. Független a script engine-től, és jelenleg csak ellenőrző nézet.",
     "foundSummary": "A jelenlegi layouton {{signals}} jelző, {{turnouts}} váltó és {{sensors}} foglaltságérzékelő található.",
-    "savePath": "Mentés helye: server/data/signal-rules.json",
+    "savePath": "Mentés helye: /data/signal-rules.json",
     "reload": "Újratöltés",
     "save": "Mentés",
     "autostart": "Automatikus indítás",
