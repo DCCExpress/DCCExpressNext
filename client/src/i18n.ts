@@ -15,8 +15,9 @@ const enTranslation = {
   settings: {
     ...en.settings,
     languages: {
-      ...en.settings.languages,
-      de: "German",
+      en: "English",
+      hu: "Magyar",
+      de: "Deutsch",
     },
   },
   ...signalLogicEn,
@@ -27,8 +28,9 @@ const huTranslation = {
   settings: {
     ...hu.settings,
     languages: {
-      ...hu.settings.languages,
-      de: "Német",
+      en: "English",
+      hu: "Magyar",
+      de: "Deutsch",
     },
   },
   ...signalLogicHu,
@@ -36,6 +38,14 @@ const huTranslation = {
 
 const deTranslation = {
   ...de,
+  settings: {
+    ...de.settings,
+    languages: {
+      en: "English",
+      hu: "Magyar",
+      de: "Deutsch",
+    },
+  },
   ...signalLogicDe,
 };
 
