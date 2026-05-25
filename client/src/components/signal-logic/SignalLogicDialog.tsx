@@ -103,6 +103,16 @@ function aspectBadgeColor(aspect: SignalAspect): string {
   }
 }
 
+function aspectBadgeStyle(aspect: SignalAspect) {
+  if (aspect !== "white") return undefined;
+
+  return {
+    backgroundColor: "#ffffff",
+    border: "1px solid #ced4da",
+    color: "#000000",
+  };
+}
+
 function getConditionExpression(condition: SignalLogicConditionDto): string | null {
   if (condition.type === "sensor") {
     if (condition.sensorAddress <= 0) return null;
@@ -739,7 +749,11 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                             )}
 
                             <Text size="sm" c="dimmed">→</Text>
-                            <Badge color={aspectBadgeColor(rule.aspect)} variant="filled">
+                            <Badge
+                              color={aspectBadgeColor(rule.aspect)}
+                              variant="filled"
+                              style={aspectBadgeStyle(rule.aspect)}
+                            >
                               {getAspectLabel(t, rule.aspect).toUpperCase()}
                             </Badge>
                           </Group>
