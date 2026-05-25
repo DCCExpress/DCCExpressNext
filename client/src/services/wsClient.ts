@@ -33,6 +33,12 @@ type AnyTypedMessageListener =
         raw: TypedServerWsMessage
     ) => void;
 
+type ExplicitPayloadMessageListener<TData> =
+    (
+        data: TData,
+        raw: TypedServerWsMessage
+    ) => void;
+
 const WS_DEBUG = false;
 
 class WsClient {
@@ -199,6 +205,16 @@ class WsClient {
     public on<TType extends ServerWsMessageType>(
         type: TType,
         listener: TypedMessageListener<TType>
+    ): () => void;
+
+    public on<TData>(
+        type: ServerWsMessageType,
+        listener: ExplicitPayloadMessageListener<TData>
+    ): () => void;
+
+    public on(
+        type: ServerWsMessageType,
+        listener: AnyTypedMessageListener
     ): () => void {
         const listeners =
             this.typedListeners.get(type) ??
