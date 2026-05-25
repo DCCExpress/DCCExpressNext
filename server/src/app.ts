@@ -14,10 +14,74 @@ export const app = express();
 type NetworkAddressInfo = {
   name: string;
   address: string;
+  score: number;
 };
 
+const VIRTUAL_INTERFACE_PATTERNS = [
+  "virtualbox",
+  "vmware",
+  "hyper-v",
+  "vethernet",
+  "docker",
+  "wsl",
+  "loopback",
+  "tap",
+  "npcap",
+  "zerotier",
+  "tailscale",
+] as const;
+
+function isVirtualOrHostOnlyInterface(name: string, address: string): boolean {
+  const normalizedName = name.toLowerCase();
+
+  if (VIRTUAL_INTERFACE_PATTERNS.some(pattern => normalizedName.includes(pattern))) {
+    return true;
+  }
+
+  if (address.startsWith("192.168.56.")) {
+    return true;
+  }
+
+  return false;
+}
+
+function scoreAddress(name: string, address: string): number {
+  const normalizedName = name.toLowerCase();
+
+  if (address.startsWith("192.168.1.")) {
+    return 100;
+  }
+
+  if (address.startsWith("192.168.0.")) {
+    return 90;
+  }
+
+  if (address.startsWith("192.168.")) {
+    return 80;
+  }
+
+  if (address.startsWith("10.")) {
+    return 70;
+  }
+
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(address)) {
+    return 60;
+  }
+
+  if (normalizedName.includes("wi-fi") || normalizedName.includes("wifi")) {
+    return 50;
+  }
+
+  if (normalizedName.includes("ethernet")) {
+    return 45;
+  }
+
+  return 10;
+}
+
 function getLanIpv4Addresses(): NetworkAddressInfo[] {
-  const result: NetworkAddressInfo[] = [];
+  const physical: NetworkAddressInfo[] = [];
+  const fallback: NetworkAddressInfo[] = [];
   const interfaces = os.networkInterfaces();
 
   for (const [name, addresses] of Object.entries(interfaces)) {
@@ -26,14 +90,24 @@ function getLanIpv4Addresses(): NetworkAddressInfo[] {
         continue;
       }
 
-      result.push({
+      const entry = {
         name,
         address: item.address,
-      });
+        score: scoreAddress(name, item.address),
+      };
+
+      if (isVirtualOrHostOnlyInterface(name, item.address)) {
+        fallback.push(entry);
+        continue;
+      }
+
+      physical.push(entry);
     }
   }
 
-  return result;
+  const result = physical.length > 0 ? physical : fallback;
+
+  return result.sort((a, b) => b.score - a.score);
 }
 
 function readRequestPort(req: Request): number {
@@ -88,7 +162,7 @@ app.get("/api/network", (req, res) => {
     ok: true,
     hostName: os.hostname(),
     port,
-    addresses,
+    addresses: addresses.map(({ name, address }) => ({ name, address })),
     urls: addresses.map(item => ({
       name: item.name,
       address: item.address,
