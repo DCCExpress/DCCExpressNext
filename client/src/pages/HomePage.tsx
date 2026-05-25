@@ -79,6 +79,14 @@ function openMobileClient(language: string): void {
   window.location.assign(url);
 }
 
+function activateCard(item: HomeCardItem): void {
+  if (item.disabled === true) {
+    return;
+  }
+
+  item.onClick?.();
+}
+
 export default function HomePage({ onOpenLayout }: HomePageProps) {
   const { t, i18n } = useTranslation();
 
@@ -219,96 +227,118 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
           </Paper>
 
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
-            {cards.map((item) => (
-              <Card
-                key={item.key}
-                shadow="sm"
-                padding="lg"
-                radius="lg"
-                withBorder
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "100%",
-                  position: "relative",
-                  overflow: "hidden",
-                  opacity: item.disabled ? 0.78 : 1,
-                  transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease",
-                  background:
-                    "linear-gradient(180deg, rgba(12, 31, 52, 0.58) 0%, rgba(4, 12, 24, 0.36) 100%)",
-                  borderColor: "rgba(120, 220, 255, 0.18)",
-                  backdropFilter: "blur(14px) saturate(1.22)",
-                  boxShadow: "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.045)",
-                }}
-                onMouseEnter={(ev) => {
-                  if (item.disabled) return;
+            {cards.map((item) => {
+              const isActive = item.disabled !== true && item.onClick !== undefined;
 
-                  ev.currentTarget.style.transform = "translateY(-5px)";
-                  ev.currentTarget.style.boxShadow = "0 22px 58px rgba(0, 0, 0, 0.34), 0 0 28px rgba(34, 139, 230, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07)";
-                  ev.currentTarget.style.borderColor = "rgba(120, 220, 255, 0.42)";
-                  ev.currentTarget.style.background = "linear-gradient(180deg, rgba(16, 43, 72, 0.66) 0%, rgba(5, 15, 29, 0.42) 100%)";
-                }}
-                onMouseLeave={(ev) => {
-                  ev.currentTarget.style.transform = "translateY(0)";
-                  ev.currentTarget.style.boxShadow = "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.045)";
-                  ev.currentTarget.style.borderColor = "rgba(120, 220, 255, 0.18)";
-                  ev.currentTarget.style.background = "linear-gradient(180deg, rgba(12, 31, 52, 0.58) 0%, rgba(4, 12, 24, 0.36) 100%)";
-                }}
-              >
-                <Card.Section style={{ position: "relative", overflow: "hidden" }}>
-                  <Image
-                    src={item.image}
-                    alt={item.title}
-                    h={180}
-                    fit="cover"
-                    fallbackSrc={`https://placehold.co/800x450?text=${encodeURIComponent(
-                      item.title
-                    )}`}
-                    style={{
-                      display: "block",
-                      WebkitMaskImage: CARD_IMAGE_FADE_MASK,
-                      maskImage: CARD_IMAGE_FADE_MASK,
-                    }}
-                  />
-                  <Box
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      pointerEvents: "none",
-                      background:
-                        "radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.14) 0%, transparent 48%)",
-                    }}
-                  />
-                </Card.Section>
-
-                <Stack gap="sm" mt="md" style={{ flex: 1, position: "relative" }}>
-                  <Group gap="xs" align="center">
-                    <ThemeIcon variant="light" size="lg" radius="md">
-                      {item.icon}
-                    </ThemeIcon>
-
-                    <Title order={3}>{item.title}</Title>
-                  </Group>
-
-                  <Text size="sm" c="dimmed" style={{ flex: 1 }}>
-                    {item.description}
-                  </Text>
-
-                  <Button
-                    variant={item.disabled ? "default" : "light"}
-                    fullWidth
-                    mt="sm"
-                    disabled={item.disabled === true}
-                    rightSection={
-                      item.disabled === true ? undefined : <IconArrowRight size={16} />
+              return (
+                <Card
+                  key={item.key}
+                  shadow="sm"
+                  padding="lg"
+                  radius="lg"
+                  withBorder
+                  role={isActive ? "button" : undefined}
+                  tabIndex={isActive ? 0 : undefined}
+                  aria-disabled={item.disabled === true ? true : undefined}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
+                    position: "relative",
+                    overflow: "hidden",
+                    opacity: item.disabled ? 0.78 : 1,
+                    cursor: isActive ? "pointer" : "default",
+                    transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease",
+                    background:
+                      "linear-gradient(180deg, rgba(12, 31, 52, 0.58) 0%, rgba(4, 12, 24, 0.36) 100%)",
+                    borderColor: "rgba(120, 220, 255, 0.18)",
+                    backdropFilter: "blur(14px) saturate(1.22)",
+                    boxShadow: "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.045)",
+                  }}
+                  onClick={() => activateCard(item)}
+                  onKeyDown={(ev) => {
+                    if (!isActive) {
+                      return;
                     }
-                    onClick={item.disabled === true ? undefined : item.onClick}
-                  >
-                    {item.buttonLabel}
-                  </Button>
-                </Stack>
-              </Card>
-            ))}
+
+                    if (ev.key === "Enter" || ev.key === " ") {
+                      ev.preventDefault();
+                      activateCard(item);
+                    }
+                  }}
+                  onMouseEnter={(ev) => {
+                    if (item.disabled) return;
+
+                    ev.currentTarget.style.transform = "translateY(-5px)";
+                    ev.currentTarget.style.boxShadow = "0 22px 58px rgba(0, 0, 0, 0.34), 0 0 28px rgba(34, 139, 230, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07)";
+                    ev.currentTarget.style.borderColor = "rgba(120, 220, 255, 0.42)";
+                    ev.currentTarget.style.background = "linear-gradient(180deg, rgba(16, 43, 72, 0.66) 0%, rgba(5, 15, 29, 0.42) 100%)";
+                  }}
+                  onMouseLeave={(ev) => {
+                    ev.currentTarget.style.transform = "translateY(0)";
+                    ev.currentTarget.style.boxShadow = "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.045)";
+                    ev.currentTarget.style.borderColor = "rgba(120, 220, 255, 0.18)";
+                    ev.currentTarget.style.background = "linear-gradient(180deg, rgba(12, 31, 52, 0.58) 0%, rgba(4, 12, 24, 0.36) 100%)";
+                  }}
+                >
+                  <Card.Section style={{ position: "relative", overflow: "hidden" }}>
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      h={180}
+                      fit="cover"
+                      fallbackSrc={`https://placehold.co/800x450?text=${encodeURIComponent(
+                        item.title
+                      )}`}
+                      style={{
+                        display: "block",
+                        WebkitMaskImage: CARD_IMAGE_FADE_MASK,
+                        maskImage: CARD_IMAGE_FADE_MASK,
+                      }}
+                    />
+                    <Box
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        pointerEvents: "none",
+                        background:
+                          "radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.14) 0%, transparent 48%)",
+                      }}
+                    />
+                  </Card.Section>
+
+                  <Stack gap="sm" mt="md" style={{ flex: 1, position: "relative" }}>
+                    <Group gap="xs" align="center">
+                      <ThemeIcon variant="light" size="lg" radius="md">
+                        {item.icon}
+                      </ThemeIcon>
+
+                      <Title order={3}>{item.title}</Title>
+                    </Group>
+
+                    <Text size="sm" c="dimmed" style={{ flex: 1 }}>
+                      {item.description}
+                    </Text>
+
+                    <Button
+                      variant={item.disabled ? "default" : "light"}
+                      fullWidth
+                      mt="sm"
+                      disabled={item.disabled === true}
+                      rightSection={
+                        item.disabled === true ? undefined : <IconArrowRight size={16} />
+                      }
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        activateCard(item);
+                      }}
+                    >
+                      {item.buttonLabel}
+                    </Button>
+                  </Stack>
+                </Card>
+              );
+            })}
           </SimpleGrid>
 
           <Paper
