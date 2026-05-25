@@ -23,6 +23,7 @@ import type {
 import {
   getLocos,
 } from "../../client/src/api/domainApi";
+import CollapsiblePanelCard from "../../client/src/components/common/CollapsiblePanelCard";
 import LocoPanel from "../../client/src/layout/LocoPanel";
 import {
   getDefaultWsUrl,
@@ -120,24 +121,29 @@ export default function App() {
   return (
     <Box className="mobile-shell">
       <Stack gap="md" h="100%">
-        <Card withBorder radius="lg" p="md">
-          <Group justify="space-between" align="center" wrap="nowrap">
+        <CollapsiblePanelCard
+          title={(
             <Group gap="xs" wrap="nowrap">
-              <IconTrain size={28} />
+              <IconTrain size={24} />
               <div>
-                <Title order={3}>DCCExpress Mobile</Title>
+                <Title order={4}>DCCExpress Mobile</Title>
                 <Text size="xs" c="dimmed">
                   Shared client LocoPanel
                 </Text>
               </div>
             </Group>
-
+          )}
+          collapsedStorageKey="dcc-express.mobile.header.collapsed"
+          expandTooltip="Expand"
+          collapseTooltip="Collapse"
+          rightSection={(
             <Badge color={statusColor(status)} variant="light">
               {formatStatus(status)}
             </Badge>
-          </Group>
-
-          <Group mt="sm" justify="space-between" align="center">
+          )}
+          cardPadding="md"
+        >
+          <Group justify="space-between" align="center">
             <Text size="xs" c="dimmed">
               Client UUID: {wsApi.clientUuid}
             </Text>
@@ -152,7 +158,7 @@ export default function App() {
               Reload locos
             </Button>
           </Group>
-        </Card>
+        </CollapsiblePanelCard>
 
         {isLoading && !hasLocos ? (
           <Card withBorder radius="lg" p="xl">
