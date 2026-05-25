@@ -11,6 +11,7 @@ import {
   Select,
   Stack,
   TextInput,
+  useComputedColorScheme,
 } from "@mantine/core";
 
 import {
@@ -61,6 +62,15 @@ export default function LocoActionCard({
   onUpdateAction,
   onDeleteAction,
 }: Props) {
+  const computedColorScheme = useComputedColorScheme("light");
+  const cardBackground = computedColorScheme === "dark"
+    ? "var(--mantine-color-dark-6)"
+    : "var(--mantine-color-gray-0)";
+
+  const cardBorderColor = computedColorScheme === "dark"
+    ? "var(--mantine-color-dark-4)"
+    : "var(--mantine-color-gray-3)";
+
   const updateCurrentAction = (nextAction: LocoAction): void => {
     onUpdateAction(action.id, nextAction);
   };
@@ -74,7 +84,12 @@ export default function LocoActionCard({
       onDragStart={event => onDragStart(event, action.id)}
       onDragEnd={onDragEnd}
       onDragOver={event => onDragOverAction(event, action.id, actionIndex)}
-      style={{ opacity: draggedActionId === action.id ? 0.35 : 1, transition: "opacity 120ms ease, transform 120ms ease" }}
+      style={{
+        backgroundColor: cardBackground,
+        borderColor: cardBorderColor,
+        opacity: draggedActionId === action.id ? 0.35 : 1,
+        transition: "opacity 120ms ease, transform 120ms ease, background-color 120ms ease, border-color 120ms ease",
+      }}
     >
       <Stack gap="sm">
         <Group justify="space-between" wrap="nowrap">
