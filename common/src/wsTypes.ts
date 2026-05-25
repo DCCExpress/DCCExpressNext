@@ -28,6 +28,7 @@ import type {
 
 import type {
   SignalLogicDocumentDto,
+  SignalLogicRuntimeStateDto,
   SignalLogicValidationIssue,
 } from "./signalLogic.js";
 
@@ -247,6 +248,7 @@ export type SignalLogicResponsePayload = WsCommandResponseMeta & {
   document?: SignalLogicDocumentDto;
   issues?: SignalLogicValidationIssue[];
   created?: boolean;
+  state?: SignalLogicRuntimeStateDto;
 };
 
 export type FastClockResponsePayload = WsCommandResponseMeta & {
@@ -323,6 +325,7 @@ export type ServerWsPayloadMap = {
   commandCenterConfigResponse: CommandCenterConfigResponsePayload;
   appSettingsResponse: AppSettingsResponsePayload;
   signalLogicResponse: SignalLogicResponsePayload;
+  signalLogicStateChanged: SignalLogicRuntimeStateDto;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
 
