@@ -9,12 +9,14 @@ import {
 } from "@mantine/core";
 
 import {
+  IconCode,
   IconEdit,
   IconListDetails,
   IconPlayerPause,
   IconPlayerPlayFilled,
   IconPlayerSkipForward,
   IconPlayerStopFilled,
+  IconTrafficLights,
   IconTrain,
   IconVolume,
   IconVolumeOff,
@@ -44,7 +46,6 @@ import StatusBadge from "../components/common/StatusBadge";
 import FastClockStatus from "../components/common/FastClockStatus";
 import ScriptEditorDialog from "../components/ScriptEditorDialog";
 import { useCommandCenter } from "../context/CommandCenterContext";
-import { useBrowserStats } from "../hooks/useBrowserStats";
 import { useScriptStatus } from "../hooks/useScriptStatus";
 import { useServerRuntimeStats } from "../hooks/useServerRuntimeStats";
 import { useWsStatus } from "../hooks/useWsStatus";
@@ -79,7 +80,6 @@ export default function StatusBar({
   onOpenSignalLogicDialog,
 }: StatusBarProps) {
   const wsStatus = useWsStatus();
-  const browserStats = useBrowserStats(1000);
   const serverStats = useServerRuntimeStats();
 
   const {
@@ -181,7 +181,7 @@ export default function StatusBar({
         setDispatcherState(result.state);
       })
       .catch(error => {
-        console.error("Could not load dispatcher state:", error);
+        console.error("Could not load Signal Control state:", error);
       });
   }, [wsConnected]);
 
@@ -220,7 +220,7 @@ export default function StatusBar({
         setDispatcherState(result.state);
       })
       .catch(error => {
-        console.error("Could not toggle dispatcher:", error);
+        console.error("Could not toggle Signal Control:", error);
       })
       .finally(() => {
         setDispatcherBusy(false);
@@ -309,7 +309,10 @@ export default function StatusBar({
           <Divider orientation="vertical" />
 
           <StatusBadge color={scriptBadgeColor}>
-            SCRIPT {scriptStatus.toUpperCase()}
+            <Group gap={4} wrap="nowrap">
+              <IconCode size={13} />
+              <span>{scriptStatus.toUpperCase()}</span>
+            </Group>
           </StatusBadge>
 
           <StatusActionIcon
@@ -330,11 +333,14 @@ export default function StatusBar({
           </StatusActionIcon>
 
           <StatusBadge color={dispatcherBadgeColor}>
-            DISPATCHER {dispatcherIsRunning ? "RUNNING" : "STOPPED"}
+            <Group gap={4} wrap="nowrap">
+              <IconTrafficLights size={13} />
+              <span>{dispatcherIsRunning ? "RUNNING" : "STOPPED"}</span>
+            </Group>
           </StatusBadge>
 
           <StatusActionIcon
-            tooltip={dispatcherIsRunning ? "Stop dispatcher" : "Start dispatcher"}
+            tooltip={dispatcherIsRunning ? "Stop Signal Control" : "Start Signal Control"}
             color={dispatcherIsRunning ? "red" : "green"}
             disabled={!wsConnected || dispatcherBusy}
             onClick={handleToggleDispatcher}
@@ -343,7 +349,7 @@ export default function StatusBar({
           </StatusActionIcon>
 
           <StatusActionIcon
-            tooltip="Edit dispatcher rules"
+            tooltip="Edit Signal Control rules"
             color="blue"
             onClick={onOpenSignalLogicDialog}
           >
@@ -472,25 +478,4 @@ export default function StatusBar({
       </Modal>
     </>
   );
-}
-
-function getMemoryColor(value: number | null): string {
-  if (value === null) return "gray";
-  if (value > 1000) return "red";
-  if (value > 500) return "orange";
-  return "green";
-}
-
-function getFpsColor(value: number | null): string {
-  if (value === null) return "gray";
-  if (value < 20) return "red";
-  if (value < 45) return "orange";
-  return "green";
-}
-
-function getCpuLoadColor(value: number | null): string {
-  if (value === null) return "gray";
-  if (value > 85) return "red";
-  if (value > 65) return "orange";
-  return "green";
 }
