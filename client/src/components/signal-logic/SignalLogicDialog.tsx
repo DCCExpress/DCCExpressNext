@@ -255,6 +255,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [runtimeBusy, setRuntimeBusy] = useState(false);
+  const [autostartBusy, setAutostartBusy] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [warningText, setWarningText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -418,7 +419,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   };
 
   const setAutostart = async (autostart: boolean): Promise<void> => {
-    setRuntimeBusy(true);
+    setAutostartBusy(true);
     clearMessages();
     try {
       const result = await setSignalLogicAutostartWs(autostart);
@@ -427,7 +428,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
     } finally {
-      setRuntimeBusy(false);
+      setAutostartBusy(false);
     }
   };
 
@@ -889,8 +890,9 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
           <Group>
             <Checkbox
               checked={runtimeState.autostart}
-              disabled={runtimeBusy}
+              disabled={autostartBusy}
               label={t("signalLogic.autostart")}
+              onClick={event => event.stopPropagation()}
               onChange={event => void setAutostart(event.currentTarget.checked)}
             />
             <Button
@@ -899,7 +901,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
               leftSection={<IconPlayerPlay size={16} />}
               onClick={() => void startSignalLogic()}
               loading={runtimeBusy && !runtimeState.running}
-              disabled={runtimeState.running}
+              disabled={runtimeState.running || runtimeBusy}
             >
               {t("signalLogic.start")}
             </Button>
@@ -909,7 +911,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
               leftSection={<IconPlayerStop size={16} />}
               onClick={() => void stopSignalLogic()}
               loading={runtimeBusy && runtimeState.running}
-              disabled={!runtimeState.running}
+              disabled={!runtimeState.running || runtimeBusy}
             >
               {t("signalLogic.stop")}
             </Button>
