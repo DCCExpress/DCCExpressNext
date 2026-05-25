@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import {
   Button,
   Card,
@@ -24,7 +26,7 @@ export default function AudioSettingsTab({
   settings,
   onChange,
 }: AudioSettingsTabProps) {
-  const identity = getClientIdentity();
+  const [identity, setIdentity] = useState(() => getClientIdentity());
 
   const patchAudio = (audioPatch: Partial<AudioSettings>): void => {
     onChange({
@@ -55,6 +57,7 @@ export default function AudioSettingsTab({
             value={identity.friendlyName}
             onChange={event => {
               const next = saveClientFriendlyName(event.currentTarget.value);
+              setIdentity(next);
 
               if (settings.audio.selectedClientId === next.clientId) {
                 patchAudio({ selectedClientName: next.friendlyName });
@@ -72,9 +75,11 @@ export default function AudioSettingsTab({
             <Button
               variant="light"
               onClick={() => {
+                const previousClientId = identity.clientId;
                 const next = regenerateClientIdentity();
+                setIdentity(next);
 
-                if (settings.audio.selectedClientId === identity.clientId) {
+                if (settings.audio.selectedClientId === previousClientId) {
                   patchAudio({
                     selectedClientId: next.clientId,
                     selectedClientName: next.friendlyName,
