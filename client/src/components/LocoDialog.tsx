@@ -25,6 +25,8 @@ import {
 } from "@mantine/core";
 
 import {
+  IconArrowDown,
+  IconArrowUp,
   IconGripVertical,
   IconPhoto,
   IconPlus,
@@ -377,6 +379,23 @@ export default function LocoDialog({
     );
   };
 
+  const moveActionByOffset = (
+    hook: LocoActionHook,
+    actionId: string,
+    offset: number
+  ): void => {
+    if (!selectedLoco) return;
+
+    const actions = getLocoActions(selectedLoco, hook);
+    const fromIndex = actions.findIndex(action => action.id === actionId);
+    const toIndex = fromIndex + offset;
+
+    updateActionsForHook(
+      hook,
+      moveItem(actions, fromIndex, toIndex)
+    );
+  };
+
   const reorderAction = (
     hook: LocoActionHook,
     targetActionId: string
@@ -461,7 +480,8 @@ export default function LocoDialog({
   const renderActionEditor = (
     action: LocoAction,
     hook: LocoActionHook,
-    actionIndex: number
+    actionIndex: number,
+    actionCount: number
   ) => {
     const updateCurrentAction = (nextAction: LocoAction): void => {
       updateAction(hook, action.id, nextAction);
@@ -511,13 +531,33 @@ export default function LocoDialog({
               <Badge variant="light">{getActionSummary(action)}</Badge>
             </Group>
 
-            <ActionIcon
-              color="red"
-              variant="light"
-              onClick={() => deleteAction(hook, action.id)}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
+            <Group gap="xs" wrap="nowrap">
+              <ActionIcon
+                color="gray"
+                variant="light"
+                disabled={actionIndex === 0}
+                onClick={() => moveActionByOffset(hook, action.id, -1)}
+              >
+                <IconArrowUp size={16} />
+              </ActionIcon>
+
+              <ActionIcon
+                color="gray"
+                variant="light"
+                disabled={actionIndex >= actionCount - 1}
+                onClick={() => moveActionByOffset(hook, action.id, 1)}
+              >
+                <IconArrowDown size={16} />
+              </ActionIcon>
+
+              <ActionIcon
+                color="red"
+                variant="light"
+                onClick={() => deleteAction(hook, action.id)}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Group>
           </Group>
 
           <Group align="flex-end" wrap="wrap">
@@ -896,7 +936,12 @@ export default function LocoDialog({
                               <ScrollArea style={{ height: "100%" }}>
                                 <Stack gap="sm">
                                   {actions.map((action, actionIndex) =>
-                                    renderActionEditor(action, hook.value, actionIndex)
+                                    renderActionEditor(
+                                      action,
+                                      hook.value,
+                                      actionIndex,
+                                      actions.length
+                                    )
                                   )}
 
                                   {actions.length === 0 && (
