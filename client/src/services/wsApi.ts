@@ -42,9 +42,7 @@ class WebSocketApi {
     return wsClient.send(message);
   }
 
-  private waitUntilConnected(
-    timeoutMs: number
-  ): Promise<void> {
+  private waitUntilConnected(timeoutMs: number): Promise<void> {
     if (wsClient.isConnected()) {
       return Promise.resolve();
     }
@@ -67,9 +65,7 @@ class WebSocketApi {
 
       timeoutHandle = window.setTimeout(() => {
         unsubscribe();
-        reject(
-          new Error("WebSocket connection timed out.")
-        );
+        reject(new Error("WebSocket connection timed out."));
       }, timeoutMs);
     });
   }
@@ -81,9 +77,7 @@ class WebSocketApi {
     clientType: TClientType,
     data: ClientWsPayloadMap[TClientType],
     responseType: TServerType,
-    matches: (
-      data: ServerWsPayloadMap[TServerType]
-    ) => boolean,
+    matches: (data: ServerWsPayloadMap[TServerType]) => boolean,
     timeoutMs = 10000
   ): Promise<ServerWsPayloadMap[TServerType]> {
     await this.waitUntilConnected(timeoutMs);
@@ -104,72 +98,55 @@ class WebSocketApi {
         unsubscribeStatus();
       };
 
-      const resolveOnce = (
-        responseData: ServerWsPayloadMap[TServerType]
-      ): void => {
-        if (settled) {
-          return;
-        }
-
+      const resolveOnce = (responseData: ServerWsPayloadMap[TServerType]): void => {
+        if (settled) return;
         settled = true;
         cleanup();
         resolve(responseData);
       };
 
       const rejectOnce = (error: Error): void => {
-        if (settled) {
-          return;
-        }
-
+        if (settled) return;
         settled = true;
         cleanup();
         reject(error);
       };
 
       unsubscribeResponse = wsClient.on(responseType, responseData => {
-        if (!matches(responseData)) {
-          return;
-        }
-
+        if (!matches(responseData)) return;
         resolveOnce(responseData);
       });
 
       unsubscribeStatus = wsClient.subscribeStatus(status => {
-        if (
-          status === "connected" ||
-          status === "connecting" ||
-          status === "reconnecting"
-        ) {
+        if (status === "connected" || status === "connecting" || status === "reconnecting") {
           return;
         }
 
-        rejectOnce(
-          new Error(
-            `WebSocket request failed because connection is ${status}: ${String(clientType)}`
-          )
-        );
+        rejectOnce(new Error(`WebSocket request failed because connection is ${status}: ${String(clientType)}`));
       });
 
       timeoutHandle = window.setTimeout(() => {
-        rejectOnce(
-          new Error(
-            `WebSocket request timed out: ${String(clientType)}`
-          )
-        );
+        rejectOnce(new Error(`WebSocket request timed out: ${String(clientType)}`));
       }, timeoutMs);
 
       const sent = this.send(clientType, data);
 
       if (!sent) {
-        rejectOnce(
-          new Error("WebSocket is not connected.")
-        );
+        rejectOnce(new Error("WebSocket is not connected."));
       }
     });
   }
 
   setTrackPower(on: boolean): boolean {
     return this.send("setTrackPower", { on });
+  }
+
+  powerOn(): boolean {
+    return this.setTrackPower(true);
+  }
+
+  powerOff(): boolean {
+    return this.setTrackPower(false);
   }
 
   setProgrammingPower(on: boolean): boolean {
@@ -304,7 +281,7 @@ class WebSocketApi {
     return this.send("abortAllTasks", {});
   }
 
-  setRuntimeVariable(key: RuntimeVariableKey, value: RuntimeVariableValue): boolean {
+  setRuntimeVariable<TKey extends RuntimeVariableKey>(key: TKey, value: RuntimeVariableValue<TKey>): boolean {
     return this.send("setRuntimeVariable", { key, value });
   }
 
