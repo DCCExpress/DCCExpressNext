@@ -23,6 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LayoutView } from "../../models/editor/core/LayoutView";
 import { isTurnoutElement } from "../../models/editor/core/LayoutView";
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
+import { TrackSensorElementView } from "../../models/editor/elements/TrackSensorElementView";
 import { generateId } from "../../helpers";
 import AppModal from "../common/AppModal";
 import {
@@ -31,6 +32,7 @@ import {
 } from "../../api/signalLogicWsApi";
 import type {
   SignalAspect,
+  SignalLogicConditionDto,
   SignalLogicRuleGroupDto,
   SignalLogicValidationIssue,
 } from "../../../../common/src/signalLogic";
@@ -45,7 +47,7 @@ type SignalLogicDialogProps = {
   layout: LayoutView;
 };
 
-type TurnoutOption = {
+type AddressOption = {
   value: string;
   label: string;
 };
@@ -63,10 +65,33 @@ const aspectLabels: Record<SignalAspect, string> = {
   white: "White",
 };
 
-const booleanOptions = [
+const turnoutStateOptions = [
   { value: "true", label: "Closed" },
   { value: "false", label: "Thrown" },
 ];
+
+const sensorStateOptions = [
+  { value: "true", label: "Occupied / active" },
+  { value: "false", label: "Free / inactive" },
+];
+
+function createTurnoutCondition(turnoutAddress: number): SignalLogicConditionDto {
+  return {
+    id: generateId(),
+    type: "turnout",
+    turnoutAddress,
+    closed: true,
+  };
+}
+
+function createSensorCondition(sensorAddress: number): SignalLogicConditionDto {
+  return {
+    id: generateId(),
+    type: "sensor",
+    sensorAddress,
+    active: true,
+  };
+}
 
 function createRule(signalAddress: number): SignalLogicRuleGroupDto {
   return {
@@ -77,13 +102,7 @@ function createRule(signalAddress: number): SignalLogicRuleGroupDto {
       {
         id: generateId(),
         aspect: "green",
-        conditions: [
-          {
-            id: generateId(),
-            turnoutAddress: 0,
-            closed: true,
-          },
-        ],
+        conditions: [createTurnoutCondition(0)],
       },
     ],
   };
@@ -102,17 +121,45 @@ function aspectToMethod(aspect: SignalAspect): string {
   }
 }
 
+function getConditionAddress(condition: SignalLogicConditionDto): number {
+  return condition.type === "sensor"
+    ? condition.sensorAddress
+    : condition.turnoutAddress;
+}
+
+function getConditionExpression(condition: SignalLogicConditionDto): string | null {
+  if (condition.type === "sensor") {
+    if (condition.sensorAddress <= 0) return null;
+    const variableName = `s${condition.sensorAddress}Active`;
+    return condition.active ? variableName : `!${variableName}`;
+  }
+
+  if (condition.turnoutAddress <= 0) return null;
+  const variableName = `t${condition.turnoutAddress}Closed`;
+  return condition.closed ? variableName : `!${variableName}`;
+}
+
 function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
   const lines: string[] = ["while (true) {", ""];
 
   const turnoutAddresses = Array.from(
     new Set(
       groups
-        .flatMap(group =>
-          group.rules.flatMap(rule =>
-            rule.conditions.map(condition => condition.turnoutAddress)
-          )
-        )
+        .flatMap(group => group.rules)
+        .flatMap(rule => rule.conditions)
+        .filter(condition => condition.type === "turnout")
+        .map(condition => condition.turnoutAddress)
+        .filter(address => address > 0)
+    )
+  ).sort((a, b) => a - b);
+
+  const sensorAddresses = Array.from(
+    new Set(
+      groups
+        .flatMap(group => group.rules)
+        .flatMap(rule => rule.conditions)
+        .filter(condition => condition.type === "sensor")
+        .map(condition => condition.sensorAddress)
         .filter(address => address > 0)
     )
   ).sort((a, b) => a - b);
@@ -121,7 +168,11 @@ function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
     lines.push(`  const t${address}Closed = getTurnoutState(${address});`);
   }
 
-  if (turnoutAddresses.length > 0) {
+  for (const address of sensorAddresses) {
+    lines.push(`  const s${address}Active = getSensorState(${address});`);
+  }
+
+  if (turnoutAddresses.length > 0 || sensorAddresses.length > 0) {
     lines.push("");
   }
 
@@ -130,15 +181,12 @@ function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
 
     group.rules.forEach((rule, ruleIndex) => {
       const keyword = ruleIndex === 0 ? "if" : "else if";
-      const expression =
-        rule.conditions.length === 0
-          ? "true"
-          : rule.conditions
-              .map(condition => {
-                const variableName = `t${condition.turnoutAddress}Closed`;
-                return condition.closed ? variableName : `!${variableName}`;
-              })
-              .join(" && ");
+      const expressions = rule.conditions
+        .map(getConditionExpression)
+        .filter((expression): expression is string => Boolean(expression));
+      const expression = expressions.length === 0
+        ? "true"
+        : expressions.join(" && ");
 
       lines.push(`  ${keyword} (${expression}) {`);
       lines.push(`    await ${aspectToMethod(rule.aspect)}(${group.signalAddress});`);
@@ -157,11 +205,13 @@ function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
   return lines.join("\n");
 }
 
-function formatCondition(condition: SignalLogicRuleGroupDto["rules"][number]["conditions"][number]): string {
-  if (condition.turnoutAddress <= 0) {
-    return "Turnout not selected";
+function formatCondition(condition: SignalLogicConditionDto): string {
+  if (condition.type === "sensor") {
+    if (condition.sensorAddress <= 0) return "Sensor not selected";
+    return `S${condition.sensorAddress} = ${condition.active ? "occupied / active" : "free / inactive"}`;
   }
 
+  if (condition.turnoutAddress <= 0) return "Turnout not selected";
   return `T${condition.turnoutAddress} = ${condition.closed ? "closed" : "thrown"}`;
 }
 
@@ -204,13 +254,26 @@ export default function SignalLogicDialog({
       .sort((a, b) => Number(a.value) - Number(b.value));
   }, [layout]);
 
-  const turnoutOptions = useMemo<TurnoutOption[]>(() => {
+  const turnoutOptions = useMemo<AddressOption[]>(() => {
     return layout
       .getAllElements()
       .filter(isTurnoutElement)
       .map(turnout => ({
         value: turnout.turnoutAddress.toString(),
         label: `Turnout #${turnout.turnoutAddress}`,
+      }))
+      .sort((a, b) => Number(a.value) - Number(b.value));
+  }, [layout]);
+
+  const sensorOptions = useMemo<AddressOption[]>(() => {
+    return layout
+      .getAllElements()
+      .filter((element): element is TrackSensorElementView =>
+        element instanceof TrackSensorElementView
+      )
+      .map(sensor => ({
+        value: sensor.address.toString(),
+        label: `Sensor #${sensor.address}`,
       }))
       .sort((a, b) => Number(a.value) - Number(b.value));
   }, [layout]);
@@ -228,6 +291,13 @@ export default function SignalLogicDialog({
       address: Number(turnout.value),
     })),
     [turnoutOptions]
+  );
+
+  const knownSensors = useMemo(
+    () => sensorOptions.map(sensor => ({
+      address: Number(sensor.value),
+    })),
+    [sensorOptions]
   );
 
   const [groups, setGroups] = useState<SignalLogicRuleGroupDto[]>([]);
@@ -251,8 +321,8 @@ export default function SignalLogicDialog({
   );
 
   const validationIssues = useMemo(
-    () => validateSignalLogicDocument(document, knownSignals, knownTurnouts),
-    [document, knownSignals, knownTurnouts]
+    () => validateSignalLogicDocument(document, knownSignals, knownTurnouts, knownSensors),
+    [document, knownSignals, knownTurnouts, knownSensors]
   );
 
   const issueList = validationIssues.length > 0
@@ -370,13 +440,7 @@ export default function SignalLogicDialog({
         {
           id: generateId(),
           aspect: normalizeAspectForSignal(signalOptions, group.signalAddress, "yellow"),
-          conditions: [
-            {
-              id: generateId(),
-              turnoutAddress: Number(turnoutOptions[0]?.value ?? 0),
-              closed: true,
-            },
-          ],
+          conditions: [],
         },
       ],
     }));
@@ -389,7 +453,7 @@ export default function SignalLogicDialog({
     }));
   };
 
-  const addCondition = (groupId: string, ruleId: string): void => {
+  const addTurnoutCondition = (groupId: string, ruleId: string): void => {
     updateGroup(groupId, group => ({
       ...group,
       rules: group.rules.map(rule =>
@@ -398,11 +462,24 @@ export default function SignalLogicDialog({
               ...rule,
               conditions: [
                 ...rule.conditions,
-                {
-                  id: generateId(),
-                  turnoutAddress: Number(turnoutOptions[0]?.value ?? 0),
-                  closed: true,
-                },
+                createTurnoutCondition(Number(turnoutOptions[0]?.value ?? 0)),
+              ],
+            }
+          : rule
+      ),
+    }));
+  };
+
+  const addSensorCondition = (groupId: string, ruleId: string): void => {
+    updateGroup(groupId, group => ({
+      ...group,
+      rules: group.rules.map(rule =>
+        rule.id === ruleId
+          ? {
+              ...rule,
+              conditions: [
+                ...rule.conditions,
+                createSensorCondition(Number(sensorOptions[0]?.value ?? 0)),
               ],
             }
           : rule
@@ -661,66 +738,129 @@ export default function SignalLogicDialog({
                                   {conditionIndex === 0 ? "IF" : "AND"}
                                 </Text>
 
-                                <Select
-                                  label={conditionIndex === 0 ? "Turnout" : undefined}
-                                  data={turnoutOptions}
-                                  value={
-                                    condition.turnoutAddress > 0
-                                      ? condition.turnoutAddress.toString()
-                                      : null
-                                  }
-                                  placeholder="Select turnout"
-                                  onChange={value => {
-                                    updateGroup(selectedGroup.id, group => ({
-                                      ...group,
-                                      rules: group.rules.map(currentRule =>
-                                        currentRule.id === rule.id
-                                          ? {
-                                              ...currentRule,
-                                              conditions: currentRule.conditions.map(
-                                                currentCondition =>
-                                                  currentCondition.id === condition.id
-                                                    ? {
-                                                        ...currentCondition,
-                                                        turnoutAddress: Number(value ?? 0),
-                                                      }
-                                                    : currentCondition
-                                              ),
-                                            }
-                                          : currentRule
-                                      ),
-                                    }));
-                                  }}
-                                  w={220}
-                                />
+                                {condition.type === "sensor" ? (
+                                  <>
+                                    <Select
+                                      label={conditionIndex === 0 ? "Sensor" : undefined}
+                                      data={sensorOptions}
+                                      value={
+                                        condition.sensorAddress > 0
+                                          ? condition.sensorAddress.toString()
+                                          : null
+                                      }
+                                      placeholder="Select sensor"
+                                      onChange={value => {
+                                        updateGroup(selectedGroup.id, group => ({
+                                          ...group,
+                                          rules: group.rules.map(currentRule =>
+                                            currentRule.id === rule.id
+                                              ? {
+                                                  ...currentRule,
+                                                  conditions: currentRule.conditions.map(currentCondition =>
+                                                    currentCondition.id === condition.id
+                                                      ? {
+                                                          ...condition,
+                                                          sensorAddress: Number(value ?? 0),
+                                                        }
+                                                      : currentCondition
+                                                  ),
+                                                }
+                                              : currentRule
+                                          ),
+                                        }));
+                                      }}
+                                      w={220}
+                                    />
 
-                                <Select
-                                  label={conditionIndex === 0 ? "State" : undefined}
-                                  data={booleanOptions}
-                                  value={condition.closed.toString()}
-                                  onChange={value => {
-                                    updateGroup(selectedGroup.id, group => ({
-                                      ...group,
-                                      rules: group.rules.map(currentRule =>
-                                        currentRule.id === rule.id
-                                          ? {
-                                              ...currentRule,
-                                              conditions: currentRule.conditions.map(
-                                                currentCondition =>
-                                                  currentCondition.id === condition.id
-                                                    ? {
-                                                        ...currentCondition,
-                                                        closed: value === "true",
-                                                      }
-                                                    : currentCondition
-                                              ),
-                                            }
-                                          : currentRule
-                                      ),
-                                    }));
-                                  }}
-                                  w={160}
-                                />
+                                    <Select
+                                      label={conditionIndex === 0 ? "State" : undefined}
+                                      data={sensorStateOptions}
+                                      value={condition.active.toString()}
+                                      onChange={value => {
+                                        updateGroup(selectedGroup.id, group => ({
+                                          ...group,
+                                          rules: group.rules.map(currentRule =>
+                                            currentRule.id === rule.id
+                                              ? {
+                                                  ...currentRule,
+                                                  conditions: currentRule.conditions.map(currentCondition =>
+                                                    currentCondition.id === condition.id
+                                                      ? {
+                                                          ...condition,
+                                                          active: value === "true",
+                                                        }
+                                                      : currentCondition
+                                                  ),
+                                                }
+                                              : currentRule
+                                          ),
+                                        }));
+                                      }}
+                                      w={180}
+                                    />
+                                  </>
+                                ) : (
+                                  <>
+                                    <Select
+                                      label={conditionIndex === 0 ? "Turnout" : undefined}
+                                      data={turnoutOptions}
+                                      value={
+                                        condition.turnoutAddress > 0
+                                          ? condition.turnoutAddress.toString()
+                                          : null
+                                      }
+                                      placeholder="Select turnout"
+                                      onChange={value => {
+                                        updateGroup(selectedGroup.id, group => ({
+                                          ...group,
+                                          rules: group.rules.map(currentRule =>
+                                            currentRule.id === rule.id
+                                              ? {
+                                                  ...currentRule,
+                                                  conditions: currentRule.conditions.map(currentCondition =>
+                                                    currentCondition.id === condition.id
+                                                      ? {
+                                                          ...condition,
+                                                          turnoutAddress: Number(value ?? 0),
+                                                        }
+                                                      : currentCondition
+                                                  ),
+                                                }
+                                              : currentRule
+                                          ),
+                                        }));
+                                      }}
+                                      w={220}
+                                    />
+
+                                    <Select
+                                      label={conditionIndex === 0 ? "State" : undefined}
+                                      data={turnoutStateOptions}
+                                      value={condition.closed.toString()}
+                                      onChange={value => {
+                                        updateGroup(selectedGroup.id, group => ({
+                                          ...group,
+                                          rules: group.rules.map(currentRule =>
+                                            currentRule.id === rule.id
+                                              ? {
+                                                  ...currentRule,
+                                                  conditions: currentRule.conditions.map(currentCondition =>
+                                                    currentCondition.id === condition.id
+                                                      ? {
+                                                          ...condition,
+                                                          closed: value === "true",
+                                                        }
+                                                      : currentCondition
+                                                  ),
+                                                }
+                                              : currentRule
+                                          ),
+                                        }));
+                                      }}
+                                      w={160}
+                                    />
+                                  </>
+                                )}
 
                                 <ActionIcon
                                   color="red"
@@ -735,15 +875,25 @@ export default function SignalLogicDialog({
                               </Group>
                             ))}
 
-                            <Button
-                              size="xs"
-                              variant="light"
-                              leftSection={<IconPlus size={14} />}
-                              onClick={() => addCondition(selectedGroup.id, rule.id)}
-                              w={180}
-                            >
-                              Add condition
-                            </Button>
+                            <Group gap="xs">
+                              <Button
+                                size="xs"
+                                variant="light"
+                                leftSection={<IconPlus size={14} />}
+                                onClick={() => addTurnoutCondition(selectedGroup.id, rule.id)}
+                              >
+                                Add turnout condition
+                              </Button>
+
+                              <Button
+                                size="xs"
+                                variant="light"
+                                leftSection={<IconPlus size={14} />}
+                                onClick={() => addSensorCondition(selectedGroup.id, rule.id)}
+                              >
+                                Add occupancy condition
+                              </Button>
+                            </Group>
                           </Stack>
                         </Card>
                       ))}
@@ -819,7 +969,7 @@ export default function SignalLogicDialog({
 
               <Group justify="space-between" pb="xs">
                 <Text size="sm" c="dimmed">
-                  Found {signalOptions.length} signals and {turnoutOptions.length} turnouts in the current layout.
+                  Found {signalOptions.length} signals, {turnoutOptions.length} turnouts and {sensorOptions.length} occupancy sensors in the current layout.
                 </Text>
                 <NumberInput
                   label="Polling interval preview"
