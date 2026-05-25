@@ -169,6 +169,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           <StatusBar
             rightPanelMode={rightPanelMode}
             setRightPanelMode={setRightPanelMode}
+            onOpenSignalLogicDialog={() => setSignalLogicDialogOpened(true)}
           />
         </AppShell.Footer>
       </AppShell>
