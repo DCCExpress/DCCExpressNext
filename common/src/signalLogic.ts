@@ -11,13 +11,25 @@ export const SIGNAL_ASPECTS = [
 
 export type SignalLogicTurnoutConditionDto = {
   id: string;
+  type: "turnout";
   turnoutAddress: number;
   closed: boolean;
 };
 
+export type SignalLogicSensorConditionDto = {
+  id: string;
+  type: "sensor";
+  sensorAddress: number;
+  active: boolean;
+};
+
+export type SignalLogicConditionDto =
+  | SignalLogicTurnoutConditionDto
+  | SignalLogicSensorConditionDto;
+
 export type SignalLogicRuleDto = {
   id: string;
-  conditions: SignalLogicTurnoutConditionDto[];
+  conditions: SignalLogicConditionDto[];
   aspect: SignalAspect;
 };
 
@@ -42,6 +54,10 @@ export type SignalLogicKnownTurnout = {
   address: number;
 };
 
+export type SignalLogicKnownSensor = {
+  address: number;
+};
+
 export type SignalLogicValidationIssue = {
   level: "error" | "warning";
   message: string;
@@ -54,6 +70,8 @@ export const DEFAULT_SIGNAL_LOGIC_DOCUMENT: SignalLogicDocumentDto = {
   version: 1,
   groups: [],
 };
+
+type RawCondition = Partial<SignalLogicTurnoutConditionDto & SignalLogicSensorConditionDto>;
 
 export function getAllowedSignalAspects(signalAspect: number): SignalAspect[] {
   if (signalAspect >= 4) {
@@ -69,6 +87,51 @@ export function getAllowedSignalAspects(signalAspect: number): SignalAspect[] {
 
 export function isSignalAspect(value: unknown): value is SignalAspect {
   return typeof value === "string" && (SIGNAL_ASPECTS as readonly string[]).includes(value);
+}
+
+function getConditionId(
+  condition: RawCondition,
+  groupIndex: number,
+  ruleIndex: number,
+  conditionIndex: number
+): string {
+  return typeof condition?.id === "string" && condition.id.length > 0
+    ? condition.id
+    : `signal-condition-${groupIndex + 1}-${ruleIndex + 1}-${conditionIndex + 1}`;
+}
+
+function normalizeCondition(
+  condition: RawCondition,
+  groupIndex: number,
+  ruleIndex: number,
+  conditionIndex: number
+): SignalLogicConditionDto {
+  const id = getConditionId(
+    condition,
+    groupIndex,
+    ruleIndex,
+    conditionIndex
+  );
+
+  if (condition?.type === "sensor") {
+    return {
+      id,
+      type: "sensor",
+      sensorAddress: Number.isFinite(Number(condition.sensorAddress))
+        ? Number(condition.sensorAddress)
+        : 0,
+      active: Boolean(condition.active),
+    };
+  }
+
+  return {
+    id,
+    type: "turnout",
+    turnoutAddress: Number.isFinite(Number(condition?.turnoutAddress))
+      ? Number(condition.turnoutAddress)
+      : 0,
+    closed: Boolean(condition?.closed),
+  };
 }
 
 export function normalizeSignalLogicDocument(input: unknown): SignalLogicDocumentDto {
@@ -100,15 +163,14 @@ export function normalizeSignalLogicDocument(input: unknown): SignalLogicDocumen
               ? rule.aspect
               : "red",
             conditions: Array.isArray(rule?.conditions)
-              ? rule.conditions.map((condition, conditionIndex) => ({
-                  id: typeof condition?.id === "string" && condition.id.length > 0
-                    ? condition.id
-                    : `signal-condition-${groupIndex + 1}-${ruleIndex + 1}-${conditionIndex + 1}`,
-                  turnoutAddress: Number.isFinite(Number(condition?.turnoutAddress))
-                    ? Number(condition?.turnoutAddress)
-                    : 0,
-                  closed: Boolean(condition?.closed),
-                }))
+              ? rule.conditions.map((condition, conditionIndex) =>
+                  normalizeCondition(
+                    condition as RawCondition,
+                    groupIndex,
+                    ruleIndex,
+                    conditionIndex
+                  )
+                )
               : [],
           }))
         : [],
@@ -116,10 +178,21 @@ export function normalizeSignalLogicDocument(input: unknown): SignalLogicDocumen
   };
 }
 
+function conditionSignature(condition: SignalLogicConditionDto): string {
+  switch (condition.type) {
+    case "sensor":
+      return `sensor:${condition.sensorAddress}:${condition.active}`;
+    case "turnout":
+    default:
+      return `turnout:${condition.turnoutAddress}:${condition.closed}`;
+  }
+}
+
 export function validateSignalLogicDocument(
   document: SignalLogicDocumentDto,
   knownSignals: SignalLogicKnownSignal[] = [],
-  knownTurnouts: SignalLogicKnownTurnout[] = []
+  knownTurnouts: SignalLogicKnownTurnout[] = [],
+  knownSensors: SignalLogicKnownSensor[] = []
 ): SignalLogicValidationIssue[] {
   const issues: SignalLogicValidationIssue[] = [];
   const knownSignalByAddress = new Map(
@@ -127,6 +200,9 @@ export function validateSignalLogicDocument(
   );
   const knownTurnoutAddresses = new Set(
     knownTurnouts.map(turnout => turnout.address)
+  );
+  const knownSensorAddresses = new Set(
+    knownSensors.map(sensor => sensor.address)
   );
   const usedSignalAddresses = new Set<number>();
 
@@ -205,7 +281,7 @@ export function validateSignalLogicDocument(
       }
 
       const signature = rule.conditions
-        .map(condition => `${condition.turnoutAddress}:${condition.closed}`)
+        .map(conditionSignature)
         .sort()
         .join("|");
 
@@ -214,15 +290,60 @@ export function validateSignalLogicDocument(
           level: "warning",
           groupId: group.id,
           ruleId: rule.id,
-          message: "Another rule has the same turnout conditions.",
+          message: "Another rule has the same conditions.",
         });
       }
 
       ruleSignatures.add(signature);
 
-      const conditionAddresses = new Set<number>();
+      const conditionKeys = new Set<string>();
 
       for (const condition of rule.conditions) {
+        const key = `${condition.type}:${
+          condition.type === "sensor"
+            ? condition.sensorAddress
+            : condition.turnoutAddress
+        }`;
+
+        if (conditionKeys.has(key)) {
+          issues.push({
+            level: "warning",
+            groupId: group.id,
+            ruleId: rule.id,
+            conditionId: condition.id,
+            message: "The same input is used more than once in the same rule.",
+          });
+        }
+
+        conditionKeys.add(key);
+
+        if (condition.type === "sensor") {
+          if (condition.sensorAddress <= 0) {
+            issues.push({
+              level: "error",
+              groupId: group.id,
+              ruleId: rule.id,
+              conditionId: condition.id,
+              message: "Sensor condition must reference a sensor address greater than zero.",
+            });
+          }
+
+          if (
+            knownSensorAddresses.size > 0 &&
+            !knownSensorAddresses.has(condition.sensorAddress)
+          ) {
+            issues.push({
+              level: "error",
+              groupId: group.id,
+              ruleId: rule.id,
+              conditionId: condition.id,
+              message: `Sensor #${condition.sensorAddress} does not exist on the layout.`,
+            });
+          }
+
+          continue;
+        }
+
         if (condition.turnoutAddress <= 0) {
           issues.push({
             level: "error",
@@ -232,18 +353,6 @@ export function validateSignalLogicDocument(
             message: "Turnout condition must reference a turnout address greater than zero.",
           });
         }
-
-        if (conditionAddresses.has(condition.turnoutAddress)) {
-          issues.push({
-            level: "warning",
-            groupId: group.id,
-            ruleId: rule.id,
-            conditionId: condition.id,
-            message: `Turnout #${condition.turnoutAddress} is used more than once in the same rule.`,
-          });
-        }
-
-        conditionAddresses.add(condition.turnoutAddress);
 
         if (
           knownTurnoutAddresses.size > 0 &&
