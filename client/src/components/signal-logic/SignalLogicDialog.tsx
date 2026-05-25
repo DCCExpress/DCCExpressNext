@@ -79,10 +79,7 @@ function createRule(signalAddress: number): SignalLogicRuleGroupDto {
 }
 
 function withFixedRedFallback(groups: SignalLogicRuleGroupDto[]): SignalLogicRuleGroupDto[] {
-  return groups.map(group => ({
-    ...group,
-    defaultAspect: "red",
-  }));
+  return groups.map(group => ({ ...group, defaultAspect: "red" }));
 }
 
 function aspectToMethod(aspect: SignalAspect): string {
@@ -223,9 +220,7 @@ function formatCondition(t: Translate, condition: SignalLogicConditionDto): stri
 }
 
 function translateValidationIssue(t: Translate, issue: SignalLogicValidationIssue): string {
-  if (!issue.messageKey) {
-    return issue.message;
-  }
+  if (!issue.messageKey) return issue.message;
 
   const params = { ...(issue.messageParams ?? {}) };
 
@@ -415,10 +410,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   };
 
   const deleteRule = (groupId: string, ruleId: string): void => {
-    updateGroup(groupId, group => ({
-      ...group,
-      rules: group.rules.filter(rule => rule.id !== ruleId),
-    }));
+    updateGroup(groupId, group => ({ ...group, rules: group.rules.filter(rule => rule.id !== ruleId) }));
   };
 
   const addTurnoutCondition = (groupId: string, ruleId: string): void => {
@@ -500,15 +492,11 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
         )}
 
         {errorText && (
-          <Alert color="red" icon={<IconAlertTriangle size={16} />} py="xs">
-            {errorText}
-          </Alert>
+          <Alert color="red" icon={<IconAlertTriangle size={16} />} py="xs">{errorText}</Alert>
         )}
 
         {warningText && !errorText && (
-          <Alert color="yellow" icon={<IconAlertTriangle size={16} />} py="xs">
-            {warningText}
-          </Alert>
+          <Alert color="yellow" icon={<IconAlertTriangle size={16} />} py="xs">{warningText}</Alert>
         )}
 
         {statusText && !warningText && !errorText && (
@@ -573,9 +561,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
 
                 <Box flex={1} style={{ minWidth: 0 }}>
                   {!selectedGroup ? (
-                    <Card withBorder p="lg">
-                      <Text c="dimmed">{t("signalLogic.selectOrAdd")}</Text>
-                    </Card>
+                    <Card withBorder p="lg"><Text c="dimmed">{t("signalLogic.selectOrAdd")}</Text></Card>
                   ) : (
                     <Stack gap="md" pb="md">
                       <Card withBorder>
@@ -601,12 +587,8 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                             />
 
                             <Box>
-                              <Text size="sm" fw={500} mb={4}>
-                                {t("signalLogic.defaultAspect")}
-                              </Text>
-                              <Badge color="red" variant="filled" size="lg">
-                                {getAspectLabel(t, "red")}
-                              </Badge>
+                              <Text size="sm" fw={500} mb={4}>{t("signalLogic.defaultAspect")}</Text>
+                              <Badge color="red" variant="filled" size="lg">{getAspectLabel(t, "red")}</Badge>
                             </Box>
                           </Group>
 
@@ -625,7 +607,13 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                         <Card key={rule.id} withBorder>
                           <Group justify="space-between" mb="sm">
                             <Group>
-                              <Badge>{t("signalLogic.rule", { index: ruleIndex + 1 })}</Badge>
+                              <Badge
+                                color={aspectBadgeColor(rule.aspect)}
+                                variant="filled"
+                                style={aspectBadgeStyle(rule.aspect)}
+                              >
+                                {t("signalLogic.rule", { index: ruleIndex + 1 })}
+                              </Badge>
                               <Text fw={600}>{t("signalLogic.then")}</Text>
                               <Select
                                 data={aspectOptionsFor(selectedGroup.signalAddress)}
@@ -667,21 +655,16 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                                       value={condition.sensorAddress > 0 ? condition.sensorAddress.toString() : null}
                                       placeholder={t("signalLogic.selectSensor")}
                                       onChange={value => updateCondition(selectedGroup.id, rule.id, condition.id, current =>
-                                        current.type === "sensor"
-                                          ? { ...current, sensorAddress: Number(value ?? 0) }
-                                          : current
+                                        current.type === "sensor" ? { ...current, sensorAddress: Number(value ?? 0) } : current
                                       )}
                                       w={220}
                                     />
-
                                     <Select
                                       label={conditionIndex === 0 ? t("signalLogic.state") : undefined}
                                       data={sensorStateOptions}
                                       value={condition.active.toString()}
                                       onChange={value => updateCondition(selectedGroup.id, rule.id, condition.id, current =>
-                                        current.type === "sensor"
-                                          ? { ...current, active: value === "true" }
-                                          : current
+                                        current.type === "sensor" ? { ...current, active: value === "true" } : current
                                       )}
                                       w={180}
                                     />
@@ -694,21 +677,16 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                                       value={condition.turnoutAddress > 0 ? condition.turnoutAddress.toString() : null}
                                       placeholder={t("signalLogic.selectTurnout")}
                                       onChange={value => updateCondition(selectedGroup.id, rule.id, condition.id, current =>
-                                        current.type === "turnout"
-                                          ? { ...current, turnoutAddress: Number(value ?? 0) }
-                                          : current
+                                        current.type === "turnout" ? { ...current, turnoutAddress: Number(value ?? 0) } : current
                                       )}
                                       w={220}
                                     />
-
                                     <Select
                                       label={conditionIndex === 0 ? t("signalLogic.state") : undefined}
                                       data={turnoutStateOptions}
                                       value={condition.closed.toString()}
                                       onChange={value => updateCondition(selectedGroup.id, rule.id, condition.id, current =>
-                                        current.type === "turnout"
-                                          ? { ...current, closed: value === "true" }
-                                          : current
+                                        current.type === "turnout" ? { ...current, closed: value === "true" } : current
                                       )}
                                       w={160}
                                     />
@@ -773,16 +751,12 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                             </Badge>
 
                             {rule.conditions.length === 0 ? (
-                              <Badge variant="light" color="gray">
-                                {t("signalLogic.always")}
-                              </Badge>
+                              <Badge variant="light" color="gray">{t("signalLogic.always")}</Badge>
                             ) : (
                               rule.conditions.map((condition, conditionIndex) => (
                                 <Fragment key={condition.id}>
                                   {conditionIndex > 0 && (
-                                    <Text size="xs" c="dimmed" fw={700}>
-                                      {t("signalLogic.and")}
-                                    </Text>
+                                    <Text size="xs" c="dimmed" fw={700}>{t("signalLogic.and")}</Text>
                                   )}
                                   <Badge variant="light" color={condition.type === "sensor" ? "blue" : "grape"}>
                                     {formatCondition(t, condition)}
@@ -790,15 +764,6 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                                 </Fragment>
                               ))
                             )}
-
-                            <Text size="sm" c="dimmed">→</Text>
-                            <Badge
-                              color={aspectBadgeColor(rule.aspect)}
-                              variant="filled"
-                              style={aspectBadgeStyle(rule.aspect)}
-                            >
-                              {getAspectLabel(t, rule.aspect).toUpperCase()}
-                            </Badge>
                           </Group>
                         </Card>
                       ))}
