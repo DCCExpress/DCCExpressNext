@@ -1,4 +1,5 @@
 import {
+  type DragEvent,
   useEffect,
   useMemo,
   useState,
@@ -6,6 +7,7 @@ import {
 
 import {
   ActionIcon,
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -15,6 +17,7 @@ import {
   Loader,
   NumberInput,
   ScrollArea,
+  Select,
   Stack,
   Tabs,
   Text,
@@ -22,6 +25,7 @@ import {
 } from "@mantine/core";
 
 import {
+  IconGripVertical,
   IconPhoto,
   IconPlus,
   IconTrash,
@@ -31,6 +35,8 @@ import { useTranslation } from "react-i18next";
 
 import type {
   Loco,
+  LocoAction,
+  LocoActionHook,
   LocoFunction,
 } from "../../../common/src/types";
 
@@ -48,6 +54,60 @@ type LocoDialogProps = {
   onSaved?: () => void;
 };
 
+type LocoActionType = LocoAction["type"];
+
+const ACTION_HOOKS: {
+  value: LocoActionHook;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "beforeStart",
+    label: "Before start",
+    description: "Runs before the task starts the loco.",
+  },
+  {
+    value: "afterStart",
+    label: "After start",
+    description: "Runs after the loco start command was sent.",
+  },
+  {
+    value: "beforeStop",
+    label: "Before stop",
+    description: "Runs before a normal task stop.",
+  },
+  {
+    value: "afterStop",
+    label: "After stop",
+    description: "Runs after the loco stop command was sent.",
+  },
+];
+
+const ACTION_TYPE_OPTIONS: {
+  value: LocoActionType;
+  label: string;
+}[] = [
+  {
+    value: "setFunction",
+    label: "Function ON/OFF",
+  },
+  {
+    value: "momentaryFunction",
+    label: "Momentary function",
+  },
+  {
+    value: "wait",
+    label: "Wait",
+  },
+];
+
+const createEmptyLocoActions = (): Record<LocoActionHook, LocoAction[]> => ({
+  beforeStart: [],
+  afterStart: [],
+  beforeStop: [],
+  afterStop: [],
+});
+
 const createEmptyLoco = (): Loco => ({
   id: generateId(),
   name: "",
@@ -57,6 +117,7 @@ const createEmptyLoco = (): Loco => ({
   image: "",
   length: 200,
   functions: [],
+  actions: createEmptyLocoActions(),
 });
 
 const createDefaultFunction = (
@@ -68,6 +129,87 @@ const createDefaultFunction = (
   icon: "💡",
   momentary: false,
 });
+
+const createDefaultAction = (
+  type: LocoActionType = "wait"
+): LocoAction => {
+  switch (type) {
+    case "setFunction":
+      return {
+        id: generateId(),
+        type,
+        functionNumber: 0,
+        active: true,
+      };
+
+    case "momentaryFunction":
+      return {
+        id: generateId(),
+        type,
+        functionNumber: 2,
+        ms: 200,
+      };
+
+    case "wait":
+      return {
+        id: generateId(),
+        type,
+        ms: 500,
+      };
+  }
+};
+
+const convertActionType = (
+  action: LocoAction,
+  type: LocoActionType
+): LocoAction => ({
+  ...createDefaultAction(type),
+  id: action.id,
+});
+
+const getLocoActions = (
+  loco: Loco,
+  hook: LocoActionHook
+): LocoAction[] => loco.actions?.[hook] ?? [];
+
+const getActionSummary = (
+  action: LocoAction
+): string => {
+  switch (action.type) {
+    case "setFunction":
+      return `F${action.functionNumber} ${action.active ? "ON" : "OFF"}`;
+
+    case "momentaryFunction":
+      return `F${action.functionNumber} pulse ${action.ms} ms`;
+
+    case "wait":
+      return `Wait ${action.ms} ms`;
+  }
+};
+
+const moveItem = <T,>(
+  items: T[],
+  fromIndex: number,
+  toIndex: number
+): T[] => {
+  if (
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex === toIndex
+  ) {
+    return items;
+  }
+
+  const next = [...items];
+  const [item] = next.splice(fromIndex, 1);
+
+  if (item === undefined) {
+    return items;
+  }
+
+  next.splice(toIndex, 0, item);
+  return next;
+};
 
 export default function LocoDialog({
   opened,
@@ -81,6 +223,8 @@ export default function LocoDialog({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [activeActionHook, setActiveActionHook] = useState<LocoActionHook>("beforeStart");
+  const [draggedActionId, setDraggedActionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!opened) return;
@@ -104,6 +248,11 @@ export default function LocoDialog({
   const selectedLoco = useMemo(
     () => locos.find(loco => loco.id === selectedId) ?? null,
     [locos, selectedId]
+  );
+
+  const selectedHookInfo = useMemo(
+    () => ACTION_HOOKS.find(item => item.value === activeActionHook) ?? ACTION_HOOKS[0]!,
+    [activeActionHook]
   );
 
   const updateSelectedLoco = (patch: Partial<Loco>): void => {
@@ -169,6 +318,92 @@ export default function LocoDialog({
     });
   };
 
+  const updateActionsForHook = (
+    hook: LocoActionHook,
+    actions: LocoAction[]
+  ): void => {
+    if (!selectedLoco) return;
+
+    updateSelectedLoco({
+      actions: {
+        ...createEmptyLocoActions(),
+        ...(selectedLoco.actions ?? {}),
+        [hook]: actions,
+      },
+    });
+  };
+
+  const addAction = (
+    hook: LocoActionHook,
+    type: LocoActionType = "wait"
+  ): void => {
+    if (!selectedLoco) return;
+
+    updateActionsForHook(
+      hook,
+      [
+        ...getLocoActions(selectedLoco, hook),
+        createDefaultAction(type),
+      ]
+    );
+  };
+
+  const updateAction = (
+    hook: LocoActionHook,
+    actionId: string,
+    nextAction: LocoAction
+  ): void => {
+    if (!selectedLoco) return;
+
+    updateActionsForHook(
+      hook,
+      getLocoActions(selectedLoco, hook).map(action =>
+        action.id === actionId
+          ? nextAction
+          : action
+      )
+    );
+  };
+
+  const deleteAction = (
+    hook: LocoActionHook,
+    actionId: string
+  ): void => {
+    if (!selectedLoco) return;
+
+    updateActionsForHook(
+      hook,
+      getLocoActions(selectedLoco, hook).filter(action => action.id !== actionId)
+    );
+  };
+
+  const reorderAction = (
+    hook: LocoActionHook,
+    targetActionId: string
+  ): void => {
+    if (!selectedLoco || !draggedActionId || draggedActionId === targetActionId) {
+      return;
+    }
+
+    const actions = getLocoActions(selectedLoco, hook);
+    const fromIndex = actions.findIndex(action => action.id === draggedActionId);
+    const toIndex = actions.findIndex(action => action.id === targetActionId);
+
+    updateActionsForHook(
+      hook,
+      moveItem(actions, fromIndex, toIndex)
+    );
+  };
+
+  const handleActionDragStart = (
+    event: DragEvent<HTMLDivElement>,
+    actionId: string
+  ): void => {
+    setDraggedActionId(actionId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", actionId);
+  };
+
   const sendFunctionTest = async (
     fn: LocoFunction,
     active: boolean
@@ -216,6 +451,165 @@ export default function LocoDialog({
     } finally {
       setSaving(false);
     }
+  };
+
+  const functionOptions = selectedLoco?.functions.map(fn => ({
+    value: String(fn.number),
+    label: `${fn.icon ? `${fn.icon} ` : ""}F${fn.number} - ${fn.name}`,
+  })) ?? [];
+
+  const renderActionEditor = (
+    action: LocoAction,
+    hook: LocoActionHook
+  ) => {
+    const updateCurrentAction = (nextAction: LocoAction): void => {
+      updateAction(hook, action.id, nextAction);
+    };
+
+    return (
+      <Card
+        key={action.id}
+        withBorder
+        p="sm"
+        draggable
+        onDragStart={event => handleActionDragStart(event, action.id)}
+        onDragEnd={() => setDraggedActionId(null)}
+        onDragOver={event => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        }}
+        onDrop={event => {
+          event.preventDefault();
+          reorderAction(hook, action.id);
+          setDraggedActionId(null);
+        }}
+        style={{
+          opacity: draggedActionId === action.id ? 0.55 : 1,
+        }}
+      >
+        <Stack gap="sm">
+          <Group justify="space-between" wrap="nowrap">
+            <Group gap="xs" wrap="nowrap">
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                style={{ cursor: "grab", touchAction: "none" }}
+              >
+                <IconGripVertical size={18} />
+              </ActionIcon>
+
+              <Badge variant="light">{getActionSummary(action)}</Badge>
+            </Group>
+
+            <ActionIcon
+              color="red"
+              variant="light"
+              onClick={() => deleteAction(hook, action.id)}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Group>
+
+          <Group align="flex-end" wrap="wrap">
+            <Select
+              label="Action type"
+              value={action.type}
+              data={ACTION_TYPE_OPTIONS}
+              w={210}
+              allowDeselect={false}
+              onChange={value => {
+                if (!value) {
+                  return;
+                }
+
+                updateCurrentAction(
+                  convertActionType(action, value as LocoActionType)
+                );
+              }}
+            />
+
+            {action.type === "setFunction" && (
+              <>
+                <Select
+                  label="Function"
+                  value={String(action.functionNumber)}
+                  data={functionOptions}
+                  w={220}
+                  searchable
+                  allowDeselect={false}
+                  onChange={value => {
+                    updateCurrentAction({
+                      ...action,
+                      functionNumber: Number(value) || 0,
+                    });
+                  }}
+                />
+
+                <Checkbox
+                  label="Active"
+                  checked={action.active}
+                  onChange={event => {
+                    updateCurrentAction({
+                      ...action,
+                      active: event.currentTarget.checked,
+                    });
+                  }}
+                />
+              </>
+            )}
+
+            {action.type === "momentaryFunction" && (
+              <>
+                <Select
+                  label="Function"
+                  value={String(action.functionNumber)}
+                  data={functionOptions}
+                  w={220}
+                  searchable
+                  allowDeselect={false}
+                  onChange={value => {
+                    updateCurrentAction({
+                      ...action,
+                      functionNumber: Number(value) || 0,
+                    });
+                  }}
+                />
+
+                <NumberInput
+                  label="Duration (ms)"
+                  value={action.ms}
+                  min={1}
+                  step={100}
+                  w={150}
+                  onChange={value => {
+                    updateCurrentAction({
+                      ...action,
+                      ms: Number(value) || 1,
+                    });
+                  }}
+                />
+              </>
+            )}
+
+            {action.type === "wait" && (
+              <NumberInput
+                label="Wait (ms)"
+                value={action.ms}
+                min={1}
+                step={100}
+                w={150}
+                onChange={value => {
+                  updateCurrentAction({
+                    ...action,
+                    ms: Number(value) || 1,
+                  });
+                }}
+              />
+            )}
+          </Group>
+        </Stack>
+      </Card>
+    );
   };
 
   return (
@@ -310,6 +704,7 @@ export default function LocoDialog({
                   <Tabs.List>
                     <Tabs.Tab value="general">General</Tabs.Tab>
                     <Tabs.Tab value="functions">Functions</Tabs.Tab>
+                    <Tabs.Tab value="actions">Actions</Tabs.Tab>
                     <Tabs.Tab value="extended">Extended params</Tabs.Tab>
                   </Tabs.List>
 
@@ -420,6 +815,91 @@ export default function LocoDialog({
                           )}
                         </Stack>
                       </ScrollArea>
+                    </Stack>
+                  </Tabs.Panel>
+
+                  <Tabs.Panel value="actions" pt="md" style={{ flex: 1, minHeight: 0 }}>
+                    <Stack h="100%" gap="sm">
+                      <Tabs
+                        value={activeActionHook}
+                        onChange={value => {
+                          if (value) {
+                            setActiveActionHook(value as LocoActionHook);
+                          }
+                        }}
+                        style={{ minHeight: 0, display: "flex", flexDirection: "column", flex: 1 }}
+                      >
+                        <Tabs.List>
+                          {ACTION_HOOKS.map(hook => (
+                            <Tabs.Tab key={hook.value} value={hook.value}>
+                              {hook.label}
+                            </Tabs.Tab>
+                          ))}
+                        </Tabs.List>
+
+                        <Stack gap="xs" pt="sm">
+                          <Group justify="space-between" align="flex-start">
+                            <Stack gap={2}>
+                              <Text fw={600}>{selectedHookInfo.label}</Text>
+                              <Text size="sm" c="dimmed">{selectedHookInfo.description}</Text>
+                            </Stack>
+
+                            <Group gap="xs">
+                              <Button
+                                size="xs"
+                                variant="light"
+                                leftSection={<IconPlus size={14} />}
+                                onClick={() => addAction(activeActionHook, "setFunction")}
+                              >
+                                Function
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="light"
+                                leftSection={<IconPlus size={14} />}
+                                onClick={() => addAction(activeActionHook, "momentaryFunction")}
+                              >
+                                Momentary
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="light"
+                                leftSection={<IconPlus size={14} />}
+                                onClick={() => addAction(activeActionHook, "wait")}
+                              >
+                                Wait
+                              </Button>
+                            </Group>
+                          </Group>
+                        </Stack>
+
+                        {ACTION_HOOKS.map(hook => {
+                          const actions = getLocoActions(selectedLoco, hook.value);
+
+                          return (
+                            <Tabs.Panel
+                              key={hook.value}
+                              value={hook.value}
+                              pt="sm"
+                              style={{ flex: 1, minHeight: 0 }}
+                            >
+                              <ScrollArea style={{ height: "100%" }}>
+                                <Stack gap="sm">
+                                  {actions.map(action => renderActionEditor(action, hook.value))}
+
+                                  {actions.length === 0 && (
+                                    <Card withBorder p="md">
+                                      <Text size="sm" c="dimmed">
+                                        No actions yet. Add a function, momentary function or wait step.
+                                      </Text>
+                                    </Card>
+                                  )}
+                                </Stack>
+                              </ScrollArea>
+                            </Tabs.Panel>
+                          );
+                        })}
+                      </Tabs>
                     </Stack>
                   </Tabs.Panel>
 
