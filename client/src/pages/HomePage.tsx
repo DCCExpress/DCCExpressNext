@@ -16,7 +16,9 @@ import {
 import {
   IconArrowRight,
   IconDeviceMobile,
+  IconHeartHandshake,
   IconMap2,
+  IconSparkles,
   IconTool,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
@@ -27,6 +29,21 @@ import "../styles/global.css";
 const HERO_BACKGROUND_IMAGE = "/images/home-hero.png";
 const CARD_IMAGE_FADE_MASK =
   "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) calc(100% - 42px), rgba(0,0,0,0) 100%)";
+
+const THANKS_TECH_ITEMS = [
+  "React",
+  "Mantine",
+  "Node.js",
+  "Express",
+  "TypeScript",
+  "Vite",
+  "Tabler Icons",
+  "WebSocket / ws",
+  "CodeMirror",
+  "i18next",
+  "Zod",
+  "SerialPort",
+] as const;
 
 type HomePageProps = {
   onOpenLayout: () => void;
@@ -274,6 +291,81 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
               </Card>
             ))}
           </SimpleGrid>
+
+          <Paper
+            radius="lg"
+            p="xl"
+            withBorder
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              background:
+                "linear-gradient(135deg, rgba(12, 31, 52, 0.62) 0%, rgba(4, 12, 24, 0.38) 100%)",
+              borderColor: "rgba(120, 220, 255, 0.16)",
+              boxShadow: "0 18px 52px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.045)",
+              backdropFilter: "blur(14px) saturate(1.18)",
+            }}
+          >
+            <Box
+              style={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                background:
+                  "radial-gradient(circle at 12% 0%, rgba(90, 200, 255, 0.15) 0%, transparent 34%), radial-gradient(circle at 96% 100%, rgba(95, 255, 180, 0.08) 0%, transparent 38%)",
+              }}
+            />
+
+            <Stack gap="lg" style={{ position: "relative" }}>
+              <Group justify="space-between" align="flex-start" gap="lg">
+                <Group gap="md" align="flex-start">
+                  <ThemeIcon size="xl" radius="md" variant="light" color="cyan">
+                    <IconHeartHandshake size={24} />
+                  </ThemeIcon>
+
+                  <Stack gap={4}>
+                    <Group gap="xs" align="center">
+                      <Title order={2} c="white">
+                        Köszi / Thanks
+                      </Title>
+                      <IconSparkles size={20} color="var(--mantine-color-yellow-4)" />
+                    </Group>
+
+                    <Text c="gray.3" maw={820}>
+                      DCCExpress stands on the shoulders of excellent open-source tools,
+                      modern web technologies, and a good dose of AI-assisted brainstorming.
+                    </Text>
+                  </Stack>
+                </Group>
+
+                <Badge
+                  size="lg"
+                  variant="gradient"
+                  gradient={{ from: "violet", to: "cyan", deg: 135 }}
+                >
+                  ChatGPT
+                </Badge>
+              </Group>
+
+              <Group gap="xs">
+                {THANKS_TECH_ITEMS.map(item => (
+                  <Badge
+                    key={item}
+                    variant="light"
+                    color="cyan"
+                    radius="sm"
+                    size="lg"
+                    style={{
+                      background: "rgba(34, 139, 230, 0.12)",
+                      border: "1px solid rgba(120, 220, 255, 0.12)",
+                    }}
+                  >
+                    {item}
+                  </Badge>
+                ))}
+              </Group>
+            </Stack>
+          </Paper>
         </Stack>
       </Container>
     </Box>
