@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-05-24T12:10:28.847Z",
+  "savedAt": "2026-05-25T02:45:58.338Z",
   "blocks": [
     [
       "97aa3af-3ac9-4483-815a-d1ead989",
@@ -20,7 +20,7 @@
       "518e54e-918c-4add-a05a-37dab832",
       {
         "blockId": "518e54e-918c-4add-a05a-37dab832",
-        "locoId": "406e2e15-ecbf-4dbf-80a4-7497ef8af796"
+        "locoId": null
       }
     ],
     [
@@ -57,7 +57,7 @@
       12,
       {
         "address": 12,
-        "closed": false
+        "closed": true
       }
     ],
     [

@@ -63,45 +63,45 @@ const ACTION_HOOKS: {
   label: string;
   description: string;
 }[] = [
-  {
-    value: "beforeStart",
-    label: "Before start",
-    description: "Runs before the task starts the loco.",
-  },
-  {
-    value: "afterStart",
-    label: "After start",
-    description: "Runs after the loco start command was sent.",
-  },
-  {
-    value: "beforeStop",
-    label: "Before stop",
-    description: "Runs before a normal task stop.",
-  },
-  {
-    value: "afterStop",
-    label: "After stop",
-    description: "Runs after the loco stop command was sent.",
-  },
-];
+    {
+      value: "beforeStart",
+      label: "Before start",
+      description: "Runs before the task starts the loco.",
+    },
+    {
+      value: "afterStart",
+      label: "After start",
+      description: "Runs after the loco start command was sent.",
+    },
+    {
+      value: "beforeStop",
+      label: "Before stop",
+      description: "Runs before a normal task stop.",
+    },
+    {
+      value: "afterStop",
+      label: "After stop",
+      description: "Runs after the loco stop command was sent.",
+    },
+  ];
 
 const ACTION_TYPE_OPTIONS: {
   value: LocoActionType;
   label: string;
 }[] = [
-  {
-    value: "setFunction",
-    label: "Function ON/OFF",
-  },
-  {
-    value: "momentaryFunction",
-    label: "Momentary function",
-  },
-  {
-    value: "wait",
-    label: "Wait",
-  },
-];
+    {
+      value: "setFunction",
+      label: "Function ON/OFF",
+    },
+    {
+      value: "momentaryFunction",
+      label: "Momentary function",
+    },
+    {
+      value: "wait",
+      label: "Wait",
+    },
+  ];
 
 const createEmptyLocoActions = (): Record<LocoActionHook, LocoAction[]> => ({
   beforeStart: [],
@@ -396,27 +396,27 @@ export default function LocoDialog({
     );
   };
 
-const moveDraggedActionToIndex = (
-  hook: LocoActionHook,
-  targetIndex: number
-): void => {
-  if (!selectedLoco || !draggedActionId) {
-    return;
-  }
+  const moveDraggedActionToIndex = (
+    hook: LocoActionHook,
+    targetIndex: number
+  ): void => {
+    if (!selectedLoco || !draggedActionId) {
+      return;
+    }
 
-  const actions = getLocoActions(selectedLoco, hook);
-  const fromIndex = actions.findIndex(action => action.id === draggedActionId);
-  const boundedTargetIndex = Math.max(0, Math.min(targetIndex, actions.length - 1));
+    const actions = getLocoActions(selectedLoco, hook);
+    const fromIndex = actions.findIndex(action => action.id === draggedActionId);
+    const boundedTargetIndex = Math.max(0, Math.min(targetIndex, actions.length - 1));
 
-  if (fromIndex < 0 || fromIndex === boundedTargetIndex) {
-    return;
-  }
+    if (fromIndex < 0 || fromIndex === boundedTargetIndex) {
+      return;
+    }
 
-  updateActionsForHook(
-    hook,
-    moveItem(actions, fromIndex, boundedTargetIndex)
-  );
-};
+    updateActionsForHook(
+      hook,
+      moveItem(actions, fromIndex, boundedTargetIndex)
+    );
+  };
   const handleActionDragStart = (
     event: DragEvent<HTMLDivElement>,
     actionId: string
@@ -528,11 +528,13 @@ const moveDraggedActionToIndex = (
 
               <Badge
                 variant="filled"
-                color="blue"
-                miw={34}
+                color={draggedActionId === action.id ? "orange" : "blue"}
+                miw={draggedActionId === action.id ? 58 : 34}
                 ta="center"
               >
-                #{actionIndex + 1}
+                {draggedActionId === action.id
+                  ? `→ #${actionIndex + 1}`
+                  : `#${actionIndex + 1}`}
               </Badge>
 
               <Badge variant="light">{getActionSummary(action)}</Badge>

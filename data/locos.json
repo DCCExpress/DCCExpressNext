@@ -29,7 +29,38 @@
         "momentary": false
       }
     ],
-    "length": 210
+    "length": 210,
+    "actions": {
+      "beforeStart": [
+        {
+          "id": "535bca2-f7b7-4f86-a914-06b84801",
+          "type": "setFunction",
+          "functionNumber": 1,
+          "active": true
+        },
+        {
+          "id": "2cbd5aa-0248-49a1-b05b-32b2c42c",
+          "type": "setFunction",
+          "functionNumber": 0,
+          "active": true
+        },
+        {
+          "id": "354f2f4-3c6b-4111-837a-aa0eefe7",
+          "type": "setFunction",
+          "functionNumber": 0,
+          "active": true
+        },
+        {
+          "id": "89f501f-9994-41d7-896e-58dd7ee2",
+          "type": "setFunction",
+          "functionNumber": 0,
+          "active": true
+        }
+      ],
+      "afterStart": [],
+      "beforeStop": [],
+      "afterStop": []
+    }
   },
   {
     "id": "4bccdc08-2fd3-406e-82ea-ccfa3942df24",
