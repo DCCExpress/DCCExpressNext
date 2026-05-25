@@ -122,6 +122,19 @@ function aspectToMethod(aspect: SignalAspect): string {
   }
 }
 
+function aspectBadgeColor(aspect: SignalAspect): string {
+  switch (aspect) {
+    case "green":
+      return "green";
+    case "yellow":
+      return "yellow";
+    case "white":
+      return "gray";
+    default:
+      return "red";
+  }
+}
+
 function getConditionExpression(condition: SignalLogicConditionDto): string | null {
   if (condition.type === "sensor") {
     if (condition.sensorAddress <= 0) return null;
@@ -899,7 +912,7 @@ export default function SignalLogicDialog({
                   <Card key={group.id} withBorder>
                     <Group justify="space-between" mb="sm">
                       <Title order={5}>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</Title>
-                      <Badge color="red" variant="light">
+                      <Badge color={aspectBadgeColor(group.defaultAspect)} variant="light">
                         {t("signalLogic.default", {
                           aspect: getAspectLabel(t, group.defaultAspect),
                         })}
@@ -908,17 +921,31 @@ export default function SignalLogicDialog({
 
                     <Stack gap="xs">
                       {group.rules.map((rule, index) => (
-                        <Group key={rule.id} align="center">
-                          <Badge>{t("signalLogic.rule", { index: index + 1 })}</Badge>
-                          <Text size="sm">
-                            {rule.conditions.map(condition => formatCondition(t, condition)).join(` ${t("signalLogic.and")} `) || t("signalLogic.always")}
-                          </Text>
-                          <Text size="sm" fw={700}>
-                            {t("signalLogic.result", {
-                              aspect: getAspectLabel(t, rule.aspect).toUpperCase(),
-                            })}
-                          </Text>
-                        </Group>
+                        <Card key={rule.id} withBorder p="xs" radius="md">
+                          <Group align="center" gap="xs" wrap="wrap">
+                            <Badge variant="outline">
+                              {t("signalLogic.rule", { index: index + 1 })}
+                            </Badge>
+
+                            {rule.conditions.length === 0 ? (
+                              <Badge variant="light" color="gray">
+                                {t("signalLogic.always")}
+                              </Badge>
+                            ) : (
+                              rule.conditions.map(condition => (
+                                <Badge key={condition.id} variant="light" color={condition.type === "sensor" ? "blue" : "grape"}>
+                                  {formatCondition(t, condition)}
+                                </Badge>
+                              ))
+                            )}
+
+                            <Text size="sm" c="dimmed">→</Text>
+
+                            <Badge color={aspectBadgeColor(rule.aspect)} variant="filled">
+                              {getAspectLabel(t, rule.aspect).toUpperCase()}
+                            </Badge>
+                          </Group>
+                        </Card>
                       ))}
                     </Stack>
                   </Card>
