@@ -1,6 +1,10 @@
 // server/src/ws/handlers/wsCommandCenterMessageHandlers.ts
 
 import {
+  locoReservationStore,
+} from "../../services/locoReservationStore.js";
+
+import {
   routeGraphRuntimeStore,
 } from "../../services/routeGraphRuntimeStore.js";
 
@@ -24,6 +28,33 @@ function rejectMissingCommandCenter({
       message: "No command center available",
     },
   });
+}
+
+function sendActiveRouteReservationSnapshots(context: WsHandlerContext): void {
+  const {
+    ws,
+    sendToClient,
+  } = context;
+
+  const reservations =
+    routeGraphRuntimeStore.getActiveReservations();
+
+  for (const reservation of reservations) {
+    sendToClient(ws, {
+      type: "routeReservationChanged",
+      data: {
+        busy: true,
+        sectionNames: reservation.sectionNames,
+        elementIds:
+          routeGraphRuntimeStore.getElementIdsForSections(
+            reservation.sectionNames
+          ),
+        turnoutAddresses: reservation.turnoutAddresses,
+        fromBlockName: reservation.fromBlockName,
+        toBlockName: reservation.toBlockName,
+      },
+    });
+  }
 }
 
 function sendCommandCenterRuntimeSnapshot(context: WsHandlerContext): void {
@@ -78,6 +109,16 @@ function sendCommandCenterRuntimeSnapshot(context: WsHandlerContext): void {
     });
   }
 
+  for (const reservation of locoReservationStore.getAll()) {
+    sendToClient(ws, {
+      type: "locoReservationChanged",
+      data: {
+        locoAddress: reservation.locoAddress,
+        reservation,
+      },
+    });
+  }
+
   for (const turnout of commandCenter.getTurnouts()) {
     sendToClient(ws, {
       type: "turnoutChanged",
@@ -98,6 +139,8 @@ function sendCommandCenterRuntimeSnapshot(context: WsHandlerContext): void {
     });
   }
 
+  commandCenter.getBlocks();
+
   for (const accessory of commandCenter.getAccessories()) {
     sendToClient(ws, {
       type: "accessoryChanged",
@@ -107,6 +150,8 @@ function sendCommandCenterRuntimeSnapshot(context: WsHandlerContext): void {
       },
     });
   }
+
+  sendActiveRouteReservationSnapshots(context);
 }
 
 export const handleCommandCenterMessage: WsMessageHandler = context => {
@@ -599,8 +644,17 @@ export const handleCommandCenterMessage: WsMessageHandler = context => {
         return true;
       }
 
-      log("Getting blocks and command center runtime snapshot");
+      log("Getting blocks");
       commandCenter.getBlocks();
+      return true;
+
+    case "getLayoutRuntimeSnapshot":
+      if (!commandCenter) {
+        rejectMissingCommandCenter(context);
+        return true;
+      }
+
+      log("Getting layout runtime snapshot");
       sendCommandCenterRuntimeSnapshot(context);
       return true;
 
