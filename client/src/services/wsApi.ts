@@ -13,12 +13,14 @@ import type {
   TypedClientWsMessage,
 } from "../../../common/src/types";
 
-import { getClientIdentity } from "./clientIdentity";
+import { generateId } from "../helpers";
 import { wsClient } from "./wsClient";
 
 class WebSocketApi {
+  private readonly uuid = generateId();
+
   get clientUuid(): string {
-    return getClientIdentity().clientId;
+    return this.uuid;
   }
 
   connect(url: string): void {
@@ -36,29 +38,21 @@ class WebSocketApi {
     const message: TypedClientWsMessage<TType> = {
       type,
       data,
-      uuid: this.clientUuid,
+      uuid: this.uuid,
     };
 
     return wsClient.send(message);
   }
 
   private waitUntilConnected(timeoutMs: number): Promise<void> {
-    if (wsClient.isConnected()) {
-      return Promise.resolve();
-    }
+    if (wsClient.isConnected()) return Promise.resolve();
 
     return new Promise((resolve, reject) => {
       let timeoutHandle: number | null = null;
 
       const unsubscribe = wsClient.subscribeStatus(status => {
-        if (status !== "connected") {
-          return;
-        }
-
-        if (timeoutHandle !== null) {
-          window.clearTimeout(timeoutHandle);
-        }
-
+        if (status !== "connected") return;
+        if (timeoutHandle !== null) window.clearTimeout(timeoutHandle);
         unsubscribe();
         resolve();
       });
@@ -93,7 +87,6 @@ class WebSocketApi {
           window.clearTimeout(timeoutHandle);
           timeoutHandle = null;
         }
-
         unsubscribeResponse();
         unsubscribeStatus();
       };
@@ -118,10 +111,7 @@ class WebSocketApi {
       });
 
       unsubscribeStatus = wsClient.subscribeStatus(status => {
-        if (status === "connected" || status === "connecting" || status === "reconnecting") {
-          return;
-        }
-
+        if (status === "connected" || status === "connecting" || status === "reconnecting") return;
         rejectOnce(new Error(`WebSocket request failed because connection is ${status}: ${String(clientType)}`));
       });
 
@@ -130,10 +120,7 @@ class WebSocketApi {
       }, timeoutMs);
 
       const sent = this.send(clientType, data);
-
-      if (!sent) {
-        rejectOnce(new Error("WebSocket is not connected."));
-      }
+      if (!sent) rejectOnce(new Error("WebSocket is not connected."));
     });
   }
 
