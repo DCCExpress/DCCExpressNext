@@ -73,20 +73,6 @@ class SignalLogicRulesStore {
     return this.getDocument();
   }
 
-  async setAutostart(autostart: boolean): Promise<SignalLogicDocumentDto> {
-    await this.initialize();
-
-    this.document = normalizeSignalLogicDocument({
-      ...this.document,
-      autostart,
-    });
-
-    await this.persist();
-    this.createdOnInitialize = false;
-
-    return this.getDocument();
-  }
-
   private async persist(): Promise<void> {
     await fs.mkdir(path.dirname(this.filePath), { recursive: true });
     await fs.writeFile(this.filePath, JSON.stringify(this.document, null, 2), "utf8");
