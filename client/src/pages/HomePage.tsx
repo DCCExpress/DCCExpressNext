@@ -193,17 +193,7 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                   ev.currentTarget.style.background = "linear-gradient(180deg, rgba(12, 31, 52, 0.58) 0%, rgba(4, 12, 24, 0.36) 100%)";
                 }}
               >
-                <Box
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    pointerEvents: "none",
-                    background:
-                      "radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.16) 0%, transparent 38%)",
-                  }}
-                />
-
-                <Card.Section style={{ position: "relative" }}>
+                <Card.Section style={{ position: "relative", overflow: "hidden" }}>
                   <Image
                     src={item.image}
                     alt={item.title}
@@ -212,6 +202,15 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                     fallbackSrc={`https://placehold.co/800x450?text=${encodeURIComponent(
                       item.title
                     )}`}
+                  />
+                  <Box
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      pointerEvents: "none",
+                      background:
+                        "linear-gradient(180deg, transparent 58%, rgba(4, 12, 24, 0.22) 100%), radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.14) 0%, transparent 48%)",
+                    }}
                   />
                 </Card.Section>
 
