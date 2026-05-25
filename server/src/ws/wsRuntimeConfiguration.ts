@@ -28,6 +28,10 @@ import {
   serverRuntimeStatsStore,
 } from "../services/serverRuntimeStatsStore.js";
 
+import {
+  signalLogicRuntimeService,
+} from "../services/signalLogicRuntimeService.js";
+
 import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
@@ -56,6 +60,13 @@ export function configureWebSocketRuntimes({
 
   runtimeVariableService.setBroadcast(message => {
     broadcast(message);
+  });
+
+  signalLogicRuntimeService.configure({
+    broadcast: message => {
+      broadcast(message);
+    },
+    getCommandCenter,
   });
 
   serverRuntimeStatsStore.configure({
