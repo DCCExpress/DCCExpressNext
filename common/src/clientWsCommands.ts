@@ -236,6 +236,7 @@ export type ClientWsPayloadMap = {
   setBlockRemove: SetBlockRemoveCommandPayload;
   setBlocksReset: EmptyClientWsCommandPayload;
   getBlocks: EmptyClientWsCommandPayload;
+  getLayoutRuntimeSnapshot: EmptyClientWsCommandPayload;
 
   routeLock: EmptyClientWsCommandPayload;
   routeUnlock: EmptyClientWsCommandPayload;
