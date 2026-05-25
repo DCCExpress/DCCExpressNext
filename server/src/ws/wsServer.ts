@@ -270,7 +270,6 @@ export async function setupWebSocketServer(
       await routeIncomingWebSocketMessage({
         ws,
         msg,
-        clientUUID,
         commandCenter: currentCommandCenter,
         sendToClient,
         broadcast,
@@ -279,7 +278,7 @@ export async function setupWebSocketServer(
 
     ws.on("close", () => {
       logWs("WebSocket client disconnected:", clientUUID);
-      editorEditModeStore.release(clientUUID);
+      editorEditModeStore.removeClient(clientUUID);
     });
   });
 
