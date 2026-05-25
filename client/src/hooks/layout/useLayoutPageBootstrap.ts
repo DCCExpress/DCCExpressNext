@@ -141,8 +141,7 @@ export function useLayoutPageBootstrap({
       return;
     }
 
-    wsApi.getBlocks();
-    wsApi.getRouteReservations();
+    wsApi.getLayoutRuntimeSnapshot();
   }, [layoutLoadedRef]);
 
   const loadLayoutFromServer = useCallback(async (): Promise<void> => {
