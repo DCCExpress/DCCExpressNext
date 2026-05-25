@@ -49,6 +49,7 @@ class WebSocketApi {
 
     return new Promise((resolve, reject) => {
       let timeoutHandle: number | null = null;
+      let pollHandle: number | null = null;
       let unsubscribe: () => void = () => {};
       let settled = false;
 
@@ -57,11 +58,19 @@ class WebSocketApi {
           window.clearTimeout(timeoutHandle);
           timeoutHandle = null;
         }
+
+        if (pollHandle !== null) {
+          window.clearInterval(pollHandle);
+          pollHandle = null;
+        }
+
         unsubscribe();
       };
 
       const resolveOnce = (): void => {
         if (settled) return;
+        if (!wsClient.isConnected()) return;
+
         settled = true;
         cleanup();
         resolve();
@@ -80,14 +89,15 @@ class WebSocketApi {
         }
       });
 
-      if (settled) {
-        unsubscribe();
-        return;
-      }
+      pollHandle = window.setInterval(() => {
+        resolveOnce();
+      }, 25);
 
       timeoutHandle = window.setTimeout(() => {
         rejectOnce(new Error("WebSocket connection timed out."));
       }, timeoutMs);
+
+      resolveOnce();
     });
   }
 
@@ -142,12 +152,21 @@ class WebSocketApi {
         rejectOnce(new Error(`WebSocket request failed because connection is ${status}: ${String(clientType)}`));
       });
 
+      const sendWhenOpen = (): void => {
+        if (!wsClient.isConnected()) {
+          rejectOnce(new Error("WebSocket is not connected."));
+          return;
+        }
+
+        const sent = this.send(clientType, data);
+        if (!sent) rejectOnce(new Error("WebSocket is not connected."));
+      };
+
       timeoutHandle = window.setTimeout(() => {
         rejectOnce(new Error(`WebSocket request timed out: ${String(clientType)}`));
       }, timeoutMs);
 
-      const sent = this.send(clientType, data);
-      if (!sent) rejectOnce(new Error("WebSocket is not connected."));
+      sendWhenOpen();
     });
   }
 
