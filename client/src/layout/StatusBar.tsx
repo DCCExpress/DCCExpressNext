@@ -297,6 +297,8 @@ export default function StatusBar({
             {locked ? "LOCK" : "FREE"}
           </StatusBadge>
 
+          <Divider orientation="vertical" />
+
           <StatusActionIcon
             tooltip={serverAudioEnabled ? "Server audio playback enabled" : "Server audio playback disabled"}
             color={serverAudioEnabled ? "green" : "gray"}
@@ -308,6 +310,23 @@ export default function StatusBar({
               <IconVolumeOff size={16} />
             )}
           </StatusActionIcon>
+
+          <StatusActionIcon
+            tooltip={
+              rightPanelMode === "loco"
+                ? "Right panel: loco panel"
+                : "Right panel: property panel"
+            }
+            color={
+              rightPanelMode === "loco"
+                ? "green"
+                : "gray"
+            }
+            onClick={handleToggleRightPanelMode}
+          >
+            <IconTrain size={16} />
+          </StatusActionIcon>
+
 
           <Divider orientation="vertical" />
 
@@ -417,59 +436,41 @@ export default function StatusBar({
 
           <Divider orientation="vertical" />
 
-          <StatusActionIcon 
-            tooltip={
-              rightPanelMode === "loco"
-                ? "Right panel: loco panel"
-                : "Right panel: property panel"
-            }
-            color={
-              rightPanelMode === "loco"
-                ? "green"
-                : "gray"
-            }
-            onClick={handleToggleRightPanelMode}
-          >
-            <IconTrain size={16}/>
-          </StatusActionIcon>
-
-          <Divider orientation="vertical" />
-
-          <StatusBadge
+          {/* <StatusBadge
             color={getMemoryColor(
               browserStats.memoryUsedMb
             )}
           >
             JS {browserStats.memoryUsedMb ?? "-"} MB
-          </StatusBadge>
+          </StatusBadge> */}
 
-          <StatusBadge
+          {/* <StatusBadge
             color={getFpsColor(browserStats.fps)}
           >
             FPS {browserStats.fps ?? "-"}
-          </StatusBadge>
+          </StatusBadge> */}
 
-          <StatusBadge color="blue">
+          {/* <StatusBadge color="blue">
             CPU {browserStats.cpuThreads ?? "-"}
-          </StatusBadge>
+          </StatusBadge> */}
 
-          <Divider orientation="vertical" />
+          {/* <Divider orientation="vertical" /> */}
 
-          <StatusBadge
+          {/* <StatusBadge
             color={getMemoryColor(
               serverStats?.memoryRssMb ?? null
             )}
           >
             SRV MEM {serverStats?.memoryRssMb ?? "-"} MB
-          </StatusBadge>
+          </StatusBadge> */}
 
-          <StatusBadge
+          {/* <StatusBadge
             color={getCpuLoadColor(
               serverStats?.systemLoadPercent ?? null
             )}
           >
             SRV CPU {serverStats?.systemLoadPercent ?? "-"}%
-          </StatusBadge>
+          </StatusBadge> */}
 
           <StatusBadge color="blue">
             NET ↓{serverStats?.wsRxKbps ?? "-"} ↑{serverStats?.wsTxKbps ?? "-"} kbit/s

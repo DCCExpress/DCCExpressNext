@@ -33,28 +33,31 @@
     "actions": {
       "beforeStart": [
         {
-          "id": "535bca2-f7b7-4f86-a914-06b84801",
-          "type": "setFunction",
-          "functionNumber": 1,
-          "active": true
-        },
-        {
           "id": "2cbd5aa-0248-49a1-b05b-32b2c42c",
           "type": "setFunction",
           "functionNumber": 0,
           "active": true
         },
         {
-          "id": "354f2f4-3c6b-4111-837a-aa0eefe7",
+          "id": "924e63b-6e5e-4f4e-84ad-3afd7d71",
+          "type": "wait",
+          "ms": 3000
+        },
+        {
+          "id": "dbff98a-cf4b-4f91-aa55-a0760547",
           "type": "setFunction",
-          "functionNumber": 0,
+          "functionNumber": 1,
           "active": true
         },
         {
-          "id": "89f501f-9994-41d7-896e-58dd7ee2",
-          "type": "setFunction",
-          "functionNumber": 0,
-          "active": true
+          "id": "2433276-3e5e-4ff2-9424-0cd0d074",
+          "type": "wait",
+          "ms": 3000
+        },
+        {
+          "id": "f5df2db-8772-4953-8a86-23ac1f6e",
+          "type": "playAudio",
+          "fileName": "mav_szignal.mp3"
         }
       ],
       "afterStart": [],
