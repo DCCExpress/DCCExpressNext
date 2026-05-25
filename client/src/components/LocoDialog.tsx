@@ -396,32 +396,27 @@ export default function LocoDialog({
     );
   };
 
-  const moveDraggedActionToIndex = (
-    hook: LocoActionHook,
-    targetIndex: number
-  ): void => {
-    if (!selectedLoco || !draggedActionId) {
-      return;
-    }
+const moveDraggedActionToIndex = (
+  hook: LocoActionHook,
+  targetIndex: number
+): void => {
+  if (!selectedLoco || !draggedActionId) {
+    return;
+  }
 
-    const actions = getLocoActions(selectedLoco, hook);
-    const fromIndex = actions.findIndex(action => action.id === draggedActionId);
-    const boundedTargetIndex = Math.max(0, Math.min(targetIndex, actions.length));
-    const adjustedTargetIndex =
-      fromIndex >= 0 && fromIndex < boundedTargetIndex
-        ? boundedTargetIndex - 1
-        : boundedTargetIndex;
+  const actions = getLocoActions(selectedLoco, hook);
+  const fromIndex = actions.findIndex(action => action.id === draggedActionId);
+  const boundedTargetIndex = Math.max(0, Math.min(targetIndex, actions.length - 1));
 
-    if (fromIndex < 0 || fromIndex === adjustedTargetIndex) {
-      return;
-    }
+  if (fromIndex < 0 || fromIndex === boundedTargetIndex) {
+    return;
+  }
 
-    updateActionsForHook(
-      hook,
-      moveItem(actions, fromIndex, adjustedTargetIndex)
-    );
-  };
-
+  updateActionsForHook(
+    hook,
+    moveItem(actions, fromIndex, boundedTargetIndex)
+  );
+};
   const handleActionDragStart = (
     event: DragEvent<HTMLDivElement>,
     actionId: string
