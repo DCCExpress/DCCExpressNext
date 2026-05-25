@@ -339,8 +339,6 @@ Recommended higher-quality options:
 - Azure Speech, for example `hu-HU-NoemiNeural`, `hu-HU-TamasNeural` for Hungarian
 - ElevenLabs with a model/voice that supports the target language well
 
-Whisper is not suitable for this task. Whisper is speech-to-text, meaning it converts spoken audio into text. For MP3 announcements we need text-to-speech, meaning text into spoken audio.
-
 ## Troubleshooting
 
 ### The system cannot find the path specified
