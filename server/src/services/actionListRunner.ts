@@ -1,4 +1,11 @@
-import type { Loco, LocoAction, LocoActionHook } from "../../../common/src/types.js";
+import type {
+  BlockAction,
+  BlockActionHook,
+  Loco,
+  LocoAction,
+  LocoActionHook,
+} from "../../../common/src/types.js";
+import type { BlockElement } from "../../../common/src/layout/elements/BlockElement.js";
 import type { CommandCenter } from "../commandCenter/CommandCenter.js";
 
 export type ActionListStatusPayload = {
@@ -28,6 +35,17 @@ export type LocoActionListCallbacks = {
   status: (payload: LocoActionListStatusPayload) => void;
 };
 
+export type BlockActionListStatusPayload = ActionListStatusPayload & {
+  blockId: string;
+  blockName: string;
+  hook: BlockActionHook;
+};
+
+export type BlockActionListCallbacks = {
+  playAudio: (fileName: string) => void;
+  status: (payload: BlockActionListStatusPayload) => void;
+};
+
 const sleep = (ms: number): Promise<void> =>
   new Promise(resolve => setTimeout(resolve, Math.max(0, ms)));
 
@@ -47,15 +65,7 @@ class ActionListRunner {
     callbacks: ActionListRunnerCallbacks;
     executeAction: (action: TAction, index: number) => Promise<void>;
   }): Promise<void> {
-    const {
-      runKey,
-      sourceType,
-      sourceId,
-      hook,
-      actions,
-      callbacks,
-      executeAction,
-    } = params;
+    const { runKey, sourceType, sourceId, hook, actions, callbacks, executeAction } = params;
 
     if (this.runningKeys.has(runKey)) {
       throw new Error(`Action list is already running: ${runKey}`);
@@ -63,42 +73,15 @@ class ActionListRunner {
 
     this.runningKeys.add(runKey);
 
-    callbacks.status({
-      runKey,
-      sourceType,
-      sourceId,
-      hook,
-      running: true,
-      currentIndex: 0,
-      total: actions.length,
-      message: "started",
-    });
+    callbacks.status({ runKey, sourceType, sourceId, hook, running: true, currentIndex: 0, total: actions.length, message: "started" });
 
     try {
       for (let index = 0; index < actions.length; index++) {
-        callbacks.status({
-          runKey,
-          sourceType,
-          sourceId,
-          hook,
-          running: true,
-          currentIndex: index + 1,
-          total: actions.length,
-        });
-
+        callbacks.status({ runKey, sourceType, sourceId, hook, running: true, currentIndex: index + 1, total: actions.length });
         await executeAction(actions[index]!, index);
       }
 
-      callbacks.status({
-        runKey,
-        sourceType,
-        sourceId,
-        hook,
-        running: false,
-        currentIndex: actions.length,
-        total: actions.length,
-        message: "finished",
-      });
+      callbacks.status({ runKey, sourceType, sourceId, hook, running: false, currentIndex: actions.length, total: actions.length, message: "finished" });
     } catch (error) {
       callbacks.status({
         runKey,
@@ -119,17 +102,12 @@ class ActionListRunner {
 
 export const actionListRunner = new ActionListRunner();
 
-function toLocoStatus(
-  payload: ActionListStatusPayload,
-  loco: Loco,
-  hook: LocoActionHook
-): LocoActionListStatusPayload {
-  return {
-    ...payload,
-    locoId: loco.id,
-    locoAddress: loco.address,
-    hook,
-  };
+function toLocoStatus(payload: ActionListStatusPayload, loco: Loco, hook: LocoActionHook): LocoActionListStatusPayload {
+  return { ...payload, locoId: loco.id, locoAddress: loco.address, hook };
+}
+
+function toBlockStatus(payload: ActionListStatusPayload, block: BlockElement, hook: BlockActionHook): BlockActionListStatusPayload {
+  return { ...payload, blockId: block.id, blockName: block.name, hook };
 }
 
 async function runLocoAction(
@@ -166,6 +144,23 @@ async function runLocoAction(
   }
 }
 
+async function runBlockAction(
+  action: BlockAction,
+  callbacks: BlockActionListCallbacks
+): Promise<void> {
+  switch (action.type) {
+    case "playAudio": {
+      const fileName = action.fileName.trim();
+      if (fileName) callbacks.playAudio(fileName);
+      return;
+    }
+
+    case "wait":
+      await sleep(action.ms);
+      return;
+  }
+}
+
 export async function runLocoActionList(params: {
   loco: Loco;
   hook: LocoActionHook;
@@ -183,9 +178,28 @@ export async function runLocoActionList(params: {
     sourceId: loco.id,
     hook,
     actions,
-    callbacks: {
-      status: payload => callbacks.status(toLocoStatus(payload, loco, hook)),
-    },
+    callbacks: { status: payload => callbacks.status(toLocoStatus(payload, loco, hook)) },
     executeAction: action => runLocoAction(loco, action, commandCenter, callbacks),
+  });
+}
+
+export async function runBlockActionList(params: {
+  block: BlockElement;
+  hook: BlockActionHook;
+  actions: BlockAction[];
+  callbacks: BlockActionListCallbacks;
+  runKey?: string;
+}): Promise<void> {
+  const { block, hook, actions, callbacks } = params;
+  const runKey = params.runKey ?? `block:${block.id}:${hook}`;
+
+  await actionListRunner.run<BlockAction>({
+    runKey,
+    sourceType: "block",
+    sourceId: block.id,
+    hook,
+    actions,
+    callbacks: { status: payload => callbacks.status(toBlockStatus(payload, block, hook)) },
+    executeAction: action => runBlockAction(action, callbacks),
   });
 }
