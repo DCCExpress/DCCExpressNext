@@ -486,6 +486,7 @@ export class BlockElementView
     copy.length = this.length;
     copy.sensorAddress = this.sensorAddress;
     copy.blockType = this.blockType;
+    copy.actions = structuredClone(this.actions ?? {});
 
     return copy;
   }
@@ -518,6 +519,8 @@ export class BlockElementView
     element.blockType =
       data.blockType ?? BLOCK_TYPES.NORMAL;
 
+    element.actions = data.actions ?? {};
+
     return element;
   }
 
@@ -530,6 +533,7 @@ export class BlockElementView
       locoAddress: this.locoAddress,
       sensorAddress: this.sensorAddress,
       blockType: this.blockType as BlockType,
+      actions: this.actions,
     };
   }
 
