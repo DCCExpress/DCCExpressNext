@@ -61,15 +61,26 @@ type HomeCardItem = {
   disabled?: boolean;
 };
 
-function openMobileClient(): void {
+function normalizeLanguage(language: string): string {
+  const shortCode = language.split("-")[0]?.toLowerCase();
+
+  if (shortCode === "hu" || shortCode === "de" || shortCode === "en") {
+    return shortCode;
+  }
+
+  return "en";
+}
+
+function openMobileClient(language: string): void {
   const protocol = window.location.protocol;
-  const url = `${protocol}//${window.location.hostname}:3000/mobile/`;
+  const lang = encodeURIComponent(normalizeLanguage(language));
+  const url = `${protocol}//${window.location.hostname}:3000/mobile/?lang=${lang}`;
 
   window.location.assign(url);
 }
 
 export default function HomePage({ onOpenLayout }: HomePageProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const cards: HomeCardItem[] = [
     {
@@ -98,7 +109,7 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
       image: "/images/mobile-card.png",
       buttonLabel: "Open mobile",
       icon: <IconDeviceMobile size={18} />,
-      onClick: openMobileClient,
+      onClick: () => openMobileClient(i18n.language),
       disabled: false,
     },
   ];
