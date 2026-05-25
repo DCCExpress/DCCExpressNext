@@ -26,6 +26,89 @@ function rejectMissingCommandCenter({
   });
 }
 
+function sendCommandCenterRuntimeSnapshot(context: WsHandlerContext): void {
+  const {
+    ws,
+    commandCenter,
+    sendToClient,
+  } = context;
+
+  if (!commandCenter) {
+    return;
+  }
+
+  const powerInfo = commandCenter.getPowerInfo();
+
+  sendToClient(ws, {
+    type: "commandCenterInfo",
+    data: {
+      alive: commandCenter.isAlive(),
+      name: commandCenter.getName(),
+      connectionString: commandCenter.getConnectionString(),
+      power: powerInfo.trackVoltageOn,
+    },
+  });
+
+  sendToClient(ws, {
+    type: "powerInfo",
+    data: {
+      emergencyStop: powerInfo.emergencyStop,
+      trackVoltageOn: powerInfo.trackVoltageOn,
+      trackVoltageOff: !powerInfo.trackVoltageOn,
+      shortCircuit: powerInfo.shortCircuit,
+      programmingModeActive: false,
+    },
+  });
+
+  sendToClient(ws, {
+    type: "commandCenterLockChanged",
+    data: {
+      locked: commandCenter.locked,
+      lockOwner: commandCenter.lockOwnerUUID ?? null,
+      reason: commandCenter.locked ? "route" : null,
+    },
+  });
+
+  for (const loco of commandCenter.getLocos()) {
+    sendToClient(ws, {
+      type: "locoState",
+      data: {
+        loco,
+      },
+    });
+  }
+
+  for (const turnout of commandCenter.getTurnouts()) {
+    sendToClient(ws, {
+      type: "turnoutChanged",
+      data: {
+        address: turnout.address,
+        closed: turnout.closed,
+      },
+    });
+  }
+
+  for (const sensor of commandCenter.getSensors()) {
+    sendToClient(ws, {
+      type: "sensorChanged",
+      data: {
+        address: sensor.address,
+        on: sensor.active,
+      },
+    });
+  }
+
+  for (const accessory of commandCenter.getAccessories()) {
+    sendToClient(ws, {
+      type: "accessoryChanged",
+      data: {
+        address: accessory.address,
+        active: accessory.active,
+      },
+    });
+  }
+}
+
 export const handleCommandCenterMessage: WsMessageHandler = context => {
   const {
     ws,
@@ -516,8 +599,9 @@ export const handleCommandCenterMessage: WsMessageHandler = context => {
         return true;
       }
 
-      log("Getting blocks");
+      log("Getting blocks and command center runtime snapshot");
       commandCenter.getBlocks();
+      sendCommandCenterRuntimeSnapshot(context);
       return true;
 
     default:
