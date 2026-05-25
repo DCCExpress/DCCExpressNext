@@ -1,5 +1,6 @@
 import {
   Badge,
+  Box,
   Button,
   Card,
   Container,
@@ -75,146 +76,160 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
   ];
 
   return (
-    <Container size="xl" py="xl">
-      <Stack gap="xl">
-        <Paper
-          radius="lg"
-          p="xl"
-          withBorder
-          style={{
-            position: "relative",
-            overflow: "hidden",
-            minHeight: 360,
-            backgroundImage: `linear-gradient(90deg, rgba(5, 13, 27, 0.96) 0%, rgba(5, 13, 27, 0.86) 34%, rgba(5, 13, 27, 0.34) 67%, rgba(5, 13, 27, 0.18) 100%), url(${HERO_BACKGROUND_IMAGE})`,
-            backgroundPosition: "center",
-            backgroundSize: "cover",
-            boxShadow: "var(--mantine-shadow-lg)",
-          }}
-        >
+    <Box
+      mih="100vh"
+      style={{
+        background:
+          "radial-gradient(circle at 82% 18%, rgba(34, 139, 230, 0.22) 0%, transparent 32%), radial-gradient(circle at 18% 78%, rgba(64, 192, 87, 0.10) 0%, transparent 34%), linear-gradient(135deg, #06101f 0%, #071827 42%, #020711 100%)",
+      }}
+    >
+      <Container size="xl" py="xl">
+        <Stack gap="xl">
           <Paper
-            radius="md"
-            p={4}
+            radius="lg"
+            p="xl"
             withBorder
             style={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              zIndex: 2,
-              background: "color-mix(in srgb, var(--mantine-color-body) 78%, transparent)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <LanguageSelector variant="light" size="lg" width={68} />
-          </Paper>
-
-          <Stack
-            gap="md"
-            justify="center"
-            style={{
               position: "relative",
-              zIndex: 1,
-              minHeight: 300,
-              maxWidth: 760,
-              paddingRight: 96,
+              overflow: "hidden",
+              minHeight: 360,
+              backgroundImage: `linear-gradient(90deg, rgba(5, 13, 27, 0.96) 0%, rgba(5, 13, 27, 0.86) 34%, rgba(5, 13, 27, 0.34) 67%, rgba(5, 13, 27, 0.18) 100%), url(${HERO_BACKGROUND_IMAGE})`,
+              backgroundPosition: "center",
+              backgroundSize: "cover",
+              borderColor: "rgba(100, 210, 255, 0.20)",
+              boxShadow: "0 26px 70px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(120, 220, 255, 0.06)",
             }}
           >
-            <Badge variant="light" size="lg" radius="sm" w="fit-content">
-              DCCExpress
-            </Badge>
-
-            <Title order={1} c="white">
-              {t("home.heroTitle").split("\n").map((line, index) => (
-                <span key={line}>
-                  {line}
-                  {index === 0 && <br />}
-                </span>
-              ))}
-            </Title>
-
-            <Text size="lg" c="gray.3" maw={720}>
-              {t("home.heroDescription")}
-            </Text>
-
-            <Group>
-              <Button
-                size="md"
-                rightSection={<IconArrowRight size={16} />}
-                onClick={onOpenLayout}
-              >
-                {t("home.startLayout")}
-              </Button>
-            </Group>
-          </Stack>
-        </Paper>
-
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
-          {cards.map((item) => (
-            <Card
-              key={item.key}
-              shadow="sm"
-              padding="lg"
-              radius="lg"
+            <Paper
+              radius="md"
+              p={4}
               withBorder
               style={{
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                opacity: item.disabled ? 0.72 : 1,
-                transition: "transform 160ms ease, box-shadow 160ms ease",
-              }}
-              onMouseEnter={(ev) => {
-                if (item.disabled) return;
-
-                ev.currentTarget.style.transform = "translateY(-4px)";
-                ev.currentTarget.style.boxShadow = "var(--mantine-shadow-md)";
-              }}
-              onMouseLeave={(ev) => {
-                ev.currentTarget.style.transform = "translateY(0)";
-                ev.currentTarget.style.boxShadow = "var(--mantine-shadow-sm)";
+                position: "absolute",
+                top: 16,
+                right: 16,
+                zIndex: 2,
+                background: "color-mix(in srgb, var(--mantine-color-body) 78%, transparent)",
+                backdropFilter: "blur(10px)",
               }}
             >
-              <Card.Section>
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  h={180}
-                  fit="cover"
-                  fallbackSrc={`https://placehold.co/800x450?text=${encodeURIComponent(
-                    item.title
-                  )}`}
-                />
-              </Card.Section>
+              <LanguageSelector variant="light" size="lg" width={68} />
+            </Paper>
 
-              <Stack gap="sm" mt="md" style={{ flex: 1 }}>
-                <Group gap="xs" align="center">
-                  <ThemeIcon variant="light" size="lg" radius="md">
-                    {item.icon}
-                  </ThemeIcon>
+            <Stack
+              gap="md"
+              justify="center"
+              style={{
+                position: "relative",
+                zIndex: 1,
+                minHeight: 300,
+                maxWidth: 760,
+                paddingRight: 96,
+              }}
+            >
+              <Badge variant="light" size="lg" radius="sm" w="fit-content">
+                DCCExpress
+              </Badge>
 
-                  <Title order={3}>{item.title}</Title>
-                </Group>
+              <Title order={1} c="white">
+                {t("home.heroTitle").split("\n").map((line, index) => (
+                  <span key={line}>
+                    {line}
+                    {index === 0 && <br />}
+                  </span>
+                ))}
+              </Title>
 
-                <Text size="sm" c="dimmed" style={{ flex: 1 }}>
-                  {item.description}
-                </Text>
+              <Text size="lg" c="gray.3" maw={720}>
+                {t("home.heroDescription")}
+              </Text>
 
+              <Group>
                 <Button
-                  variant={item.disabled ? "default" : "light"}
-                  fullWidth
-                  mt="sm"
-                  disabled={item.disabled === true}
-                  rightSection={
-                    item.disabled === true ? undefined : <IconArrowRight size={16} />
-                  }
-                  onClick={item.disabled === true ? undefined : item.onClick}
+                  size="md"
+                  rightSection={<IconArrowRight size={16} />}
+                  onClick={onOpenLayout}
                 >
-                  {item.buttonLabel}
+                  {t("home.startLayout")}
                 </Button>
-              </Stack>
-            </Card>
-          ))}
-        </SimpleGrid>
-      </Stack>
-    </Container>
+              </Group>
+            </Stack>
+          </Paper>
+
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+            {cards.map((item) => (
+              <Card
+                key={item.key}
+                shadow="sm"
+                padding="lg"
+                radius="lg"
+                withBorder
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  opacity: item.disabled ? 0.72 : 1,
+                  transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
+                  background: "color-mix(in srgb, var(--mantine-color-body) 88%, rgba(6, 16, 31, 0.62))",
+                  borderColor: "rgba(100, 210, 255, 0.14)",
+                  backdropFilter: "blur(8px)",
+                }}
+                onMouseEnter={(ev) => {
+                  if (item.disabled) return;
+
+                  ev.currentTarget.style.transform = "translateY(-4px)";
+                  ev.currentTarget.style.boxShadow = "0 18px 46px rgba(0, 0, 0, 0.28)";
+                  ev.currentTarget.style.borderColor = "rgba(100, 210, 255, 0.32)";
+                }}
+                onMouseLeave={(ev) => {
+                  ev.currentTarget.style.transform = "translateY(0)";
+                  ev.currentTarget.style.boxShadow = "var(--mantine-shadow-sm)";
+                  ev.currentTarget.style.borderColor = "rgba(100, 210, 255, 0.14)";
+                }}
+              >
+                <Card.Section>
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    h={180}
+                    fit="cover"
+                    fallbackSrc={`https://placehold.co/800x450?text=${encodeURIComponent(
+                      item.title
+                    )}`}
+                  />
+                </Card.Section>
+
+                <Stack gap="sm" mt="md" style={{ flex: 1 }}>
+                  <Group gap="xs" align="center">
+                    <ThemeIcon variant="light" size="lg" radius="md">
+                      {item.icon}
+                    </ThemeIcon>
+
+                    <Title order={3}>{item.title}</Title>
+                  </Group>
+
+                  <Text size="sm" c="dimmed" style={{ flex: 1 }}>
+                    {item.description}
+                  </Text>
+
+                  <Button
+                    variant={item.disabled ? "default" : "light"}
+                    fullWidth
+                    mt="sm"
+                    disabled={item.disabled === true}
+                    rightSection={
+                      item.disabled === true ? undefined : <IconArrowRight size={16} />
+                    }
+                    onClick={item.disabled === true ? undefined : item.onClick}
+                  >
+                    {item.buttonLabel}
+                  </Button>
+                </Stack>
+              </Card>
+            ))}
+          </SimpleGrid>
+        </Stack>
+      </Container>
+    </Box>
   );
 }
