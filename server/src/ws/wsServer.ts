@@ -55,8 +55,8 @@ import {
 } from "./wsMessageRouter.js";
 
 import {
-  parseIncomingClientWsMessage,
-} from "./wsIncomingClientMessageParser.js";
+  parseIncomingClientWsMessageWithRuntimeActions,
+} from "./wsIncomingClientMessageParserRuntimePatch.js";
 
 import {
   configureCommandCenterLifecycle,
@@ -222,7 +222,7 @@ export async function setupWebSocketServer(
       logWs("incoming:", text);
 
       const parseResult =
-        parseIncomingClientWsMessage(text);
+        parseIncomingClientWsMessageWithRuntimeActions(text);
 
       if (!parseResult.ok) {
         logError("Invalid WebSocket message:", parseResult.reason);
