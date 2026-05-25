@@ -113,6 +113,24 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         header={{ height: toolbarOpened ? HEADER_HEIGHT : 0 }}
         footer={{ height: FOOTER_HEIGHT }}
         padding="xs"
+        styles={{
+          root: {
+            minHeight: "100dvh",
+            background:
+              "radial-gradient(circle at top left, rgba(34, 139, 230, 0.22), transparent 34rem), linear-gradient(180deg, #111318 0%, #08090b 100%)",
+          },
+          main: {
+            background: "transparent",
+          },
+          header: {
+            background: "color-mix(in srgb, var(--mantine-color-body) 92%, transparent)",
+            backdropFilter: "blur(10px)",
+          },
+          footer: {
+            background: "color-mix(in srgb, var(--mantine-color-body) 92%, transparent)",
+            backdropFilter: "blur(10px)",
+          },
+        }}
       >
         <LayoutPageHeader
           onGoHome={onGoHome}
