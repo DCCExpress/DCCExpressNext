@@ -57,14 +57,6 @@ type LocoDialogProps = {
 };
 
 type LocoActionType = LocoAction["type"];
-type DropTarget =
-  | {
-      type: "before";
-      actionId: string;
-    }
-  | {
-      type: "end";
-    };
 
 const ACTION_HOOKS: {
   value: LocoActionHook;
@@ -235,7 +227,6 @@ export default function LocoDialog({
   const [message, setMessage] = useState("");
   const [activeActionHook, setActiveActionHook] = useState<LocoActionHook>("beforeStart");
   const [draggedActionId, setDraggedActionId] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
 
   useEffect(() => {
     if (!opened) return;
@@ -405,7 +396,7 @@ export default function LocoDialog({
     );
   };
 
-  const reorderActionToIndex = (
+  const moveDraggedActionToIndex = (
     hook: LocoActionHook,
     targetIndex: number
   ): void => {
@@ -416,9 +407,14 @@ export default function LocoDialog({
     const actions = getLocoActions(selectedLoco, hook);
     const fromIndex = actions.findIndex(action => action.id === draggedActionId);
     const boundedTargetIndex = Math.max(0, Math.min(targetIndex, actions.length));
-    const adjustedTargetIndex = fromIndex >= 0 && fromIndex < boundedTargetIndex
-      ? boundedTargetIndex - 1
-      : boundedTargetIndex;
+    const adjustedTargetIndex =
+      fromIndex >= 0 && fromIndex < boundedTargetIndex
+        ? boundedTargetIndex - 1
+        : boundedTargetIndex;
+
+    if (fromIndex < 0 || fromIndex === adjustedTargetIndex) {
+      return;
+    }
 
     updateActionsForHook(
       hook,
@@ -431,14 +427,12 @@ export default function LocoDialog({
     actionId: string
   ): void => {
     setDraggedActionId(actionId);
-    setDropTarget(null);
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", actionId);
   };
 
   const clearDragState = (): void => {
     setDraggedActionId(null);
-    setDropTarget(null);
   };
 
   const sendFunctionTest = async (
@@ -495,24 +489,6 @@ export default function LocoDialog({
     label: `${fn.icon ? `${fn.icon} ` : ""}F${fn.number} - ${fn.name}`,
   })) ?? [];
 
-  const renderDropPlaceholder = (
-    key: string
-  ) => (
-    <Card
-      key={key}
-      withBorder
-      p="sm"
-      style={{
-        borderStyle: "dashed",
-        backgroundColor: "var(--mantine-color-default-hover)",
-      }}
-    >
-      <Text size="sm" c="dimmed" ta="center">
-        Drop here
-      </Text>
-    </Card>
-  );
-
   const renderActionEditor = (
     action: LocoAction,
     hook: LocoActionHook,
@@ -536,23 +512,12 @@ export default function LocoDialog({
           event.dataTransfer.dropEffect = "move";
 
           if (draggedActionId && draggedActionId !== action.id) {
-            setDropTarget({
-              type: "before",
-              actionId: action.id,
-            });
+            moveDraggedActionToIndex(hook, actionIndex);
           }
-        }}
-        onDrop={event => {
-          event.preventDefault();
-
-          if (draggedActionId && draggedActionId !== action.id) {
-            reorderActionToIndex(hook, actionIndex);
-          }
-
-          clearDragState();
         }}
         style={{
           opacity: draggedActionId === action.id ? 0.35 : 1,
+          transition: "opacity 120ms ease, transform 120ms ease",
         }}
       >
         <Stack gap="sm">
@@ -981,31 +946,15 @@ export default function LocoDialog({
                               style={{ flex: 1, minHeight: 0 }}
                             >
                               <ScrollArea style={{ height: "100%" }}>
-                                <Stack
-                                  gap="sm"
-                                  onDragLeave={event => {
-                                    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                                      return;
-                                    }
-
-                                    setDropTarget(null);
-                                  }}
-                                >
-                                  {actions.map((action, actionIndex) => (
-                                    <Stack key={action.id} gap="sm">
-                                      {dropTarget?.type === "before" &&
-                                        dropTarget.actionId === action.id &&
-                                        draggedActionId !== action.id &&
-                                        renderDropPlaceholder(`drop-before-${action.id}`)}
-
-                                      {renderActionEditor(
-                                        action,
-                                        hook.value,
-                                        actionIndex,
-                                        actions.length
-                                      )}
-                                    </Stack>
-                                  ))}
+                                <Stack gap="sm">
+                                  {actions.map((action, actionIndex) =>
+                                    renderActionEditor(
+                                      action,
+                                      hook.value,
+                                      actionIndex,
+                                      actions.length
+                                    )
+                                  )}
 
                                   {draggedActionId && actions.length > 0 && (
                                     <Card
@@ -1014,27 +963,18 @@ export default function LocoDialog({
                                       onDragOver={event => {
                                         event.preventDefault();
                                         event.dataTransfer.dropEffect = "move";
-                                        setDropTarget({ type: "end" });
-                                      }}
-                                      onDrop={event => {
-                                        event.preventDefault();
-                                        reorderActionToIndex(hook.value, actions.length);
-                                        clearDragState();
+                                        moveDraggedActionToIndex(hook.value, actions.length);
                                       }}
                                       style={{
                                         borderStyle: "dashed",
-                                        opacity: dropTarget?.type === "end" ? 1 : 0.45,
+                                        opacity: 0.45,
                                       }}
                                     >
                                       <Text size="sm" c="dimmed" ta="center">
-                                        Drop at end
+                                        Move to end
                                       </Text>
                                     </Card>
                                   )}
-
-                                  {dropTarget?.type === "end" &&
-                                    draggedActionId &&
-                                    renderDropPlaceholder("drop-end-placeholder")}
 
                                   {actions.length === 0 && (
                                     <Card withBorder p="md">
