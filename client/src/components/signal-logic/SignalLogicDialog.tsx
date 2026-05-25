@@ -17,8 +17,15 @@ import {
   Textarea,
   Title,
 } from "@mantine/core";
-import { IconAlertTriangle, IconDeviceFloppy, IconPlus, IconRefresh, IconTrash } from "@tabler/icons-react";
+import {
+  IconAlertTriangle,
+  IconDeviceFloppy,
+  IconPlus,
+  IconRefresh,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { LayoutView } from "../../models/editor/core/LayoutView";
 import { isTurnoutElement } from "../../models/editor/core/LayoutView";
@@ -58,31 +65,12 @@ type SignalOption = {
   aspect: number;
 };
 
-const aspectLabels: Record<SignalAspect, string> = {
-  red: "Red",
-  yellow: "Yellow",
-  green: "Green",
-  white: "White",
-};
-
-const turnoutStateOptions = [
-  { value: "true", label: "Closed" },
-  { value: "false", label: "Thrown" },
-];
-
-const sensorStateOptions = [
-  { value: "true", label: "Occupied / active" },
-  { value: "false", label: "Free / inactive" },
-];
+type Translate = ReturnType<typeof useTranslation>["t"];
 
 function uniqueByValue<T extends { value: string }>(options: T[]): T[] {
   const seen = new Set<string>();
-
   return options.filter(option => {
-    if (seen.has(option.value)) {
-      return false;
-    }
-
+    if (seen.has(option.value)) return false;
     seen.add(option.value);
     return true;
   });
@@ -149,11 +137,13 @@ function getConditionExpression(condition: SignalLogicConditionDto): string | nu
 function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
   const lines: string[] = ["while (true) {", ""];
 
+  const conditions = groups.flatMap(group =>
+    group.rules.flatMap(rule => rule.conditions)
+  );
+
   const turnoutAddresses = Array.from(
     new Set(
-      groups
-        .flatMap(group => group.rules)
-        .flatMap(rule => rule.conditions)
+      conditions
         .filter(condition => condition.type === "turnout")
         .map(condition => condition.turnoutAddress)
         .filter(address => address > 0)
@@ -162,9 +152,7 @@ function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
 
   const sensorAddresses = Array.from(
     new Set(
-      groups
-        .flatMap(group => group.rules)
-        .flatMap(rule => rule.conditions)
+      conditions
         .filter(condition => condition.type === "sensor")
         .map(condition => condition.sensorAddress)
         .filter(address => address > 0)
@@ -191,9 +179,7 @@ function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
       const expressions = rule.conditions
         .map(getConditionExpression)
         .filter((expression): expression is string => Boolean(expression));
-      const expression = expressions.length === 0
-        ? "true"
-        : expressions.join(" && ");
+      const expression = expressions.length === 0 ? "true" : expressions.join(" && ");
 
       lines.push(`  ${keyword} (${expression}) {`);
       lines.push(`    await ${aspectToMethod(rule.aspect)}(${group.signalAddress});`);
@@ -212,24 +198,22 @@ function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
   return lines.join("\n");
 }
 
-function formatCondition(condition: SignalLogicConditionDto): string {
-  if (condition.type === "sensor") {
-    if (condition.sensorAddress <= 0) return "Sensor not selected";
-    return `S${condition.sensorAddress} = ${condition.active ? "occupied / active" : "free / inactive"}`;
-  }
-
-  if (condition.turnoutAddress <= 0) return "Turnout not selected";
-  return `T${condition.turnoutAddress} = ${condition.closed ? "closed" : "thrown"}`;
-}
-
 function getSignalAspect(signalOptions: SignalOption[], signalAddress: number): number {
   return signalOptions.find(option => Number(option.value) === signalAddress)?.aspect ?? 2;
 }
 
-function getAspectOptions(signalOptions: SignalOption[], signalAddress: number) {
+function getAspectLabel(t: Translate, aspect: SignalAspect): string {
+  return t(`signalLogic.aspects.${aspect}`);
+}
+
+function getAspectOptions(
+  t: Translate,
+  signalOptions: SignalOption[],
+  signalAddress: number
+) {
   return getAllowedSignalAspects(getSignalAspect(signalOptions, signalAddress)).map(aspect => ({
     value: aspect,
-    label: aspectLabels[aspect],
+    label: getAspectLabel(t, aspect),
   }));
 }
 
@@ -242,11 +226,52 @@ function normalizeAspectForSignal(
   return allowed.includes(aspect) ? aspect : allowed[0] ?? "red";
 }
 
+function formatCondition(t: Translate, condition: SignalLogicConditionDto): string {
+  if (condition.type === "sensor") {
+    if (condition.sensorAddress <= 0) return t("signalLogic.sensorNotSelected");
+    return t("signalLogic.sensorCondition", {
+      address: condition.sensorAddress,
+      state: t(condition.active
+        ? "signalLogic.sensorStates.active"
+        : "signalLogic.sensorStates.inactive"),
+    });
+  }
+
+  if (condition.turnoutAddress <= 0) return t("signalLogic.turnoutNotSelected");
+  return t("signalLogic.turnoutCondition", {
+    address: condition.turnoutAddress,
+    state: t(condition.closed
+      ? "signalLogic.turnoutStates.closed"
+      : "signalLogic.turnoutStates.thrown"),
+  });
+}
+
 export default function SignalLogicDialog({
   opened,
   onClose,
   layout,
 }: SignalLogicDialogProps) {
+  const { t } = useTranslation();
+
+  const aspectOptionsFor = (signalAddress: number) =>
+    getAspectOptions(t, signalOptions, signalAddress);
+
+  const turnoutStateOptions = useMemo(
+    () => [
+      { value: "true", label: t("signalLogic.turnoutStates.closed") },
+      { value: "false", label: t("signalLogic.turnoutStates.thrown") },
+    ],
+    [t]
+  );
+
+  const sensorStateOptions = useMemo(
+    () => [
+      { value: "true", label: t("signalLogic.sensorStates.active") },
+      { value: "false", label: t("signalLogic.sensorStates.inactive") },
+    ],
+    [t]
+  );
+
   const signalOptions = useMemo<SignalOption[]>(() => {
     const options = layout
       .getAllElements()
@@ -255,13 +280,16 @@ export default function SignalLogicDialog({
       )
       .map(signal => ({
         value: signal.address.toString(),
-        label: `Signal #${signal.address} (${signal.aspect} aspect)`,
+        label: t("signalLogic.signalOption", {
+          address: signal.address,
+          aspect: signal.aspect,
+        }),
         aspect: signal.aspect,
       }))
       .sort((a, b) => Number(a.value) - Number(b.value));
 
     return uniqueByValue(options);
-  }, [layout]);
+  }, [layout, t]);
 
   const turnoutOptions = useMemo<AddressOption[]>(() => {
     const options = layout
@@ -269,12 +297,14 @@ export default function SignalLogicDialog({
       .filter(isTurnoutElement)
       .map(turnout => ({
         value: turnout.turnoutAddress.toString(),
-        label: `Turnout #${turnout.turnoutAddress}`,
+        label: t("signalLogic.turnoutOption", {
+          address: turnout.turnoutAddress,
+        }),
       }))
       .sort((a, b) => Number(a.value) - Number(b.value));
 
     return uniqueByValue(options);
-  }, [layout]);
+  }, [layout, t]);
 
   const sensorOptions = useMemo<AddressOption[]>(() => {
     const options = layout
@@ -284,12 +314,14 @@ export default function SignalLogicDialog({
       )
       .map(sensor => ({
         value: sensor.address.toString(),
-        label: `Sensor #${sensor.address}`,
+        label: t("signalLogic.sensorOption", {
+          address: sensor.address,
+        }),
       }))
       .sort((a, b) => Number(a.value) - Number(b.value));
 
     return uniqueByValue(options);
-  }, [layout]);
+  }, [layout, t]);
 
   const knownSignals = useMemo(
     () => signalOptions.map(signal => ({
@@ -338,19 +370,19 @@ export default function SignalLogicDialog({
     [document, knownSignals, knownTurnouts, knownSensors]
   );
 
-  const issueList = validationIssues.length > 0
-    ? validationIssues
-    : serverIssues;
-
+  const issueList = validationIssues.length > 0 ? validationIssues : serverIssues;
   const hasValidationErrors = validationIssues.some(issue => issue.level === "error");
-
   const generatedScript = useMemo(() => buildGeneratedScript(groups), [groups]);
+
+  const clearMessages = (): void => {
+    setStatusText(null);
+    setWarningText(null);
+    setErrorText(null);
+  };
 
   const loadRules = async (): Promise<void> => {
     setLoading(true);
-    setErrorText(null);
-    setStatusText(null);
-    setWarningText(null);
+    clearMessages();
 
     try {
       const result = await loadSignalLogicRulesWs();
@@ -359,12 +391,9 @@ export default function SignalLogicDialog({
       setServerIssues(result.issues);
 
       if (result.created) {
-        setWarningText(
-          result.message ??
-          "No signal-rules.json file existed yet. The system created an empty file and will save your rules there."
-        );
+        setWarningText(result.message ?? t("signalLogic.createdWarning"));
       } else {
-        setStatusText("Signal logic rules loaded.");
+        setStatusText(t("signalLogic.loaded"));
       }
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
@@ -380,16 +409,14 @@ export default function SignalLogicDialog({
 
   const saveRules = async (): Promise<void> => {
     setSaving(true);
-    setErrorText(null);
-    setStatusText(null);
-    setWarningText(null);
+    clearMessages();
 
     try {
       const result = await saveSignalLogicRulesWs(document);
       setGroups(result.document.groups);
       setSelectedGroupId(previous => previous ?? result.document.groups[0]?.id ?? null);
       setServerIssues(result.issues);
-      setStatusText("Signal logic rules saved.");
+      setStatusText(t("signalLogic.saved"));
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
     } finally {
@@ -401,9 +428,7 @@ export default function SignalLogicDialog({
     groupId: string,
     update: (group: SignalLogicRuleGroupDto) => SignalLogicRuleGroupDto
   ): void => {
-    setStatusText(null);
-    setWarningText(null);
-    setErrorText(null);
+    clearMessages();
     setGroups(previous =>
       previous.map(group => (group.id === groupId ? update(group) : group))
     );
@@ -416,9 +441,7 @@ export default function SignalLogicDialog({
     );
     const signalAddress = Number(nextSignal?.value ?? signalOptions[0]?.value ?? 0);
 
-    if (signalAddress <= 0) {
-      return;
-    }
+    if (signalAddress <= 0) return;
 
     const group = createRule(signalAddress);
     group.defaultAspect = normalizeAspectForSignal(signalOptions, signalAddress, group.defaultAspect);
@@ -427,17 +450,13 @@ export default function SignalLogicDialog({
       aspect: normalizeAspectForSignal(signalOptions, signalAddress, rule.aspect),
     }));
 
-    setStatusText(null);
-    setWarningText(null);
-    setErrorText(null);
+    clearMessages();
     setGroups(previous => [...previous, group]);
     setSelectedGroupId(group.id);
   };
 
   const deleteSignalRuleGroup = (groupId: string): void => {
-    setStatusText(null);
-    setWarningText(null);
-    setErrorText(null);
+    clearMessages();
     setGroups(previous => {
       const next = previous.filter(group => group.id !== groupId);
       setSelectedGroupId(next[0]?.id ?? null);
@@ -500,20 +519,14 @@ export default function SignalLogicDialog({
     }));
   };
 
-  const deleteCondition = (
-    groupId: string,
-    ruleId: string,
-    conditionId: string
-  ): void => {
+  const deleteCondition = (groupId: string, ruleId: string, conditionId: string): void => {
     updateGroup(groupId, group => ({
       ...group,
       rules: group.rules.map(rule =>
         rule.id === ruleId
           ? {
               ...rule,
-              conditions: rule.conditions.filter(
-                condition => condition.id !== conditionId
-              ),
+              conditions: rule.conditions.filter(condition => condition.id !== conditionId),
             }
           : rule
       ),
@@ -524,7 +537,7 @@ export default function SignalLogicDialog({
     <AppModal
       opened={opened}
       onClose={onClose}
-      title="Signal Logic Editor"
+      title={t("signalLogic.title")}
       size={1200}
       centered
       draggable
@@ -548,7 +561,7 @@ export default function SignalLogicDialog({
         {loading && groups.length === 0 && !warningText && (
           <Group gap="xs">
             <Loader size="xs" />
-            <Text size="sm" c="dimmed">Loading signal logic rules...</Text>
+            <Text size="sm" c="dimmed">{t("signalLogic.loading")}</Text>
           </Group>
         )}
 
@@ -565,9 +578,7 @@ export default function SignalLogicDialog({
         )}
 
         {statusText && !warningText && !errorText && (
-          <Alert color="green" py="xs">
-            {statusText}
-          </Alert>
+          <Alert color="green" py="xs">{statusText}</Alert>
         )}
 
         {issueList.length > 0 && (
@@ -579,31 +590,28 @@ export default function SignalLogicDialog({
             <Stack gap={4}>
               {issueList.slice(0, 4).map((issue, index) => (
                 <Text key={`${issue.message}-${index}`} size="sm">
-                  {issue.level.toUpperCase()}: {issue.message}
+                  {t("signalLogic.validationLine", {
+                    level: issue.level.toUpperCase(),
+                    message: issue.message,
+                  })}
                 </Text>
               ))}
               {issueList.length > 4 && (
                 <Text size="sm" c="dimmed">
-                  +{issueList.length - 4} more validation messages
+                  {t("signalLogic.moreValidationMessages", {
+                    count: issueList.length - 4,
+                  })}
                 </Text>
               )}
             </Stack>
           </Alert>
         )}
 
-        <Tabs
-          defaultValue="rules"
-          style={{
-            flex: 1,
-            minHeight: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+        <Tabs defaultValue="rules" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <Tabs.List style={{ flex: "0 0 auto" }}>
-            <Tabs.Tab value="rules">Rules</Tabs.Tab>
-            <Tabs.Tab value="preview">Live preview</Tabs.Tab>
-            <Tabs.Tab value="script">Generated script</Tabs.Tab>
+            <Tabs.Tab value="rules">{t("signalLogic.tabs.rules")}</Tabs.Tab>
+            <Tabs.Tab value="preview">{t("signalLogic.tabs.preview")}</Tabs.Tab>
+            <Tabs.Tab value="script">{t("signalLogic.tabs.script")}</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="rules" style={{ flex: 1, minHeight: 0 }}>
@@ -611,22 +619,16 @@ export default function SignalLogicDialog({
               <Group align="stretch" wrap="nowrap" h="100%">
                 <Card withBorder w={260} p="sm" style={{ flex: "0 0 260px" }}>
                   <Group justify="space-between" mb="sm">
-                    <Title order={5}>Signals</Title>
-                    <Button
-                      size="xs"
-                      leftSection={<IconPlus size={14} />}
-                      onClick={addSignalRuleGroup}
-                    >
-                      Add
+                    <Title order={5}>{t("signalLogic.signals")}</Title>
+                    <Button size="xs" leftSection={<IconPlus size={14} />} onClick={addSignalRuleGroup}>
+                      {t("signalLogic.add")}
                     </Button>
                   </Group>
 
                   <ScrollArea h={540} type="auto" offsetScrollbars>
                     <Stack gap="xs">
                       {groups.length === 0 && (
-                        <Text size="sm" c="dimmed">
-                          No signal rule yet. Add a signal rule to start.
-                        </Text>
+                        <Text size="sm" c="dimmed">{t("signalLogic.emptySignals")}</Text>
                       )}
 
                       {groups.map(group => (
@@ -636,10 +638,8 @@ export default function SignalLogicDialog({
                           justify="space-between"
                           onClick={() => setSelectedGroupId(group.id)}
                         >
-                          <span>Signal #{group.signalAddress}</span>
-                          <Badge size="xs" variant="light">
-                            {group.rules.length}
-                          </Badge>
+                          <span>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</span>
+                          <Badge size="xs" variant="light">{group.rules.length}</Badge>
                         </Button>
                       ))}
                     </Stack>
@@ -649,7 +649,7 @@ export default function SignalLogicDialog({
                 <Box flex={1} style={{ minWidth: 0 }}>
                   {!selectedGroup ? (
                     <Card withBorder p="lg">
-                      <Text c="dimmed">Select or add a signal rule group.</Text>
+                      <Text c="dimmed">{t("signalLogic.selectOrAdd")}</Text>
                     </Card>
                   ) : (
                     <Stack gap="md" pb="md">
@@ -657,7 +657,7 @@ export default function SignalLogicDialog({
                         <Group justify="space-between" align="flex-end">
                           <Group align="flex-end">
                             <Select
-                              label="Signal"
+                              label={t("signalLogic.signal")}
                               data={signalOptions}
                               value={selectedGroup.signalAddress.toString()}
                               onChange={value => {
@@ -665,18 +665,10 @@ export default function SignalLogicDialog({
                                 updateGroup(selectedGroup.id, group => ({
                                   ...group,
                                   signalAddress,
-                                  defaultAspect: normalizeAspectForSignal(
-                                    signalOptions,
-                                    signalAddress,
-                                    group.defaultAspect
-                                  ),
+                                  defaultAspect: normalizeAspectForSignal(signalOptions, signalAddress, group.defaultAspect),
                                   rules: group.rules.map(rule => ({
                                     ...rule,
-                                    aspect: normalizeAspectForSignal(
-                                      signalOptions,
-                                      signalAddress,
-                                      rule.aspect
-                                    ),
+                                    aspect: normalizeAspectForSignal(signalOptions, signalAddress, rule.aspect),
                                   })),
                                 }));
                               }}
@@ -684,8 +676,8 @@ export default function SignalLogicDialog({
                             />
 
                             <Select
-                              label="Default aspect"
-                              data={getAspectOptions(signalOptions, selectedGroup.signalAddress)}
+                              label={t("signalLogic.defaultAspect")}
+                              data={aspectOptionsFor(selectedGroup.signalAddress)}
                               value={selectedGroup.defaultAspect}
                               onChange={value => {
                                 updateGroup(selectedGroup.id, group => ({
@@ -701,7 +693,7 @@ export default function SignalLogicDialog({
                             color="red"
                             variant="light"
                             onClick={() => deleteSignalRuleGroup(selectedGroup.id)}
-                            aria-label="Delete signal rule group"
+                            aria-label={t("signalLogic.deleteSignalRuleGroup")}
                           >
                             <IconTrash size={16} />
                           </ActionIcon>
@@ -712,20 +704,17 @@ export default function SignalLogicDialog({
                         <Card key={rule.id} withBorder>
                           <Group justify="space-between" mb="sm">
                             <Group>
-                              <Badge>Rule {ruleIndex + 1}</Badge>
-                              <Text fw={600}>IF conditions match THEN</Text>
+                              <Badge>{t("signalLogic.rule", { index: ruleIndex + 1 })}</Badge>
+                              <Text fw={600}>{t("signalLogic.then")}</Text>
                               <Select
-                                data={getAspectOptions(signalOptions, selectedGroup.signalAddress)}
+                                data={aspectOptionsFor(selectedGroup.signalAddress)}
                                 value={rule.aspect}
                                 onChange={value => {
                                   updateGroup(selectedGroup.id, group => ({
                                     ...group,
                                     rules: group.rules.map(currentRule =>
                                       currentRule.id === rule.id
-                                        ? {
-                                            ...currentRule,
-                                            aspect: (value ?? "red") as SignalAspect,
-                                          }
+                                        ? { ...currentRule, aspect: (value ?? "red") as SignalAspect }
                                         : currentRule
                                     ),
                                   }));
@@ -738,7 +727,7 @@ export default function SignalLogicDialog({
                               color="red"
                               variant="light"
                               onClick={() => deleteRule(selectedGroup.id, rule.id)}
-                              aria-label="Delete rule"
+                              aria-label={t("signalLogic.deleteRule")}
                             >
                               <IconTrash size={16} />
                             </ActionIcon>
@@ -748,20 +737,16 @@ export default function SignalLogicDialog({
                             {rule.conditions.map((condition, conditionIndex) => (
                               <Group key={condition.id} align="flex-end">
                                 <Text w={36} size="sm" c="dimmed">
-                                  {conditionIndex === 0 ? "IF" : "AND"}
+                                  {conditionIndex === 0 ? t("signalLogic.if") : t("signalLogic.and")}
                                 </Text>
 
                                 {condition.type === "sensor" ? (
                                   <>
                                     <Select
-                                      label={conditionIndex === 0 ? "Sensor" : undefined}
+                                      label={conditionIndex === 0 ? t("signalLogic.sensor") : undefined}
                                       data={sensorOptions}
-                                      value={
-                                        condition.sensorAddress > 0
-                                          ? condition.sensorAddress.toString()
-                                          : null
-                                      }
-                                      placeholder="Select sensor"
+                                      value={condition.sensorAddress > 0 ? condition.sensorAddress.toString() : null}
+                                      placeholder={t("signalLogic.selectSensor")}
                                       onChange={value => {
                                         updateGroup(selectedGroup.id, group => ({
                                           ...group,
@@ -771,10 +756,7 @@ export default function SignalLogicDialog({
                                                   ...currentRule,
                                                   conditions: currentRule.conditions.map(currentCondition =>
                                                     currentCondition.id === condition.id
-                                                      ? {
-                                                          ...condition,
-                                                          sensorAddress: Number(value ?? 0),
-                                                        }
+                                                      ? { ...condition, sensorAddress: Number(value ?? 0) }
                                                       : currentCondition
                                                   ),
                                                 }
@@ -786,7 +768,7 @@ export default function SignalLogicDialog({
                                     />
 
                                     <Select
-                                      label={conditionIndex === 0 ? "State" : undefined}
+                                      label={conditionIndex === 0 ? t("signalLogic.state") : undefined}
                                       data={sensorStateOptions}
                                       value={condition.active.toString()}
                                       onChange={value => {
@@ -798,10 +780,7 @@ export default function SignalLogicDialog({
                                                   ...currentRule,
                                                   conditions: currentRule.conditions.map(currentCondition =>
                                                     currentCondition.id === condition.id
-                                                      ? {
-                                                          ...condition,
-                                                          active: value === "true",
-                                                        }
+                                                      ? { ...condition, active: value === "true" }
                                                       : currentCondition
                                                   ),
                                                 }
@@ -815,14 +794,10 @@ export default function SignalLogicDialog({
                                 ) : (
                                   <>
                                     <Select
-                                      label={conditionIndex === 0 ? "Turnout" : undefined}
+                                      label={conditionIndex === 0 ? t("signalLogic.turnout") : undefined}
                                       data={turnoutOptions}
-                                      value={
-                                        condition.turnoutAddress > 0
-                                          ? condition.turnoutAddress.toString()
-                                          : null
-                                      }
-                                      placeholder="Select turnout"
+                                      value={condition.turnoutAddress > 0 ? condition.turnoutAddress.toString() : null}
+                                      placeholder={t("signalLogic.selectTurnout")}
                                       onChange={value => {
                                         updateGroup(selectedGroup.id, group => ({
                                           ...group,
@@ -832,10 +807,7 @@ export default function SignalLogicDialog({
                                                   ...currentRule,
                                                   conditions: currentRule.conditions.map(currentCondition =>
                                                     currentCondition.id === condition.id
-                                                      ? {
-                                                          ...condition,
-                                                          turnoutAddress: Number(value ?? 0),
-                                                        }
+                                                      ? { ...condition, turnoutAddress: Number(value ?? 0) }
                                                       : currentCondition
                                                   ),
                                                 }
@@ -847,7 +819,7 @@ export default function SignalLogicDialog({
                                     />
 
                                     <Select
-                                      label={conditionIndex === 0 ? "State" : undefined}
+                                      label={conditionIndex === 0 ? t("signalLogic.state") : undefined}
                                       data={turnoutStateOptions}
                                       value={condition.closed.toString()}
                                       onChange={value => {
@@ -859,10 +831,7 @@ export default function SignalLogicDialog({
                                                   ...currentRule,
                                                   conditions: currentRule.conditions.map(currentCondition =>
                                                     currentCondition.id === condition.id
-                                                      ? {
-                                                          ...condition,
-                                                          closed: value === "true",
-                                                        }
+                                                      ? { ...condition, closed: value === "true" }
                                                       : currentCondition
                                                   ),
                                                 }
@@ -878,10 +847,8 @@ export default function SignalLogicDialog({
                                 <ActionIcon
                                   color="red"
                                   variant="subtle"
-                                  onClick={() =>
-                                    deleteCondition(selectedGroup.id, rule.id, condition.id)
-                                  }
-                                  aria-label="Delete condition"
+                                  onClick={() => deleteCondition(selectedGroup.id, rule.id, condition.id)}
+                                  aria-label={t("signalLogic.deleteCondition")}
                                 >
                                   <IconTrash size={16} />
                                 </ActionIcon>
@@ -895,7 +862,7 @@ export default function SignalLogicDialog({
                                 leftSection={<IconPlus size={14} />}
                                 onClick={() => addTurnoutCondition(selectedGroup.id, rule.id)}
                               >
-                                Add turnout condition
+                                {t("signalLogic.addTurnoutCondition")}
                               </Button>
 
                               <Button
@@ -904,7 +871,7 @@ export default function SignalLogicDialog({
                                 leftSection={<IconPlus size={14} />}
                                 onClick={() => addSensorCondition(selectedGroup.id, rule.id)}
                               >
-                                Add occupancy condition
+                                {t("signalLogic.addOccupancyCondition")}
                               </Button>
                             </Group>
                           </Stack>
@@ -916,7 +883,7 @@ export default function SignalLogicDialog({
                         leftSection={<IconPlus size={14} />}
                         onClick={() => addRule(selectedGroup.id)}
                       >
-                        Add rule
+                        {t("signalLogic.addRule")}
                       </Button>
                     </Stack>
                   )}
@@ -931,21 +898,25 @@ export default function SignalLogicDialog({
                 {groups.map(group => (
                   <Card key={group.id} withBorder>
                     <Group justify="space-between" mb="sm">
-                      <Title order={5}>Signal #{group.signalAddress}</Title>
+                      <Title order={5}>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</Title>
                       <Badge color="red" variant="light">
-                        Default: {group.defaultAspect}
+                        {t("signalLogic.default", {
+                          aspect: getAspectLabel(t, group.defaultAspect),
+                        })}
                       </Badge>
                     </Group>
 
                     <Stack gap="xs">
                       {group.rules.map((rule, index) => (
                         <Group key={rule.id} align="center">
-                          <Badge>Rule {index + 1}</Badge>
+                          <Badge>{t("signalLogic.rule", { index: index + 1 })}</Badge>
                           <Text size="sm">
-                            {rule.conditions.map(formatCondition).join(" AND ") || "Always"}
+                            {rule.conditions.map(condition => formatCondition(t, condition)).join(` ${t("signalLogic.and")} `) || t("signalLogic.always")}
                           </Text>
                           <Text size="sm" fw={700}>
-                            → {rule.aspect.toUpperCase()}
+                            {t("signalLogic.result", {
+                              aspect: getAspectLabel(t, rule.aspect).toUpperCase(),
+                            })}
                           </Text>
                         </Group>
                       ))}
@@ -958,18 +929,14 @@ export default function SignalLogicDialog({
 
           <Tabs.Panel value="script" style={{ flex: 1, minHeight: 0 }}>
             <Stack h="100%" pt="md">
-              <Text size="sm" c="dimmed">
-                This is generated from the visual rules. It is independent from the script engine and is only a preview for now.
-              </Text>
+              <Text size="sm" c="dimmed">{t("signalLogic.scriptDescription")}</Text>
 
               <Textarea
                 value={generatedScript}
                 readOnly
                 style={{ flex: 1, minHeight: 0 }}
                 styles={{
-                  wrapper: {
-                    height: "100%",
-                  },
+                  wrapper: { height: "100%" },
                   input: {
                     height: "100%",
                     fontFamily: "monospace",
@@ -982,10 +949,14 @@ export default function SignalLogicDialog({
 
               <Group justify="space-between" pb="xs">
                 <Text size="sm" c="dimmed">
-                  Found {signalOptions.length} signals, {turnoutOptions.length} turnouts and {sensorOptions.length} occupancy sensors in the current layout.
+                  {t("signalLogic.foundSummary", {
+                    signals: signalOptions.length,
+                    turnouts: turnoutOptions.length,
+                    sensors: sensorOptions.length,
+                  })}
                 </Text>
                 <NumberInput
-                  label="Polling interval preview"
+                  label={t("signalLogic.pollingIntervalPreview")}
                   value={500}
                   disabled
                   suffix=" ms"
@@ -999,9 +970,7 @@ export default function SignalLogicDialog({
         <Divider />
 
         <Group justify="space-between">
-          <Text size="sm" c="dimmed">
-            Saved to server/data/signal-rules.json
-          </Text>
+          <Text size="sm" c="dimmed">{t("signalLogic.savePath")}</Text>
 
           <Group>
             <Button
@@ -1010,7 +979,7 @@ export default function SignalLogicDialog({
               onClick={() => void loadRules()}
               loading={loading}
             >
-              Reload
+              {t("signalLogic.reload")}
             </Button>
 
             <Button
@@ -1019,7 +988,7 @@ export default function SignalLogicDialog({
               loading={saving}
               disabled={hasValidationErrors}
             >
-              Save
+              {t("signalLogic.save")}
             </Button>
           </Group>
         </Group>
