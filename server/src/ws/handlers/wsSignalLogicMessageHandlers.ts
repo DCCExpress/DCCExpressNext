@@ -36,7 +36,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
   try {
     switch (action) {
       case "load": {
-        await signalLogicRulesStore.initialize();
+        const initializeResult = await signalLogicRulesStore.initialize();
         const document = signalLogicRulesStore.getDocument();
 
         sendSignalLogicResponse(context, {
@@ -45,6 +45,10 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
           ok: true,
           document,
           issues: validateSignalLogicDocument(document),
+          created: initializeResult.created,
+          message: initializeResult.created
+            ? "Signal rules file did not exist, so an empty one was created."
+            : undefined,
         });
 
         return true;
@@ -79,6 +83,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
           ok: true,
           document,
           issues,
+          created: false,
         });
 
         context.broadcast({
@@ -89,6 +94,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
             ok: true,
             document,
             issues,
+            created: false,
           },
         }, context.ws);
 
