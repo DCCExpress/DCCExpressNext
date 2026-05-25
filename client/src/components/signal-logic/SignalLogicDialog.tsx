@@ -764,7 +764,11 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                       {group.rules.map((rule, index) => (
                         <Card key={rule.id} withBorder p="xs" radius="md">
                           <Group align="center" gap="xs" wrap="wrap">
-                            <Badge variant="outline">
+                            <Badge
+                              color={aspectBadgeColor(rule.aspect)}
+                              variant="filled"
+                              style={aspectBadgeStyle(rule.aspect)}
+                            >
                               {t("signalLogic.rule", { index: index + 1 })}
                             </Badge>
 
