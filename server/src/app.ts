@@ -4,11 +4,49 @@ import express, {
   type Response,
 } from "express";
 import cors from "cors";
+import os from "node:os";
 import path from "node:path";
 import { clientDir, mobileDir } from "./paths.js";
 import { logError } from "./utility.js";
 
 export const app = express();
+
+type NetworkAddressInfo = {
+  name: string;
+  address: string;
+};
+
+function getLanIpv4Addresses(): NetworkAddressInfo[] {
+  const result: NetworkAddressInfo[] = [];
+  const interfaces = os.networkInterfaces();
+
+  for (const [name, addresses] of Object.entries(interfaces)) {
+    for (const item of addresses ?? []) {
+      if (item.family !== "IPv4" || item.internal) {
+        continue;
+      }
+
+      result.push({
+        name,
+        address: item.address,
+      });
+    }
+  }
+
+  return result;
+}
+
+function readRequestPort(req: Request): number {
+  const host = req.get("host") ?? "";
+  const portText = host.split(":")[1];
+  const parsed = Number(portText);
+
+  if (Number.isInteger(parsed) && parsed > 0 && parsed <= 65535) {
+    return parsed;
+  }
+
+  return 3000;
+}
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
@@ -38,6 +76,25 @@ app.get("/api/health", (_req, res) => {
     platform: process.platform,
     timestamp: new Date().toISOString(),
     uptimeSec: Math.round(process.uptime()),
+  });
+});
+
+app.get("/api/network", (req, res) => {
+  const port = readRequestPort(req);
+  const protocol = req.protocol;
+  const addresses = getLanIpv4Addresses();
+
+  res.json({
+    ok: true,
+    hostName: os.hostname(),
+    port,
+    addresses,
+    urls: addresses.map(item => ({
+      name: item.name,
+      address: item.address,
+      desktop: `${protocol}://${item.address}:${port}/`,
+      mobile: `${protocol}://${item.address}:${port}/mobile/`,
+    })),
   });
 });
 
