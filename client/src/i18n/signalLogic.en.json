@@ -37,7 +37,7 @@
     "createdWarning": "No signal-rules.json file existed yet. The system created an empty file and will save your rules there.",
     "scriptDescription": "This is generated from the visual rules. It is independent from the script engine and is only a preview for now.",
     "foundSummary": "Found {{signals}} signals, {{turnouts}} turnouts and {{sensors}} occupancy sensors in the current layout.",
-    "savePath": "Saved to server/data/signal-rules.json",
+    "savePath": "Saved to /data/signal-rules.json",
     "reload": "Reload",
     "save": "Save",
     "autostart": "Autostart",
