@@ -157,12 +157,17 @@ export type AppSettingsCommandPayload = {
 
 export type SignalLogicCommandAction =
   | "load"
-  | "save";
+  | "save"
+  | "start"
+  | "stop"
+  | "state"
+  | "setAutostart";
 
 export type SignalLogicCommandPayload = {
   requestId: string;
   action: SignalLogicCommandAction;
   document?: SignalLogicDocumentDto;
+  autostart?: boolean;
 };
 
 export type TaskManagerCommandAction =
