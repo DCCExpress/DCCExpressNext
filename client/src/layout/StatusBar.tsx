@@ -28,6 +28,10 @@ import {
 } from "react";
 
 import type {
+  SignalLogicRuntimeStateDto,
+} from "../../../common/src/signalLogic";
+
+import type {
   TaskManagerSnapshot,
 } from "../../../common/src/task";
 
@@ -44,6 +48,11 @@ import { useBrowserStats } from "../hooks/useBrowserStats";
 import { useScriptStatus } from "../hooks/useScriptStatus";
 import { useServerRuntimeStats } from "../hooks/useServerRuntimeStats";
 import { useWsStatus } from "../hooks/useWsStatus";
+import {
+  getSignalLogicRuntimeStateWs,
+  startSignalLogicWs,
+  stopSignalLogicWs,
+} from "../api/signalLogicWsApi";
 import { isServerAudioPlaybackEnabled, subscribeServerAudioPlaybackChanged, toggleServerAudioPlaybackEnabled } from "../services/audioPlaybackSettings";
 import { scriptEngine } from "../services/scriptEngine";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
@@ -56,6 +65,11 @@ import "../styles/global.css";
 type StatusBarProps = {
   rightPanelMode: RightPanelMode;
   setRightPanelMode: Dispatch<SetStateAction<RightPanelMode>>;
+};
+
+const DEFAULT_DISPATCHER_STATE: SignalLogicRuntimeStateDto = {
+  running: false,
+  autostart: false,
 };
 
 export default function StatusBar({
@@ -99,6 +113,18 @@ export default function StatusBar({
     useState<TaskManagerSnapshot | null>(null);
 
   const [
+    dispatcherState,
+    setDispatcherState,
+  ] =
+    useState<SignalLogicRuntimeStateDto>(DEFAULT_DISPATCHER_STATE);
+
+  const [
+    dispatcherBusy,
+    setDispatcherBusy,
+  ] =
+    useState(false);
+
+  const [
     serverAudioEnabled,
     setServerAudioEnabled,
   ] =
@@ -137,6 +163,16 @@ export default function StatusBar({
           : scriptStatus === "finished"
             ? "blue"
             : "gray";
+
+  const dispatcherIsRunning =
+    dispatcherState.running;
+
+  const dispatcherBadgeColor =
+    dispatcherBusy
+      ? "orange"
+      : dispatcherIsRunning
+        ? "green"
+        : "gray";
 
   const runningTaskCount =
     taskSnapshot?.tasks.filter(
@@ -181,6 +217,36 @@ export default function StatusBar({
   }, []);
 
   useEffect(() => {
+    const unsubscribe =
+      wsClient.on<SignalLogicRuntimeStateDto>(
+        "signalLogicStateChanged",
+        data => {
+          setDispatcherState(data);
+        }
+      );
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (!wsConnected) {
+      setDispatcherState(previous => ({
+        ...previous,
+        running: false,
+      }));
+      return;
+    }
+
+    void getSignalLogicRuntimeStateWs()
+      .then(result => {
+        setDispatcherState(result.state);
+      })
+      .catch(error => {
+        console.error("Could not load dispatcher state:", error);
+      });
+  }, [wsConnected]);
+
+  useEffect(() => {
     return subscribeServerAudioPlaybackChanged(setServerAudioEnabled);
   }, []);
 
@@ -197,6 +263,29 @@ export default function StatusBar({
     }
 
     handleStartScript();
+  };
+
+  const handleToggleDispatcher = (): void => {
+    if (!wsConnected || dispatcherBusy) {
+      return;
+    }
+
+    setDispatcherBusy(true);
+
+    const request = dispatcherIsRunning
+      ? stopSignalLogicWs()
+      : startSignalLogicWs();
+
+    void request
+      .then(result => {
+        setDispatcherState(result.state);
+      })
+      .catch(error => {
+        console.error("Could not toggle dispatcher:", error);
+      })
+      .finally(() => {
+        setDispatcherBusy(false);
+      });
   };
 
   const handleToggleRightPanelMode = (): void => {
@@ -365,6 +454,31 @@ export default function StatusBar({
             }}
           >
             <IconEdit size={14} />
+          </StatusActionIcon>
+
+          <StatusBadge color={dispatcherBadgeColor}>
+            DISPATCHER {dispatcherIsRunning ? "RUNNING" : "STOPPED"}
+          </StatusBadge>
+
+          <StatusActionIcon
+            tooltip={
+              dispatcherIsRunning
+                ? "Stop dispatcher"
+                : "Start dispatcher"
+            }
+            color={
+              dispatcherIsRunning
+                ? "red"
+                : "green"
+            }
+            disabled={!wsConnected || dispatcherBusy}
+            onClick={handleToggleDispatcher}
+          >
+            {dispatcherIsRunning ? (
+              <IconPlayerStopFilled size={14} />
+            ) : (
+              <IconPlayerPlayFilled size={14} />
+            )}
           </StatusActionIcon>
 
           <Divider orientation="vertical" />
