@@ -18,20 +18,11 @@ export type FastClockSettings = {
   resetTimeMs: number;
 };
 
-export type AudioPlaybackMode = "allClients" | "selectedClient";
-
-export type AudioSettings = {
-  mode: AudioPlaybackMode;
-  selectedClientId: string;
-  selectedClientName: string;
-};
-
 export type AppSettings = {
   version: 1;
   general: GeneralSettings;
   commandCenter: ICommandCenter;
   fastClock: FastClockSettings;
-  audio: AudioSettings;
 };
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
@@ -39,12 +30,6 @@ export const DEFAULT_FAST_CLOCK_RESET_TIME_MS = 0;
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   language: "en",
-};
-
-export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
-  mode: "allClients",
-  selectedClientId: "",
-  selectedClientName: "",
 };
 
 export const DEFAULT_COMMAND_CENTER_SETTINGS: ICommandCenter = {
@@ -74,7 +59,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     resetSource: "system",
     resetTimeMs: DEFAULT_FAST_CLOCK_RESET_TIME_MS,
   },
-  audio: DEFAULT_AUDIO_SETTINGS,
 };
 
 export function normalizeDayTimeMs(value: unknown): number {
@@ -124,15 +108,6 @@ export function normalizeGeneralSettings(value: Partial<GeneralSettings> | null 
   };
 }
 
-export function normalizeAudioSettings(value: Partial<AudioSettings> | null | undefined): AudioSettings {
-  const mode: AudioPlaybackMode = value?.mode === "selectedClient" ? "selectedClient" : "allClients";
-  return {
-    mode,
-    selectedClientId: normalizeTrimmedString(value?.selectedClientId, ""),
-    selectedClientName: normalizeTrimmedString(value?.selectedClientName, ""),
-  };
-}
-
 export function normalizeCommandCenterSettings(value: Partial<ICommandCenter> | null | undefined): ICommandCenter {
   return {
     type: isValidCommandCenterType(value?.type) ? value.type : DEFAULT_COMMAND_CENTER_SETTINGS.type,
@@ -165,7 +140,6 @@ export function normalizeAppSettings(value: Partial<AppSettings> | null | undefi
       resetSource,
       resetTimeMs: normalizeDayTimeMs(value?.fastClock?.resetTimeMs),
     },
-    audio: normalizeAudioSettings(value?.audio),
   };
 }
 
