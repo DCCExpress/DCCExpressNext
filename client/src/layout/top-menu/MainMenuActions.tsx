@@ -96,7 +96,7 @@ export default function MainMenuActions({
           <Menu.Item disabled>{t("Trains") + "..."}</Menu.Item>
           <Menu.Item disabled>{t("Routes") + "..."}</Menu.Item>
           <Menu.Item onClick={onOpenSignalLogic}>
-            Signal logic...
+            {t("signalLogic.menu")}
           </Menu.Item>
           <Divider />
           <Menu.Item onClick={onOpenDiagnostics}>
