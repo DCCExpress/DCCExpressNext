@@ -1,6 +1,11 @@
 // server/src/ws/handlers/wsTaskManagerMessageHandlers.ts
 
-import type { LocoActionHook, TaskManagerResponsePayload } from "../../../../common/src/types.js";
+import type {
+  BlockAction,
+  BlockActionHook,
+  LocoActionHook,
+  TaskManagerResponsePayload,
+} from "../../../../common/src/types.js";
 
 import type {
   AddTrainTaskResult,
@@ -8,8 +13,9 @@ import type {
   TaskManagerActionResult,
 } from "../../../../common/src/task.js";
 
+import { BlockElement } from "../../../../common/src/layout/elements/BlockElement.js";
 import { editorEditModeStore } from "../../services/editorEditModeStore.js";
-import { runLocoActionList } from "../../services/actionListRunner.js";
+import { runBlockActionList, runLocoActionList } from "../../services/actionListRunner.js";
 import { readLocos } from "../../services/locoStore.js";
 import { taskRuntimeStore } from "../../services/taskRuntimeStore.js";
 
@@ -95,6 +101,53 @@ async function runLocoActionListTest(context: Parameters<WsMessageHandler>[0]): 
   return true;
 }
 
+async function runBlockActionListTest(context: Parameters<WsMessageHandler>[0]): Promise<boolean> {
+  const data = context.msg.data as unknown as {
+    requestId: string;
+    action: string;
+    blockId?: string;
+    blockName?: string;
+    hook?: BlockActionHook;
+    actions?: BlockAction[];
+  };
+
+  const requestId = data.requestId;
+  const hook = data.hook;
+
+  if (!data.blockId || !hook || !Array.isArray(data.actions)) {
+    throw new Error("Missing blockId, hook or actions.");
+  }
+
+  const block = new BlockElement(0, 0);
+  block.id = data.blockId;
+  block.name = data.blockName || data.blockId;
+
+  await runBlockActionList({
+    block,
+    hook,
+    actions: data.actions,
+    callbacks: {
+      playAudio: fileName => {
+        context.broadcast({ type: "playAudio", data: { fileName } } as any);
+      },
+      status: payload => {
+        context.broadcast({ type: "blockActionListStatus", data: payload } as any);
+      },
+    },
+    runKey: `block-test:${block.id}:${hook}`,
+  });
+
+  sendTaskManagerResponse(context, {
+    requestId,
+    action: "snapshot",
+    ok: true,
+    message: "Block action list test completed.",
+    snapshot: taskRuntimeStore.getSnapshot(),
+  });
+
+  return true;
+}
+
 export const handleTaskManagerMessage: WsMessageHandler = async context => {
   if (context.msg.type !== "taskManagerCommand") return false;
 
@@ -103,6 +156,10 @@ export const handleTaskManagerMessage: WsMessageHandler = async context => {
   try {
     if ((action as string) === "testLocoActionList") {
       return await runLocoActionListTest(context);
+    }
+
+    if ((action as string) === "testBlockActionList") {
+      return await runBlockActionListTest(context);
     }
 
     switch (action) {
