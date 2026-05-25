@@ -51,6 +51,9 @@
     "turnoutCondition": "T{{address}} = {{state}}",
     "sensorCondition": "S{{address}} = {{state}}",
     "result": "{{aspect}}",
+    "validation": {
+      "duplicateRuleAspect": "Duplikált szabály jelzéskép: {{aspect}}. Ellenőrizd a szabályok sorrendjét."
+    },
     "aspects": { "red": "Piros", "yellow": "Sárga", "green": "Zöld", "white": "Fehér" },
     "turnoutStates": { "closed": "Egyenes", "thrown": "Kitérő" },
     "sensorStates": { "active": "Foglalt / aktív", "inactive": "Szabad / inaktív" }
