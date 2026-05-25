@@ -3,6 +3,9 @@
 import type {
   SignalLogicResponsePayload,
 } from "../../../../common/src/types.js";
+import type {
+  SignalLogicRuntimeStateDto,
+} from "../../../../common/src/signalLogic.js";
 import {
   normalizeSignalLogicDocument,
   validateSignalLogicDocument,
@@ -15,6 +18,26 @@ import {
 import type {
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
+
+let running = false;
+
+function getRuntimeState(): SignalLogicRuntimeStateDto {
+  const document = signalLogicRulesStore.getDocument();
+
+  return {
+    running,
+    autostart: document.autostart,
+  };
+}
+
+function broadcastRuntimeState(
+  context: Parameters<WsMessageHandler>[0]
+): void {
+  context.broadcast({
+    type: "signalLogicStateChanged",
+    data: getRuntimeState(),
+  });
+}
 
 function sendSignalLogicResponse(
   context: Parameters<WsMessageHandler>[0],
@@ -34,6 +57,8 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
   const { requestId, action } = context.msg.data;
 
   try {
+    await signalLogicRulesStore.initialize();
+
     switch (action) {
       case "load": {
         const initializeResult = await signalLogicRulesStore.initialize();
@@ -45,6 +70,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
           document,
           issues: validateSignalLogicDocument(document),
           created: initializeResult.created,
+          state: getRuntimeState(),
           ...(initializeResult.created
             ? {
                 message: "Signal rules file did not exist, so an empty one was created.",
@@ -72,6 +98,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
             ok: false,
             document: inputDocument,
             issues,
+            state: getRuntimeState(),
             message: "Signal logic contains validation errors.",
           });
 
@@ -79,6 +106,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
         }
 
         const document = await signalLogicRulesStore.saveDocument(inputDocument);
+        const state = getRuntimeState();
 
         sendSignalLogicResponse(context, {
           requestId,
@@ -87,6 +115,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
           document,
           issues,
           created: false,
+          state,
         });
 
         context.broadcast({
@@ -98,8 +127,92 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
             document,
             issues,
             created: false,
+            state,
           },
         }, context.ws);
+
+        broadcastRuntimeState(context);
+
+        return true;
+      }
+
+      case "state": {
+        sendSignalLogicResponse(context, {
+          requestId,
+          action,
+          ok: true,
+          document: signalLogicRulesStore.getDocument(),
+          issues: validateSignalLogicDocument(signalLogicRulesStore.getDocument()),
+          state: getRuntimeState(),
+        });
+
+        return true;
+      }
+
+      case "start": {
+        running = true;
+        const state = getRuntimeState();
+
+        sendSignalLogicResponse(context, {
+          requestId,
+          action,
+          ok: true,
+          document: signalLogicRulesStore.getDocument(),
+          issues: validateSignalLogicDocument(signalLogicRulesStore.getDocument()),
+          state,
+        });
+
+        broadcastRuntimeState(context);
+
+        return true;
+      }
+
+      case "stop": {
+        running = false;
+        const state = getRuntimeState();
+
+        sendSignalLogicResponse(context, {
+          requestId,
+          action,
+          ok: true,
+          document: signalLogicRulesStore.getDocument(),
+          issues: validateSignalLogicDocument(signalLogicRulesStore.getDocument()),
+          state,
+        });
+
+        broadcastRuntimeState(context);
+
+        return true;
+      }
+
+      case "setAutostart": {
+        const document = await signalLogicRulesStore.setAutostart(
+          Boolean(context.msg.data.autostart)
+        );
+        const state = getRuntimeState();
+
+        sendSignalLogicResponse(context, {
+          requestId,
+          action,
+          ok: true,
+          document,
+          issues: validateSignalLogicDocument(document),
+          state,
+        });
+
+        context.broadcast({
+          type: "signalLogicResponse",
+          data: {
+            requestId,
+            action,
+            ok: true,
+            document,
+            issues: validateSignalLogicDocument(document),
+            state,
+          },
+        }, context.ws);
+
+        broadcastRuntimeState(context);
 
         return true;
       }
@@ -109,6 +222,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
           requestId,
           action,
           ok: false,
+          state: getRuntimeState(),
           message: "Unknown signal logic command action.",
         });
 
