@@ -246,6 +246,7 @@ export type AppSettingsResponsePayload = WsCommandResponseMeta & {
 export type SignalLogicResponsePayload = WsCommandResponseMeta & {
   document?: SignalLogicDocumentDto;
   issues?: SignalLogicValidationIssue[];
+  created?: boolean;
 };
 
 export type FastClockResponsePayload = WsCommandResponseMeta & {
