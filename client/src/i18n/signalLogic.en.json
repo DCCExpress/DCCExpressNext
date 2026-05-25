@@ -51,6 +51,9 @@
     "turnoutCondition": "T{{address}} = {{state}}",
     "sensorCondition": "S{{address}} = {{state}}",
     "result": "{{aspect}}",
+    "validation": {
+      "duplicateRuleAspect": "Duplicate rule aspect: {{aspect}}. Please check the rule order."
+    },
     "aspects": { "red": "Red", "yellow": "Yellow", "green": "Green", "white": "White" },
     "turnoutStates": { "closed": "Closed", "thrown": "Thrown" },
     "sensorStates": { "active": "Occupied / active", "inactive": "Free / inactive" }
