@@ -27,6 +27,11 @@ import type {
 } from "./scriptTypes.js";
 
 import type {
+  SignalLogicDocumentDto,
+  SignalLogicValidationIssue,
+} from "./signalLogic.js";
+
+import type {
   AddTrainTaskResult,
   LoadTrainTasksResult,
   TaskLifecycleEventPayload,
@@ -127,6 +132,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "scriptDocumentCommand",
   "commandCenterConfigCommand",
   "appSettingsCommand",
+  "signalLogicCommand",
   "taskManagerCommand",
   "fastClockCommand",
   "fileCommand",
@@ -237,6 +243,11 @@ export type AppSettingsResponsePayload = WsCommandResponseMeta & {
   settings?: AppSettings;
 };
 
+export type SignalLogicResponsePayload = WsCommandResponseMeta & {
+  document?: SignalLogicDocumentDto;
+  issues?: SignalLogicValidationIssue[];
+};
+
 export type FastClockResponsePayload = WsCommandResponseMeta & {
   snapshot?: FastClockSnapshot;
   speed?: number;
@@ -310,6 +321,7 @@ export type ServerWsPayloadMap = {
   scriptDocumentResponse: ScriptDocumentResponsePayload;
   commandCenterConfigResponse: CommandCenterConfigResponsePayload;
   appSettingsResponse: AppSettingsResponsePayload;
+  signalLogicResponse: SignalLogicResponsePayload;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
 
