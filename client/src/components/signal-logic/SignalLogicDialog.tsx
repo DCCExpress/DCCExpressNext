@@ -24,29 +24,23 @@ import {
   IconRefresh,
   IconTrash,
 } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { LayoutView } from "../../models/editor/core/LayoutView";
 import { isTurnoutElement } from "../../models/editor/core/LayoutView";
-import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { TrackSensorElementView } from "../../models/editor/elements/TrackSensorElementView";
+import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { generateId } from "../../helpers";
 import AppModal from "../common/AppModal";
-import {
-  loadSignalLogicRulesWs,
-  saveSignalLogicRulesWs,
-} from "../../api/signalLogicWsApi";
+import { loadSignalLogicRulesWs, saveSignalLogicRulesWs } from "../../api/signalLogicWsApi";
 import type {
   SignalAspect,
   SignalLogicConditionDto,
   SignalLogicRuleGroupDto,
   SignalLogicValidationIssue,
 } from "../../../../common/src/signalLogic";
-import {
-  getAllowedSignalAspects,
-  validateSignalLogicDocument,
-} from "../../../../common/src/signalLogic";
+import { getAllowedSignalAspects, validateSignalLogicDocument } from "../../../../common/src/signalLogic";
 
 type SignalLogicDialogProps = {
   opened: boolean;
@@ -54,17 +48,8 @@ type SignalLogicDialogProps = {
   layout: LayoutView;
 };
 
-type AddressOption = {
-  value: string;
-  label: string;
-};
-
-type SignalOption = {
-  value: string;
-  label: string;
-  aspect: number;
-};
-
+type AddressOption = { value: string; label: string };
+type SignalOption = AddressOption & { aspect: number };
 type Translate = ReturnType<typeof useTranslation>["t"];
 
 function uniqueByValue<T extends { value: string }>(options: T[]): T[] {
@@ -77,21 +62,11 @@ function uniqueByValue<T extends { value: string }>(options: T[]): T[] {
 }
 
 function createTurnoutCondition(turnoutAddress: number): SignalLogicConditionDto {
-  return {
-    id: generateId(),
-    type: "turnout",
-    turnoutAddress,
-    closed: true,
-  };
+  return { id: generateId(), type: "turnout", turnoutAddress, closed: true };
 }
 
 function createSensorCondition(sensorAddress: number): SignalLogicConditionDto {
-  return {
-    id: generateId(),
-    type: "sensor",
-    sensorAddress,
-    active: true,
-  };
+  return { id: generateId(), type: "sensor", sensorAddress, active: true };
 }
 
 function createRule(signalAddress: number): SignalLogicRuleGroupDto {
@@ -99,106 +74,71 @@ function createRule(signalAddress: number): SignalLogicRuleGroupDto {
     id: generateId(),
     signalAddress,
     defaultAspect: "red",
-    rules: [
-      {
-        id: generateId(),
-        aspect: "green",
-        conditions: [],
-      },
-    ],
+    rules: [{ id: generateId(), aspect: "green", conditions: [] }],
   };
 }
 
 function aspectToMethod(aspect: SignalAspect): string {
   switch (aspect) {
-    case "green":
-      return "setSignalGreen";
-    case "yellow":
-      return "setSignalYellow";
-    case "white":
-      return "setSignalWhite";
-    default:
-      return "setSignalRed";
+    case "green": return "setSignalGreen";
+    case "yellow": return "setSignalYellow";
+    case "white": return "setSignalWhite";
+    default: return "setSignalRed";
   }
 }
 
 function aspectBadgeColor(aspect: SignalAspect): string {
   switch (aspect) {
-    case "green":
-      return "green";
-    case "yellow":
-      return "yellow";
-    case "white":
-      return "gray";
-    default:
-      return "red";
+    case "green": return "green";
+    case "yellow": return "yellow";
+    case "white": return "gray";
+    default: return "red";
   }
 }
 
 function getConditionExpression(condition: SignalLogicConditionDto): string | null {
   if (condition.type === "sensor") {
     if (condition.sensorAddress <= 0) return null;
-    const variableName = `s${condition.sensorAddress}Active`;
-    return condition.active ? variableName : `!${variableName}`;
+    const name = `s${condition.sensorAddress}Active`;
+    return condition.active ? name : `!${name}`;
   }
 
   if (condition.turnoutAddress <= 0) return null;
-  const variableName = `t${condition.turnoutAddress}Closed`;
-  return condition.closed ? variableName : `!${variableName}`;
+  const name = `t${condition.turnoutAddress}Closed`;
+  return condition.closed ? name : `!${name}`;
 }
 
 function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
   const lines: string[] = ["while (true) {", ""];
+  const conditions = groups.flatMap(group => group.rules.flatMap(rule => rule.conditions));
+  const turnoutAddresses = Array.from(new Set(
+    conditions
+      .filter(condition => condition.type === "turnout")
+      .map(condition => condition.turnoutAddress)
+      .filter(address => address > 0)
+  )).sort((a, b) => a - b);
+  const sensorAddresses = Array.from(new Set(
+    conditions
+      .filter(condition => condition.type === "sensor")
+      .map(condition => condition.sensorAddress)
+      .filter(address => address > 0)
+  )).sort((a, b) => a - b);
 
-  const conditions = groups.flatMap(group =>
-    group.rules.flatMap(rule => rule.conditions)
-  );
-
-  const turnoutAddresses = Array.from(
-    new Set(
-      conditions
-        .filter(condition => condition.type === "turnout")
-        .map(condition => condition.turnoutAddress)
-        .filter(address => address > 0)
-    )
-  ).sort((a, b) => a - b);
-
-  const sensorAddresses = Array.from(
-    new Set(
-      conditions
-        .filter(condition => condition.type === "sensor")
-        .map(condition => condition.sensorAddress)
-        .filter(address => address > 0)
-    )
-  ).sort((a, b) => a - b);
-
-  for (const address of turnoutAddresses) {
-    lines.push(`  const t${address}Closed = getTurnoutState(${address});`);
-  }
-
-  for (const address of sensorAddresses) {
-    lines.push(`  const s${address}Active = getSensorState(${address});`);
-  }
-
-  if (turnoutAddresses.length > 0 || sensorAddresses.length > 0) {
-    lines.push("");
-  }
+  for (const address of turnoutAddresses) lines.push(`  const t${address}Closed = getTurnoutState(${address});`);
+  for (const address of sensorAddresses) lines.push(`  const s${address}Active = getSensorState(${address});`);
+  if (turnoutAddresses.length > 0 || sensorAddresses.length > 0) lines.push("");
 
   for (const group of groups) {
     lines.push(`  // Signal #${group.signalAddress}`);
-
-    group.rules.forEach((rule, ruleIndex) => {
-      const keyword = ruleIndex === 0 ? "if" : "else if";
+    group.rules.forEach((rule, index) => {
+      const keyword = index === 0 ? "if" : "else if";
       const expressions = rule.conditions
         .map(getConditionExpression)
         .filter((expression): expression is string => Boolean(expression));
-      const expression = expressions.length === 0 ? "true" : expressions.join(" && ");
-
-      lines.push(`  ${keyword} (${expression}) {`);
+      lines.push(`  ${keyword} (${expressions.length === 0 ? "true" : expressions.join(" && ")}) {`);
       lines.push(`    await ${aspectToMethod(rule.aspect)}(${group.signalAddress});`);
       lines.push("  }");
     });
-
     lines.push("  else {");
     lines.push(`    await ${aspectToMethod(group.defaultAspect)}(${group.signalAddress});`);
     lines.push("  }");
@@ -207,7 +147,6 @@ function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
 
   lines.push("  await sleep(500);");
   lines.push("}");
-
   return lines.join("\n");
 }
 
@@ -219,22 +158,14 @@ function getAspectLabel(t: Translate, aspect: SignalAspect): string {
   return t(`signalLogic.aspects.${aspect}`);
 }
 
-function getAspectOptions(
-  t: Translate,
-  signalOptions: SignalOption[],
-  signalAddress: number
-) {
+function getAspectOptions(t: Translate, signalOptions: SignalOption[], signalAddress: number) {
   return getAllowedSignalAspects(getSignalAspect(signalOptions, signalAddress)).map(aspect => ({
     value: aspect,
     label: getAspectLabel(t, aspect),
   }));
 }
 
-function normalizeAspectForSignal(
-  signalOptions: SignalOption[],
-  signalAddress: number,
-  aspect: SignalAspect
-): SignalAspect {
+function normalizeAspectForSignal(signalOptions: SignalOption[], signalAddress: number, aspect: SignalAspect): SignalAspect {
   const allowed = getAllowedSignalAspects(getSignalAspect(signalOptions, signalAddress));
   return allowed.includes(aspect) ? aspect : allowed[0] ?? "red";
 }
@@ -244,119 +175,19 @@ function formatCondition(t: Translate, condition: SignalLogicConditionDto): stri
     if (condition.sensorAddress <= 0) return t("signalLogic.sensorNotSelected");
     return t("signalLogic.sensorCondition", {
       address: condition.sensorAddress,
-      state: t(condition.active
-        ? "signalLogic.sensorStates.active"
-        : "signalLogic.sensorStates.inactive"),
+      state: t(condition.active ? "signalLogic.sensorStates.active" : "signalLogic.sensorStates.inactive"),
     });
   }
 
   if (condition.turnoutAddress <= 0) return t("signalLogic.turnoutNotSelected");
   return t("signalLogic.turnoutCondition", {
     address: condition.turnoutAddress,
-    state: t(condition.closed
-      ? "signalLogic.turnoutStates.closed"
-      : "signalLogic.turnoutStates.thrown"),
+    state: t(condition.closed ? "signalLogic.turnoutStates.closed" : "signalLogic.turnoutStates.thrown"),
   });
 }
 
-export default function SignalLogicDialog({
-  opened,
-  onClose,
-  layout,
-}: SignalLogicDialogProps) {
+export default function SignalLogicDialog({ opened, onClose, layout }: SignalLogicDialogProps) {
   const { t } = useTranslation();
-
-  const aspectOptionsFor = (signalAddress: number) =>
-    getAspectOptions(t, signalOptions, signalAddress);
-
-  const turnoutStateOptions = useMemo(
-    () => [
-      { value: "true", label: t("signalLogic.turnoutStates.closed") },
-      { value: "false", label: t("signalLogic.turnoutStates.thrown") },
-    ],
-    [t]
-  );
-
-  const sensorStateOptions = useMemo(
-    () => [
-      { value: "true", label: t("signalLogic.sensorStates.active") },
-      { value: "false", label: t("signalLogic.sensorStates.inactive") },
-    ],
-    [t]
-  );
-
-  const signalOptions = useMemo<SignalOption[]>(() => {
-    const options = layout
-      .getAllElements()
-      .filter((element): element is TrackSignalElementView =>
-        element instanceof TrackSignalElementView
-      )
-      .map(signal => ({
-        value: signal.address.toString(),
-        label: t("signalLogic.signalOption", {
-          address: signal.address,
-          aspect: signal.aspect,
-        }),
-        aspect: signal.aspect,
-      }))
-      .sort((a, b) => Number(a.value) - Number(b.value));
-
-    return uniqueByValue(options);
-  }, [layout, t]);
-
-  const turnoutOptions = useMemo<AddressOption[]>(() => {
-    const options = layout
-      .getAllElements()
-      .filter(isTurnoutElement)
-      .map(turnout => ({
-        value: turnout.turnoutAddress.toString(),
-        label: t("signalLogic.turnoutOption", {
-          address: turnout.turnoutAddress,
-        }),
-      }))
-      .sort((a, b) => Number(a.value) - Number(b.value));
-
-    return uniqueByValue(options);
-  }, [layout, t]);
-
-  const sensorOptions = useMemo<AddressOption[]>(() => {
-    const options = layout
-      .getAllElements()
-      .filter((element): element is TrackSensorElementView =>
-        element instanceof TrackSensorElementView
-      )
-      .map(sensor => ({
-        value: sensor.address.toString(),
-        label: t("signalLogic.sensorOption", {
-          address: sensor.address,
-        }),
-      }))
-      .sort((a, b) => Number(a.value) - Number(b.value));
-
-    return uniqueByValue(options);
-  }, [layout, t]);
-
-  const knownSignals = useMemo(
-    () => signalOptions.map(signal => ({
-      address: Number(signal.value),
-      aspect: signal.aspect,
-    })),
-    [signalOptions]
-  );
-
-  const knownTurnouts = useMemo(
-    () => turnoutOptions.map(turnout => ({
-      address: Number(turnout.value),
-    })),
-    [turnoutOptions]
-  );
-
-  const knownSensors = useMemo(
-    () => sensorOptions.map(sensor => ({
-      address: Number(sensor.value),
-    })),
-    [sensorOptions]
-  );
 
   const [groups, setGroups] = useState<SignalLogicRuleGroupDto[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -367,25 +198,73 @@ export default function SignalLogicDialog({
   const [errorText, setErrorText] = useState<string | null>(null);
   const [serverIssues, setServerIssues] = useState<SignalLogicValidationIssue[]>([]);
 
-  const selectedGroup =
-    groups.find(group => group.id === selectedGroupId) ?? groups[0] ?? null;
+  const turnoutStateOptions = useMemo(() => [
+    { value: "true", label: t("signalLogic.turnoutStates.closed") },
+    { value: "false", label: t("signalLogic.turnoutStates.thrown") },
+  ], [t]);
 
-  const document = useMemo(
-    () => ({
-      version: 1 as const,
-      groups,
-    }),
-    [groups]
+  const sensorStateOptions = useMemo(() => [
+    { value: "true", label: t("signalLogic.sensorStates.active") },
+    { value: "false", label: t("signalLogic.sensorStates.inactive") },
+  ], [t]);
+
+  const signalOptions = useMemo<SignalOption[]>(() => uniqueByValue(
+    layout
+      .getAllElements()
+      .filter((element): element is TrackSignalElementView => element instanceof TrackSignalElementView)
+      .map(signal => ({
+        value: signal.address.toString(),
+        label: t("signalLogic.signalOption", { address: signal.address, aspect: signal.aspect }),
+        aspect: signal.aspect,
+      }))
+      .sort((a, b) => Number(a.value) - Number(b.value))
+  ), [layout, t]);
+
+  const turnoutOptions = useMemo<AddressOption[]>(() => uniqueByValue(
+    layout
+      .getAllElements()
+      .filter(isTurnoutElement)
+      .map(turnout => ({
+        value: turnout.turnoutAddress.toString(),
+        label: t("signalLogic.turnoutOption", { address: turnout.turnoutAddress }),
+      }))
+      .sort((a, b) => Number(a.value) - Number(b.value))
+  ), [layout, t]);
+
+  const sensorOptions = useMemo<AddressOption[]>(() => uniqueByValue(
+    layout
+      .getAllElements()
+      .filter((element): element is TrackSensorElementView => element instanceof TrackSensorElementView)
+      .map(sensor => ({
+        value: sensor.address.toString(),
+        label: t("signalLogic.sensorOption", { address: sensor.address }),
+      }))
+      .sort((a, b) => Number(a.value) - Number(b.value))
+  ), [layout, t]);
+
+  const knownSignals = useMemo(
+    () => signalOptions.map(signal => ({ address: Number(signal.value), aspect: signal.aspect })),
+    [signalOptions]
+  );
+  const knownTurnouts = useMemo(
+    () => turnoutOptions.map(turnout => ({ address: Number(turnout.value) })),
+    [turnoutOptions]
+  );
+  const knownSensors = useMemo(
+    () => sensorOptions.map(sensor => ({ address: Number(sensor.value) })),
+    [sensorOptions]
   );
 
+  const selectedGroup = groups.find(group => group.id === selectedGroupId) ?? groups[0] ?? null;
+  const document = useMemo(() => ({ version: 1 as const, groups }), [groups]);
   const validationIssues = useMemo(
     () => validateSignalLogicDocument(document, knownSignals, knownTurnouts, knownSensors),
     [document, knownSignals, knownTurnouts, knownSensors]
   );
-
   const issueList = validationIssues.length > 0 ? validationIssues : serverIssues;
   const hasValidationErrors = validationIssues.some(issue => issue.level === "error");
   const generatedScript = useMemo(() => buildGeneratedScript(groups), [groups]);
+  const aspectOptionsFor = (signalAddress: number) => getAspectOptions(t, signalOptions, signalAddress);
 
   const clearMessages = (): void => {
     setStatusText(null);
@@ -396,13 +275,11 @@ export default function SignalLogicDialog({
   const loadRules = async (): Promise<void> => {
     setLoading(true);
     clearMessages();
-
     try {
       const result = await loadSignalLogicRulesWs();
       setGroups(result.document.groups);
       setSelectedGroupId(result.document.groups[0]?.id ?? null);
       setServerIssues(result.issues);
-
       if (result.created) {
         setWarningText(result.message ?? t("signalLogic.createdWarning"));
       } else {
@@ -416,14 +293,12 @@ export default function SignalLogicDialog({
   };
 
   useEffect(() => {
-    if (!opened) return;
-    void loadRules();
+    if (opened) void loadRules();
   }, [opened]);
 
   const saveRules = async (): Promise<void> => {
     setSaving(true);
     clearMessages();
-
     try {
       const result = await saveSignalLogicRulesWs(document);
       setGroups(result.document.groups);
@@ -442,18 +317,13 @@ export default function SignalLogicDialog({
     update: (group: SignalLogicRuleGroupDto) => SignalLogicRuleGroupDto
   ): void => {
     clearMessages();
-    setGroups(previous =>
-      previous.map(group => (group.id === groupId ? update(group) : group))
-    );
+    setGroups(previous => previous.map(group => group.id === groupId ? update(group) : group));
   };
 
   const addSignalRuleGroup = (): void => {
     const usedAddresses = new Set(groups.map(group => group.signalAddress));
-    const nextSignal = signalOptions.find(
-      option => !usedAddresses.has(Number(option.value))
-    );
+    const nextSignal = signalOptions.find(option => !usedAddresses.has(Number(option.value)));
     const signalAddress = Number(nextSignal?.value ?? signalOptions[0]?.value ?? 0);
-
     if (signalAddress <= 0) return;
 
     const group = createRule(signalAddress);
@@ -482,11 +352,7 @@ export default function SignalLogicDialog({
       ...group,
       rules: [
         ...group.rules,
-        {
-          id: generateId(),
-          aspect: normalizeAspectForSignal(signalOptions, group.signalAddress, "yellow"),
-          conditions: [],
-        },
+        { id: generateId(), aspect: normalizeAspectForSignal(signalOptions, group.signalAddress, "yellow"), conditions: [] },
       ],
     }));
   };
@@ -501,48 +367,46 @@ export default function SignalLogicDialog({
   const addTurnoutCondition = (groupId: string, ruleId: string): void => {
     updateGroup(groupId, group => ({
       ...group,
-      rules: group.rules.map(rule =>
-        rule.id === ruleId
-          ? {
-              ...rule,
-              conditions: [
-                ...rule.conditions,
-                createTurnoutCondition(Number(turnoutOptions[0]?.value ?? 0)),
-              ],
-            }
-          : rule
-      ),
+      rules: group.rules.map(rule => rule.id === ruleId
+        ? { ...rule, conditions: [...rule.conditions, createTurnoutCondition(Number(turnoutOptions[0]?.value ?? 0))] }
+        : rule),
     }));
   };
 
   const addSensorCondition = (groupId: string, ruleId: string): void => {
     updateGroup(groupId, group => ({
       ...group,
-      rules: group.rules.map(rule =>
-        rule.id === ruleId
-          ? {
-              ...rule,
-              conditions: [
-                ...rule.conditions,
-                createSensorCondition(Number(sensorOptions[0]?.value ?? 0)),
-              ],
-            }
-          : rule
-      ),
+      rules: group.rules.map(rule => rule.id === ruleId
+        ? { ...rule, conditions: [...rule.conditions, createSensorCondition(Number(sensorOptions[0]?.value ?? 0))] }
+        : rule),
     }));
   };
 
   const deleteCondition = (groupId: string, ruleId: string, conditionId: string): void => {
     updateGroup(groupId, group => ({
       ...group,
-      rules: group.rules.map(rule =>
-        rule.id === ruleId
-          ? {
-              ...rule,
-              conditions: rule.conditions.filter(condition => condition.id !== conditionId),
-            }
-          : rule
-      ),
+      rules: group.rules.map(rule => rule.id === ruleId
+        ? { ...rule, conditions: rule.conditions.filter(condition => condition.id !== conditionId) }
+        : rule),
+    }));
+  };
+
+  const updateCondition = (
+    groupId: string,
+    ruleId: string,
+    conditionId: string,
+    update: (condition: SignalLogicConditionDto) => SignalLogicConditionDto
+  ): void => {
+    updateGroup(groupId, group => ({
+      ...group,
+      rules: group.rules.map(rule => rule.id === ruleId
+        ? {
+            ...rule,
+            conditions: rule.conditions.map(condition =>
+              condition.id === conditionId ? update(condition) : condition
+            ),
+          }
+        : rule),
     }));
   };
 
@@ -595,11 +459,7 @@ export default function SignalLogicDialog({
         )}
 
         {issueList.length > 0 && (
-          <Alert
-            color={hasValidationErrors ? "red" : "yellow"}
-            icon={<IconAlertTriangle size={16} />}
-            py="xs"
-          >
+          <Alert color={hasValidationErrors ? "red" : "yellow"} icon={<IconAlertTriangle size={16} />} py="xs">
             <Stack gap={4}>
               {issueList.slice(0, 4).map((issue, index) => (
                 <Text key={`${issue.message}-${index}`} size="sm">
@@ -611,9 +471,7 @@ export default function SignalLogicDialog({
               ))}
               {issueList.length > 4 && (
                 <Text size="sm" c="dimmed">
-                  {t("signalLogic.moreValidationMessages", {
-                    count: issueList.length - 4,
-                  })}
+                  {t("signalLogic.moreValidationMessages", { count: issueList.length - 4 })}
                 </Text>
               )}
             </Stack>
@@ -640,10 +498,7 @@ export default function SignalLogicDialog({
 
                   <ScrollArea h={540} type="auto" offsetScrollbars>
                     <Stack gap="xs">
-                      {groups.length === 0 && (
-                        <Text size="sm" c="dimmed">{t("signalLogic.emptySignals")}</Text>
-                      )}
-
+                      {groups.length === 0 && <Text size="sm" c="dimmed">{t("signalLogic.emptySignals")}</Text>}
                       {groups.map(group => (
                         <Button
                           key={group.id}
@@ -692,12 +547,10 @@ export default function SignalLogicDialog({
                               label={t("signalLogic.defaultAspect")}
                               data={aspectOptionsFor(selectedGroup.signalAddress)}
                               value={selectedGroup.defaultAspect}
-                              onChange={value => {
-                                updateGroup(selectedGroup.id, group => ({
-                                  ...group,
-                                  defaultAspect: (value ?? "red") as SignalAspect,
-                                }));
-                              }}
+                              onChange={value => updateGroup(selectedGroup.id, group => ({
+                                ...group,
+                                defaultAspect: (value ?? "red") as SignalAspect,
+                              }))}
                               w={180}
                             />
                           </Group>
@@ -722,16 +575,14 @@ export default function SignalLogicDialog({
                               <Select
                                 data={aspectOptionsFor(selectedGroup.signalAddress)}
                                 value={rule.aspect}
-                                onChange={value => {
-                                  updateGroup(selectedGroup.id, group => ({
-                                    ...group,
-                                    rules: group.rules.map(currentRule =>
-                                      currentRule.id === rule.id
-                                        ? { ...currentRule, aspect: (value ?? "red") as SignalAspect }
-                                        : currentRule
-                                    ),
-                                  }));
-                                }}
+                                onChange={value => updateGroup(selectedGroup.id, group => ({
+                                  ...group,
+                                  rules: group.rules.map(currentRule =>
+                                    currentRule.id === rule.id
+                                      ? { ...currentRule, aspect: (value ?? "red") as SignalAspect }
+                                      : currentRule
+                                  ),
+                                }))}
                                 w={160}
                               />
                             </Group>
@@ -760,23 +611,11 @@ export default function SignalLogicDialog({
                                       data={sensorOptions}
                                       value={condition.sensorAddress > 0 ? condition.sensorAddress.toString() : null}
                                       placeholder={t("signalLogic.selectSensor")}
-                                      onChange={value => {
-                                        updateGroup(selectedGroup.id, group => ({
-                                          ...group,
-                                          rules: group.rules.map(currentRule =>
-                                            currentRule.id === rule.id
-                                              ? {
-                                                  ...currentRule,
-                                                  conditions: currentRule.conditions.map(currentCondition =>
-                                                    currentCondition.id === condition.id
-                                                      ? { ...condition, sensorAddress: Number(value ?? 0) }
-                                                      : currentCondition
-                                                  ),
-                                                }
-                                              : currentRule
-                                          ),
-                                        }));
-                                      }}
+                                      onChange={value => updateCondition(selectedGroup.id, rule.id, condition.id, current =>
+                                        current.type === "sensor"
+                                          ? { ...current, sensorAddress: Number(value ?? 0) }
+                                          : current
+                                      )}
                                       w={220}
                                     />
 
@@ -784,23 +623,11 @@ export default function SignalLogicDialog({
                                       label={conditionIndex === 0 ? t("signalLogic.state") : undefined}
                                       data={sensorStateOptions}
                                       value={condition.active.toString()}
-                                      onChange={value => {
-                                        updateGroup(selectedGroup.id, group => ({
-                                          ...group,
-                                          rules: group.rules.map(currentRule =>
-                                            currentRule.id === rule.id
-                                              ? {
-                                                  ...currentRule,
-                                                  conditions: currentRule.conditions.map(currentCondition =>
-                                                    currentCondition.id === condition.id
-                                                      ? { ...condition, active: value === "true" }
-                                                      : currentCondition
-                                                  ),
-                                                }
-                                              : currentRule
-                                          ),
-                                        }));
-                                      }}
+                                      onChange={value => updateCondition(selectedGroup.id, rule.id, condition.id, current =>
+                                        current.type === "sensor"
+                                          ? { ...current, active: value === "true" }
+                                          : current
+                                      )}
                                       w={180}
                                     />
                                   </>
@@ -811,23 +638,11 @@ export default function SignalLogicDialog({
                                       data={turnoutOptions}
                                       value={condition.turnoutAddress > 0 ? condition.turnoutAddress.toString() : null}
                                       placeholder={t("signalLogic.selectTurnout")}
-                                      onChange={value => {
-                                        updateGroup(selectedGroup.id, group => ({
-                                          ...group,
-                                          rules: group.rules.map(currentRule =>
-                                            currentRule.id === rule.id
-                                              ? {
-                                                  ...currentRule,
-                                                  conditions: currentRule.conditions.map(currentCondition =>
-                                                    currentCondition.id === condition.id
-                                                      ? { ...condition, turnoutAddress: Number(value ?? 0) }
-                                                      : currentCondition
-                                                  ),
-                                                }
-                                              : currentRule
-                                          ),
-                                        }));
-                                      }}
+                                      onChange={value => updateCondition(selectedGroup.id, rule.id, condition.id, current =>
+                                        current.type === "turnout"
+                                          ? { ...current, turnoutAddress: Number(value ?? 0) }
+                                          : current
+                                      )}
                                       w={220}
                                     />
 
@@ -835,23 +650,11 @@ export default function SignalLogicDialog({
                                       label={conditionIndex === 0 ? t("signalLogic.state") : undefined}
                                       data={turnoutStateOptions}
                                       value={condition.closed.toString()}
-                                      onChange={value => {
-                                        updateGroup(selectedGroup.id, group => ({
-                                          ...group,
-                                          rules: group.rules.map(currentRule =>
-                                            currentRule.id === rule.id
-                                              ? {
-                                                  ...currentRule,
-                                                  conditions: currentRule.conditions.map(currentCondition =>
-                                                    currentCondition.id === condition.id
-                                                      ? { ...condition, closed: value === "true" }
-                                                      : currentCondition
-                                                  ),
-                                                }
-                                              : currentRule
-                                          ),
-                                        }));
-                                      }}
+                                      onChange={value => updateCondition(selectedGroup.id, rule.id, condition.id, current =>
+                                        current.type === "turnout"
+                                          ? { ...current, closed: value === "true" }
+                                          : current
+                                      )}
                                       w={160}
                                     />
                                   </>
@@ -869,21 +672,10 @@ export default function SignalLogicDialog({
                             ))}
 
                             <Group gap="xs">
-                              <Button
-                                size="xs"
-                                variant="light"
-                                leftSection={<IconPlus size={14} />}
-                                onClick={() => addTurnoutCondition(selectedGroup.id, rule.id)}
-                              >
+                              <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={() => addTurnoutCondition(selectedGroup.id, rule.id)}>
                                 {t("signalLogic.addTurnoutCondition")}
                               </Button>
-
-                              <Button
-                                size="xs"
-                                variant="light"
-                                leftSection={<IconPlus size={14} />}
-                                onClick={() => addSensorCondition(selectedGroup.id, rule.id)}
-                              >
+                              <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={() => addSensorCondition(selectedGroup.id, rule.id)}>
                                 {t("signalLogic.addOccupancyCondition")}
                               </Button>
                             </Group>
@@ -891,11 +683,7 @@ export default function SignalLogicDialog({
                         </Card>
                       ))}
 
-                      <Button
-                        variant="light"
-                        leftSection={<IconPlus size={14} />}
-                        onClick={() => addRule(selectedGroup.id)}
-                      >
+                      <Button variant="light" leftSection={<IconPlus size={14} />} onClick={() => addRule(selectedGroup.id)}>
                         {t("signalLogic.addRule")}
                       </Button>
                     </Stack>
@@ -913,9 +701,7 @@ export default function SignalLogicDialog({
                     <Group justify="space-between" mb="sm">
                       <Title order={5}>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</Title>
                       <Badge color={aspectBadgeColor(group.defaultAspect)} variant="light">
-                        {t("signalLogic.default", {
-                          aspect: getAspectLabel(t, group.defaultAspect),
-                        })}
+                        {t("signalLogic.default", { aspect: getAspectLabel(t, group.defaultAspect) })}
                       </Badge>
                     </Group>
 
@@ -932,15 +718,21 @@ export default function SignalLogicDialog({
                                 {t("signalLogic.always")}
                               </Badge>
                             ) : (
-                              rule.conditions.map(condition => (
-                                <Badge key={condition.id} variant="light" color={condition.type === "sensor" ? "blue" : "grape"}>
-                                  {formatCondition(t, condition)}
-                                </Badge>
+                              rule.conditions.map((condition, conditionIndex) => (
+                                <Fragment key={condition.id}>
+                                  {conditionIndex > 0 && (
+                                    <Text size="xs" c="dimmed" fw={700}>
+                                      {t("signalLogic.and")}
+                                    </Text>
+                                  )}
+                                  <Badge variant="light" color={condition.type === "sensor" ? "blue" : "grape"}>
+                                    {formatCondition(t, condition)}
+                                  </Badge>
+                                </Fragment>
                               ))
                             )}
 
                             <Text size="sm" c="dimmed">→</Text>
-
                             <Badge color={aspectBadgeColor(rule.aspect)} variant="filled">
                               {getAspectLabel(t, rule.aspect).toUpperCase()}
                             </Badge>
@@ -964,11 +756,7 @@ export default function SignalLogicDialog({
                 style={{ flex: 1, minHeight: 0 }}
                 styles={{
                   wrapper: { height: "100%" },
-                  input: {
-                    height: "100%",
-                    fontFamily: "monospace",
-                    resize: "none",
-                  },
+                  input: { height: "100%", fontFamily: "monospace", resize: "none" },
                 }}
               />
 
@@ -998,23 +786,11 @@ export default function SignalLogicDialog({
 
         <Group justify="space-between">
           <Text size="sm" c="dimmed">{t("signalLogic.savePath")}</Text>
-
           <Group>
-            <Button
-              variant="light"
-              leftSection={<IconRefresh size={16} />}
-              onClick={() => void loadRules()}
-              loading={loading}
-            >
+            <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={() => void loadRules()} loading={loading}>
               {t("signalLogic.reload")}
             </Button>
-
-            <Button
-              leftSection={<IconDeviceFloppy size={16} />}
-              onClick={() => void saveRules()}
-              loading={saving}
-              disabled={hasValidationErrors}
-            >
+            <Button leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveRules()} loading={saving} disabled={hasValidationErrors}>
               {t("signalLogic.save")}
             </Button>
           </Group>
