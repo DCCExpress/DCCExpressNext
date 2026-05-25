@@ -1,3 +1,6 @@
+import type {
+  BlockActionHooks,
+} from "../../domainTypes.js";
 import {
   BLOCK_TYPES,
   type BlockType,
@@ -23,6 +26,7 @@ export class BlockElement extends TrackElement {
   length: number = 1;
   sensorAddress: number = 0;
   blockType: BlockType = BLOCK_TYPES.NORMAL;
+  actions: BlockActionHooks = {};
 
   constructor(x: number, y: number) {
     super(x, y);
@@ -83,6 +87,7 @@ export class BlockElement extends TrackElement {
     element.sensorAddress = data.sensorAddress ?? 0;
     element.locoAddress = data.locoAddress ?? 0;
     element.blockType = data.blockType ?? BLOCK_TYPES.NORMAL;
+    element.actions = data.actions ?? {};
     return element;
   }
 
@@ -94,6 +99,7 @@ export class BlockElement extends TrackElement {
       length: this.length,
       sensorAddress: this.sensorAddress,
       blockType: this.blockType,
+      actions: this.actions,
     };
   }
 }
