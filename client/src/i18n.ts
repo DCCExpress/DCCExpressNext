@@ -8,7 +8,34 @@ import signalLogicHu from "./i18n/signalLogic.hu.json";
 import signalLogicEn from "./i18n/signalLogic.en.json";
 import signalLogicDe from "./i18n/signalLogic.de.json";
 
-const savedLang = localStorage.getItem("lang") || "en";
+type SupportedLanguage = "en" | "hu" | "de";
+
+const supportedLanguages: SupportedLanguage[] = ["en", "hu", "de"];
+
+function normalizeLanguage(language: string | null | undefined): SupportedLanguage | null {
+  const shortCode = language?.split("-")[0]?.toLowerCase();
+
+  if (supportedLanguages.includes(shortCode as SupportedLanguage)) {
+    return shortCode as SupportedLanguage;
+  }
+
+  return null;
+}
+
+function readInitialLanguage(): SupportedLanguage {
+  const urlLanguage = normalizeLanguage(
+    new URLSearchParams(window.location.search).get("lang")
+  );
+
+  if (urlLanguage) {
+    localStorage.setItem("lang", urlLanguage);
+    return urlLanguage;
+  }
+
+  return normalizeLanguage(localStorage.getItem("lang")) ?? "en";
+}
+
+const savedLang = readInitialLanguage();
 
 const enTranslation = {
   ...en,
