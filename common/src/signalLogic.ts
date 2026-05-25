@@ -61,6 +61,8 @@ export type SignalLogicKnownSensor = {
 export type SignalLogicValidationIssue = {
   level: "error" | "warning";
   message: string;
+  messageKey?: string;
+  messageParams?: Record<string, string | number | boolean>;
   groupId?: string;
   ruleId?: string;
   conditionId?: string;
@@ -289,8 +291,22 @@ export function validateSignalLogicDocument(
     }
 
     const ruleSignatures = new Set<string>();
+    const usedRuleAspects = new Set<SignalAspect>();
 
     for (const rule of group.rules) {
+      if (usedRuleAspects.has(rule.aspect)) {
+        issues.push({
+          level: "warning",
+          groupId: group.id,
+          ruleId: rule.id,
+          message: `More than one rule sets the signal to ${rule.aspect}.`,
+          messageKey: "signalLogic.validation.duplicateRuleAspect",
+          messageParams: { aspect: rule.aspect },
+        });
+      }
+
+      usedRuleAspects.add(rule.aspect);
+
       if (knownSignal) {
         const allowedAspects = getAllowedSignalAspects(knownSignal.aspect);
 
