@@ -11,10 +11,12 @@ import { BaseElementView } from "../models/editor/core/BaseElementView";
 import { LayoutView } from "../models/editor/core/LayoutView";
 import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
 import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
+import { BlockElementView } from "../models/editor/elements/BlockElementView";
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { useRouteGraph } from "../hooks/useRouteGraph";
 import { wsApi } from "../services/wsApi";
 import { getGraphBlockSelectData } from "../services/routeGraphUi";
+import BlockActionsPanel from "./property-panel/BlockActionsPanel";
 import ExtendedRouteActions from "./property-panel/ExtendedRouteActions";
 import PropertyFieldRenderer from "./property-panel/PropertyFieldRenderer";
 import PropertyPanelHelp from "./property-panel/PropertyPanelHelp";
@@ -270,6 +272,13 @@ export default function RightPropertyPanel({
               </Card>
             </div>
           ))}
+
+        {selectedElement instanceof BlockElementView && (
+          <BlockActionsPanel
+            selectedElement={selectedElement}
+            onUpdateSelectedElement={onUpdateSelectedElement}
+          />
+        )}
 
         {selectedElement instanceof ExtendedRouteButtonElementView && (
           <ExtendedRouteActions
