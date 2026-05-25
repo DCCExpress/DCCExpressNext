@@ -49,17 +49,44 @@ class WebSocketApi {
 
     return new Promise((resolve, reject) => {
       let timeoutHandle: number | null = null;
+      let unsubscribe: () => void = () => {};
+      let settled = false;
 
-      const unsubscribe = wsClient.subscribeStatus(status => {
-        if (status !== "connected") return;
-        if (timeoutHandle !== null) window.clearTimeout(timeoutHandle);
+      const cleanup = (): void => {
+        if (timeoutHandle !== null) {
+          window.clearTimeout(timeoutHandle);
+          timeoutHandle = null;
+        }
         unsubscribe();
+      };
+
+      const resolveOnce = (): void => {
+        if (settled) return;
+        settled = true;
+        cleanup();
         resolve();
+      };
+
+      const rejectOnce = (error: Error): void => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(error);
+      };
+
+      unsubscribe = wsClient.subscribeStatus(status => {
+        if (status === "connected") {
+          resolveOnce();
+        }
       });
 
-      timeoutHandle = window.setTimeout(() => {
+      if (settled) {
         unsubscribe();
-        reject(new Error("WebSocket connection timed out."));
+        return;
+      }
+
+      timeoutHandle = window.setTimeout(() => {
+        rejectOnce(new Error("WebSocket connection timed out."));
       }, timeoutMs);
     });
   }
