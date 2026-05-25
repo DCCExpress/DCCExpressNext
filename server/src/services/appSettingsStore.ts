@@ -43,7 +43,6 @@ class AppSettingsStore {
         dccexSerial: { ...this.settings.commandCenter.dccexSerial },
       },
       fastClock: { ...this.settings.fastClock },
-      audio: { ...this.settings.audio },
     };
   }
 
@@ -76,10 +75,6 @@ class AppSettingsStore {
       fastClock: {
         ...this.settings.fastClock,
         ...input.fastClock,
-      },
-      audio: {
-        ...this.settings.audio,
-        ...input.audio,
       },
     });
 
