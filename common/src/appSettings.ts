@@ -5,21 +5,25 @@ import type {
   ICommandCenter,
 } from "./domainTypes.js";
 
-export type AppLanguage =
-  | "en"
-  | "hu";
+export type AppLanguage = "en" | "hu";
 
 export type GeneralSettings = {
   language: AppLanguage;
 };
 
-export type FastClockResetSource =
-  | "system"
-  | "configured";
+export type FastClockResetSource = "system" | "configured";
 
 export type FastClockSettings = {
   resetSource: FastClockResetSource;
   resetTimeMs: number;
+};
+
+export type AudioPlaybackMode = "allClients" | "selectedClient";
+
+export type AudioSettings = {
+  mode: AudioPlaybackMode;
+  selectedClientId: string;
+  selectedClientName: string;
 };
 
 export type AppSettings = {
@@ -27,16 +31,20 @@ export type AppSettings = {
   general: GeneralSettings;
   commandCenter: ICommandCenter;
   fastClock: FastClockSettings;
+  audio: AudioSettings;
 };
 
-export const DAY_MS =
-  24 * 60 * 60 * 1000;
-
-export const DEFAULT_FAST_CLOCK_RESET_TIME_MS =
-  0;
+export const DAY_MS = 24 * 60 * 60 * 1000;
+export const DEFAULT_FAST_CLOCK_RESET_TIME_MS = 0;
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   language: "en",
+};
+
+export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
+  mode: "allClients",
+  selectedClientId: "",
+  selectedClientName: "",
 };
 
 export const DEFAULT_COMMAND_CENTER_SETTINGS: ICommandCenter = {
@@ -66,189 +74,98 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     resetSource: "system",
     resetTimeMs: DEFAULT_FAST_CLOCK_RESET_TIME_MS,
   },
+  audio: DEFAULT_AUDIO_SETTINGS,
 };
 
 export function normalizeDayTimeMs(value: unknown): number {
-  const numeric =
-    typeof value === "number"
-      ? value
-      : Number(value);
-
-  if (!Number.isFinite(numeric)) {
-    return DEFAULT_FAST_CLOCK_RESET_TIME_MS;
-  }
-
-  const normalized =
-    Math.floor(numeric) % DAY_MS;
-
-  return normalized < 0
-    ? normalized + DAY_MS
-    : normalized;
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return DEFAULT_FAST_CLOCK_RESET_TIME_MS;
+  const normalized = Math.floor(numeric) % DAY_MS;
+  return normalized < 0 ? normalized + DAY_MS : normalized;
 }
 
-function isValidCommandCenterType(
-  value: unknown
-): value is CommandCenterType {
-  return (
-    value === "z21" ||
-    value === "dcc-ex-tcp" ||
-    value === "dcc-ex-serial" ||
-    value === "simulator"
-  );
+function isValidCommandCenterType(value: unknown): value is CommandCenterType {
+  return value === "z21" || value === "dcc-ex-tcp" || value === "dcc-ex-serial" || value === "simulator";
 }
 
-function isValidAppLanguage(
-  value: unknown
-): value is AppLanguage {
+function isValidAppLanguage(value: unknown): value is AppLanguage {
   return value === "en" || value === "hu";
 }
 
-function normalizeString(
-  value: unknown,
-  fallback: string
-): string {
-  return typeof value === "string"
-    ? value
-    : fallback;
+function normalizeString(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
 }
 
-function normalizeTrimmedString(
-  value: unknown,
-  fallback: string
-): string {
+function normalizeTrimmedString(value: unknown, fallback: string): string {
   return normalizeString(value, fallback).trim();
 }
 
-function normalizeNumber(
-  value: unknown,
-  fallback: number
-): number {
-  return typeof value === "number" && Number.isFinite(value)
-    ? value
-    : fallback;
+function normalizeNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function normalizeIntegerRange(
-  value: unknown,
-  fallback: number,
-  min: number,
-  max: number
-): number {
+function normalizeIntegerRange(value: unknown, fallback: number, min: number, max: number): number {
   const numeric = normalizeNumber(value, fallback);
   const integer = Math.round(numeric);
-
-  return integer >= min && integer <= max
-    ? integer
-    : fallback;
+  return integer >= min && integer <= max ? integer : fallback;
 }
 
-function normalizePort(
-  value: unknown,
-  fallback: number
-): number {
-  return normalizeIntegerRange(
-    value,
-    fallback,
-    1,
-    65535
-  );
+function normalizePort(value: unknown, fallback: number): number {
+  return normalizeIntegerRange(value, fallback, 1, 65535);
 }
 
-function normalizeBaudRate(
-  value: unknown,
-  fallback: number
-): number {
-  return normalizeIntegerRange(
-    value,
-    fallback,
-    1,
-    10000000
-  );
+function normalizeBaudRate(value: unknown, fallback: number): number {
+  return normalizeIntegerRange(value, fallback, 1, 10000000);
 }
 
-export function normalizeGeneralSettings(
-  value: Partial<GeneralSettings> | null | undefined
-): GeneralSettings {
+export function normalizeGeneralSettings(value: Partial<GeneralSettings> | null | undefined): GeneralSettings {
   return {
-    language: isValidAppLanguage(value?.language)
-      ? value.language
-      : DEFAULT_GENERAL_SETTINGS.language,
+    language: isValidAppLanguage(value?.language) ? value.language : DEFAULT_GENERAL_SETTINGS.language,
   };
 }
 
-export function normalizeCommandCenterSettings(
-  value: Partial<ICommandCenter> | null | undefined
-): ICommandCenter {
+export function normalizeAudioSettings(value: Partial<AudioSettings> | null | undefined): AudioSettings {
+  const mode: AudioPlaybackMode = value?.mode === "selectedClient" ? "selectedClient" : "allClients";
   return {
-    type: isValidCommandCenterType(value?.type)
-      ? value.type
-      : DEFAULT_COMMAND_CENTER_SETTINGS.type,
+    mode,
+    selectedClientId: normalizeTrimmedString(value?.selectedClientId, ""),
+    selectedClientName: normalizeTrimmedString(value?.selectedClientName, ""),
+  };
+}
+
+export function normalizeCommandCenterSettings(value: Partial<ICommandCenter> | null | undefined): ICommandCenter {
+  return {
+    type: isValidCommandCenterType(value?.type) ? value.type : DEFAULT_COMMAND_CENTER_SETTINGS.type,
     z21: {
-      host: normalizeTrimmedString(
-        value?.z21?.host,
-        "192.168.1.100"
-      ),
-      port: normalizePort(
-        value?.z21?.port,
-        21105
-      ),
+      host: normalizeTrimmedString(value?.z21?.host, "192.168.1.100"),
+      port: normalizePort(value?.z21?.port, 21105),
     },
     dccexTcp: {
-      host: normalizeTrimmedString(
-        value?.dccexTcp?.host,
-        ""
-      ),
-      port: normalizePort(
-        value?.dccexTcp?.port,
-        2560
-      ),
-      init: normalizeString(
-        value?.dccexTcp?.init,
-        ""
-      ),
+      host: normalizeTrimmedString(value?.dccexTcp?.host, ""),
+      port: normalizePort(value?.dccexTcp?.port, 2560),
+      init: normalizeString(value?.dccexTcp?.init, ""),
     },
     dccexSerial: {
-      serialPort: normalizeTrimmedString(
-        value?.dccexSerial?.serialPort,
-        ""
-      ),
-      baudRate: normalizeBaudRate(
-        value?.dccexSerial?.baudRate,
-        115200
-      ),
-      init: normalizeString(
-        value?.dccexSerial?.init,
-        ""
-      ),
+      serialPort: normalizeTrimmedString(value?.dccexSerial?.serialPort, ""),
+      baudRate: normalizeBaudRate(value?.dccexSerial?.baudRate, 115200),
+      init: normalizeString(value?.dccexSerial?.init, ""),
     },
-    autoConnect: typeof value?.autoConnect === "boolean"
-      ? value.autoConnect
-      : false,
+    autoConnect: typeof value?.autoConnect === "boolean" ? value.autoConnect : false,
   };
 }
 
-export function normalizeAppSettings(
-  value: Partial<AppSettings> | null | undefined
-): AppSettings {
-  const resetSource =
-    value?.fastClock?.resetSource === "configured"
-      ? "configured"
-      : "system";
+export function normalizeAppSettings(value: Partial<AppSettings> | null | undefined): AppSettings {
+  const resetSource = value?.fastClock?.resetSource === "configured" ? "configured" : "system";
 
   return {
     version: 1,
-    general: normalizeGeneralSettings(
-      value?.general
-    ),
-    commandCenter: normalizeCommandCenterSettings(
-      value?.commandCenter
-    ),
+    general: normalizeGeneralSettings(value?.general),
+    commandCenter: normalizeCommandCenterSettings(value?.commandCenter),
     fastClock: {
       resetSource,
-      resetTimeMs: normalizeDayTimeMs(
-        value?.fastClock?.resetTimeMs
-      ),
+      resetTimeMs: normalizeDayTimeMs(value?.fastClock?.resetTimeMs),
     },
+    audio: normalizeAudioSettings(value?.audio),
   };
 }
 
@@ -257,7 +174,6 @@ export function dayTimeMsToTimeInputValue(value: number): string {
   const totalSeconds = Math.floor(normalized / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
-
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
@@ -265,13 +181,6 @@ export function timeInputValueToDayTimeMs(value: string): number {
   const [hoursText = "0", minutesText = "0"] = value.split(":");
   const hours = Number(hoursText);
   const minutes = Number(minutesText);
-
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
-    return DEFAULT_FAST_CLOCK_RESET_TIME_MS;
-  }
-
-  return normalizeDayTimeMs(
-    hours * 60 * 60 * 1000 +
-    minutes * 60 * 1000
-  );
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return DEFAULT_FAST_CLOCK_RESET_TIME_MS;
+  return normalizeDayTimeMs(hours * 60 * 60 * 1000 + minutes * 60 * 1000);
 }
