@@ -25,9 +25,7 @@ class SignalLogicRulesStore {
 
   async initialize(): Promise<SignalLogicRulesInitializeResult> {
     if (this.initialized) {
-      return {
-        created: false,
-      };
+      return { created: false };
     }
 
     await fs.mkdir(path.dirname(this.filePath), { recursive: true });
@@ -48,14 +46,13 @@ class SignalLogicRulesStore {
 
     this.initialized = true;
 
-    return {
-      created: this.createdOnInitialize,
-    };
+    return { created: this.createdOnInitialize };
   }
 
   getDocument(): SignalLogicDocumentDto {
     return {
       version: 1,
+      autostart: this.document.autostart,
       groups: this.document.groups.map(group => ({
         ...group,
         rules: group.rules.map(rule => ({
@@ -70,6 +67,20 @@ class SignalLogicRulesStore {
     await this.initialize();
 
     this.document = normalizeSignalLogicDocument(input);
+    await this.persist();
+    this.createdOnInitialize = false;
+
+    return this.getDocument();
+  }
+
+  async setAutostart(autostart: boolean): Promise<SignalLogicDocumentDto> {
+    await this.initialize();
+
+    this.document = normalizeSignalLogicDocument({
+      ...this.document,
+      autostart,
+    });
+
     await this.persist();
     this.createdOnInitialize = false;
 
