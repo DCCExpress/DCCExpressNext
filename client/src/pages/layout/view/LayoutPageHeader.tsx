@@ -45,6 +45,7 @@ type LayoutPageHeaderProps = {
   setTool: EditorToolSetter;
 
   setLocoDialogOpened: BooleanSetter;
+  setSignalLogicDialogOpened: BooleanSetter;
   setPickerOpened: BooleanSetter;
 
   saveLayoutToServer: () => Promise<void>;
@@ -78,6 +79,7 @@ export default function LayoutPageHeader({
   setTool,
 
   setLocoDialogOpened,
+  setSignalLogicDialogOpened,
   setPickerOpened,
 
   saveLayoutToServer,
@@ -143,6 +145,9 @@ export default function LayoutPageHeader({
             onGoHome={onGoHome}
             onOpenLocos={() =>
               setLocoDialogOpened(true)
+            }
+            onOpenSignalLogic={() =>
+              setSignalLogicDialogOpened(true)
             }
             locoPanelCollapsed={locoPanelCollapsed}
             onToggleLocoPanel={() =>
