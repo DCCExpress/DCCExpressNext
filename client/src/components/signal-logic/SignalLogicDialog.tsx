@@ -115,7 +115,7 @@ function createRule(signalAddress: number): SignalLogicRuleGroupDto {
       {
         id: generateId(),
         aspect: "green",
-        conditions: [createTurnoutCondition(0)],
+        conditions: [],
       },
     ],
   };
