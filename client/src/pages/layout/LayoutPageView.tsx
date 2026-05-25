@@ -34,6 +34,8 @@ export type LayoutPageViewProps = {
   onCommandCenterSaved?: (commandCenter: CommandCenter) => void;
   locoDialogOpened: boolean;
   setLocoDialogOpened: BooleanSetter;
+  signalLogicDialogOpened: boolean;
+  setSignalLogicDialogOpened: BooleanSetter;
   onLocosSaved: () => Promise<void>;
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
@@ -76,6 +78,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
   const {
     onGoHome, toolbarOpened, setToolbarOpened, canvasBusy, canvasBusyText,
     setCanvasBusy, setCanvasBusyText, locoDialogOpened, setLocoDialogOpened,
+    signalLogicDialogOpened, setSignalLogicDialogOpened,
     onLocosSaved, pickerOpened, setPickerOpened,
     appSettingsDialogOpened, setAppSettingsDialogOpened,
     editMode, setEditMode, locoPanelCollapsed, setLocoPanelCollapsed,
@@ -96,10 +99,13 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         locoDialogOpened={locoDialogOpened}
         setLocoDialogOpened={setLocoDialogOpened}
         onLocosSaved={onLocosSaved}
+        signalLogicDialogOpened={signalLogicDialogOpened}
+        setSignalLogicDialogOpened={setSignalLogicDialogOpened}
         pickerOpened={pickerOpened}
         setPickerOpened={setPickerOpened}
         appSettingsDialogOpened={appSettingsDialogOpened}
         setAppSettingsDialogOpened={setAppSettingsDialogOpened}
+        layout={layout}
         setTool={setTool}
       />
 
@@ -121,6 +127,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           tool={tool}
           setTool={setTool}
           setLocoDialogOpened={setLocoDialogOpened}
+          setSignalLogicDialogOpened={setSignalLogicDialogOpened}
           setPickerOpened={setPickerOpened}
           saveLayoutToServer={saveLayoutToServer}
           loadLayoutFromServer={loadLayoutFromServer}
