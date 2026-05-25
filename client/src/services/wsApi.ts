@@ -196,6 +196,10 @@ class WebSocketApi {
     return this.send("getBlocks", {});
   }
 
+  getLayoutRuntimeSnapshot(): boolean {
+    return this.send("getLayoutRuntimeSnapshot", {});
+  }
+
   routeLock(): boolean {
     return this.send("routeLock", {});
   }
