@@ -22,6 +22,7 @@ import {
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../components/common/LanguageSelector";
+import "../styles/global.css";
 
 const HERO_BACKGROUND_IMAGE = "/images/home-hero.png";
 const CARD_IMAGE_FADE_MASK =
@@ -81,11 +82,26 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
     <Box
       mih="100vh"
       style={{
+        position: "relative",
+        overflow: "hidden",
         background:
-          "radial-gradient(circle at 82% 18%, rgba(34, 139, 230, 0.22) 0%, transparent 32%), radial-gradient(circle at 18% 78%, rgba(64, 192, 87, 0.10) 0%, transparent 34%), linear-gradient(135deg, #06101f 0%, #071827 42%, #020711 100%)",
+          "linear-gradient(135deg, #06101f 0%, #071827 42%, #020711 100%)",
       }}
     >
-      <Container size="xl" py="xl">
+      <Box
+        className="home-bg-glow home-bg-glow-light"
+        aria-hidden="true"
+      />
+      <Box
+        className="home-bg-glow home-bg-glow-dark"
+        aria-hidden="true"
+      />
+      <Box
+        className="home-bg-glow home-bg-glow-green"
+        aria-hidden="true"
+      />
+
+      <Container size="xl" py="xl" style={{ position: "relative", zIndex: 1 }}>
         <Stack gap="xl">
           <Paper
             radius="lg"
