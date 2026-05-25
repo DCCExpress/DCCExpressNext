@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   type Dispatch,
   type MutableRefObject,
   type SetStateAction,
@@ -107,6 +108,7 @@ export function useLayoutPageBootstrap({
   setInvalidateCounter,
 }: UseLayoutPageBootstrapParams): UseLayoutPageBootstrapResult {
   const { t } = useTranslation();
+  const bootStartedRef = useRef(false);
 
   const loadLocos = useCallback(async (): Promise<void> => {
     try {
@@ -262,22 +264,48 @@ export function useLayoutPageBootstrap({
     setInvalidateCounter,
   ]);
 
+  const bootstrapFromWelcome = useCallback((): void => {
+    if (!wsClient.isConnected()) {
+      return;
+    }
+
+    if (layoutLoadedRef.current) {
+      requestInitialRuntimeSync();
+      return;
+    }
+
+    if (bootStartedRef.current) {
+      return;
+    }
+
+    bootStartedRef.current = true;
+
+    void loadPartsFromServer().catch(error => {
+      bootStartedRef.current = false;
+      console.error("[Layout bootstrap] Failed after ws:welcome:", error);
+    });
+  }, [
+    layoutLoadedRef,
+    loadPartsFromServer,
+    requestInitialRuntimeSync,
+  ]);
+
   useEffect(() => {
-    const unsubscribe =
-      wsClient.subscribeStatus(status => {
-        if (status === "connected") {
-          requestInitialRuntimeSync();
-        }
+    const unsubscribeWelcome =
+      wsClient.on("ws:welcome", () => {
+        bootstrapFromWelcome();
       });
 
     return () => {
-      unsubscribe();
+      unsubscribeWelcome();
     };
-  }, [requestInitialRuntimeSync]);
+  }, [bootstrapFromWelcome]);
 
   useEffect(() => {
-    void loadPartsFromServer();
-  }, [loadPartsFromServer]);
+    if (wsClient.isConnected()) {
+      bootstrapFromWelcome();
+    }
+  }, [bootstrapFromWelcome]);
 
   return {
     loadLocos,
