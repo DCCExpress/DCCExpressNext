@@ -34,6 +34,7 @@ export default function BlockActionsPanel({
 
       <BlockActionsDialog
         opened={opened}
+        blockId={selectedElement.id}
         blockName={selectedElement.name}
         actions={selectedElement.actions ?? {}}
         onChange={actions => {
