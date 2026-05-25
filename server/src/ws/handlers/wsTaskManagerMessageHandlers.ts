@@ -9,7 +9,7 @@ import type {
 } from "../../../../common/src/task.js";
 
 import { editorEditModeStore } from "../../services/editorEditModeStore.js";
-import { locoActionRunner } from "../../services/locoActionRunner.js";
+import { runLocoActionList } from "../../services/actionListRunner.js";
 import { readLocos } from "../../services/locoStore.js";
 import { taskRuntimeStore } from "../../services/taskRuntimeStore.js";
 
@@ -68,7 +68,7 @@ async function runLocoActionListTest(context: Parameters<WsMessageHandler>[0]): 
 
   const actions = loco.actions?.[hook] ?? [];
 
-  await locoActionRunner.run({
+  await runLocoActionList({
     loco,
     hook,
     actions,
