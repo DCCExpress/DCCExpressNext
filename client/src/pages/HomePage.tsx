@@ -518,8 +518,7 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                     </Group>
 
                     <Text c="gray.3" maw={820}>
-                      DCCExpress stands on the shoulders of excellent open-source tools,
-                      modern web technologies, and a good dose of AI-assisted brainstorming.
+                      {t("home.thanksDescription")}
                     </Text>
                   </Stack>
                 </Group>
