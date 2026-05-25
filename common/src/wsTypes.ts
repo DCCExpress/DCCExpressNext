@@ -116,6 +116,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "setBlockRemove",
   "setBlocksReset",
   "getBlocks",
+  "getLayoutRuntimeSnapshot",
   "routeLock",
   "routeUnlock",
   "reserveRoute",
@@ -220,195 +221,67 @@ export type RouteReservationRejectedMessage = {
   data: RouteReservationRejectedPayload;
 };
 
-export type EditorEditModeRejectedPayload = {
-  reason: string;
-  editingClients: string[];
+export type RouteReservationReleasedMessage = {
+  type: "routeReservationReleased";
+  data: RouteReservationReleasedPayload;
 };
 
-export type LayoutResponsePayload = {
-  requestId: string;
-  action: "load" | "save" | "refreshRuntime" | "getRouteGraph";
-  ok: boolean;
-  message?: string;
-  layout?: SerializedLayoutDto;
-  routeGraph?: RouteGraphResponseDto;
+export type RouteReservationReleaseRejectedMessage = {
+  type: "routeReservationReleaseRejected";
+  data: RouteReservationReleaseRejectedPayload;
 };
 
-export type LocosResponsePayload = {
-  requestId: string;
-  action: "load" | "save";
-  ok: boolean;
-  message?: string;
-  locos?: Loco[];
-  count?: number;
-};
-
-export type ScriptDocumentResponsePayload = {
-  requestId: string;
-  action: "load" | "save";
-  ok: boolean;
-  message?: string;
-  document?: ScriptDocumentDto;
-};
-
-export type CommandCenterConfigResponsePayload = {
-  requestId: string;
-  action: "load" | "save";
-  ok: boolean;
-  message?: string;
-  config?: ICommandCenter | null;
-};
-
-export type AppSettingsResponsePayload = {
-  requestId: string;
-  action: "load" | "save";
-  ok: boolean;
-  message?: string;
-  settings?: AppSettings;
-};
-
-export type TaskManagerResponsePayload = {
-  requestId: string;
-  action:
-    | "snapshot"
-    | "add"
-    | "update"
-    | "delete"
-    | "save"
-    | "reload"
-    | "start"
-    | "pause"
-    | "resume"
-    | "finish"
-    | "abort"
-    | "startAll"
-    | "pauseAll"
-    | "finishAll"
-    | "abortAll";
-  ok: boolean;
-  message?: string;
-  snapshot?: TaskManagerSnapshot;
-  addResult?: AddTrainTaskResult;
-  actionResult?: TaskManagerActionResult;
-  loadResult?: LoadTrainTasksResult;
-};
-
-export type FastClockResponsePayload = {
-  requestId: string;
-  action: "snapshot" | "run" | "pause" | "reset" | "setSpeed";
-  ok: boolean;
-  message?: string;
-  snapshot?: FastClockSnapshot;
-};
-
-export type FileResponsePayload = {
-  requestId: string;
-  action: "readText" | "writeText" | "readJson" | "writeJson";
-  ok: boolean;
-  fileName: string;
-  message?: string;
-  content?: string;
-  data?: unknown;
-};
-
-export type ServerWsPayloadMap = {
-  "ws:welcome": {
-    message: string;
-  };
-
-  error: {
-    message: string;
-  };
-
-  commandRejected: CommandRejectedPayload;
-
-  commandCenterInfo: CommandCenterInfoPayload;
-
-  commandCenterLockChanged: CommandCenterLockChangedPayload;
-
-  dccExDirectCommandResponse: DccExDirectCommandResponsePayload;
-
-  locoState: LocoStateChangedPayload;
-
-  locoReservationChanged: LocoReservationChangedPayload;
-
-  turnoutChanged: TurnoutChangedPayload;
-
-  accessoryChanged: AccessoryChangedPayload;
-
-  sensorChanged: SensorChangedPayload;
-
-  blockStateChanged: BlockStateChangedPayload;
-
-  routeReservationChanged: RouteReservationChangedPayload;
-
-  routeReservationRejected: RouteReservationRejectedPayload;
-
-  routeReservationReleaseRejected:
-  RouteReservationReleaseRejectedPayload;
-
-  routeReservationReleased: RouteReservationReleasedPayload;
-
-  allRouteReservationsCleared: {};
-
-  layoutResponse: LayoutResponsePayload;
-  locosResponse: LocosResponsePayload;
-  scriptDocumentResponse: ScriptDocumentResponsePayload;
-  commandCenterConfigResponse: CommandCenterConfigResponsePayload;
-  appSettingsResponse: AppSettingsResponsePayload;
-  taskManagerResponse: TaskManagerResponsePayload;
-  fastClockResponse: FastClockResponsePayload;
-  fileResponse: FileResponsePayload;
-
-  scriptRejected: {
-    reason: string;
-  };
-
-  scriptDocumentChanged: ScriptDocumentDto;
-  scriptStateChanged: ScriptStateDto | null;
-
-  taskRejected: TaskRejectedPayload;
-
-  taskManagerSnapshotChanged: TaskManagerSnapshot;
-
-  taskWaitingForLoco: TaskWaitingForLocoPayload;
-
-  taskCompleted: TaskLifecycleEventPayload;
-  taskCycleCompleted: TaskLifecycleEventPayload;
-
-  runtimeVariableChanged: RuntimeVariableChangedPayload;
-  runtimeVariableRejected: RuntimeVariableRejectedPayload;
-  runtimeVariablesSnapshot: RuntimeVariablesSnapshotPayload;
-
-  serverRuntimeStatsChanged: ServerRuntimeStatsSnapshot;
-
-  editorEditModeRejected: EditorEditModeRejectedPayload;
-
-  fastClockChanged: FastClockSnapshot;
-
-  z21SystemState: Z21SystemStatePayload;
-  powerInfo: WsPowerInfoPayload;
-
-  rbusInfo: RBusInfo;
-
-  z21SerialNumber: Z21SerialNumberPayload;
-
-  z21TurnoutInfo: Z21TurnoutInfoPayload;
-
-  z21AccessoryInfo: Z21AccessoryInfoPayload;
-
-  rbusSensorChanged: RBusSensorInfo;
-};
+export type TypedServerWsMessage =
+  | { type: "ws:welcome"; data: { message: string } }
+  | { type: "error"; data: { message: string } }
+  | { type: "commandRejected"; uuid?: string | null; data: CommandRejectedPayload }
+  | { type: "commandCenterInfo"; data: CommandCenterInfoPayload }
+  | { type: "commandCenterLockChanged"; data: CommandCenterLockChangedPayload }
+  | { type: "powerInfo"; data: WsPowerInfoPayload }
+  | { type: "turnoutChanged"; data: TurnoutChangedPayload }
+  | { type: "sensorChanged"; data: SensorChangedPayload }
+  | { type: "accessoryChanged"; data: AccessoryChangedPayload }
+  | { type: "blockStateChanged"; data: BlockStateChangedPayload }
+  | { type: "locoState"; data: LocoStateChangedPayload }
+  | { type: "locoReservationChanged"; data: LocoReservationChangedPayload }
+  | { type: "routeReservationChanged"; data: RouteReservationChangedPayload }
+  | { type: "routeReservationRejected"; data: RouteReservationRejectedPayload }
+  | { type: "routeReservationReleased"; data: RouteReservationReleasedPayload }
+  | { type: "routeReservationReleaseRejected"; data: RouteReservationReleaseRejectedPayload }
+  | { type: "allRouteReservationsCleared"; data: {} }
+  | { type: "z21SystemState"; data: Z21SystemStatePayload }
+  | { type: "z21TurnoutInfo"; data: Z21TurnoutInfoPayload }
+  | { type: "z21AccessoryInfo"; data: Z21AccessoryInfoPayload }
+  | { type: "z21SerialNumber"; data: Z21SerialNumberPayload }
+  | { type: "dccExDirectCommandResponse"; data: DccExDirectCommandResponsePayload }
+  | { type: "rbusInfo"; data: RBusInfo }
+  | { type: "rbusSensorChanged"; data: RBusSensorInfo }
+  | { type: "scriptDocumentChanged"; data: ScriptDocumentDto }
+  | { type: "scriptStateChanged"; data: ScriptStateDto }
+  | { type: "taskManagerSnapshotChanged"; data: TaskManagerSnapshot }
+  | { type: "taskManagerResponse"; data: any }
+  | { type: "taskRejected"; data: TaskRejectedPayload }
+  | { type: "taskWaitingForLoco"; data: TaskWaitingForLocoPayload }
+  | { type: "taskCycleCompleted"; data: TaskLifecycleEventPayload }
+  | { type: "fastClockChanged"; data: FastClockSnapshot }
+  | { type: "runtimeVariableChanged"; data: RuntimeVariableChangedPayload }
+  | { type: "runtimeVariableRejected"; data: RuntimeVariableRejectedPayload }
+  | { type: "runtimeVariablesSnapshot"; data: RuntimeVariablesSnapshotPayload }
+  | { type: "serverRuntimeStatsChanged"; data: ServerRuntimeStatsSnapshot }
+  | { type: "layoutResponse"; data: any }
+  | { type: "locosResponse"; data: any }
+  | { type: "scriptDocumentResponse"; data: any }
+  | { type: "commandCenterConfigResponse"; data: any }
+  | { type: "appSettingsResponse"; data: any }
+  | { type: "fastClockResponse"; data: any }
+  | { type: "fileResponse"; data: any }
+  | { type: "playAudio"; data: { fileName: string } }
+  | { type: "locoActionListStatus"; data: any }
+  | { type: "blockActionListStatus"; data: any };
 
 export type ServerWsMessageType =
-  keyof ServerWsPayloadMap;
+  TypedServerWsMessage["type"];
 
-export type TypedServerWsMessage<
-  TType extends ServerWsMessageType = ServerWsMessageType
-> = {
-  [K in TType]: {
-    type: K;
-    data: ServerWsPayloadMap[K];
-    uuid?: string | null;
-  };
-}[TType];
+export type ServerWsPayloadMap = {
+  [M in TypedServerWsMessage as M["type"]]: M["data"];
+};
