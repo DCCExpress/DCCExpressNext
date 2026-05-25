@@ -71,7 +71,27 @@ export const DEFAULT_SIGNAL_LOGIC_DOCUMENT: SignalLogicDocumentDto = {
   groups: [],
 };
 
-type RawCondition = Partial<SignalLogicTurnoutConditionDto & SignalLogicSensorConditionDto>;
+type RawCondition = {
+  id?: unknown;
+  type?: unknown;
+  turnoutAddress?: unknown;
+  closed?: unknown;
+  sensorAddress?: unknown;
+  active?: unknown;
+};
+
+type RawRule = {
+  id?: unknown;
+  aspect?: unknown;
+  conditions?: unknown;
+};
+
+type RawGroup = {
+  id?: unknown;
+  signalAddress?: unknown;
+  defaultAspect?: unknown;
+  rules?: unknown;
+};
 
 export function getAllowedSignalAspects(signalAspect: number): SignalAspect[] {
   if (signalAspect >= 4) {
@@ -89,23 +109,28 @@ export function isSignalAspect(value: unknown): value is SignalAspect {
   return typeof value === "string" && (SIGNAL_ASPECTS as readonly string[]).includes(value);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function getConditionId(
   condition: RawCondition,
   groupIndex: number,
   ruleIndex: number,
   conditionIndex: number
 ): string {
-  return typeof condition?.id === "string" && condition.id.length > 0
+  return typeof condition.id === "string" && condition.id.length > 0
     ? condition.id
     : `signal-condition-${groupIndex + 1}-${ruleIndex + 1}-${conditionIndex + 1}`;
 }
 
 function normalizeCondition(
-  condition: RawCondition,
+  input: unknown,
   groupIndex: number,
   ruleIndex: number,
   conditionIndex: number
 ): SignalLogicConditionDto {
+  const condition: RawCondition = isRecord(input) ? input : {};
   const id = getConditionId(
     condition,
     groupIndex,
@@ -113,7 +138,7 @@ function normalizeCondition(
     conditionIndex
   );
 
-  if (condition?.type === "sensor") {
+  if (condition.type === "sensor") {
     return {
       id,
       type: "sensor",
@@ -127,54 +152,62 @@ function normalizeCondition(
   return {
     id,
     type: "turnout",
-    turnoutAddress: Number.isFinite(Number(condition?.turnoutAddress))
+    turnoutAddress: Number.isFinite(Number(condition.turnoutAddress))
       ? Number(condition.turnoutAddress)
       : 0,
-    closed: Boolean(condition?.closed),
+    closed: Boolean(condition.closed),
   };
 }
 
 export function normalizeSignalLogicDocument(input: unknown): SignalLogicDocumentDto {
-  if (typeof input !== "object" || input === null) {
+  if (!isRecord(input)) {
     return DEFAULT_SIGNAL_LOGIC_DOCUMENT;
   }
 
-  const raw = input as Partial<SignalLogicDocumentDto>;
+  const raw = input as { groups?: unknown };
   const groups = Array.isArray(raw.groups) ? raw.groups : [];
 
   return {
     version: 1,
-    groups: groups.map((group, groupIndex) => ({
-      id: typeof group?.id === "string" && group.id.length > 0
-        ? group.id
-        : `signal-group-${groupIndex + 1}`,
-      signalAddress: Number.isFinite(Number(group?.signalAddress))
-        ? Number(group?.signalAddress)
-        : 0,
-      defaultAspect: isSignalAspect(group?.defaultAspect)
-        ? group.defaultAspect
-        : "red",
-      rules: Array.isArray(group?.rules)
-        ? group.rules.map((rule, ruleIndex) => ({
-            id: typeof rule?.id === "string" && rule.id.length > 0
+    groups: groups.map((groupInput, groupIndex) => {
+      const group: RawGroup = isRecord(groupInput) ? groupInput : {};
+      const rules = Array.isArray(group.rules) ? group.rules : [];
+
+      return {
+        id: typeof group.id === "string" && group.id.length > 0
+          ? group.id
+          : `signal-group-${groupIndex + 1}`,
+        signalAddress: Number.isFinite(Number(group.signalAddress))
+          ? Number(group.signalAddress)
+          : 0,
+        defaultAspect: isSignalAspect(group.defaultAspect)
+          ? group.defaultAspect
+          : "red",
+        rules: rules.map((ruleInput, ruleIndex) => {
+          const rule: RawRule = isRecord(ruleInput) ? ruleInput : {};
+          const conditions = Array.isArray(rule.conditions)
+            ? rule.conditions
+            : [];
+
+          return {
+            id: typeof rule.id === "string" && rule.id.length > 0
               ? rule.id
               : `signal-rule-${groupIndex + 1}-${ruleIndex + 1}`,
-            aspect: isSignalAspect(rule?.aspect)
+            aspect: isSignalAspect(rule.aspect)
               ? rule.aspect
               : "red",
-            conditions: Array.isArray(rule?.conditions)
-              ? rule.conditions.map((condition, conditionIndex) =>
-                  normalizeCondition(
-                    condition as RawCondition,
-                    groupIndex,
-                    ruleIndex,
-                    conditionIndex
-                  )
-                )
-              : [],
-          }))
-        : [],
-    })),
+            conditions: conditions.map((condition, conditionIndex) =>
+              normalizeCondition(
+                condition,
+                groupIndex,
+                ruleIndex,
+                conditionIndex
+              )
+            ),
+          };
+        }),
+      };
+    }),
   };
 }
 
