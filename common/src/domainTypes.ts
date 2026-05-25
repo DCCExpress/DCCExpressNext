@@ -49,6 +49,11 @@ export type LocoAction =
     }
   | {
       id: string;
+      type: "playAudio";
+      fileName: string;
+    }
+  | {
+      id: string;
       type: "wait";
       ms: number;
     };
