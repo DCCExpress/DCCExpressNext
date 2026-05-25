@@ -10,6 +10,7 @@ import {
   IconSun,
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import LanguageSelector from "../../components/common/LanguageSelector";
 import TrainIcon from "../../icons/TrainIcon";
 
 type RightToolbarActionsProps = {
@@ -43,6 +44,8 @@ export default function RightToolbarActions({
           <IconMoon size={18} />
         )}
       </ActionIcon>
+
+      <LanguageSelector variant="subtle" size="lg" />
 
       <Tooltip
         label={
