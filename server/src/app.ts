@@ -5,7 +5,7 @@ import express, {
 } from "express";
 import cors from "cors";
 import path from "node:path";
-import { clientDir } from "./paths.js";
+import { clientDir, mobileDir } from "./paths.js";
 import { logError } from "./utility.js";
 
 export const app = express();
@@ -48,7 +48,14 @@ app.use("/api", (_req, res) => {
   });
 });
 
-// production frontend
+// production mobile frontend
+app.use("/mobile", express.static(mobileDir));
+
+app.get(/^\/mobile(?:\/.*)?$/, (_req, res) => {
+  res.sendFile(path.join(mobileDir, "index.html"));
+});
+
+// production desktop frontend
 app.use(express.static(clientDir));
 
 app.get(/.*/, (_req, res) => {
