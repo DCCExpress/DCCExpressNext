@@ -68,7 +68,7 @@ function openMobileClient(): void {
   window.location.assign(url);
 }
 
-export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePageProps) {
+export default function HomePage({ onOpenLayout }: HomePageProps) {
   const { t } = useTranslation();
 
   const cards: HomeCardItem[] = [
@@ -81,15 +81,15 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
       icon: <IconMap2 size={18} />,
       onClick: onOpenLayout,
       disabled: false,
-    }, {
+    },
+    {
       key: "programmer",
       title: t("home.cards.programmer.title"),
       description: t("home.cards.programmer.description"),
       image: "/images/programmer-card.png",
       buttonLabel: t("home.comingSoon"),
       icon: <IconTool size={18} />,
-      onClick: onOpenProgrammer,
-      disabled: false,
+      disabled: true,
     },
     {
       key: "mobile",
