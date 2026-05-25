@@ -1,7 +1,7 @@
 {
   "signalLogic": {
-    "menu": "Jelzőlogika...",
-    "title": "Jelzőlogika szerkesztő",
+    "menu": "Jelzővezérlés...",
+    "title": "Jelzővezérlés szerkesztő",
     "tabs": {
       "rules": "Szabályok",
       "preview": "Élő előnézet",
@@ -28,11 +28,11 @@
     "state": "Állapot",
     "selectTurnout": "Válassz váltót",
     "selectSensor": "Válassz érzékelőt",
-    "loading": "Jelzőlogika szabályok betöltése...",
-    "loaded": "Jelzőlogika szabályok betöltve.",
-    "saved": "Jelzőlogika szabályok mentve.",
-    "started": "A jelzőlogika aktív.",
-    "stopped": "A jelzőlogika inaktív.",
+    "loading": "Jelzővezérlés szabályok betöltése...",
+    "loaded": "Jelzővezérlés szabályok betöltve.",
+    "saved": "Jelzővezérlés szabályok mentve.",
+    "started": "A jelzővezérlés aktív.",
+    "stopped": "A jelzővezérlés inaktív.",
     "autostartSaved": "Automatikus indítás beállítása mentve.",
     "createdWarning": "Még nem létezett signal-rules.json fájl. A rendszer létrehozott egy üres fájlt, és ide fogja menteni a szabályokat.",
     "scriptDescription": "Ez a vizuális szabályokból generált előnézet. Független a script engine-től, és jelenleg csak ellenőrző nézet.",
