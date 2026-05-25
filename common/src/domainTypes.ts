@@ -60,6 +60,24 @@ export type LocoAction =
 
 export type LocoActionHooks = Partial<Record<LocoActionHook, LocoAction[]>>;
 
+export type BlockActionHook =
+  | "onTrainEnter"
+  | "onTrainLeave";
+
+export type BlockAction =
+  | {
+      id: string;
+      type: "playAudio";
+      fileName: string;
+    }
+  | {
+      id: string;
+      type: "wait";
+      ms: number;
+    };
+
+export type BlockActionHooks = Partial<Record<BlockActionHook, BlockAction[]>>;
+
 export type Loco = {
   id: string;
   name: string;
