@@ -24,6 +24,8 @@ import { useTranslation } from "react-i18next";
 import LanguageSelector from "../components/common/LanguageSelector";
 
 const HERO_BACKGROUND_IMAGE = "/images/home-hero.png";
+const CARD_IMAGE_FADE_MASK =
+  "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) calc(100% - 42px), rgba(0,0,0,0) 100%)";
 
 type HomePageProps = {
   onOpenLayout: () => void;
@@ -202,6 +204,11 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                     fallbackSrc={`https://placehold.co/800x450?text=${encodeURIComponent(
                       item.title
                     )}`}
+                    style={{
+                      display: "block",
+                      WebkitMaskImage: CARD_IMAGE_FADE_MASK,
+                      maskImage: CARD_IMAGE_FADE_MASK,
+                    }}
                   />
                   <Box
                     style={{
@@ -209,7 +216,7 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
                       inset: 0,
                       pointerEvents: "none",
                       background:
-                        "linear-gradient(180deg, transparent 36%, rgba(8, 22, 39, 0.18) 58%, rgba(6, 16, 31, 0.62) 82%, rgba(6, 16, 31, 0.94) 100%), radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.14) 0%, transparent 48%)",
+                        "radial-gradient(circle at 50% 0%, rgba(90, 200, 255, 0.14) 0%, transparent 48%)",
                     }}
                   />
                 </Card.Section>
