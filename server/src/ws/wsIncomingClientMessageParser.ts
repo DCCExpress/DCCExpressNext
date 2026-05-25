@@ -14,6 +14,7 @@ import type {
   ReservationOwnerType,
   ScriptDocumentCommandAction,
   ScriptRunSource,
+  SignalLogicCommandAction,
   TaskManagerCommandAction,
 } from "../../../common/src/types.js";
 
@@ -65,6 +66,10 @@ function isCommandCenterConfigCommandAction(value: unknown): value is CommandCen
 }
 
 function isAppSettingsCommandAction(value: unknown): value is AppSettingsCommandAction {
+  return value === "load" || value === "save";
+}
+
+function isSignalLogicCommandAction(value: unknown): value is SignalLogicCommandAction {
   return value === "load" || value === "save";
 }
 
@@ -302,6 +307,14 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (!isAppSettingsCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (data.action === "save" && !isRecord(data.settings)) return invalidPayload(type, "settings must be an object for save.");
       return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.settings) ? { settings: data.settings } : {}) } as ClientWsPayloadMap[TType] };
+    }
+
+    case "signalLogicCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isSignalLogicCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+      if (data.action === "save" && !isRecord(data.document)) return invalidPayload(type, "document must be an object for save.");
+      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.document) ? { document: data.document } : {}) } as ClientWsPayloadMap[TType] };
     }
 
     case "taskManagerCommand":
