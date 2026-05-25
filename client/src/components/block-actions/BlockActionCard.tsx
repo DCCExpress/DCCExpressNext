@@ -1,3 +1,5 @@
+import type { DragEvent } from "react";
+
 import {
   ActionIcon,
   Badge,
@@ -14,6 +16,7 @@ import {
   IconArrowDown,
   IconArrowUp,
   IconFolderOpen,
+  IconGripVertical,
   IconPlayerPlayFilled,
   IconTrash,
 } from "@tabler/icons-react";
@@ -31,6 +34,10 @@ type BlockActionCardProps = {
   action: BlockAction;
   actionIndex: number;
   actionCount: number;
+  draggedActionId: string | null;
+  onDragStart: (event: DragEvent<HTMLDivElement>, actionId: string) => void;
+  onDragEnd: () => void;
+  onDragOverAction: (event: DragEvent<HTMLDivElement>, actionId: string, actionIndex: number) => void;
   onMoveByOffset: (actionId: string, offset: number) => void;
   onUpdateAction: (actionId: string, nextAction: BlockAction) => void;
   onDeleteAction: (actionId: string) => void;
@@ -40,6 +47,10 @@ export default function BlockActionCard({
   action,
   actionIndex,
   actionCount,
+  draggedActionId,
+  onDragStart,
+  onDragEnd,
+  onDragOverAction,
   onMoveByOffset,
   onUpdateAction,
   onDeleteAction,
@@ -49,12 +60,32 @@ export default function BlockActionCard({
   };
 
   return (
-    <Card withBorder p="sm">
+    <Card
+      withBorder
+      p="sm"
+      draggable
+      onDragStart={event => onDragStart(event, action.id)}
+      onDragEnd={onDragEnd}
+      onDragOver={event => onDragOverAction(event, action.id, actionIndex)}
+      style={{
+        opacity: draggedActionId === action.id ? 0.35 : 1,
+        transition: "opacity 120ms ease, transform 120ms ease",
+      }}
+    >
       <Stack gap="sm">
         <Group justify="space-between" wrap="nowrap">
           <Group gap="xs" wrap="nowrap">
-            <Badge variant="filled" color="blue" miw={34} ta="center">
-              #{actionIndex + 1}
+            <ActionIcon variant="subtle" color="gray" style={{ cursor: "grab", touchAction: "none" }}>
+              <IconGripVertical size={18} />
+            </ActionIcon>
+
+            <Badge
+              variant="filled"
+              color={draggedActionId === action.id ? "orange" : "blue"}
+              miw={draggedActionId === action.id ? 58 : 34}
+              ta="center"
+            >
+              {draggedActionId === action.id ? `→ #${actionIndex + 1}` : `#${actionIndex + 1}`}
             </Badge>
             <Badge variant="light">{getBlockActionSummary(action)}</Badge>
           </Group>
