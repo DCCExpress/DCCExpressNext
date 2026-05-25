@@ -22,6 +22,8 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../components/common/LanguageSelector";
 
+const HERO_BACKGROUND_IMAGE = "/images/home-hero.png";
+
 type HomePageProps = {
   onOpenLayout: () => void;
   onOpenProgrammer: () => void;
@@ -82,9 +84,11 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
           style={{
             position: "relative",
             overflow: "hidden",
-            minHeight: 230,
-            background:
-              "linear-gradient(135deg, rgba(34,139,230,0.14) 0%, rgba(64,192,87,0.10) 100%)",
+            minHeight: 360,
+            backgroundImage: `linear-gradient(90deg, rgba(5, 13, 27, 0.96) 0%, rgba(5, 13, 27, 0.86) 34%, rgba(5, 13, 27, 0.34) 67%, rgba(5, 13, 27, 0.18) 100%), url(${HERO_BACKGROUND_IMAGE})`,
+            backgroundPosition: "center",
+            backgroundSize: "cover",
+            boxShadow: "var(--mantine-shadow-lg)",
           }}
         >
           <Paper
@@ -105,9 +109,12 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
 
           <Stack
             gap="md"
+            justify="center"
             style={{
               position: "relative",
               zIndex: 1,
+              minHeight: 300,
+              maxWidth: 760,
               paddingRight: 96,
             }}
           >
@@ -115,7 +122,7 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
               DCCExpress
             </Badge>
 
-            <Title order={1}>
+            <Title order={1} c="white">
               {t("home.heroTitle").split("\n").map((line, index) => (
                 <span key={line}>
                   {line}
@@ -124,7 +131,7 @@ export default function HomePage({ onOpenLayout, onOpenProgrammer }: HomePagePro
               ))}
             </Title>
 
-            <Text size="lg" c="dimmed" maw={760}>
+            <Text size="lg" c="gray.3" maw={720}>
               {t("home.heroDescription")}
             </Text>
 
