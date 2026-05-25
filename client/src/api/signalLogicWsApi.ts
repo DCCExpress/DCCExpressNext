@@ -2,6 +2,7 @@
 
 import type {
   SignalLogicDocumentDto,
+  SignalLogicRuntimeStateDto,
   SignalLogicValidationIssue,
 } from "../../../common/src/signalLogic";
 
@@ -13,16 +14,20 @@ export type SignalLogicLoadResult = {
   document: SignalLogicDocumentDto;
   issues: SignalLogicValidationIssue[];
   created: boolean;
+  state: SignalLogicRuntimeStateDto;
+  message?: string;
+};
+
+type SignalLogicResponse = {
+  document?: SignalLogicDocumentDto;
+  issues?: SignalLogicValidationIssue[];
+  created?: boolean;
+  state?: SignalLogicRuntimeStateDto;
   message?: string;
 };
 
 function toSignalLogicLoadResult(
-  response: {
-    document?: SignalLogicDocumentDto;
-    issues?: SignalLogicValidationIssue[];
-    created?: boolean;
-    message?: string;
-  }
+  response: SignalLogicResponse
 ): SignalLogicLoadResult {
   if (!response.document) {
     throw new Error("Missing signal logic document in response.");
@@ -32,35 +37,85 @@ function toSignalLogicLoadResult(
     document: response.document,
     issues: response.issues ?? [],
     created: response.created ?? false,
+    state: response.state ?? {
+      running: false,
+      autostart: response.document.autostart,
+    },
     ...(response.message
       ? { message: response.message }
       : {}),
   };
 }
 
-export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
+async function requestSignalLogic(
+  action: "load" | "save" | "start" | "stop" | "state" | "setAutostart",
+  data: {
+    document?: SignalLogicDocumentDto;
+    autostart?: boolean;
+  } = {},
+  errorMessage = "Signal logic command failed."
+): Promise<SignalLogicLoadResult> {
   const response = await requestWsCommand(
     "signalLogicCommand",
-    { action: "load" },
+    {
+      action,
+      ...data,
+    },
     "signalLogicResponse",
-    "Could not load signal logic rules."
+    errorMessage
   );
 
   return toSignalLogicLoadResult(response);
 }
 
+export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
+  return requestSignalLogic(
+    "load",
+    {},
+    "Could not load signal logic rules."
+  );
+}
+
 export async function saveSignalLogicRulesWs(
   document: SignalLogicDocumentDto
 ): Promise<SignalLogicLoadResult> {
-  const response = await requestWsCommand(
-    "signalLogicCommand",
-    {
-      action: "save",
-      document,
-    },
-    "signalLogicResponse",
+  return requestSignalLogic(
+    "save",
+    { document },
     "Could not save signal logic rules."
   );
+}
 
-  return toSignalLogicLoadResult(response);
+export async function getSignalLogicRuntimeStateWs(): Promise<SignalLogicLoadResult> {
+  return requestSignalLogic(
+    "state",
+    {},
+    "Could not get signal logic runtime state."
+  );
+}
+
+export async function startSignalLogicWs(): Promise<SignalLogicLoadResult> {
+  return requestSignalLogic(
+    "start",
+    {},
+    "Could not start signal logic."
+  );
+}
+
+export async function stopSignalLogicWs(): Promise<SignalLogicLoadResult> {
+  return requestSignalLogic(
+    "stop",
+    {},
+    "Could not stop signal logic."
+  );
+}
+
+export async function setSignalLogicAutostartWs(
+  autostart: boolean
+): Promise<SignalLogicLoadResult> {
+  return requestSignalLogic(
+    "setAutostart",
+    { autostart },
+    "Could not update signal logic autostart."
+  );
 }
