@@ -33,6 +33,11 @@ export default function LayoutPage({
   const [locoDialogOpened, setLocoDialogOpened] =
     useState(false);
 
+  const [
+    signalLogicDialogOpened,
+    setSignalLogicDialogOpened,
+  ] = useState(false);
+
   const [locos, setLocos] =
     useState<Loco[]>([]);
 
@@ -232,6 +237,12 @@ export default function LayoutPage({
       locoDialogOpened={locoDialogOpened}
       setLocoDialogOpened={
         setLocoDialogOpened
+      }
+      signalLogicDialogOpened={
+        signalLogicDialogOpened
+      }
+      setSignalLogicDialogOpened={
+        setSignalLogicDialogOpened
       }
       onLocosSaved={loadLocos}
       pickerOpened={pickerOpened}
