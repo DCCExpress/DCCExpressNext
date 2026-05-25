@@ -14,7 +14,10 @@ import {
   Text,
 } from "@mantine/core";
 
-import { IconPlus } from "@tabler/icons-react";
+import {
+  IconPlayerPlay,
+  IconPlus,
+} from "@tabler/icons-react";
 
 import type {
   Loco,
@@ -22,6 +25,7 @@ import type {
   LocoActionHook,
 } from "../../../../common/src/types";
 
+import { wsApi } from "../../services/wsApi";
 import LocoActionCard from "./LocoActionCard";
 import {
   ACTION_HOOKS,
@@ -47,6 +51,9 @@ type LocoActionsTabProps = {
   ) => void;
 };
 
+const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => window.setTimeout(resolve, Math.max(0, ms)));
+
 export default function LocoActionsTab({
   selectedLoco,
   activeActionHook,
@@ -55,6 +62,8 @@ export default function LocoActionsTab({
   onUpdateActionsForHook,
 }: LocoActionsTabProps) {
   const [draggedActionId, setDraggedActionId] = useState<string | null>(null);
+  const [testingHook, setTestingHook] = useState<LocoActionHook | null>(null);
+  const [testMessage, setTestMessage] = useState("");
 
   const selectedHookInfo = useMemo(
     () => ACTION_HOOKS.find(item => item.value === activeActionHook) ?? ACTION_HOOKS[0]!,
@@ -149,6 +158,57 @@ export default function LocoActionsTab({
     setDraggedActionId(null);
   };
 
+  const runActionListTest = async (hook: LocoActionHook): Promise<void> => {
+    const actions = getLocoActions(selectedLoco, hook);
+
+    if (actions.length === 0) {
+      setTestMessage("Nincs mit tesztelni ebben a listában.");
+      return;
+    }
+
+    try {
+      setTestingHook(hook);
+      setTestMessage(`Teszt fut: ${actions.length} lépés...`);
+
+      for (const action of actions) {
+        switch (action.type) {
+          case "setFunction":
+            await wsApi.setLocoFunction(
+              selectedLoco.address,
+              action.functionNumber,
+              action.active
+            );
+            break;
+
+          case "momentaryFunction":
+            await wsApi.setLocoFunction(
+              selectedLoco.address,
+              action.functionNumber,
+              true
+            );
+            await sleep(action.ms);
+            await wsApi.setLocoFunction(
+              selectedLoco.address,
+              action.functionNumber,
+              false
+            );
+            break;
+
+          case "wait":
+            await sleep(action.ms);
+            break;
+        }
+      }
+
+      setTestMessage("Teszt kész.");
+    } catch (error) {
+      console.error(error);
+      setTestMessage("A teszt közben hiba történt.");
+    } finally {
+      setTestingHook(null);
+    }
+  };
+
   return (
     <Stack h="100%" gap="sm">
       <Tabs
@@ -173,9 +233,25 @@ export default function LocoActionsTab({
             <Stack gap={2}>
               <Text fw={600}>{selectedHookInfo.label}</Text>
               <Text size="sm" c="dimmed">{selectedHookInfo.description}</Text>
+              {testMessage && (
+                <Text size="xs" c={testMessage.includes("hiba") ? "red" : "dimmed"}>
+                  {testMessage}
+                </Text>
+              )}
             </Stack>
 
             <Group gap="xs">
+              <Button
+                size="xs"
+                variant="light"
+                color="green"
+                leftSection={<IconPlayerPlay size={14} />}
+                loading={testingHook === activeActionHook}
+                disabled={testingHook !== null || getLocoActions(selectedLoco, activeActionHook).length === 0}
+                onClick={() => void runActionListTest(activeActionHook)}
+              >
+                Test list
+              </Button>
               <Button
                 size="xs"
                 variant="light"
