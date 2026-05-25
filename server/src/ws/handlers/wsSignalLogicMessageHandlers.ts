@@ -38,18 +38,21 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
       case "load": {
         const initializeResult = await signalLogicRulesStore.initialize();
         const document = signalLogicRulesStore.getDocument();
-
-        sendSignalLogicResponse(context, {
+        const payload: SignalLogicResponsePayload = {
           requestId,
           action,
           ok: true,
           document,
           issues: validateSignalLogicDocument(document),
           created: initializeResult.created,
-          message: initializeResult.created
-            ? "Signal rules file did not exist, so an empty one was created."
-            : undefined,
-        });
+          ...(initializeResult.created
+            ? {
+                message: "Signal rules file did not exist, so an empty one was created.",
+              }
+            : {}),
+        };
+
+        sendSignalLogicResponse(context, payload);
 
         return true;
       }
