@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Card,
+  Code,
   Container,
   Group,
   Image,
@@ -22,6 +23,7 @@ import {
   IconTool,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../components/common/LanguageSelector";
 import "../styles/global.css";
@@ -57,8 +59,23 @@ type HomeCardItem = {
   image: string;
   buttonLabel: string;
   icon: ReactNode;
+  url?: string;
   onClick?: () => void;
   disabled?: boolean;
+};
+
+type NetworkUrlInfo = {
+  name: string;
+  address: string;
+  desktop: string;
+  mobile: string;
+};
+
+type NetworkInfoResponse = {
+  ok: boolean;
+  hostName?: string;
+  port?: number;
+  urls?: NetworkUrlInfo[];
 };
 
 function normalizeLanguage(language: string): string {
@@ -71,12 +88,20 @@ function normalizeLanguage(language: string): string {
   return "en";
 }
 
-function openMobileClient(language: string): void {
-  const protocol = window.location.protocol;
+function withLanguage(url: string, language: string): string {
+  const separator = url.includes("?") ? "&" : "?";
   const lang = encodeURIComponent(normalizeLanguage(language));
-  const url = `${protocol}//${window.location.hostname}:3000/mobile/?lang=${lang}`;
 
-  window.location.assign(url);
+  return `${url}${separator}lang=${lang}`;
+}
+
+function createFallbackDesktopUrl(): string {
+  const protocol = window.location.protocol;
+  return `${protocol}//${window.location.hostname}:3000/`;
+}
+
+function createFallbackMobileUrl(language: string): string {
+  return withLanguage(`${createFallbackDesktopUrl()}mobile/`, language);
 }
 
 function activateCard(item: HomeCardItem): void {
@@ -89,6 +114,48 @@ function activateCard(item: HomeCardItem): void {
 
 export default function HomePage({ onOpenLayout }: HomePageProps) {
   const { t, i18n } = useTranslation();
+  const [networkUrls, setNetworkUrls] = useState<NetworkUrlInfo[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadNetworkInfo(): Promise<void> {
+      try {
+        const response = await fetch("/api/network");
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json() as NetworkInfoResponse;
+
+        if (!alive || !data.ok) {
+          return;
+        }
+
+        setNetworkUrls(data.urls ?? []);
+      } catch (error) {
+        console.warn("Could not load network info.", error);
+      }
+    }
+
+    void loadNetworkInfo();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const primaryUrls = useMemo(() => {
+    const primary = networkUrls[0];
+    const desktop = primary?.desktop ?? createFallbackDesktopUrl();
+    const mobileBase = primary?.mobile ?? `${createFallbackDesktopUrl()}mobile/`;
+
+    return {
+      desktop,
+      mobile: withLanguage(mobileBase, i18n.language),
+    };
+  }, [networkUrls, i18n.language]);
 
   const cards: HomeCardItem[] = [
     {
@@ -98,6 +165,7 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
       image: "/images/layout-card.png",
       buttonLabel: t("home.cards.layout.button"),
       icon: <IconMap2 size={18} />,
+      url: primaryUrls.desktop,
       onClick: onOpenLayout,
       disabled: false,
     },
@@ -117,7 +185,8 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
       image: "/images/mobile-card.png",
       buttonLabel: "Open mobile",
       icon: <IconDeviceMobile size={18} />,
-      onClick: () => openMobileClient(i18n.language),
+      url: primaryUrls.mobile,
+      onClick: () => window.location.assign(primaryUrls.mobile),
       disabled: false,
     },
   ];
@@ -214,15 +283,21 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                 {t("home.heroDescription")}
               </Text>
 
-              <Group>
-                <Button
-                  size="md"
-                  rightSection={<IconArrowRight size={16} />}
-                  onClick={onOpenLayout}
-                >
-                  {t("home.startLayout")}
-                </Button>
-              </Group>
+              <Stack gap="xs">
+                <Group>
+                  <Button
+                    size="md"
+                    rightSection={<IconArrowRight size={16} />}
+                    onClick={onOpenLayout}
+                  >
+                    {t("home.startLayout")}
+                  </Button>
+                </Group>
+
+                <Text size="xs" c="gray.4">
+                  LAN desktop URL: <Code>{primaryUrls.desktop}</Code>
+                </Text>
+              </Stack>
             </Stack>
           </Paper>
 
@@ -320,6 +395,30 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
                       {item.description}
                     </Text>
 
+                    {item.url && (
+                      <Box
+                        p="xs"
+                        style={{
+                          border: "1px solid rgba(120, 220, 255, 0.14)",
+                          borderRadius: 8,
+                          background: "rgba(0, 0, 0, 0.16)",
+                        }}
+                      >
+                        <Text size="xs" c="dimmed" mb={4}>
+                          Full URL
+                        </Text>
+                        <Code
+                          block
+                          style={{
+                            whiteSpace: "normal",
+                            wordBreak: "break-all",
+                          }}
+                        >
+                          {item.url}
+                        </Code>
+                      </Box>
+                    )}
+
                     <Button
                       variant={item.disabled ? "default" : "light"}
                       fullWidth
@@ -340,6 +439,28 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
               );
             })}
           </SimpleGrid>
+
+          {networkUrls.length > 1 && (
+            <Paper
+              radius="lg"
+              p="md"
+              withBorder
+              style={{
+                background: "rgba(4, 12, 24, 0.36)",
+                borderColor: "rgba(120, 220, 255, 0.16)",
+              }}
+            >
+              <Stack gap="xs">
+                <Text fw={700}>Detected LAN addresses</Text>
+                {networkUrls.map(item => (
+                  <Group key={`${item.name}-${item.address}`} justify="space-between" gap="xs">
+                    <Badge variant="light">{item.name}</Badge>
+                    <Code style={{ wordBreak: "break-all" }}>{item.mobile}</Code>
+                  </Group>
+                ))}
+              </Stack>
+            </Paper>
+          )}
 
           <Paper
             radius="lg"
