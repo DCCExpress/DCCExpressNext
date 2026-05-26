@@ -59,6 +59,10 @@ import {
 } from "../../models/editor/elements/TrackSignalElementView";
 
 import {
+  TrackLevelCrossingElementView,
+} from "../../models/editor/elements/TrackLevelCrossingElementView";
+
+import {
   BlockElementView,
 } from "../../models/editor/elements/BlockElementView";
 
@@ -252,16 +256,28 @@ export function useLayoutRuntimeWsBindings({
           let changed = false;
 
           for (const element of elements) {
-            if (!(element instanceof TrackSignalElementView)) {
+            if (element instanceof TrackSignalElementView) {
+              if (
+                element.address <= data.address &&
+                element.lastAddress >= data.address
+              ) {
+                element.setValue(data.address, data.active);
+                changed = true;
+              }
+
               continue;
             }
 
-            if (
-              element.address <= data.address &&
-              element.lastAddress >= data.address
-            ) {
-              element.setValue(data.address, data.active);
-              changed = true;
+            if (element instanceof TrackLevelCrossingElementView) {
+              if (element.basicAccessoryAddress === data.address) {
+                const nextClosed =
+                  data.active === element.basicAccessoryClosedValue;
+
+                if (element.barrierClosed !== nextClosed) {
+                  element.barrierClosed = nextClosed;
+                  changed = true;
+                }
+              }
             }
           }
 
