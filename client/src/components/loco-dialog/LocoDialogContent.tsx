@@ -2,11 +2,14 @@ import {
   Card,
   Group,
   NumberInput,
+  Select,
   Stack,
   Tabs,
   Text,
+  TextInput,
 } from "@mantine/core";
 
+import type { LocoOccupancyDetectionPosition, LocoTrainType } from "../../../../common/src/types";
 import LocoActionsTab from "./LocoActionsTab";
 import LocoFunctionsTab from "./LocoFunctionsTab";
 import LocoGeneralTab from "./LocoGeneralTab";
@@ -19,6 +22,29 @@ type LocoDialogState = ReturnType<typeof useLocoDialogState>;
 type LocoDialogContentProps = {
   state: LocoDialogState;
   t: TFunction;
+};
+
+const TRAIN_TYPE_OPTIONS: LocoTrainType[] = [
+  "passenger",
+  "freight",
+  "mixed",
+  "maintenance",
+  "other",
+];
+
+const OCCUPANCY_DETECTION_POSITION_OPTIONS: LocoOccupancyDetectionPosition[] = [
+  "forward",
+  "reverse",
+  "both",
+];
+
+const formatDateTime = (value: string | undefined): string => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString();
 };
 
 export default function LocoDialogContent({
@@ -44,6 +70,16 @@ export default function LocoDialogContent({
     setImageFromFile,
   } = state;
 
+  const trainTypeOptions = TRAIN_TYPE_OPTIONS.map(value => ({
+    value,
+    label: t(`locodialog.trainTypes.${value}`),
+  }));
+
+  const occupancyDetectionPositionOptions = OCCUPANCY_DETECTION_POSITION_OPTIONS.map(value => ({
+    value,
+    label: t(`locodialog.occupancyDetectionPositions.${value}`),
+  }));
+
   return (
     <Group align="stretch" gap="md" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
       <LocoListPanel
@@ -64,10 +100,10 @@ export default function LocoDialogContent({
         ) : (
           <Tabs defaultValue="general" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
             <Tabs.List>
-              <Tabs.Tab value="general">General</Tabs.Tab>
-              <Tabs.Tab value="functions">Functions</Tabs.Tab>
-              <Tabs.Tab value="actions">Actions</Tabs.Tab>
-              <Tabs.Tab value="extended">Extended params</Tabs.Tab>
+              <Tabs.Tab value="general">{t("locodialog.tabs.general")}</Tabs.Tab>
+              <Tabs.Tab value="functions">{t("locodialog.tabs.functions")}</Tabs.Tab>
+              <Tabs.Tab value="actions">{t("locodialog.tabs.actions")}</Tabs.Tab>
+              <Tabs.Tab value="extended">{t("locodialog.extended_params")}</Tabs.Tab>
             </Tabs.List>
 
             <Tabs.Panel value="general" pt="md" style={{ flex: 1, minHeight: 0 }}>
@@ -101,12 +137,37 @@ export default function LocoDialogContent({
             </Tabs.Panel>
 
             <Tabs.Panel value="extended" pt="md">
-              <NumberInput
-                label={t("locodialog.loco_length_mm")}
-                value={selectedLoco.length}
-                min={1}
-                onChange={value => updateSelectedLoco({ length: Number(value) || 0 })}
-              />
+              <Stack gap="md" maw={520}>
+                <NumberInput
+                  label={t("locodialog.loco_length_mm")}
+                  value={selectedLoco.length}
+                  min={1}
+                  onChange={value => updateSelectedLoco({ length: Number(value) || 0 })}
+                />
+
+                <Select
+                  label={t("locodialog.train_type")}
+                  data={trainTypeOptions}
+                  value={selectedLoco.trainType ?? "passenger"}
+                  allowDeselect={false}
+                  onChange={value => updateSelectedLoco({ trainType: (value ?? "passenger") as LocoTrainType })}
+                />
+
+                <Select
+                  label={t("locodialog.occupancy_detection_position")}
+                  data={occupancyDetectionPositionOptions}
+                  value={selectedLoco.occupancyDetectionPosition ?? "forward"}
+                  allowDeselect={false}
+                  onChange={value => updateSelectedLoco({ occupancyDetectionPosition: (value ?? "forward") as LocoOccupancyDetectionPosition })}
+                />
+
+                <TextInput
+                  label={t("locodialog.last_run_at")}
+                  value={formatDateTime(selectedLoco.lastRunAt)}
+                  placeholder={t("locodialog.last_run_at_empty")}
+                  readOnly
+                />
+              </Stack>
             </Tabs.Panel>
           </Tabs>
         )}
