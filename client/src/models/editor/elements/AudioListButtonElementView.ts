@@ -20,6 +20,7 @@ import type { IEditableProperty } from "./PropertyDescriptor";
 export type AudioListButtonItem = AudioListButtonItemDto;
 
 const AUDIO_LIST_POPUP_ID = "dcc-audio-list-button-popup";
+const AUDIO_LIST_PLAY_BUTTON_SELECTOR = "[data-audio-list-play-id]";
 
 let removeAudioListPopupListeners: (() => void) | null = null;
 
@@ -92,13 +93,46 @@ export class AudioListButtonElementView
     document.getElementById(AUDIO_LIST_POPUP_ID)?.remove();
   }
 
+  private stylePlayButton(
+    play: HTMLButtonElement,
+    active: boolean
+  ): void {
+    play.style.background = active
+      ? "var(--mantine-primary-color-filled, #228be6)"
+      : "var(--mantine-color-default, #f1f3f5)";
+    play.style.color = active
+      ? "white"
+      : "inherit";
+  }
+
+  private updateRuntimePopupActiveStates(): void {
+    const popup = document.getElementById(AUDIO_LIST_POPUP_ID);
+
+    if (!popup) {
+      return;
+    }
+
+    const buttons = popup.querySelectorAll<HTMLButtonElement>(
+      AUDIO_LIST_PLAY_BUTTON_SELECTOR
+    );
+
+    buttons.forEach(button => {
+      this.stylePlayButton(
+        button,
+        button.dataset.audioListPlayId === this.activeItemId
+      );
+    });
+  }
+
   private showRuntimePopup(clientX: number, clientY: number): void {
+    void clientX;
     this.closeRuntimePopup();
 
     const popup = document.createElement("div");
     popup.id = AUDIO_LIST_POPUP_ID;
     popup.style.position = "fixed";
-    popup.style.left = `${clientX + 12}px`;
+    popup.style.left = "50%";
+    popup.style.transform = "translateX(-50%)";
     popup.style.top = `${clientY + 12}px`;
     popup.style.minWidth = "280px";
     popup.style.maxWidth = "380px";
@@ -120,11 +154,43 @@ export class AudioListButtonElementView
       event.stopPropagation();
     });
 
+    const header = document.createElement("div");
+    header.style.display = "grid";
+    header.style.gridTemplateColumns = "1fr auto";
+    header.style.alignItems = "center";
+    header.style.gap = "8px";
+    header.style.marginBottom = "8px";
+
     const title = document.createElement("div");
     title.textContent = this.label || "Audio list";
     title.style.fontWeight = "700";
-    title.style.marginBottom = "8px";
-    popup.appendChild(title);
+    title.style.overflow = "hidden";
+    title.style.textOverflow = "ellipsis";
+    title.style.whiteSpace = "nowrap";
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.textContent = "×";
+    closeButton.title = "Close";
+    closeButton.style.width = "28px";
+    closeButton.style.height = "28px";
+    closeButton.style.borderRadius = "8px";
+    closeButton.style.border = "1px solid rgba(128,128,128,0.35)";
+    closeButton.style.cursor = "pointer";
+    closeButton.style.background = "var(--mantine-color-default, #f1f3f5)";
+    closeButton.style.color = "inherit";
+    closeButton.style.fontSize = "18px";
+    closeButton.style.lineHeight = "18px";
+
+    closeButton.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeRuntimePopup();
+    });
+
+    header.appendChild(title);
+    header.appendChild(closeButton);
+    popup.appendChild(header);
 
     if (this.audioItems.length === 0) {
       const empty = document.createElement("div");
@@ -164,6 +230,7 @@ export class AudioListButtonElementView
 
         const play = document.createElement("button");
         play.type = "button";
+        play.dataset.audioListPlayId = item.id;
         play.textContent = "▶";
         play.title = "Play audio";
         play.style.width = "32px";
@@ -171,18 +238,14 @@ export class AudioListButtonElementView
         play.style.borderRadius = "8px";
         play.style.border = "1px solid rgba(128,128,128,0.35)";
         play.style.cursor = "pointer";
-        play.style.background = this.isItemActive(item)
-          ? "var(--mantine-primary-color-filled, #228be6)"
-          : "var(--mantine-color-default, #f1f3f5)";
-        play.style.color = this.isItemActive(item)
-          ? "white"
-          : "inherit";
+        this.stylePlayButton(play, this.isItemActive(item));
 
         play.addEventListener("click", event => {
           event.preventDefault();
           event.stopPropagation();
-          this.closeRuntimePopup();
-          this.playItem(item);
+          this.playItem(item, () => {
+            this.updateRuntimePopupActiveStates();
+          });
         });
 
         row.appendChild(text);
@@ -208,6 +271,7 @@ export class AudioListButtonElementView
     }, 0);
 
     document.body.appendChild(popup);
+    this.updateRuntimePopupActiveStates();
   }
 
   draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
