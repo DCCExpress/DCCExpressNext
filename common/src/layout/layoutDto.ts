@@ -19,6 +19,12 @@ export type RouteTurnoutItemDto = {
   closed: boolean;
 };
 
+export type AudioListButtonItemDto = {
+  id: string;
+  name: string;
+  fileName: string;
+};
+
 /**
  * A szenzor kind mezője jelenleg kliensoldali numerikus enumként él:
  *   0 = circle
@@ -89,6 +95,7 @@ export type SerializedLayoutElementDto = {
   fileName?: string;
   label?: string;
   script?: string;
+  audioItems?: AudioListButtonItemDto[];
 
   routeTurnouts?: RouteTurnoutItemDto[];
 
@@ -248,6 +255,12 @@ export interface AudioButtonElementDto extends BaseElementDto {
   label: string;
 }
 
+export interface AudioListButtonElementDto extends BaseElementDto {
+  type: "audiolistbutton";
+  label: string;
+  audioItems: AudioListButtonItemDto[];
+}
+
 export interface RouteButtonElementDto extends BaseElementDto {
   type: "routebutton";
   colorOn: string;
@@ -316,6 +329,7 @@ export type LayoutElementDto =
   | ButtonElementDto
   | ButtonScriptElementDto
   | AudioButtonElementDto
+  | AudioListButtonElementDto
   | RouteButtonElementDto
   | ExtendedRouteButtonElementDto
   | ClockElementDto
