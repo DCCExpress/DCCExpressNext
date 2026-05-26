@@ -237,7 +237,7 @@ export default function SystemTab(p: SystemTabProps) {
                 <Text size="sm" fw={700}>Client</Text>
                 <SmallRow label="JS memory" value={browserStats.memoryUsedMb} suffix=" MB" color={memColor(browserStats.memoryUsedMb)} />
                 <SmallRow label="FPS" value={browserStats.fps} color={fpsColor(browserStats.fps)} />
-                <SmallRow label="CPU threads" value={browserStats.cpuThreads} color="blue" />
+                {/* <SmallRow label="CPU threads" value={browserStats.cpuThreads} color="blue" /> */}
               </Stack>
               <Stack gap="xs">
                 <Text size="sm" fw={700}>Server</Text>

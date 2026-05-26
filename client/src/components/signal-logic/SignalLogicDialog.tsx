@@ -614,7 +614,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                           onClick={() => setSelectedGroupId(group.id)}
                         >
                           <span>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</span>
-                          <Badge size="xs" variant="light">{group.rules.length}</Badge>
+                          <Badge size="xs" bg="cyan" c="white" variant="light" m={5}>{group.rules.length}</Badge>
                         </Button>
                       ))}
                     </Stack>
