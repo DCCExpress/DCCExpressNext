@@ -1,10 +1,6 @@
 // common/src/layout/layoutDto.ts
 
 import type {
-  BlockActionHooks,
-} from "../domainTypes.js";
-
-import type {
   BlockType,
   ElementType,
 } from "./elementTypes.js";
@@ -102,7 +98,6 @@ export type SerializedLayoutElementDto = {
   locoAddress?: number;
   sensorAddress?: number;
   blockType?: BlockType | string;
-  actions?: BlockActionHooks;
 
   text?: string;
   fontSize?: number;
@@ -277,7 +272,6 @@ export interface BlockElementDto extends TrackElementDto {
   locoAddress: number;
   sensorAddress: number;
   blockType: BlockType;
-  actions?: BlockActionHooks;
 }
 
 export interface TreeElementDto extends BaseElementDto {
