@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 type MainMenuActionsProps = {
   onGoHome: () => void;
   onOpenLocos: () => void;
+  onOpenBlocks: () => void;
   onOpenSignalLogic: () => void;
   onOpenDiagnostics: () => void;
   onSaveLayout: () => void;
@@ -24,6 +25,7 @@ type MainMenuActionsProps = {
 export default function MainMenuActions({
   onGoHome,
   onOpenLocos,
+  onOpenBlocks,
   onOpenSignalLogic,
   onOpenDiagnostics,
   onSaveLayout,
@@ -92,6 +94,9 @@ export default function MainMenuActions({
         <Menu.Dropdown>
           <Menu.Item onClick={onOpenLocos}>
             {t("Locomotives") + "..."}
+          </Menu.Item>
+          <Menu.Item onClick={onOpenBlocks}>
+            {t("blockActions.menu") + "..."}
           </Menu.Item>
           <Menu.Item disabled>{t("Trains") + "..."}</Menu.Item>
           <Menu.Item disabled>{t("Routes") + "..."}</Menu.Item>
