@@ -73,11 +73,15 @@ function createDraft(
 function createDocumentFromDraft(
   draft: BlockActionsDraft
 ): BlockAutomationDocumentDto {
-  const blocks = Object.fromEntries(
-    Object.entries(draft)
-      .map(([blockId, actions]) => [blockId, cloneBlockActions(actions)])
-      .filter(([, actions]) => getActionCountFromActions(actions) > 0)
-  );
+  const blocks: BlockAutomationDocumentDto["blocks"] = {};
+
+  for (const [blockId, actions] of Object.entries(draft)) {
+    const clonedActions = cloneBlockActions(actions);
+
+    if (getActionCountFromActions(clonedActions) > 0) {
+      blocks[blockId] = clonedActions;
+    }
+  }
 
   return {
     version: 1,
