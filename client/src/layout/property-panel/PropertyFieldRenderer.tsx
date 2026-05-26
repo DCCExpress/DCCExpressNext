@@ -3,6 +3,7 @@ import type { LayoutView } from "../../models/editor/core/LayoutView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { Graph } from "../../../../common/src/railway/graph";
 
+import AudioListPropertyEditor from "./AudioListPropertyEditor";
 import BasicPropertyEditor from "./BasicPropertyEditor";
 import BlockTypeSelectPropertyEditor from "./BlockTypeSelectPropertyEditor";
 import RouteBlockSelectPropertyEditor from "./RouteBlockSelectPropertyEditor";
@@ -61,6 +62,15 @@ export default function PropertyFieldRenderer({
           prop={prop}
           selectedElement={selectedElement}
           onChange={onChange}
+        />
+      );
+
+    case "audioList":
+      return (
+        <AudioListPropertyEditor
+          prop={prop}
+          selectedElement={selectedElement}
+          onUpdateSelectedElement={onUpdateSelectedElement}
         />
       );
 
