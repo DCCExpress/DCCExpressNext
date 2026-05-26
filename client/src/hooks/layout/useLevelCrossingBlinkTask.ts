@@ -65,12 +65,17 @@ export function useLevelCrossingBlinkTask({
       let changed = false;
 
       for (const crossing of crossings) {
-        const nextBlinkOn = !crossing.blinkOn;
+        if (!crossing.blinkingEnabled || !crossing.lightsEnabled) {
+          if (crossing.blinkOn !== true) {
+            crossing.blinkOn = true;
+            changed = true;
+          }
 
-        if (crossing.blinkOn !== nextBlinkOn) {
-          crossing.blinkOn = nextBlinkOn;
-          changed = true;
+          continue;
         }
+
+        crossing.blinkOn = !crossing.blinkOn;
+        changed = true;
       }
 
       if (changed) {
