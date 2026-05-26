@@ -1,14 +1,21 @@
-import { Alert, Badge, Button, Card, Group, NumberInput, ScrollArea, SegmentedControl, Stack, Table, Tabs, Text } from "@mantine/core";
+import { Alert, Badge, Button, Card, Group, NumberInput, ScrollArea, SegmentedControl, Stack, Table, Tabs, Text, Title } from "@mantine/core";
 import { IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 
 import type {
   BlockAutomationIntegrityReportDto,
 } from "../../../../common/src/blockAutomation";
+import type {
+  SignalLogicIntegrityReportDto,
+} from "../../../../common/src/signalLogic";
 import {
   checkBlockAutomationIntegrityWs,
   deleteBlockAutomationOrphansWs,
 } from "../../api/blockAutomationWsApi";
+import {
+  checkSignalLogicIntegrityWs,
+  deleteSignalLogicOrphansWs,
+} from "../../api/signalLogicWsApi";
 import AppModal from "../common/AppModal";
 import { useRailwayDiagnostics, type DiagnosticAccessoryItem } from "../../hooks/useRailwayDiagnostics";
 import { wsApi } from "../../services/wsApi";
@@ -182,35 +189,59 @@ function BasicAccessoryTable({
 }
 
 function IntegrityTab() {
-  const [report, setReport] = useState<BlockAutomationIntegrityReportDto | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [blockReport, setBlockReport] = useState<BlockAutomationIntegrityReportDto | null>(null);
+  const [signalReport, setSignalReport] = useState<SignalLogicIntegrityReportDto | null>(null);
+  const [loadingBlocks, setLoadingBlocks] = useState(false);
+  const [loadingSignals, setLoadingSignals] = useState(false);
   const [deletingBlockId, setDeletingBlockId] = useState<string | null>(null);
+  const [deletingSignalAddress, setDeletingSignalAddress] = useState<string | null>(null);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  const orphanBlocks = report?.orphanBlocks ?? [];
+  const orphanBlocks = blockReport?.orphanBlocks ?? [];
+  const orphanSignals = signalReport?.orphanSignals ?? [];
 
-  const runCheck = async (): Promise<void> => {
-    setLoading(true);
+  const runBlockCheck = async (): Promise<void> => {
+    setLoadingBlocks(true);
     setErrorText(null);
     setStatusText(null);
 
     try {
       const nextReport = await checkBlockAutomationIntegrityWs();
-      setReport(nextReport);
+      setBlockReport(nextReport);
       setStatusText(
         nextReport.orphanBlocks.length === 0
-          ? "Integrity check completed. No orphan block action entries found."
-          : `Integrity check completed. Found ${nextReport.orphanBlocks.length} orphan block action entr${nextReport.orphanBlocks.length === 1 ? "y" : "ies"}.`
+          ? "Block automation integrity check completed. No orphan block action entries found."
+          : `Block automation integrity check completed. Found ${nextReport.orphanBlocks.length} orphan block action entr${nextReport.orphanBlocks.length === 1 ? "y" : "ies"}.`
       );
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
     } finally {
-      setLoading(false);
+      setLoadingBlocks(false);
     }
   };
 
-  const deleteOrphans = async (blockIds: string[]): Promise<void> => {
+  const runSignalCheck = async (): Promise<void> => {
+    setLoadingSignals(true);
+    setErrorText(null);
+    setStatusText(null);
+
+    try {
+      const nextReport = await checkSignalLogicIntegrityWs();
+      setSignalReport(nextReport);
+      setStatusText(
+        nextReport.orphanSignals.length === 0
+          ? "Signal logic integrity check completed. No orphan signal rule groups found."
+          : `Signal logic integrity check completed. Found ${nextReport.orphanSignals.length} orphan signal rule group${nextReport.orphanSignals.length === 1 ? "" : "s"}.`
+      );
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLoadingSignals(false);
+    }
+  };
+
+  const deleteBlockOrphans = async (blockIds: string[]): Promise<void> => {
     if (blockIds.length === 0) return;
 
     const deleteStateId = blockIds.length === 1
@@ -223,7 +254,7 @@ function IntegrityTab() {
 
     try {
       const result = await deleteBlockAutomationOrphansWs(blockIds);
-      setReport(result.integrity);
+      setBlockReport(result.integrity);
       setStatusText(
         `Deleted ${result.deletedBlockIds.length} orphan block action entr${result.deletedBlockIds.length === 1 ? "y" : "ies"}.`
       );
@@ -234,10 +265,34 @@ function IntegrityTab() {
     }
   };
 
+  const deleteSignalOrphans = async (signalAddresses: number[]): Promise<void> => {
+    if (signalAddresses.length === 0) return;
+
+    const deleteStateId = signalAddresses.length === 1
+      ? String(signalAddresses[0] ?? "")
+      : "__all__";
+
+    setDeletingSignalAddress(deleteStateId);
+    setErrorText(null);
+    setStatusText(null);
+
+    try {
+      const result = await deleteSignalLogicOrphansWs(signalAddresses);
+      setSignalReport(result.integrity);
+      setStatusText(
+        `Deleted ${result.deletedSignalAddresses.length} orphan signal rule group${result.deletedSignalAddresses.length === 1 ? "" : "s"}.`
+      );
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : String(error));
+    } finally {
+      setDeletingSignalAddress(null);
+    }
+  };
+
   return (
     <Stack gap="md" h="100%">
-      <Alert color="blue" variant="light" title="Layout / block automation integrity">
-        This check compares block IDs in the saved layout with block IDs stored in block-automation.json. Orphan entries are block action lists whose block no longer exists in the layout.
+      <Alert color="blue" variant="light" title="Layout integrity checks">
+        These checks compare saved automation/rule files with the saved layout. Orphan entries reference blocks or signals that no longer exist in the layout.
       </Alert>
 
       {errorText && (
@@ -247,90 +302,192 @@ function IntegrityTab() {
       )}
 
       {statusText && !errorText && (
-        <Alert color={orphanBlocks.length === 0 ? "green" : "yellow"} variant="light">
+        <Alert color="green" variant="light">
           {statusText}
         </Alert>
       )}
 
-      <Group justify="space-between">
-        <Group gap="xs">
-          <Button
-            leftSection={<IconRefresh size={16} />}
-            loading={loading}
-            onClick={() => void runCheck()}
-          >
-            Run integrity check
-          </Button>
+      <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto" offsetScrollbars>
+        <Stack gap="md" pb="sm">
+          <Card withBorder p="md">
+            <Stack gap="md">
+              <Group justify="space-between" align="center">
+                <Stack gap={2}>
+                  <Title order={5}>Block automation</Title>
+                  <Text size="sm" c="dimmed">
+                    Compares layout block IDs with block-automation.json entries.
+                  </Text>
+                </Stack>
 
-          <Button
-            color="red"
-            variant="light"
-            leftSection={<IconTrash size={16} />}
-            disabled={orphanBlocks.length === 0}
-            loading={deletingBlockId === "__all__"}
-            onClick={() => void deleteOrphans(orphanBlocks.map(block => block.blockId))}
-          >
-            Delete all orphans
-          </Button>
-        </Group>
-
-        {report && (
-          <Group gap="xs">
-            <Badge variant="light">Layout blocks: {report.layoutBlockCount}</Badge>
-            <Badge variant="light">Automation blocks: {report.automationBlockCount}</Badge>
-            <Badge color={orphanBlocks.length === 0 ? "green" : "yellow"} variant="light">
-              Orphans: {orphanBlocks.length}
-            </Badge>
-          </Group>
-        )}
-      </Group>
-
-      {!report && (
-        <Text size="sm" c="dimmed">
-          Run the integrity check to find block action entries that no longer have a matching block in the layout.
-        </Text>
-      )}
-
-      {report && orphanBlocks.length === 0 && (
-        <Card withBorder p="md">
-          <Text size="sm" c="green" fw={600}>
-            No orphan block action entries found.
-          </Text>
-        </Card>
-      )}
-
-      {orphanBlocks.length > 0 && (
-        <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto" offsetScrollbars>
-          <Stack gap="sm">
-            {orphanBlocks.map(block => (
-              <Card key={block.blockId} withBorder p="sm">
-                <Group justify="space-between" align="center">
-                  <Stack gap={2}>
-                    <Text fw={700}>{block.blockId}</Text>
-                    <Group gap="xs">
-                      <Badge variant="light">Actions: {block.actionCount}</Badge>
-                      <Badge variant="light">Enter: {block.onTrainEnterCount}</Badge>
-                      <Badge variant="light">Leave: {block.onTrainLeaveCount}</Badge>
-                    </Group>
-                  </Stack>
+                <Group gap="xs">
+                  <Button
+                    size="xs"
+                    leftSection={<IconRefresh size={14} />}
+                    loading={loadingBlocks}
+                    onClick={() => void runBlockCheck()}
+                  >
+                    Check blocks
+                  </Button>
 
                   <Button
                     size="xs"
                     color="red"
                     variant="light"
                     leftSection={<IconTrash size={14} />}
-                    loading={deletingBlockId === block.blockId}
-                    disabled={deletingBlockId !== null && deletingBlockId !== block.blockId}
-                    onClick={() => void deleteOrphans([block.blockId])}
+                    disabled={orphanBlocks.length === 0}
+                    loading={deletingBlockId === "__all__"}
+                    onClick={() => void deleteBlockOrphans(orphanBlocks.map(block => block.blockId))}
                   >
-                    Delete
+                    Delete all block orphans
                   </Button>
                 </Group>
-              </Card>
-            ))}
-          </Stack>
-        </ScrollArea>
-      )}
+              </Group>
+
+              {blockReport && (
+                <Group gap="xs">
+                  <Badge variant="light">Layout blocks: {blockReport.layoutBlockCount}</Badge>
+                  <Badge variant="light">Automation blocks: {blockReport.automationBlockCount}</Badge>
+                  <Badge color={orphanBlocks.length === 0 ? "green" : "yellow"} variant="light">
+                    Orphans: {orphanBlocks.length}
+                  </Badge>
+                </Group>
+              )}
+
+              {!blockReport && (
+                <Text size="sm" c="dimmed">
+                  Run the block check to find block action entries that no longer have a matching block in the layout.
+                </Text>
+              )}
+
+              {blockReport && orphanBlocks.length === 0 && (
+                <Text size="sm" c="green" fw={600}>
+                  No orphan block action entries found.
+                </Text>
+              )}
+
+              {orphanBlocks.length > 0 && (
+                <Stack gap="sm">
+                  {orphanBlocks.map(block => (
+                    <Card key={block.blockId} withBorder p="sm">
+                      <Group justify="space-between" align="center">
+                        <Stack gap={2}>
+                          <Text fw={700}>{block.blockId}</Text>
+                          <Group gap="xs">
+                            <Badge variant="light">Actions: {block.actionCount}</Badge>
+                            <Badge variant="light">Enter: {block.onTrainEnterCount}</Badge>
+                            <Badge variant="light">Leave: {block.onTrainLeaveCount}</Badge>
+                          </Group>
+                        </Stack>
+
+                        <Button
+                          size="xs"
+                          color="red"
+                          variant="light"
+                          leftSection={<IconTrash size={14} />}
+                          loading={deletingBlockId === block.blockId}
+                          disabled={deletingBlockId !== null && deletingBlockId !== block.blockId}
+                          onClick={() => void deleteBlockOrphans([block.blockId])}
+                        >
+                          Delete
+                        </Button>
+                      </Group>
+                    </Card>
+                  ))}
+                </Stack>
+              )}
+            </Stack>
+          </Card>
+
+          <Card withBorder p="md">
+            <Stack gap="md">
+              <Group justify="space-between" align="center">
+                <Stack gap={2}>
+                  <Title order={5}>Signal logic</Title>
+                  <Text size="sm" c="dimmed">
+                    Compares layout signal addresses with signal-rules.json rule groups.
+                  </Text>
+                </Stack>
+
+                <Group gap="xs">
+                  <Button
+                    size="xs"
+                    leftSection={<IconRefresh size={14} />}
+                    loading={loadingSignals}
+                    onClick={() => void runSignalCheck()}
+                  >
+                    Check signals
+                  </Button>
+
+                  <Button
+                    size="xs"
+                    color="red"
+                    variant="light"
+                    leftSection={<IconTrash size={14} />}
+                    disabled={orphanSignals.length === 0}
+                    loading={deletingSignalAddress === "__all__"}
+                    onClick={() => void deleteSignalOrphans(orphanSignals.map(signal => signal.signalAddress))}
+                  >
+                    Delete all signal orphans
+                  </Button>
+                </Group>
+              </Group>
+
+              {signalReport && (
+                <Group gap="xs">
+                  <Badge variant="light">Layout signals: {signalReport.layoutSignalCount}</Badge>
+                  <Badge variant="light">Rule groups: {signalReport.ruleGroupCount}</Badge>
+                  <Badge color={orphanSignals.length === 0 ? "green" : "yellow"} variant="light">
+                    Orphans: {orphanSignals.length}
+                  </Badge>
+                </Group>
+              )}
+
+              {!signalReport && (
+                <Text size="sm" c="dimmed">
+                  Run the signal check to find signal rule groups whose signal address no longer exists in the layout.
+                </Text>
+              )}
+
+              {signalReport && orphanSignals.length === 0 && (
+                <Text size="sm" c="green" fw={600}>
+                  No orphan signal rule groups found.
+                </Text>
+              )}
+
+              {orphanSignals.length > 0 && (
+                <Stack gap="sm">
+                  {orphanSignals.map(signal => (
+                    <Card key={`${signal.groupId}-${signal.signalAddress}`} withBorder p="sm">
+                      <Group justify="space-between" align="center">
+                        <Stack gap={2}>
+                          <Text fw={700}>Signal #{signal.signalAddress}</Text>
+                          <Text size="xs" c="dimmed">Group: {signal.groupId}</Text>
+                          <Group gap="xs">
+                            <Badge variant="light">Rules: {signal.ruleCount}</Badge>
+                            <Badge variant="light">Conditions: {signal.conditionCount}</Badge>
+                          </Group>
+                        </Stack>
+
+                        <Button
+                          size="xs"
+                          color="red"
+                          variant="light"
+                          leftSection={<IconTrash size={14} />}
+                          loading={deletingSignalAddress === String(signal.signalAddress)}
+                          disabled={deletingSignalAddress !== null && deletingSignalAddress !== String(signal.signalAddress)}
+                          onClick={() => void deleteSignalOrphans([signal.signalAddress])}
+                        >
+                          Delete
+                        </Button>
+                      </Group>
+                    </Card>
+                  ))}
+                </Stack>
+              )}
+            </Stack>
+          </Card>
+        </Stack>
+      </ScrollArea>
     </Stack>
   );
 }
