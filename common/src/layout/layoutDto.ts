@@ -25,6 +25,8 @@ export type AudioListButtonItemDto = {
   fileName: string;
 };
 
+export type LevelCrossingBarrierTypeDto = "none" | "half" | "full";
+
 /**
  * A szenzor kind mezője jelenleg kliensoldali numerikus enumként él:
  *   0 = circle
@@ -96,6 +98,11 @@ export type SerializedLayoutElementDto = {
   label?: string;
   script?: string;
   audioItems?: AudioListButtonItemDto[];
+
+  barrierType?: LevelCrossingBarrierTypeDto;
+  barrierClosed?: boolean;
+  lightsEnabled?: boolean;
+  roadColor?: string;
 
   routeTurnouts?: RouteTurnoutItemDto[];
 
@@ -172,6 +179,14 @@ export interface TrackElementDto extends BaseElementDto {
 
 export interface TrackStraightElementDto extends TrackElementDto {
   type: "trackstraight";
+}
+
+export interface TrackLevelCrossingElementDto extends TrackStraightElementDto {
+  type: "tracklevelcrossing";
+  barrierType: LevelCrossingBarrierTypeDto;
+  barrierClosed: boolean;
+  lightsEnabled: boolean;
+  roadColor: string;
 }
 
 export interface TrackDirectionElementDto extends TrackElementDto {
@@ -315,6 +330,7 @@ export interface TrackSignalElementDto extends TrackElementDto {
 
 export type LayoutElementDto =
   | TrackStraightElementDto
+  | TrackLevelCrossingElementDto
   | TrackDirectionElementDto
   | TrackEndElementDto
   | TrackCornerElementDto
