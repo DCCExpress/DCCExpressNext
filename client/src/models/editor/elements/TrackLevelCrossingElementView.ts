@@ -66,6 +66,7 @@ export class TrackLevelCrossingElementView
   enabled = true;
   alpha = 0.5;
   debug = false;
+  blinkOn = true;
 
   override type: typeof ELEMENT_TYPES.TRACK_LEVEL_CROSSING =
     ELEMENT_TYPES.TRACK_LEVEL_CROSSING;
@@ -276,11 +277,21 @@ export class TrackLevelCrossingElementView
     ctx.restore();
   }
 
-  private drawLight(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  private drawLight(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    active: boolean
+  ): void {
     if (!this.lightsEnabled) return;
 
-    const lightColor = this.barrierClosed ? "#ff0000" : "#ffffff";
-    const highlightColor = this.barrierClosed ? "#ff6b6b" : "#ffffff";
+    const lightColor = this.barrierClosed
+      ? active ? "#ff0000" : "#5c1a1a"
+      : "#ffffff";
+
+    const highlightColor = this.barrierClosed
+      ? active ? "#ff6b6b" : "#3a1010"
+      : "#ffffff";
 
     ctx.save();
     ctx.fillStyle = "#212529";
@@ -326,8 +337,8 @@ export class TrackLevelCrossingElementView
       }
     }
 
-    this.drawLight(ctx, this.centerX - 18, this.centerY + 18);
-    this.drawLight(ctx, this.centerX + 18, this.centerY - 18);
+    this.drawLight(ctx, this.centerX - 18, this.centerY + 18, !closed || this.blinkOn);
+    this.drawLight(ctx, this.centerX + 18, this.centerY - 18, !closed || !this.blinkOn);
   }
 
   draw(
@@ -396,6 +407,7 @@ export class TrackLevelCrossingElementView
     crossing.barrierClosed = data.barrierClosed ?? false;
     crossing.lightsEnabled = data.lightsEnabled ?? true;
     crossing.roadColor = data.roadColor ?? "#6c757d";
+    crossing.blinkOn = true;
 
     return crossing;
   }
@@ -416,6 +428,7 @@ export class TrackLevelCrossingElementView
     copy.barrierClosed = this.barrierClosed;
     copy.lightsEnabled = this.lightsEnabled;
     copy.roadColor = this.roadColor;
+    copy.blinkOn = this.blinkOn;
 
     return copy;
   }
