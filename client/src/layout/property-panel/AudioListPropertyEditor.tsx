@@ -10,6 +10,8 @@ import {
   TextInput,
 } from "@mantine/core";
 import {
+  IconArrowDown,
+  IconArrowUp,
   IconFolderOpen,
   IconPlayerPlayFilled,
   IconPlus,
@@ -78,6 +80,30 @@ export default function AudioListPropertyEditor({
     );
   };
 
+  const moveItem = (itemId: string, direction: -1 | 1) => {
+    const fromIndex = items.findIndex(item => item.id === itemId);
+
+    if (fromIndex < 0) {
+      return;
+    }
+
+    const toIndex = fromIndex + direction;
+
+    if (toIndex < 0 || toIndex >= items.length) {
+      return;
+    }
+
+    const nextItems = [...items];
+    const [moved] = nextItems.splice(fromIndex, 1);
+
+    if (!moved) {
+      return;
+    }
+
+    nextItems.splice(toIndex, 0, moved);
+    updateItems(nextItems);
+  };
+
   return (
     <>
       <Group justify="space-between" align="center">
@@ -103,7 +129,7 @@ export default function AudioListPropertyEditor({
         <Stack gap="sm">
           <Group justify="space-between">
             <Text size="sm" c="dimmed">
-              Add the display name and audio file for each popup row.
+              Add the display name and audio file for each popup row. Use the arrows to set the runtime order.
             </Text>
 
             <Button
@@ -123,14 +149,38 @@ export default function AudioListPropertyEditor({
             <Table striped highlightOnHover withTableBorder>
               <Table.Thead>
                 <Table.Tr>
+                  <Table.Th style={{ width: 78 }}>Order</Table.Th>
                   <Table.Th>Name</Table.Th>
                   <Table.Th>File</Table.Th>
                   <Table.Th style={{ width: 112 }}>Actions</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {items.map(item => (
+                {items.map((item, index) => (
                   <Table.Tr key={item.id}>
+                    <Table.Td>
+                      <Group gap={4} wrap="nowrap">
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          title="Move up"
+                          disabled={index === 0}
+                          onClick={() => moveItem(item.id, -1)}
+                        >
+                          <IconArrowUp size={16} />
+                        </ActionIcon>
+
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          title="Move down"
+                          disabled={index === items.length - 1}
+                          onClick={() => moveItem(item.id, 1)}
+                        >
+                          <IconArrowDown size={16} />
+                        </ActionIcon>
+                      </Group>
+                    </Table.Td>
                     <Table.Td>
                       <TextInput
                         size="xs"
