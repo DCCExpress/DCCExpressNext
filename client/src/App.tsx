@@ -12,6 +12,7 @@ import { getDefaultWsUrl } from "./services/defaultWsUrl";
 import { wsApi } from "./services/wsApi";
 import { wsClient } from "./services/wsClient";
 import { playServerAudio } from "./services/serverAudioPlayback";
+import { installLevelCrossingAccessoryRuntime } from "./services/levelCrossingAccessoryRuntime";
 import { LayoutContextProvider } from "./context/LayoutContextProvider";
 
 export type AppPage = "home" | "layout" | "programmer";
@@ -31,6 +32,8 @@ export default function App() {
   useEffect(() => {
     wsApi.connect(getDefaultWsUrl());
 
+    const uninstallLevelCrossingRuntime = installLevelCrossingAccessoryRuntime();
+
     const unsubscribeAudio = wsClient.subscribeMessages(rawMessage => {
       const message = rawMessage as RuntimeWsMessage;
 
@@ -47,6 +50,7 @@ export default function App() {
     });
 
     return () => {
+      uninstallLevelCrossingRuntime();
       unsubscribeAudio();
       wsApi.disconnect();
     };
