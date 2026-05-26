@@ -141,14 +141,14 @@ export default function LocoDialogContent({
             <Tabs.Panel value="extended" pt="md">
               <Stack gap="md" maw={520}>
 
-                <Card withBorder radius="md" p="xs">
+                {/* <Card withBorder radius="md" p="xs">
                   <Image
                     src="/images/loco-info-card.png"
                     alt="Locomotive direction and occupancy sensor diagram"
                     fit="contain"
                     radius="sm"
                   />
-                </Card>
+                </Card> */}
                 <NumberInput
                   label={t("locodialog.loco_length_mm")}
                   value={selectedLoco.length}
@@ -176,6 +176,7 @@ export default function LocoDialogContent({
                   label={t("locodialog.last_run_at")}
                   value={formatDateTime(selectedLoco.lastRunAt)}
                   placeholder={t("locodialog.last_run_at_empty")}
+                  disabled
                   readOnly
                 />
               </Stack>
