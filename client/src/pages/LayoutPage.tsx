@@ -39,6 +39,11 @@ export default function LayoutPage({
   ] = useState(false);
 
   const [
+    requestedBlockActionsBlockId,
+    setRequestedBlockActionsBlockId,
+  ] = useState<string | null>(null);
+
+  const [
     signalLogicDialogOpened,
     setSignalLogicDialogOpened,
   ] = useState(false);
@@ -217,6 +222,11 @@ export default function LayoutPage({
     );
   };
 
+  const openBlockActionsDialogForBlock = (blockId: string): void => {
+    setRequestedBlockActionsBlockId(blockId);
+    setBlockActionsDialogOpened(true);
+  };
+
   const onFitLayout = (): void => {
     setFitCounter(previous => previous + 1);
   };
@@ -248,6 +258,15 @@ export default function LayoutPage({
       }
       setBlockActionsDialogOpened={
         setBlockActionsDialogOpened
+      }
+      requestedBlockActionsBlockId={
+        requestedBlockActionsBlockId
+      }
+      onRequestedBlockActionsBlockIdConsumed={() =>
+        setRequestedBlockActionsBlockId(null)
+      }
+      onOpenBlockActionsForBlock={
+        openBlockActionsDialogForBlock
       }
       signalLogicDialogOpened={
         signalLogicDialogOpened
