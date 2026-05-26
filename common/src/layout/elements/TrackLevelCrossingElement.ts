@@ -24,7 +24,7 @@ export class TrackLevelCrossingElement extends TrackStraightElement {
     this.length = 200;
   }
 
-  static override fromJSON(data: TrackLevelCrossingElementDto): TrackLevelCrossingElement {
+  static fromJSON(data: TrackLevelCrossingElementDto): TrackLevelCrossingElement {
     const element = new TrackLevelCrossingElement(data.x, data.y);
     element.id = data.id;
     element.name = data.name;
