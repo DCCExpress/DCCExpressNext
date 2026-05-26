@@ -14,6 +14,7 @@ import {
 } from "@mantine/core";
 
 import {
+  IconDeviceFloppy,
   IconPlayerPlay,
   IconPlus,
 } from "@tabler/icons-react";
@@ -299,6 +300,7 @@ export function BlockActionsEditor({
 type BlockActionsDialogProps = BlockActionsEditorProps & {
   opened: boolean;
   onClose: () => void;
+  onSave?: () => Promise<void> | void;
 };
 
 export default function BlockActionsDialog({
@@ -308,7 +310,21 @@ export default function BlockActionsDialog({
   actions,
   onChange,
   onClose,
+  onSave,
 }: BlockActionsDialogProps) {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (): Promise<void> => {
+    if (!onSave) return;
+
+    setSaving(true);
+    try {
+      await onSave();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <AppModal
       opened={opened}
@@ -326,13 +342,27 @@ export default function BlockActionsDialog({
         },
       }}
     >
-      <BlockActionsEditor
-        blockId={blockId}
-        blockName={blockName}
-        actions={actions}
-        onChange={onChange}
-        onClose={onClose}
-      />
+      <Stack h="100%" gap="md">
+        <BlockActionsEditor
+          blockId={blockId}
+          blockName={blockName}
+          actions={actions}
+          onChange={onChange}
+        />
+
+        <Group justify="flex-end">
+          {onSave && (
+            <Button
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={saving}
+              onClick={handleSave}
+            >
+              Save
+            </Button>
+          )}
+          <Button variant="light" onClick={onClose}>Close</Button>
+        </Group>
+      </Stack>
     </AppModal>
   );
 }
