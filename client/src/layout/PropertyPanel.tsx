@@ -276,7 +276,6 @@ export default function RightPropertyPanel({
         {selectedElement instanceof BlockElementView && (
           <BlockActionsPanel
             selectedElement={selectedElement}
-            onUpdateSelectedElement={onUpdateSelectedElement}
           />
         )}
 
