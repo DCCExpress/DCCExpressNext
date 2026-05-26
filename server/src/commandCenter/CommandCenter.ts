@@ -84,6 +84,9 @@ export abstract class CommandCenter {
   public locked = false;
   public lockOwnerUUID: string | null = "";
 
+  private readonly proxiedLocoStates =
+    new WeakSet<LocoState>();
+
   private readonly unsubscribeLocosChanged: () => void;
 
   constructor(name: string) {
@@ -139,7 +142,9 @@ export abstract class CommandCenter {
 
       this.locos.set(
         loco.address,
-        this.syncLocoReservation(locoState)
+        this.syncLocoReservation(
+          this.createLocoRuntimeProxy(locoState)
+        )
       );
     }
   }
@@ -278,6 +283,53 @@ export abstract class CommandCenter {
     return loco;
   }
 
+  private createLocoRuntimeProxy(
+    loco: LocoState
+  ): LocoState {
+    if (this.proxiedLocoStates.has(loco)) {
+      return loco;
+    }
+
+    const proxy = new Proxy(loco, {
+      set: (target, property, value) => {
+        if (property !== "speed") {
+          return Reflect.set(target, property, value);
+        }
+
+        const previousSpeed =
+          Number(target.speed ?? 0);
+
+        const ok = Reflect.set(target, property, value);
+
+        const nextSpeed =
+          Number(value);
+
+        if (
+          ok &&
+          Number.isFinite(previousSpeed) &&
+          Number.isFinite(nextSpeed)
+        ) {
+          void this.persistLocoLastRunAtIfStopped(
+            target,
+            previousSpeed,
+            nextSpeed
+          ).catch(error => {
+            logError(
+              "Failed to persist loco last run time:",
+              error
+            );
+          });
+        }
+
+        return ok;
+      },
+    });
+
+    this.proxiedLocoStates.add(proxy);
+
+    return proxy;
+  }
+
   protected getOrCreateLoco(
     address: number
   ): LocoState {
@@ -285,12 +337,12 @@ export abstract class CommandCenter {
       this.locos.get(address);
 
     if (!loco) {
-      loco = {
+      loco = this.createLocoRuntimeProxy({
         address,
         speed: 0,
         direction: "forward",
         functions: {},
-      };
+      });
 
       this.locos.set(address, loco);
     }
@@ -306,17 +358,8 @@ export abstract class CommandCenter {
     const loco =
       this.getOrCreateLoco(address);
 
-    const previousSpeed =
-      loco.speed;
-
     loco.speed = speed;
     loco.direction = direction;
-
-    await this.persistLocoLastRunAtIfStopped(
-      loco,
-      previousSpeed,
-      speed
-    );
 
     return this.syncLocoReservation(loco);
   }
@@ -324,16 +367,7 @@ export abstract class CommandCenter {
   protected async stopLocoRuntimeState(
     loco: LocoState
   ): Promise<void> {
-    const previousSpeed =
-      loco.speed;
-
     loco.speed = 0;
-
-    await this.persistLocoLastRunAtIfStopped(
-      loco,
-      previousSpeed,
-      0
-    );
   }
 
   private async persistLocoLastRunAtIfStopped(
