@@ -1,21 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  Alert,
   Badge,
   Box,
   Button,
   Card,
   Group,
+  Loader,
   ScrollArea,
   Stack,
   Text,
   Title,
 } from "@mantine/core";
 
-import { IconDeviceFloppy } from "@tabler/icons-react";
+import { IconAlertTriangle, IconDeviceFloppy } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import type { BlockAction, BlockActionHook } from "../../../../common/src/types";
+import type {
+  BlockAction,
+  BlockActionHook,
+  BlockAutomationDocumentDto,
+} from "../../../../common/src/types";
+import {
+  createEmptyBlockAutomationDocument,
+} from "../../../../common/src/blockAutomation";
+import {
+  loadBlockAutomationWs,
+  saveBlockAutomationWs,
+} from "../../api/blockAutomationWsApi";
 import type { LayoutView } from "../../models/editor/core/LayoutView";
 import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 import AppModal from "../common/AppModal";
@@ -28,8 +41,6 @@ type BlockActionsManagerDialogProps = {
   opened: boolean;
   onClose: () => void;
   layout: LayoutView;
-  onBlockUpdated: (block: BlockElementView) => void;
-  onSaveLayout: () => Promise<void>;
 };
 
 function getBlockLabel(block: BlockElementView): string {
@@ -50,26 +61,40 @@ function getActionCountFromActions(actions: BlockActions | undefined): number {
   );
 }
 
-function getActionCount(block: BlockElementView, draftActions?: BlockActions): number {
-  return getActionCountFromActions(draftActions ?? block.actions);
+function createDraft(
+  blocks: BlockElementView[],
+  document: BlockAutomationDocumentDto
+): BlockActionsDraft {
+  return Object.fromEntries(
+    blocks.map(block => [block.id, cloneBlockActions(document.blocks[block.id])])
+  );
 }
 
-function createDraft(blocks: BlockElementView[]): BlockActionsDraft {
-  return Object.fromEntries(
-    blocks.map(block => [block.id, cloneBlockActions(block.actions)])
+function createDocumentFromDraft(
+  draft: BlockActionsDraft
+): BlockAutomationDocumentDto {
+  const blocks = Object.fromEntries(
+    Object.entries(draft)
+      .map(([blockId, actions]) => [blockId, cloneBlockActions(actions)])
+      .filter(([, actions]) => getActionCountFromActions(actions) > 0)
   );
+
+  return {
+    version: 1,
+    blocks,
+  };
 }
 
 export default function BlockActionsManagerDialog({
   opened,
   onClose,
   layout,
-  onBlockUpdated,
-  onSaveLayout,
 }: BlockActionsManagerDialogProps) {
   const { t } = useTranslation();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
   const [draftActions, setDraftActions] = useState<BlockActionsDraft>({});
 
   const blocks = useMemo(() => {
@@ -88,17 +113,46 @@ export default function BlockActionsManagerDialog({
   useEffect(() => {
     if (!opened) {
       setDraftActions({});
+      setErrorText(null);
       return;
     }
 
-    setDraftActions(createDraft(blocks));
-    setSelectedBlockId(previous => {
-      if (previous && blocks.some(block => block.id === previous)) {
-        return previous;
-      }
+    let cancelled = false;
 
-      return blocks[0]?.id ?? null;
-    });
+    const loadAutomation = async (): Promise<void> => {
+      setLoading(true);
+      setErrorText(null);
+
+      try {
+        const document = await loadBlockAutomationWs();
+
+        if (cancelled) return;
+
+        setDraftActions(createDraft(blocks, document));
+        setSelectedBlockId(previous => {
+          if (previous && blocks.some(block => block.id === previous)) {
+            return previous;
+          }
+
+          return blocks[0]?.id ?? null;
+        });
+      } catch (error) {
+        if (cancelled) return;
+
+        setDraftActions(createDraft(blocks, createEmptyBlockAutomationDocument()));
+        setErrorText(error instanceof Error ? error.message : String(error));
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadAutomation();
+
+    return () => {
+      cancelled = true;
+    };
   }, [opened, blocks]);
 
   const updateSelectedBlockActions = (actions: BlockActions): void => {
@@ -112,13 +166,14 @@ export default function BlockActionsManagerDialog({
 
   const handleSave = async (): Promise<void> => {
     setSaving(true);
-    try {
-      blocks.forEach(block => {
-        block.actions = cloneBlockActions(draftActions[block.id]);
-        onBlockUpdated(block);
-      });
+    setErrorText(null);
 
-      await onSaveLayout();
+    try {
+      const document = createDocumentFromDraft(draftActions);
+      const savedDocument = await saveBlockAutomationWs(document);
+      setDraftActions(createDraft(blocks, savedDocument));
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : String(error));
     } finally {
       setSaving(false);
     }
@@ -149,6 +204,19 @@ export default function BlockActionsManagerDialog({
       }}
     >
       <Stack h="100%" gap="xs">
+        {loading && (
+          <Group gap="xs">
+            <Loader size="xs" />
+            <Text size="sm" c="dimmed">{t("common.loading")}</Text>
+          </Group>
+        )}
+
+        {errorText && (
+          <Alert color="red" icon={<IconAlertTriangle size={16} />} py="xs">
+            {errorText}
+          </Alert>
+        )}
+
         <Group align="stretch" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
           <Card withBorder w={280} p="sm" style={{ flex: "0 0 280px" }}>
             <Group justify="space-between" mb="sm">
@@ -165,7 +233,8 @@ export default function BlockActionsManagerDialog({
                 )}
 
                 {blocks.map(block => {
-                  const actionCount = getActionCount(block, draftActions[block.id]);
+                  const blockActions = draftActions[block.id];
+                  const actionCount = getActionCountFromActions(blockActions);
                   const selected = block.id === selectedBlock?.id;
 
                   return (
@@ -208,7 +277,7 @@ export default function BlockActionsManagerDialog({
 
                     <Badge variant="light">
                       {t("blockActions.totalActions", {
-                        count: getActionCount(selectedBlock, selectedBlockActions),
+                        count: getActionCountFromActions(selectedBlockActions),
                       })}
                     </Badge>
                   </Group>
@@ -231,6 +300,7 @@ export default function BlockActionsManagerDialog({
           <Button
             leftSection={<IconDeviceFloppy size={16} />}
             loading={saving}
+            disabled={loading}
             onClick={handleSave}
           >
             {t("common.save")}
