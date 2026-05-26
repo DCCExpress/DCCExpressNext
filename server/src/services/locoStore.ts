@@ -55,3 +55,31 @@ export async function writeLocos(
     );
   }
 }
+
+export async function updateLocoLastRunAtByAddress(
+  address: number,
+  lastRunAt = new Date().toISOString()
+): Promise<boolean> {
+  const locos = await readLocos();
+  let changed = false;
+
+  const nextLocos = locos.map(loco => {
+    if (loco.address !== address) {
+      return loco;
+    }
+
+    changed = true;
+
+    return {
+      ...loco,
+      lastRunAt,
+    };
+  });
+
+  if (!changed) {
+    return false;
+  }
+
+  await writeLocos(nextLocos);
+  return true;
+}
