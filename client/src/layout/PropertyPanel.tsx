@@ -35,6 +35,7 @@ type PropertyPanelProps = {
   onLayoutChange: Dispatch<SetStateAction<LayoutView>>;
   routes?: string | undefined;
   setBusy?: (busy: boolean, text?: string) => void;
+  onOpenBlockActionsForBlock: (blockId: string) => void;
 };
 
 function updateElementProperty(
@@ -84,6 +85,7 @@ export default function RightPropertyPanel({
   onLayoutChange,
   routes,
   setBusy,
+  onOpenBlockActionsForBlock,
 }: PropertyPanelProps) {
   const { t } = useTranslation();
   const {
@@ -276,6 +278,7 @@ export default function RightPropertyPanel({
         {selectedElement instanceof BlockElementView && (
           <BlockActionsPanel
             selectedElement={selectedElement}
+            onOpenBlockActionsForBlock={onOpenBlockActionsForBlock}
           />
         )}
 
