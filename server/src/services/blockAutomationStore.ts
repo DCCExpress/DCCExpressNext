@@ -3,14 +3,23 @@ import path from "node:path";
 
 import type {
   BlockAutomationDocumentDto,
+  BlockAutomationIntegrityReportDto,
 } from "../../../common/src/blockAutomation.js";
 import {
   createEmptyBlockAutomationDocument,
 } from "../../../common/src/blockAutomation.js";
 
+import type {
+  SerializedLayoutDto,
+  SerializedLayoutElementDto,
+} from "../../../common/src/layout/layoutDto.js";
+
 import {
   dataDir,
 } from "../paths.js";
+import {
+  layoutRuntimeStore,
+} from "./layoutRuntimeStore.js";
 
 type BlockAutomationInitializeResult = {
   created: boolean;
@@ -36,6 +45,43 @@ function normalizeBlockAutomationDocument(
     blocks: structuredClone(
       (input as { blocks: BlockAutomationDocumentDto["blocks"] }).blocks
     ),
+  };
+}
+
+function getLayoutBlockIds(layout: SerializedLayoutDto | null): Set<string> {
+  const result = new Set<string>();
+
+  for (const layer of layout?.layers ?? []) {
+    for (const element of layer.elements ?? []) {
+      const item = element as SerializedLayoutElementDto;
+
+      if (item.type !== "trackblock") {
+        continue;
+      }
+
+      if (typeof item.id !== "string" || item.id.trim().length === 0) {
+        continue;
+      }
+
+      result.add(item.id);
+    }
+  }
+
+  return result;
+}
+
+function countActions(actions: BlockAutomationDocumentDto["blocks"][string]): {
+  actionCount: number;
+  onTrainEnterCount: number;
+  onTrainLeaveCount: number;
+} {
+  const onTrainEnterCount = actions.onTrainEnter?.length ?? 0;
+  const onTrainLeaveCount = actions.onTrainLeave?.length ?? 0;
+
+  return {
+    actionCount: onTrainEnterCount + onTrainLeaveCount,
+    onTrainEnterCount,
+    onTrainLeaveCount,
   };
 }
 
@@ -83,6 +129,66 @@ class BlockAutomationStore {
     this.createdOnInitialize = false;
 
     return this.getDocument();
+  }
+
+  async checkIntegrity(): Promise<BlockAutomationIntegrityReportDto> {
+    await this.initialize();
+    await layoutRuntimeStore.initialize();
+
+    const layoutBlockIds = getLayoutBlockIds(layoutRuntimeStore.getLayout());
+    const automationEntries = Object.entries(this.document.blocks);
+
+    const orphanBlocks = automationEntries
+      .filter(([blockId]) => !layoutBlockIds.has(blockId))
+      .map(([blockId, actions]) => ({
+        blockId,
+        ...countActions(actions),
+      }))
+      .sort((a, b) => a.blockId.localeCompare(b.blockId, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }));
+
+    return {
+      layoutBlockCount: layoutBlockIds.size,
+      automationBlockCount: automationEntries.length,
+      orphanBlocks,
+    };
+  }
+
+  async deleteBlocks(blockIds: string[]): Promise<{
+    document: BlockAutomationDocumentDto;
+    deletedBlockIds: string[];
+    integrity: BlockAutomationIntegrityReportDto;
+  }> {
+    await this.initialize();
+
+    const uniqueBlockIds = [...new Set(
+      blockIds
+        .map(blockId => blockId.trim())
+        .filter(blockId => blockId.length > 0)
+    )];
+
+    const deletedBlockIds: string[] = [];
+
+    for (const blockId of uniqueBlockIds) {
+      if (this.document.blocks[blockId] === undefined) {
+        continue;
+      }
+
+      delete this.document.blocks[blockId];
+      deletedBlockIds.push(blockId);
+    }
+
+    if (deletedBlockIds.length > 0) {
+      await this.persist();
+    }
+
+    return {
+      document: this.getDocument(),
+      deletedBlockIds,
+      integrity: await this.checkIntegrity(),
+    };
   }
 
   private async persist(): Promise<void> {
