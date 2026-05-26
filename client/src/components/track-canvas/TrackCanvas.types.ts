@@ -18,6 +18,10 @@ import type {
 } from "../../models/editor/core/LayoutView";
 
 import type {
+  AudioListButtonElementView,
+} from "../../models/editor/elements/AudioListButtonElementView";
+
+import type {
   TrackSignalElementView,
 } from "../../models/editor/elements/TrackSignalElementView";
 
@@ -120,4 +124,11 @@ export type SignalAspectPopoverState = {
   y: number;
   signal: TrackSignalElementView | null;
   previews: SignalAspectPreviews | null;
+};
+
+export type AudioListPopoverState = {
+  opened: boolean;
+  x: number;
+  y: number;
+  audioListButton: AudioListButtonElementView | null;
 };
