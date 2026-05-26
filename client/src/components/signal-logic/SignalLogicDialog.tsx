@@ -58,8 +58,13 @@ type SignalLogicDialogProps = {
 };
 
 type AddressOption = { value: string; label: string };
-type SignalOption = AddressOption & { aspect: number };
+type SignalOption = AddressOption & { aspect: number; trackName: string };
 type Translate = ReturnType<typeof useTranslation>["t"];
+
+type ElementWithTrackInfo = {
+  trackName?: unknown;
+  section?: unknown;
+};
 
 const DEFAULT_RUNTIME_STATE: SignalLogicRuntimeStateDto = {
   running: false,
@@ -72,6 +77,27 @@ function uniqueByValue<T extends { value: string }>(options: T[]): T[] {
     if (seen.has(option.value)) return false;
     seen.add(option.value);
     return true;
+  });
+}
+
+function getTrackLabel(element: ElementWithTrackInfo): string {
+  const trackName = typeof element.trackName === "string"
+    ? element.trackName.trim()
+    : "";
+
+  if (trackName.length > 0) return trackName;
+
+  if (typeof element.section === "number" && element.section > 0) {
+    return `Pálya ${element.section}`;
+  }
+
+  return "Pálya nélkül";
+}
+
+function compareByName(a: string, b: string): number {
+  return a.localeCompare(b, undefined, {
+    numeric: true,
+    sensitivity: "base",
   });
 }
 
@@ -273,12 +299,22 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     layout
       .getAllElements()
       .filter((element): element is TrackSignalElementView => element instanceof TrackSignalElementView)
-      .map(signal => ({
-        value: signal.address.toString(),
-        label: t("signalLogic.signalOption", { address: signal.address, aspect: signal.aspect }),
-        aspect: signal.aspect,
-      }))
-      .sort((a, b) => Number(a.value) - Number(b.value))
+      .map(signal => {
+        const trackName = getTrackLabel(signal);
+        const signalLabel = t("signalLogic.signalOption", { address: signal.address, aspect: signal.aspect });
+
+        return {
+          value: signal.address.toString(),
+          label: `${trackName} / ${signalLabel}`,
+          aspect: signal.aspect,
+          trackName,
+        };
+      })
+      .sort((a, b) => {
+        const trackCompare = compareByName(a.trackName, b.trackName);
+        if (trackCompare !== 0) return trackCompare;
+        return Number(a.value) - Number(b.value);
+      })
   ), [layout, t]);
 
   const turnoutOptions = useMemo<AddressOption[]>(() => uniqueByValue(
@@ -317,6 +353,22 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   );
 
   const selectedGroup = groups.find(group => group.id === selectedGroupId) ?? groups[0] ?? null;
+  const sortedGroups = useMemo(() => {
+    return [...groups].sort((a, b) => {
+      const aSignal = signalOptions.find(option => Number(option.value) === a.signalAddress);
+      const bSignal = signalOptions.find(option => Number(option.value) === b.signalAddress);
+      const trackCompare = compareByName(aSignal?.trackName ?? "", bSignal?.trackName ?? "");
+      if (trackCompare !== 0) return trackCompare;
+      return a.signalAddress - b.signalAddress;
+    });
+  }, [groups, signalOptions]);
+  const getSignalOption = (signalAddress: number): SignalOption | undefined =>
+    signalOptions.find(option => Number(option.value) === signalAddress);
+  const getSignalTrackLabel = (signalAddress: number): string =>
+    getSignalOption(signalAddress)?.trackName ?? "Pálya nélkül";
+  const getSignalListLabel = (signalAddress: number): string =>
+    getSignalOption(signalAddress)?.label ?? t("signalLogic.signalsListItem", { address: signalAddress });
+
   const document = useMemo(() => ({
     version: 1 as const,
     autostart: runtimeState.autostart,
@@ -606,17 +658,30 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                   <ScrollArea h={540} type="auto" offsetScrollbars>
                     <Stack gap="xs">
                       {groups.length === 0 && <Text size="sm" c="dimmed">{t("signalLogic.emptySignals")}</Text>}
-                      {groups.map(group => (
-                        <Button
-                          key={group.id}
-                          variant={group.id === selectedGroup?.id ? "filled" : "light"}
-                          justify="space-between"
-                          onClick={() => setSelectedGroupId(group.id)}
-                        >
-                          <span>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</span>
-                          <Badge size="xs" bg="cyan" c="white" variant="light" m={5}>{group.rules.length}</Badge>
-                        </Button>
-                      ))}
+                      {sortedGroups.map(group => {
+                        const selected = group.id === selectedGroup?.id;
+
+                        return (
+                          <Button
+                            key={group.id}
+                            variant={selected ? "filled" : "light"}
+                            justify="space-between"
+                            h="auto"
+                            py={6}
+                            onClick={() => setSelectedGroupId(group.id)}
+                          >
+                            <Stack gap={0} align="flex-start" style={{ minWidth: 0 }}>
+                              <Text size="xs" c={selected ? "white" : "dimmed"} truncate="end">
+                                {getSignalTrackLabel(group.signalAddress)}
+                              </Text>
+                              <Text size="sm" fw={600} truncate="end">
+                                {getSignalListLabel(group.signalAddress)}
+                              </Text>
+                            </Stack>
+                            <Badge size="xs" bg="cyan" c="white" variant="light" m={5}>{group.rules.length}</Badge>
+                          </Button>
+                        );
+                      })}
                     </Stack>
                   </ScrollArea>
                 </Card>
@@ -645,7 +710,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                                   })),
                                 }));
                               }}
-                              w={260}
+                              w={320}
                             />
 
                             <Box>
@@ -794,7 +859,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                 {groups.map(group => (
                   <Card key={group.id} withBorder>
                     <Group justify="space-between" mb="sm">
-                      <Title order={5}>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</Title>
+                      <Title order={5}>{getSignalListLabel(group.signalAddress)}</Title>
                       <Badge color="red" variant="light">
                         {t("signalLogic.default", { aspect: getAspectLabel(t, "red") })}
                       </Badge>
