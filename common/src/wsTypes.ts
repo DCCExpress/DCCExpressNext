@@ -32,6 +32,7 @@ import type {
 
 import type {
   SignalLogicDocumentDto,
+  SignalLogicIntegrityReportDto,
   SignalLogicRuntimeStateDto,
   SignalLogicValidationIssue,
 } from "./signalLogic.js";
@@ -254,6 +255,8 @@ export type SignalLogicResponsePayload = WsCommandResponseMeta & {
   issues?: SignalLogicValidationIssue[];
   created?: boolean;
   state?: SignalLogicRuntimeStateDto;
+  integrity?: SignalLogicIntegrityReportDto;
+  deletedSignalAddresses?: number[];
 };
 
 export type FastClockResponsePayload = WsCommandResponseMeta & {
