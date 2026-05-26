@@ -387,6 +387,7 @@ export class TrackLevelCrossingElementView
     crossing.bg = data.bg;
     crossing.fg = data.fg;
     crossing.basicAccessoryAddress = data.basicAccessoryAddress ?? 0;
+    crossing.basicAccessoryClosedValue = data.basicAccessoryClosedValue ?? true;
     crossing.barrierEnabled = data.barrierEnabled ?? true;
     crossing.barrierType = data.barrierType ?? "half";
     crossing.barrierClosed = data.barrierClosed ?? false;
@@ -406,6 +407,7 @@ export class TrackLevelCrossingElementView
     copy.address = this.address;
     copy.length = this.length;
     copy.basicAccessoryAddress = this.basicAccessoryAddress;
+    copy.basicAccessoryClosedValue = this.basicAccessoryClosedValue;
     copy.barrierEnabled = this.barrierEnabled;
     copy.barrierType = this.barrierType;
     copy.barrierClosed = this.barrierClosed;
@@ -418,7 +420,9 @@ export class TrackLevelCrossingElementView
   getEditableProperties(): IEditableProperty[] {
     return [
       ...getBaseEditableProperties(),
+      { key: "address", label: "Track/occupancy address", type: "number", min: 0 },
       { key: "basicAccessoryAddress", label: "Basic accessory address", type: "number", min: 0 },
+      { key: "basicAccessoryClosedValue", label: "Accessory value closes barrier", type: "checkbox" },
       { key: "barrierEnabled", label: "Barrier", type: "checkbox" },
       { key: "barrierClosed", label: "Barrier closed", type: "checkbox" },
       { key: "lightsEnabled", label: "Lights", type: "checkbox" },
@@ -432,7 +436,9 @@ export class TrackLevelCrossingElementView
       <p>A straight track section with a road crossing overlay.</p>
       <ul>
         <li>It behaves like a straight track element for layout connectivity.</li>
+        <li>Track/occupancy address is the track sensor address inherited from normal track elements.</li>
         <li>Basic accessory address is the future control address for the crossing accessory.</li>
+        <li>Accessory value closes barrier defines whether value 1/true or 0/false means closed.</li>
         <li>Use Barrier to show/hide barrier arms.</li>
         <li>Use Barrier closed to show closed barriers and active red warning lights.</li>
         <li>The first version is visual only; automation can be added later.</li>
