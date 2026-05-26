@@ -21,6 +21,9 @@ import { BlockElementView } from "../../models/editor/elements/BlockElementView"
 import AppModal from "../common/AppModal";
 import { BlockActionsEditor } from "./BlockActionsDialog";
 
+type BlockActions = Partial<Record<BlockActionHook, BlockAction[]>>;
+type BlockActionsDraft = Record<string, BlockActions>;
+
 type BlockActionsManagerDialogProps = {
   opened: boolean;
   onClose: () => void;
@@ -36,10 +39,24 @@ function getBlockLabel(block: BlockElementView): string {
   return block.id;
 }
 
-function getActionCount(block: BlockElementView): number {
+function cloneBlockActions(actions: BlockActions | undefined): BlockActions {
+  return structuredClone(actions ?? {});
+}
+
+function getActionCountFromActions(actions: BlockActions | undefined): number {
   return (
-    (block.actions?.onTrainEnter?.length ?? 0) +
-    (block.actions?.onTrainLeave?.length ?? 0)
+    (actions?.onTrainEnter?.length ?? 0) +
+    (actions?.onTrainLeave?.length ?? 0)
+  );
+}
+
+function getActionCount(block: BlockElementView, draftActions?: BlockActions): number {
+  return getActionCountFromActions(draftActions ?? block.actions);
+}
+
+function createDraft(blocks: BlockElementView[]): BlockActionsDraft {
+  return Object.fromEntries(
+    blocks.map(block => [block.id, cloneBlockActions(block.actions)])
   );
 }
 
@@ -53,6 +70,7 @@ export default function BlockActionsManagerDialog({
   const { t } = useTranslation();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [draftActions, setDraftActions] = useState<BlockActionsDraft>({});
 
   const blocks = useMemo(() => {
     return layout
@@ -65,10 +83,15 @@ export default function BlockActionsManagerDialog({
   }, [layout]);
 
   const selectedBlock = blocks.find(block => block.id === selectedBlockId) ?? blocks[0] ?? null;
+  const selectedBlockActions = selectedBlock ? draftActions[selectedBlock.id] ?? {} : {};
 
   useEffect(() => {
-    if (!opened) return;
+    if (!opened) {
+      setDraftActions({});
+      return;
+    }
 
+    setDraftActions(createDraft(blocks));
     setSelectedBlockId(previous => {
       if (previous && blocks.some(block => block.id === previous)) {
         return previous;
@@ -78,18 +101,23 @@ export default function BlockActionsManagerDialog({
     });
   }, [opened, blocks]);
 
-  const updateSelectedBlockActions = (
-    actions: Partial<Record<BlockActionHook, BlockAction[]>>
-  ): void => {
+  const updateSelectedBlockActions = (actions: BlockActions): void => {
     if (!selectedBlock) return;
 
-    selectedBlock.actions = actions;
-    onBlockUpdated(selectedBlock);
+    setDraftActions(previous => ({
+      ...previous,
+      [selectedBlock.id]: actions,
+    }));
   };
 
   const handleSave = async (): Promise<void> => {
     setSaving(true);
     try {
+      blocks.forEach(block => {
+        block.actions = cloneBlockActions(draftActions[block.id]);
+        onBlockUpdated(block);
+      });
+
       await onSaveLayout();
     } finally {
       setSaving(false);
@@ -137,7 +165,7 @@ export default function BlockActionsManagerDialog({
                 )}
 
                 {blocks.map(block => {
-                  const actionCount = getActionCount(block);
+                  const actionCount = getActionCount(block, draftActions[block.id]);
                   const selected = block.id === selectedBlock?.id;
 
                   return (
@@ -180,7 +208,7 @@ export default function BlockActionsManagerDialog({
 
                     <Badge variant="light">
                       {t("blockActions.totalActions", {
-                        count: getActionCount(selectedBlock),
+                        count: getActionCount(selectedBlock, selectedBlockActions),
                       })}
                     </Badge>
                   </Group>
@@ -190,7 +218,7 @@ export default function BlockActionsManagerDialog({
                   <BlockActionsEditor
                     blockId={selectedBlock.id}
                     blockName={selectedBlock.name}
-                    actions={selectedBlock.actions ?? {}}
+                    actions={selectedBlockActions}
                     onChange={updateSelectedBlockActions}
                   />
                 </Box>
