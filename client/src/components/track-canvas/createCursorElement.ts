@@ -14,6 +14,7 @@ import { TrackCrossingElementView } from "../../models/editor/elements/TrackCros
 import { TrackCurveElementView } from "../../models/editor/elements/TrackCurveElementView";
 import { TrackDirectionElementView } from "../../models/editor/elements/TrackDirectionElementView";
 import { TrackEndElementView } from "../../models/editor/elements/TrackEndElementView";
+import { TrackLevelCrossingElementView } from "../../models/editor/elements/TrackLevelCrossingElementView";
 import { TrackSensorElementView } from "../../models/editor/elements/TrackSensorElementView";
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { TrackStraightElementView } from "../../models/editor/elements/TrackStraightElementView";
@@ -25,6 +26,7 @@ import { TreeElementView } from "../../models/editor/elements/TreeElementView";
 import type { EditorTool } from "../../models/editor/types/EditorTypes";
 
 const cursorTrackElement = new TrackStraightElementView(0, 0);
+const cursorTrackLevelCrossingElement = new TrackLevelCrossingElementView(0, 0);
 const cursorTrackDirectionElement = new TrackDirectionElementView(0, 0);
 const cursorTrackEndElement = new TrackEndElementView(0, 0);
 const cursorTrackCornerElement = new TrackCornerElementView(0, 0);
@@ -62,6 +64,9 @@ export function createCursorElement(
   switch (tool.elementType) {
     case ELEMENT_TYPES.TRACK_STRAIGHT:
       return cursorTrackElement;
+
+    case ELEMENT_TYPES.TRACK_LEVEL_CROSSING:
+      return cursorTrackLevelCrossingElement;
 
     case ELEMENT_TYPES.TRACK_DIRECTION:
       return cursorTrackDirectionElement;
