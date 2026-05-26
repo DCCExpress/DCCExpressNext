@@ -33,6 +33,8 @@ export const createEmptyLoco = (): Loco => ({
   invert: false,
   image: "",
   length: 200,
+  trainType: "passenger",
+  occupancyDetectionPosition: "forward",
   functions: [],
   actions: createEmptyLocoActions(),
 });
