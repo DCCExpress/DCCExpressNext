@@ -6,9 +6,7 @@ import type {
 import type {
   EditorTool,
 } from "../../../models/editor/types/EditorTypes";
-import type { BaseElementView } from "../../../models/editor/core/BaseElementView";
 import type { LayoutView } from "../../../models/editor/core/LayoutView";
-import type { BlockElementView } from "../../../models/editor/elements/BlockElementView";
 
 import AppSettingsDialog from "../../../components/app-settings/AppSettingsDialog";
 import BlockActionsManagerDialog from "../../../components/block-actions/BlockActionsManagerDialog";
@@ -45,8 +43,6 @@ type LayoutPageDialogsProps = {
 
   layout: LayoutView;
   setTool: EditorToolSetter;
-  onUpdateSelectedElement: (element: BaseElementView | null) => void;
-  onSaveLayout: () => Promise<void>;
 };
 
 export default function LayoutPageDialogs({
@@ -71,8 +67,6 @@ export default function LayoutPageDialogs({
 
   layout,
   setTool,
-  onUpdateSelectedElement,
-  onSaveLayout,
 }: LayoutPageDialogsProps) {
   return (
     <>
@@ -95,10 +89,6 @@ export default function LayoutPageDialogs({
           setBlockActionsDialogOpened(false)
         }
         layout={layout}
-        onBlockUpdated={(block: BlockElementView) =>
-          onUpdateSelectedElement(block)
-        }
-        onSaveLayout={onSaveLayout}
       />
 
       <SignalLogicDialog
