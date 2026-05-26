@@ -36,6 +36,8 @@ type LayoutPageDialogsProps = {
 
   signalLogicDialogOpened: boolean;
   setSignalLogicDialogOpened: BooleanSetter;
+  requestedSignalLogicAddress: number | null;
+  onRequestedSignalLogicAddressConsumed: () => void;
 
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
@@ -62,6 +64,8 @@ export default function LayoutPageDialogs({
 
   signalLogicDialogOpened,
   setSignalLogicDialogOpened,
+  requestedSignalLogicAddress,
+  onRequestedSignalLogicAddressConsumed,
 
   pickerOpened,
   setPickerOpened,
@@ -103,6 +107,8 @@ export default function LayoutPageDialogs({
           setSignalLogicDialogOpened(false)
         }
         layout={layout}
+        initialSignalAddress={requestedSignalLogicAddress}
+        onInitialSignalAddressConsumed={onRequestedSignalLogicAddressConsumed}
       />
 
       <ElementPickerDialog
