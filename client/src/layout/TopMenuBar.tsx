@@ -2,6 +2,7 @@ import { Group } from "@mantine/core";
 import { useState } from "react";
 import type { EditorTool } from "../models/editor/types/EditorTypes";
 import DiagnosticsDialog from "../components/diagnostics/DiagnosticsDialog";
+import IntegrityCheckDialog from "../components/diagnostics/IntegrityCheckDialog";
 import EditorToolbar from "./top-menu/EditorToolbar";
 import FullscreenToggleButton from "./top-menu/FullscreenToggleButton";
 import MainMenuActions from "./top-menu/MainMenuActions";
@@ -73,6 +74,7 @@ export default function TopMenuBar({
 }: TopMenuBarProps) {
   const [helpOpened, setHelpOpened] = useState(false);
   const [diagnosticsOpened, setDiagnosticsOpened] = useState(false);
+  const [integrityCheckOpened, setIntegrityCheckOpened] = useState(false);
 
   return (
     <>
@@ -86,6 +88,7 @@ export default function TopMenuBar({
             onOpenBlocks={onOpenBlocks}
             onOpenSignalLogic={onOpenSignalLogic}
             onOpenDiagnostics={() => setDiagnosticsOpened(true)}
+            onOpenIntegrityCheck={() => setIntegrityCheckOpened(true)}
             onSaveLayout={onSaveLayout}
             onLoadLayout={onLoadLayout}
             onOpenAppSettingsDialog={onOpenAppSettingsDialog}
@@ -123,6 +126,11 @@ export default function TopMenuBar({
       <DiagnosticsDialog
         opened={diagnosticsOpened}
         onClose={() => setDiagnosticsOpened(false)}
+      />
+
+      <IntegrityCheckDialog
+        opened={integrityCheckOpened}
+        onClose={() => setIntegrityCheckOpened(false)}
       />
     </>
   );
