@@ -1,6 +1,4 @@
 import type {
-  BlockAction,
-  BlockActionHook,
   BlockActionHooks,
 } from "./domainTypes.js";
 
@@ -28,12 +26,6 @@ export type BlockAutomationResponsePayload = {
   message?: string;
   document?: BlockAutomationDocumentDto;
   created?: boolean;
-};
-
-export type {
-  BlockAction,
-  BlockActionHook,
-  BlockActionHooks,
 };
 
 export const createEmptyBlockAutomationDocument = (): BlockAutomationDocumentDto => ({
