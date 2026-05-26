@@ -65,7 +65,8 @@
       "afterStop": []
     },
     "trainType": "passenger",
-    "occupancyDetectionPosition": "both"
+    "occupancyDetectionPosition": "both",
+    "lastRunAt": "2026-05-26T05:49:00.032Z"
   },
   {
     "id": "4bccdc08-2fd3-406e-82ea-ccfa3942df24",
@@ -113,7 +114,8 @@
     ],
     "length": 500,
     "trainType": "freight",
-    "occupancyDetectionPosition": "both"
+    "occupancyDetectionPosition": "both",
+    "lastRunAt": "2026-05-26T05:52:28.225Z"
   },
   {
     "id": "406e2e15-ecbf-4dbf-80a4-7497ef8af796",
