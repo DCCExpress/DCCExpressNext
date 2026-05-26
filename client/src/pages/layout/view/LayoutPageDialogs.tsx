@@ -6,9 +6,12 @@ import type {
 import type {
   EditorTool,
 } from "../../../models/editor/types/EditorTypes";
+import type { BaseElementView } from "../../../models/editor/core/BaseElementView";
 import type { LayoutView } from "../../../models/editor/core/LayoutView";
+import type { BlockElementView } from "../../../models/editor/elements/BlockElementView";
 
 import AppSettingsDialog from "../../../components/app-settings/AppSettingsDialog";
+import BlockActionsManagerDialog from "../../../components/block-actions/BlockActionsManagerDialog";
 import ElementPickerDialog from "../../../components/editor/ElementPickerDialog";
 import FullscreenLoader from "../../../components/FullscreenLoader";
 import LocoDialog from "../../../components/LocoDialog";
@@ -28,6 +31,9 @@ type LayoutPageDialogsProps = {
   setLocoDialogOpened: BooleanSetter;
   onLocosSaved: () => Promise<void>;
 
+  blockActionsDialogOpened: boolean;
+  setBlockActionsDialogOpened: BooleanSetter;
+
   signalLogicDialogOpened: boolean;
   setSignalLogicDialogOpened: BooleanSetter;
 
@@ -39,6 +45,7 @@ type LayoutPageDialogsProps = {
 
   layout: LayoutView;
   setTool: EditorToolSetter;
+  onUpdateSelectedElement: (element: BaseElementView | null) => void;
 };
 
 export default function LayoutPageDialogs({
@@ -48,6 +55,9 @@ export default function LayoutPageDialogs({
   locoDialogOpened,
   setLocoDialogOpened,
   onLocosSaved,
+
+  blockActionsDialogOpened,
+  setBlockActionsDialogOpened,
 
   signalLogicDialogOpened,
   setSignalLogicDialogOpened,
@@ -60,6 +70,7 @@ export default function LayoutPageDialogs({
 
   layout,
   setTool,
+  onUpdateSelectedElement,
 }: LayoutPageDialogsProps) {
   return (
     <>
@@ -74,6 +85,17 @@ export default function LayoutPageDialogs({
           setLocoDialogOpened(false)
         }
         onSaved={onLocosSaved}
+      />
+
+      <BlockActionsManagerDialog
+        opened={blockActionsDialogOpened}
+        onClose={() =>
+          setBlockActionsDialogOpened(false)
+        }
+        layout={layout}
+        onBlockUpdated={(block: BlockElementView) =>
+          onUpdateSelectedElement(block)
+        }
       />
 
       <SignalLogicDialog
