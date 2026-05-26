@@ -27,6 +27,7 @@ type TopMenuBarProps = {
   onEditModeChange: (value: boolean) => void;
   onGoHome: () => void;
   onOpenLocos: () => void;
+  onOpenBlocks: () => void;
   onOpenSignalLogic: () => void;
   locoPanelCollapsed: boolean;
   onToggleLocoPanel: () => void;
@@ -51,6 +52,7 @@ export default function TopMenuBar({
   onEditModeChange,
   onGoHome,
   onOpenLocos,
+  onOpenBlocks,
   onOpenSignalLogic,
   locoPanelCollapsed,
   onToggleLocoPanel,
@@ -81,6 +83,7 @@ export default function TopMenuBar({
           <MainMenuActions
             onGoHome={onGoHome}
             onOpenLocos={onOpenLocos}
+            onOpenBlocks={onOpenBlocks}
             onOpenSignalLogic={onOpenSignalLogic}
             onOpenDiagnostics={() => setDiagnosticsOpened(true)}
             onSaveLayout={onSaveLayout}
