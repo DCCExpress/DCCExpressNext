@@ -5,6 +5,7 @@ import type {
 import type { Loco } from "../../../../../common/src/types";
 import type {
   AudioButtonElementDto,
+  AudioListButtonElementDto,
   BaseElementDto,
   BlockElementDto,
   ButtonElementDto,
@@ -92,6 +93,7 @@ export type ITrackSensorElement = TrackSensorElementDto;
 export type IButtonElement = ButtonElementDto;
 export type IButtonScriptElement = ButtonScriptElementDto;
 export type IAudioButtonElement = AudioButtonElementDto;
+export type IAudioListButtonElement = AudioListButtonElementDto;
 export type IRouteButtonElement = RouteButtonElementDto;
 export type IExtendedRouteButtonElement = ExtendedRouteButtonElementDto;
 export type IClockElement = ClockElementDto;
