@@ -34,6 +34,7 @@ export class AudioListButtonElementView
   audioItems: AudioListButtonItem[] = [];
 
   private activeItemId: string | null = null;
+  private activePlaybackToken: string | null = null;
 
   constructor(x: number, y: number) {
     super(x, y);
@@ -54,25 +55,34 @@ export class AudioListButtonElementView
       return;
     }
 
+    if (this.activePlaybackToken !== null) {
+      return;
+    }
+
+    const playbackToken = generateId();
+
+    this.activePlaybackToken = playbackToken;
     this.activeItemId = item.id;
     onChanged?.();
 
+    const clearActivePlayback = () => {
+      if (this.activePlaybackToken !== playbackToken) {
+        return;
+      }
+
+      this.activePlaybackToken = null;
+      this.activeItemId = null;
+      onChanged?.();
+    };
+
     audioManager.play(item.fileName, {
-      onEnded: () => {
-        if (this.activeItemId === item.id) {
-          this.activeItemId = null;
-        }
-        onChanged?.();
-      },
+      onEnded: clearActivePlayback,
       onError: (error) => {
-        if (this.activeItemId === item.id) {
-          this.activeItemId = null;
-        }
+        clearActivePlayback();
         showErrorMessage(
           i18n.t("common.error"),
           errorToString(error)
         );
-        onChanged?.();
       },
     });
   }
@@ -97,6 +107,8 @@ export class AudioListButtonElementView
     play: HTMLButtonElement,
     active: boolean
   ): void {
+    play.disabled = this.activePlaybackToken !== null && !active;
+    play.style.opacity = play.disabled ? "0.45" : "1";
     play.style.background = active
       ? "var(--mantine-primary-color-filled, #228be6)"
       : "var(--mantine-color-default, #f1f3f5)";
@@ -243,6 +255,11 @@ export class AudioListButtonElementView
         play.addEventListener("click", event => {
           event.preventDefault();
           event.stopPropagation();
+
+          if (this.activePlaybackToken !== null) {
+            return;
+          }
+
           this.playItem(item, () => {
             this.updateRuntimePopupActiveStates();
           });
