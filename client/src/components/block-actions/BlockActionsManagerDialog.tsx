@@ -22,6 +22,9 @@ import type {
   BlockActionHook,
   BlockAutomationDocumentDto,
 } from "../../../../common/src/types";
+import type {
+  SectionBlock,
+} from "../../../../common/src/railway/graph";
 import {
   createEmptyBlockAutomationDocument,
 } from "../../../../common/src/blockAutomation";
@@ -29,6 +32,7 @@ import {
   loadBlockAutomationWs,
   saveBlockAutomationWs,
 } from "../../api/blockAutomationWsApi";
+import { useRouteGraph } from "../../hooks/useRouteGraph";
 import type { LayoutView } from "../../models/editor/core/LayoutView";
 import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 import AppModal from "../common/AppModal";
@@ -36,11 +40,6 @@ import BlockActionsEditor from "./BlockActionsEditor";
 
 type BlockActions = Partial<Record<BlockActionHook, BlockAction[]>>;
 type BlockActionsDraft = Record<string, BlockActions>;
-
-type ElementWithTrackInfo = {
-  trackName?: unknown;
-  section?: unknown;
-};
 
 type BlockActionsManagerDialogProps = {
   opened: boolean;
@@ -50,20 +49,6 @@ type BlockActionsManagerDialogProps = {
   onInitialBlockIdConsumed?: () => void;
 };
 
-function getTrackLabel(element: ElementWithTrackInfo): string {
-  const trackName = typeof element.trackName === "string"
-    ? element.trackName.trim()
-    : "";
-
-  if (trackName.length > 0) return trackName;
-
-  if (typeof element.section === "number" && element.section > 0) {
-    return `Pálya ${element.section}`;
-  }
-
-  return "Pálya nélkül";
-}
-
 function compareByName(a: string, b: string): number {
   return a.localeCompare(b, undefined, {
     numeric: true,
@@ -71,11 +56,29 @@ function compareByName(a: string, b: string): number {
   });
 }
 
-function getBlockLabel(block: BlockElementView): string {
+function getFallbackBlockName(block: BlockElementView): string {
   const name = block.name.trim();
   if (name.length > 0) return name;
   if (block.address > 0) return `Block #${block.address}`;
   return block.id;
+}
+
+function getGraphBlockLabel(
+  block: BlockElementView,
+  graphBlock: SectionBlock | undefined
+): string {
+  return graphBlock?.label ?? getFallbackBlockName(block);
+}
+
+function getGraphBlockName(
+  block: BlockElementView,
+  graphBlock: SectionBlock | undefined
+): string {
+  return graphBlock?.name ?? getFallbackBlockName(block);
+}
+
+function getGraphTrackName(graphBlock: SectionBlock | undefined): string {
+  return graphBlock?.trackName.trim() || "";
 }
 
 function cloneBlockActions(actions: BlockActions | undefined): BlockActions {
@@ -125,25 +128,53 @@ export default function BlockActionsManagerDialog({
   onInitialBlockIdConsumed,
 }: BlockActionsManagerDialogProps) {
   const { t } = useTranslation();
+  const { graph, ensureLoaded } = useRouteGraph();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [draftActions, setDraftActions] = useState<BlockActionsDraft>({});
 
+  const graphBlocksById = useMemo(() => {
+    const map = new Map<string, SectionBlock>();
+
+    for (const node of graph?.nodes ?? []) {
+      for (const block of node.blocks) {
+        map.set(block.id, block);
+      }
+    }
+
+    return map;
+  }, [graph]);
+
   const blocks = useMemo(() => {
     return layout
       .getAllElements()
       .filter((element): element is BlockElementView => element instanceof BlockElementView)
       .sort((a, b) => {
-        const trackCompare = compareByName(getTrackLabel(a), getTrackLabel(b));
+        const aGraphBlock = graphBlocksById.get(a.id);
+        const bGraphBlock = graphBlocksById.get(b.id);
+        const trackCompare = compareByName(
+          getGraphTrackName(aGraphBlock),
+          getGraphTrackName(bGraphBlock)
+        );
         if (trackCompare !== 0) return trackCompare;
-        return compareByName(getBlockLabel(a), getBlockLabel(b));
+        return compareByName(
+          getGraphBlockLabel(a, aGraphBlock),
+          getGraphBlockLabel(b, bGraphBlock)
+        );
       });
-  }, [layout]);
+  }, [layout, graphBlocksById]);
 
   const selectedBlock = blocks.find(block => block.id === selectedBlockId) ?? blocks[0] ?? null;
+  const selectedGraphBlock = selectedBlock ? graphBlocksById.get(selectedBlock.id) : undefined;
   const selectedBlockActions = selectedBlock ? draftActions[selectedBlock.id] ?? {} : {};
+
+  useEffect(() => {
+    if (opened) {
+      void ensureLoaded();
+    }
+  }, [opened, ensureLoaded]);
 
   useEffect(() => {
     if (!opened) {
@@ -274,6 +305,7 @@ export default function BlockActionsManagerDialog({
                 )}
 
                 {blocks.map(block => {
+                  const graphBlock = graphBlocksById.get(block.id);
                   const blockActions = draftActions[block.id];
                   const actionCount = getActionCountFromActions(blockActions);
                   const selected = block.id === selectedBlock?.id;
@@ -288,11 +320,8 @@ export default function BlockActionsManagerDialog({
                       onClick={() => setSelectedBlockId(block.id)}
                     >
                       <Stack gap={0} align="flex-start" style={{ minWidth: 0 }}>
-                        <Text size="xs" c={selected ? "white" : "dimmed"} truncate="end">
-                          {getTrackLabel(block)}
-                        </Text>
                         <Text size="sm" fw={600} truncate="end">
-                          {getBlockLabel(block)}
+                          {getGraphBlockLabel(block, graphBlock)}
                         </Text>
                       </Stack>
                       <Badge size="xs" bg="cyan" c="white" variant="light" m={5}>
@@ -316,7 +345,7 @@ export default function BlockActionsManagerDialog({
                   <Group justify="space-between" align="center">
                     <Stack gap={2}>
                       <Text fw={700}>
-                        {getTrackLabel(selectedBlock)} / {getBlockLabel(selectedBlock)}
+                        {getGraphBlockLabel(selectedBlock, selectedGraphBlock)}
                       </Text>
                       <Text size="xs" c="dimmed">
                         {t("blockActions.blockDetails", {
@@ -338,7 +367,7 @@ export default function BlockActionsManagerDialog({
                 <Box style={{ flex: 1, minHeight: 0 }}>
                   <BlockActionsEditor
                     blockId={selectedBlock.id}
-                    blockName={getBlockLabel(selectedBlock)}
+                    blockName={getGraphBlockName(selectedBlock, selectedGraphBlock)}
                     actions={selectedBlockActions}
                     onChange={updateSelectedBlockActions}
                   />
