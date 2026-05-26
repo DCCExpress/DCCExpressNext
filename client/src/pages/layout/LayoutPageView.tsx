@@ -36,6 +36,9 @@ export type LayoutPageViewProps = {
   setLocoDialogOpened: BooleanSetter;
   blockActionsDialogOpened: boolean;
   setBlockActionsDialogOpened: BooleanSetter;
+  requestedBlockActionsBlockId: string | null;
+  onRequestedBlockActionsBlockIdConsumed: () => void;
+  onOpenBlockActionsForBlock: (blockId: string) => void;
   signalLogicDialogOpened: boolean;
   setSignalLogicDialogOpened: BooleanSetter;
   onLocosSaved: () => Promise<void>;
@@ -81,7 +84,8 @@ export function LayoutPageView(props: LayoutPageViewProps) {
     onGoHome, toolbarOpened, setToolbarOpened, canvasBusy, canvasBusyText,
     setCanvasBusy, setCanvasBusyText, locoDialogOpened, setLocoDialogOpened,
     blockActionsDialogOpened, setBlockActionsDialogOpened,
-    signalLogicDialogOpened, setSignalLogicDialogOpened,
+    requestedBlockActionsBlockId, onRequestedBlockActionsBlockIdConsumed,
+    onOpenBlockActionsForBlock, signalLogicDialogOpened, setSignalLogicDialogOpened,
     onLocosSaved, pickerOpened, setPickerOpened,
     appSettingsDialogOpened, setAppSettingsDialogOpened,
     editMode, setEditMode, locoPanelCollapsed, setLocoPanelCollapsed,
@@ -104,6 +108,8 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         onLocosSaved={onLocosSaved}
         blockActionsDialogOpened={blockActionsDialogOpened}
         setBlockActionsDialogOpened={setBlockActionsDialogOpened}
+        requestedBlockActionsBlockId={requestedBlockActionsBlockId}
+        onRequestedBlockActionsBlockIdConsumed={onRequestedBlockActionsBlockIdConsumed}
         signalLogicDialogOpened={signalLogicDialogOpened}
         setSignalLogicDialogOpened={setSignalLogicDialogOpened}
         pickerOpened={pickerOpened}
@@ -166,6 +172,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           turnoutSelection={turnoutSelection}
           setTurnoutSelection={setTurnoutSelection}
           onUpdateSelectedElement={onUpdateSelectedElement}
+          onOpenBlockActionsForBlock={onOpenBlockActionsForBlock}
           routesString={routesString}
           setCanvasBusy={setCanvasBusy}
           setCanvasBusyText={setCanvasBusyText}
