@@ -427,7 +427,16 @@ export default function LayoutPage({
       invalidateCounter={
         invalidateCounter
       }
+      setInvalidateCounter={
+        setInvalidateCounter
+      }
       fitCounter={fitCounter}
+      turnoutSelection={turnoutSelection}
+      setTurnoutSelection={setTurnoutSelection}
+      onUpdateSelectedElement={
+        handleUpdateSelectedElement
+      }
+      routesString={routesString}
     />
   );
 }
