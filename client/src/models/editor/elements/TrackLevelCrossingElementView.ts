@@ -327,7 +327,7 @@ export class TrackLevelCrossingElementView
     this.drawLight(ctx, this.centerX + 18, this.centerY - 18);
   }
 
-  override draw(
+  draw(
     ctx: CanvasRenderingContext2D,
     options?: DrawOptions
   ): void {
@@ -394,7 +394,7 @@ export class TrackLevelCrossingElementView
     return crossing;
   }
 
-  override clone(): TrackLevelCrossingElementView {
+  clone(): TrackLevelCrossingElementView {
     const copy = new TrackLevelCrossingElementView(this.x, this.y);
 
     copy.id = generateId();
@@ -411,7 +411,7 @@ export class TrackLevelCrossingElementView
     return copy;
   }
 
-  override getEditableProperties(): IEditableProperty[] {
+  getEditableProperties(): IEditableProperty[] {
     return [
       ...getBaseEditableProperties(),
       { key: "barrierClosed", label: "Barrier closed", type: "checkbox" },
@@ -420,7 +420,7 @@ export class TrackLevelCrossingElementView
     ];
   }
 
-  override getHelp(): string {
+  getHelp(): string {
     return `
       <h3 style="margin-top:0;">Level crossing</h3>
       <p>A straight track section with a road crossing overlay.</p>
