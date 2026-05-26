@@ -113,6 +113,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         layout={layout}
         setTool={setTool}
         onUpdateSelectedElement={onUpdateSelectedElement}
+        onSaveLayout={saveLayoutToServer}
       />
 
       <AppShell
