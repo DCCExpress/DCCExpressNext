@@ -102,13 +102,13 @@ export default function LayoutPageDialogs({
       />
 
       <SignalLogicDialog
+        key={requestedSignalLogicAddress ?? "all-signals"}
         opened={signalLogicDialogOpened}
-        onClose={() =>
-          setSignalLogicDialogOpened(false)
-        }
+        onClose={() => {
+          setSignalLogicDialogOpened(false);
+          onRequestedSignalLogicAddressConsumed();
+        }}
         layout={layout}
-        initialSignalAddress={requestedSignalLogicAddress}
-        onInitialSignalAddressConsumed={onRequestedSignalLogicAddressConsumed}
       />
 
       <ElementPickerDialog
