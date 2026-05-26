@@ -422,7 +422,7 @@ export class TrackLevelCrossingElementView
       ...getBaseEditableProperties(),
       { key: "address", label: "Track/occupancy address", type: "number", min: 0 },
       { key: "basicAccessoryAddress", label: "Basic accessory address", type: "number", min: 0 },
-      { key: "basicAccessoryClosedValue", label: "Accessory value closes barrier", type: "checkbox" },
+      { key: "basicAccessoryClosedValue", label: "Accessory value closes barrier", type: "bittoggle" },
       { key: "barrierEnabled", label: "Barrier", type: "checkbox" },
       { key: "barrierClosed", label: "Barrier closed", type: "checkbox" },
       { key: "lightsEnabled", label: "Lights", type: "checkbox" },
