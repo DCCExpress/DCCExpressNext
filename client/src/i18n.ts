@@ -68,6 +68,15 @@ const enTranslation = {
       both: "Both ends",
     },
   },
+  blockActions: {
+    menu: "Blocks",
+    managerTitle: "Block actions",
+    blocks: "Blocks",
+    emptyBlocks: "No blocks found on the layout.",
+    selectBlock: "Select a block from the list or add blocks to the layout first.",
+    blockDetails: "ID: {{id}} | Address: {{address}} | Sensor: {{sensor}}",
+    totalActions: "{{count}} actions",
+  },
   settings: {
     ...en.settings,
     languages: {
@@ -110,6 +119,15 @@ const huTranslation = {
       both: "Mindkét végén",
     },
   },
+  blockActions: {
+    menu: "Blocks",
+    managerTitle: "Block actionök",
+    blocks: "Blokkok",
+    emptyBlocks: "Nincs blokk a layouton.",
+    selectBlock: "Válassz egy blokkot a listából, vagy előbb tegyél blokkokat a layoutra.",
+    blockDetails: "ID: {{id}} | Cím: {{address}} | Szenzor: {{sensor}}",
+    totalActions: "{{count}} action",
+  },
   settings: {
     ...hu.settings,
     languages: {
@@ -151,6 +169,15 @@ const deTranslation = {
       reverse: "Hinten (reverse)",
       both: "An beiden Enden",
     },
+  },
+  blockActions: {
+    menu: "Blöcke",
+    managerTitle: "Blockaktionen",
+    blocks: "Blöcke",
+    emptyBlocks: "Keine Blöcke im Layout gefunden.",
+    selectBlock: "Wähle einen Block aus der Liste aus oder füge zuerst Blöcke zum Layout hinzu.",
+    blockDetails: "ID: {{id}} | Adresse: {{address}} | Sensor: {{sensor}}",
+    totalActions: "{{count}} Aktionen",
   },
   settings: {
     ...de.settings,
