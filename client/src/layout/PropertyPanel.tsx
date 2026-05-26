@@ -12,6 +12,7 @@ import { LayoutView } from "../models/editor/core/LayoutView";
 import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
 import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
+import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { useRouteGraph } from "../hooks/useRouteGraph";
 import { wsApi } from "../services/wsApi";
@@ -20,6 +21,7 @@ import BlockActionsPanel from "./property-panel/BlockActionsPanel";
 import ExtendedRouteActions from "./property-panel/ExtendedRouteActions";
 import PropertyFieldRenderer from "./property-panel/PropertyFieldRenderer";
 import PropertyPanelHelp from "./property-panel/PropertyPanelHelp";
+import SignalLogicPanel from "./property-panel/SignalLogicPanel";
 import "../styles/propertypanel.css";
 import { useTranslation } from "react-i18next";
 
@@ -36,6 +38,7 @@ type PropertyPanelProps = {
   routes?: string | undefined;
   setBusy?: (busy: boolean, text?: string) => void;
   onOpenBlockActionsForBlock: (blockId: string) => void;
+  onOpenSignalLogicForSignal: (signalAddress: number) => void;
 };
 
 function updateElementProperty(
@@ -86,6 +89,7 @@ export default function RightPropertyPanel({
   routes,
   setBusy,
   onOpenBlockActionsForBlock,
+  onOpenSignalLogicForSignal,
 }: PropertyPanelProps) {
   const { t } = useTranslation();
   const {
@@ -279,6 +283,13 @@ export default function RightPropertyPanel({
           <BlockActionsPanel
             selectedElement={selectedElement}
             onOpenBlockActionsForBlock={onOpenBlockActionsForBlock}
+          />
+        )}
+
+        {selectedElement instanceof TrackSignalElementView && (
+          <SignalLogicPanel
+            selectedElement={selectedElement}
+            onOpenSignalLogicForSignal={onOpenSignalLogicForSignal}
           />
         )}
 
