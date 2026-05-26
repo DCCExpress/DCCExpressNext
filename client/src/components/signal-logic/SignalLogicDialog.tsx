@@ -35,6 +35,7 @@ import { isTurnoutElement } from "../../models/editor/core/LayoutView";
 import { TrackSensorElementView } from "../../models/editor/elements/TrackSensorElementView";
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { generateId } from "../../helpers";
+import { useRouteGraph } from "../../hooks/useRouteGraph";
 import AppModal from "../common/AppModal";
 import {
   loadSignalLogicRulesWs,
@@ -61,11 +62,6 @@ type AddressOption = { value: string; label: string };
 type SignalOption = AddressOption & { aspect: number; trackName: string };
 type Translate = ReturnType<typeof useTranslation>["t"];
 
-type ElementWithTrackInfo = {
-  trackName?: unknown;
-  section?: unknown;
-};
-
 const DEFAULT_RUNTIME_STATE: SignalLogicRuntimeStateDto = {
   running: false,
   autostart: false,
@@ -78,20 +74,6 @@ function uniqueByValue<T extends { value: string }>(options: T[]): T[] {
     seen.add(option.value);
     return true;
   });
-}
-
-function getTrackLabel(element: ElementWithTrackInfo): string {
-  const trackName = typeof element.trackName === "string"
-    ? element.trackName.trim()
-    : "";
-
-  if (trackName.length > 0) return trackName;
-
-  if (typeof element.section === "number" && element.section > 0) {
-    return `Pálya ${element.section}`;
-  }
-
-  return "Pálya nélkül";
 }
 
 function compareByName(a: string, b: string): number {
@@ -273,6 +255,7 @@ function translateValidationIssue(t: Translate, issue: SignalLogicValidationIssu
 
 export default function SignalLogicDialog({ opened, onClose, layout }: SignalLogicDialogProps) {
   const { t } = useTranslation();
+  const { graph, ensureLoaded } = useRouteGraph();
 
   const [groups, setGroups] = useState<SignalLogicRuleGroupDto[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -295,17 +278,36 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
     { value: "false", label: t("signalLogic.sensorStates.inactive") },
   ], [t]);
 
+  const graphSignalsByAddress = useMemo(() => {
+    const map = new Map<number, { trackName: string; label: string }>();
+
+    for (const node of graph?.nodes ?? []) {
+      const trackName = node.trackName.trim();
+
+      for (const signal of node.signals) {
+        map.set(signal.address, {
+          trackName,
+          label: signal.label,
+        });
+      }
+    }
+
+    return map;
+  }, [graph]);
+
   const signalOptions = useMemo<SignalOption[]>(() => uniqueByValue(
     layout
       .getAllElements()
       .filter((element): element is TrackSignalElementView => element instanceof TrackSignalElementView)
       .map(signal => {
-        const trackName = getTrackLabel(signal);
-        const signalLabel = t("signalLogic.signalOption", { address: signal.address, aspect: signal.aspect });
+        const graphSignal = graphSignalsByAddress.get(signal.address);
+        const trackName = graphSignal?.trackName ?? "";
+        const signalLabel = graphSignal?.label
+          ?? t("signalLogic.signalOption", { address: signal.address, aspect: signal.aspect });
 
         return {
           value: signal.address.toString(),
-          label: `${trackName} / ${signalLabel}`,
+          label: trackName ? `${trackName}: ${signalLabel}` : signalLabel,
           aspect: signal.aspect,
           trackName,
         };
@@ -315,7 +317,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
         if (trackCompare !== 0) return trackCompare;
         return Number(a.value) - Number(b.value);
       })
-  ), [layout, t]);
+  ), [layout, graphSignalsByAddress, t]);
 
   const turnoutOptions = useMemo<AddressOption[]>(() => uniqueByValue(
     layout
@@ -365,7 +367,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   const getSignalOption = (signalAddress: number): SignalOption | undefined =>
     signalOptions.find(option => Number(option.value) === signalAddress);
   const getSignalTrackLabel = (signalAddress: number): string =>
-    getSignalOption(signalAddress)?.trackName ?? "Pálya nélkül";
+    getSignalOption(signalAddress)?.trackName ?? "";
   const getSignalListLabel = (signalAddress: number): string =>
     getSignalOption(signalAddress)?.label ?? t("signalLogic.signalsListItem", { address: signalAddress });
 
@@ -426,7 +428,10 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   };
 
   useEffect(() => {
-    if (opened) void loadRules();
+    if (opened) {
+      void ensureLoaded();
+      void loadRules();
+    }
   }, [opened]);
 
   const saveRules = async (): Promise<void> => {
@@ -660,6 +665,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                       {groups.length === 0 && <Text size="sm" c="dimmed">{t("signalLogic.emptySignals")}</Text>}
                       {sortedGroups.map(group => {
                         const selected = group.id === selectedGroup?.id;
+                        const trackLabel = getSignalTrackLabel(group.signalAddress);
 
                         return (
                           <Button
@@ -671,9 +677,11 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
                             onClick={() => setSelectedGroupId(group.id)}
                           >
                             <Stack gap={0} align="flex-start" style={{ minWidth: 0 }}>
-                              <Text size="xs" c={selected ? "white" : "dimmed"} truncate="end">
-                                {getSignalTrackLabel(group.signalAddress)}
-                              </Text>
+                              {trackLabel && (
+                                <Text size="xs" c={selected ? "white" : "dimmed"} truncate="end">
+                                  {trackLabel}
+                                </Text>
+                              )}
                               <Text size="sm" fw={600} truncate="end">
                                 {getSignalListLabel(group.signalAddress)}
                               </Text>
