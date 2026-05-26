@@ -34,6 +34,8 @@ export type LayoutPageViewProps = {
   onCommandCenterSaved?: (commandCenter: CommandCenter) => void;
   locoDialogOpened: boolean;
   setLocoDialogOpened: BooleanSetter;
+  blockActionsDialogOpened: boolean;
+  setBlockActionsDialogOpened: BooleanSetter;
   signalLogicDialogOpened: boolean;
   setSignalLogicDialogOpened: BooleanSetter;
   onLocosSaved: () => Promise<void>;
@@ -78,6 +80,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
   const {
     onGoHome, toolbarOpened, setToolbarOpened, canvasBusy, canvasBusyText,
     setCanvasBusy, setCanvasBusyText, locoDialogOpened, setLocoDialogOpened,
+    blockActionsDialogOpened, setBlockActionsDialogOpened,
     signalLogicDialogOpened, setSignalLogicDialogOpened,
     onLocosSaved, pickerOpened, setPickerOpened,
     appSettingsDialogOpened, setAppSettingsDialogOpened,
@@ -99,6 +102,8 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         locoDialogOpened={locoDialogOpened}
         setLocoDialogOpened={setLocoDialogOpened}
         onLocosSaved={onLocosSaved}
+        blockActionsDialogOpened={blockActionsDialogOpened}
+        setBlockActionsDialogOpened={setBlockActionsDialogOpened}
         signalLogicDialogOpened={signalLogicDialogOpened}
         setSignalLogicDialogOpened={setSignalLogicDialogOpened}
         pickerOpened={pickerOpened}
@@ -107,6 +112,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         setAppSettingsDialogOpened={setAppSettingsDialogOpened}
         layout={layout}
         setTool={setTool}
+        onUpdateSelectedElement={onUpdateSelectedElement}
       />
 
       <AppShell
@@ -127,6 +133,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           tool={tool}
           setTool={setTool}
           setLocoDialogOpened={setLocoDialogOpened}
+          setBlockActionsDialogOpened={setBlockActionsDialogOpened}
           setSignalLogicDialogOpened={setSignalLogicDialogOpened}
           setPickerOpened={setPickerOpened}
           saveLayoutToServer={saveLayoutToServer}
