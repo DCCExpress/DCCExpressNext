@@ -213,7 +213,11 @@ function IntegrityTab() {
   const deleteOrphans = async (blockIds: string[]): Promise<void> => {
     if (blockIds.length === 0) return;
 
-    setDeletingBlockId(blockIds.length === 1 ? blockIds[0] : "__all__");
+    const deleteStateId = blockIds.length === 1
+      ? blockIds[0] ?? null
+      : "__all__";
+
+    setDeletingBlockId(deleteStateId);
     setErrorText(null);
     setStatusText(null);
 
