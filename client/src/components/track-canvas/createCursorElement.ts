@@ -1,6 +1,7 @@
 import { ELEMENT_TYPES } from "../../../../common/src/layout/elementTypes";
 import { BaseElementView } from "../../models/editor/core/BaseElementView";
 import { AudioButtonElementView } from "../../models/editor/elements/AudioButtonElementView";
+import { AudioListButtonElementView } from "../../models/editor/elements/AudioListButtonElementView";
 import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 import { ButtonElementView } from "../../models/editor/elements/ButtonElementView";
 import { ButtonScriptElementView } from "../../models/editor/elements/ButtonScriptElementView";
@@ -49,6 +50,7 @@ const cursorButtonScriptElement = new ButtonScriptElementView(0, 0);
 const cursorRouteButtonElement = new RouteButtonElementView(0, 0);
 const cursorExtendedRouteButtonElement = new ExtendedRouteButtonElementView(0, 0);
 const cursorAudioButtonElement = new AudioButtonElementView(0, 0);
+const cursorAudioListButtonElement = new AudioListButtonElementView(0, 0);
 const cursorClockElement = new ClockElementView(0, 0);
 const cursorTreeElement = new TreeElementView(0, 0);
 const cursorBlockElement = new BlockElementView(0, 0);
@@ -99,6 +101,9 @@ export function createCursorElement(
 
     case ELEMENT_TYPES.BUTTON_AUDIO:
       return cursorAudioButtonElement;
+
+    case ELEMENT_TYPES.BUTTON_AUDIO_LIST:
+      return cursorAudioListButtonElement;
 
     case ELEMENT_TYPES.BUTTON_ROUTE:
       return cursorRouteButtonElement;
