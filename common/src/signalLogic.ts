@@ -64,6 +64,19 @@ export type SignalLogicKnownSensor = {
   address: number;
 };
 
+export type SignalLogicIntegrityOrphanSignalDto = {
+  groupId: string;
+  signalAddress: number;
+  ruleCount: number;
+  conditionCount: number;
+};
+
+export type SignalLogicIntegrityReportDto = {
+  layoutSignalCount: number;
+  ruleGroupCount: number;
+  orphanSignals: SignalLogicIntegrityOrphanSignalDto[];
+};
+
 export type SignalLogicValidationIssue = {
   level: "error" | "warning";
   message: string;
@@ -251,51 +264,30 @@ export function validateSignalLogicDocument(
 
   for (const group of document.groups) {
     if (group.signalAddress <= 0) {
-      issues.push({
-        level: "error",
-        groupId: group.id,
-        message: "Signal address must be greater than zero.",
-      });
+      issues.push({ level: "error", groupId: group.id, message: "Signal address must be greater than zero." });
     }
 
     if (usedSignalAddresses.has(group.signalAddress)) {
-      issues.push({
-        level: "warning",
-        groupId: group.id,
-        message: `Signal #${group.signalAddress} has more than one rule group.`,
-      });
+      issues.push({ level: "warning", groupId: group.id, message: `Signal #${group.signalAddress} has more than one rule group.` });
     }
 
     usedSignalAddresses.add(group.signalAddress);
-
     const knownSignal = knownSignalByAddress.get(group.signalAddress);
 
     if (knownSignals.length > 0 && !knownSignal) {
-      issues.push({
-        level: "error",
-        groupId: group.id,
-        message: `Signal #${group.signalAddress} does not exist on the layout.`,
-      });
+      issues.push({ level: "error", groupId: group.id, message: `Signal #${group.signalAddress} does not exist on the layout.` });
     }
 
     if (knownSignal) {
       const allowedAspects = getAllowedSignalAspects(knownSignal.aspect);
 
       if (!allowedAspects.includes(group.defaultAspect)) {
-        issues.push({
-          level: "error",
-          groupId: group.id,
-          message: `Signal #${group.signalAddress} cannot use default aspect ${group.defaultAspect}.`,
-        });
+        issues.push({ level: "error", groupId: group.id, message: `Signal #${group.signalAddress} cannot use default aspect ${group.defaultAspect}.` });
       }
     }
 
     if (group.rules.length === 0) {
-      issues.push({
-        level: "warning",
-        groupId: group.id,
-        message: `Signal #${group.signalAddress} has no rules and will always use the default aspect.`,
-      });
+      issues.push({ level: "warning", groupId: group.id, message: `Signal #${group.signalAddress} has no rules and will always use the default aspect.` });
     }
 
     const ruleSignatures = new Set<string>();
@@ -319,109 +311,50 @@ export function validateSignalLogicDocument(
         const allowedAspects = getAllowedSignalAspects(knownSignal.aspect);
 
         if (!allowedAspects.includes(rule.aspect)) {
-          issues.push({
-            level: "error",
-            groupId: group.id,
-            ruleId: rule.id,
-            message: `Signal #${group.signalAddress} cannot use rule aspect ${rule.aspect}.`,
-          });
+          issues.push({ level: "error", groupId: group.id, ruleId: rule.id, message: `Signal #${group.signalAddress} cannot use rule aspect ${rule.aspect}.` });
         }
       }
 
       if (rule.conditions.length === 0) {
-        issues.push({
-          level: "warning",
-          groupId: group.id,
-          ruleId: rule.id,
-          message: "Rule has no conditions and will always match.",
-        });
+        issues.push({ level: "warning", groupId: group.id, ruleId: rule.id, message: "Rule has no conditions and will always match." });
       }
 
-      const signature = rule.conditions
-        .map(conditionSignature)
-        .sort()
-        .join("|");
+      const signature = rule.conditions.map(conditionSignature).sort().join("|");
 
       if (signature.length > 0 && ruleSignatures.has(signature)) {
-        issues.push({
-          level: "warning",
-          groupId: group.id,
-          ruleId: rule.id,
-          message: "Another rule has the same conditions.",
-        });
+        issues.push({ level: "warning", groupId: group.id, ruleId: rule.id, message: "Another rule has the same conditions." });
       }
 
       ruleSignatures.add(signature);
-
       const conditionKeys = new Set<string>();
 
       for (const condition of rule.conditions) {
-        const key = `${condition.type}:${
-          condition.type === "sensor"
-            ? condition.sensorAddress
-            : condition.turnoutAddress
-        }`;
+        const key = `${condition.type}:${condition.type === "sensor" ? condition.sensorAddress : condition.turnoutAddress}`;
 
         if (conditionKeys.has(key)) {
-          issues.push({
-            level: "warning",
-            groupId: group.id,
-            ruleId: rule.id,
-            conditionId: condition.id,
-            message: "The same input is used more than once in the same rule.",
-          });
+          issues.push({ level: "warning", groupId: group.id, ruleId: rule.id, conditionId: condition.id, message: "The same input is used more than once in the same rule." });
         }
 
         conditionKeys.add(key);
 
         if (condition.type === "sensor") {
           if (condition.sensorAddress <= 0) {
-            issues.push({
-              level: "error",
-              groupId: group.id,
-              ruleId: rule.id,
-              conditionId: condition.id,
-              message: "Sensor condition must reference a sensor address greater than zero.",
-            });
+            issues.push({ level: "error", groupId: group.id, ruleId: rule.id, conditionId: condition.id, message: "Sensor condition must reference a sensor address greater than zero." });
           }
 
-          if (
-            knownSensorAddresses.size > 0 &&
-            !knownSensorAddresses.has(condition.sensorAddress)
-          ) {
-            issues.push({
-              level: "error",
-              groupId: group.id,
-              ruleId: rule.id,
-              conditionId: condition.id,
-              message: `Sensor #${condition.sensorAddress} does not exist on the layout.`,
-            });
+          if (knownSensorAddresses.size > 0 && !knownSensorAddresses.has(condition.sensorAddress)) {
+            issues.push({ level: "error", groupId: group.id, ruleId: rule.id, conditionId: condition.id, message: `Sensor #${condition.sensorAddress} does not exist on the layout.` });
           }
 
           continue;
         }
 
         if (condition.turnoutAddress <= 0) {
-          issues.push({
-            level: "error",
-            groupId: group.id,
-            ruleId: rule.id,
-            conditionId: condition.id,
-            message: "Turnout condition must reference a turnout address greater than zero.",
-          });
+          issues.push({ level: "error", groupId: group.id, ruleId: rule.id, conditionId: condition.id, message: "Turnout condition must reference a turnout address greater than zero." });
         }
 
-        if (
-          knownTurnoutAddresses.size > 0 &&
-          !knownTurnoutAddresses.has(condition.turnoutAddress)
-        ) {
-          issues.push({
-            level: "error",
-            groupId: group.id,
-            ruleId: rule.id,
-            conditionId: condition.id,
-            message: `Turnout #${condition.turnoutAddress} does not exist on the layout.`,
-          });
+        if (knownTurnoutAddresses.size > 0 && !knownTurnoutAddresses.has(condition.turnoutAddress)) {
+          issues.push({ level: "error", groupId: group.id, ruleId: rule.id, conditionId: condition.id, message: `Turnout #${condition.turnoutAddress} does not exist on the layout.` });
         }
       }
     }
