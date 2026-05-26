@@ -1,6 +1,14 @@
-import { Alert, Badge, Button, Group, NumberInput, ScrollArea, SegmentedControl, Stack, Table, Tabs, Text } from "@mantine/core";
+import { Alert, Badge, Button, Card, Group, NumberInput, ScrollArea, SegmentedControl, Stack, Table, Tabs, Text } from "@mantine/core";
+import { IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 
+import type {
+  BlockAutomationIntegrityReportDto,
+} from "../../../../common/src/blockAutomation";
+import {
+  checkBlockAutomationIntegrityWs,
+  deleteBlockAutomationOrphansWs,
+} from "../../api/blockAutomationWsApi";
 import AppModal from "../common/AppModal";
 import { useRailwayDiagnostics, type DiagnosticAccessoryItem } from "../../hooks/useRailwayDiagnostics";
 import { wsApi } from "../../services/wsApi";
@@ -173,6 +181,156 @@ function BasicAccessoryTable({
   );
 }
 
+function IntegrityTab() {
+  const [report, setReport] = useState<BlockAutomationIntegrityReportDto | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [deletingBlockId, setDeletingBlockId] = useState<string | null>(null);
+  const [statusText, setStatusText] = useState<string | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  const orphanBlocks = report?.orphanBlocks ?? [];
+
+  const runCheck = async (): Promise<void> => {
+    setLoading(true);
+    setErrorText(null);
+    setStatusText(null);
+
+    try {
+      const nextReport = await checkBlockAutomationIntegrityWs();
+      setReport(nextReport);
+      setStatusText(
+        nextReport.orphanBlocks.length === 0
+          ? "Integrity check completed. No orphan block action entries found."
+          : `Integrity check completed. Found ${nextReport.orphanBlocks.length} orphan block action entr${nextReport.orphanBlocks.length === 1 ? "y" : "ies"}.`
+      );
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteOrphans = async (blockIds: string[]): Promise<void> => {
+    if (blockIds.length === 0) return;
+
+    setDeletingBlockId(blockIds.length === 1 ? blockIds[0] : "__all__");
+    setErrorText(null);
+    setStatusText(null);
+
+    try {
+      const result = await deleteBlockAutomationOrphansWs(blockIds);
+      setReport(result.integrity);
+      setStatusText(
+        `Deleted ${result.deletedBlockIds.length} orphan block action entr${result.deletedBlockIds.length === 1 ? "y" : "ies"}.`
+      );
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : String(error));
+    } finally {
+      setDeletingBlockId(null);
+    }
+  };
+
+  return (
+    <Stack gap="md" h="100%">
+      <Alert color="blue" variant="light" title="Layout / block automation integrity">
+        This check compares block IDs in the saved layout with block IDs stored in block-automation.json. Orphan entries are block action lists whose block no longer exists in the layout.
+      </Alert>
+
+      {errorText && (
+        <Alert color="red" variant="light">
+          {errorText}
+        </Alert>
+      )}
+
+      {statusText && !errorText && (
+        <Alert color={orphanBlocks.length === 0 ? "green" : "yellow"} variant="light">
+          {statusText}
+        </Alert>
+      )}
+
+      <Group justify="space-between">
+        <Group gap="xs">
+          <Button
+            leftSection={<IconRefresh size={16} />}
+            loading={loading}
+            onClick={() => void runCheck()}
+          >
+            Run integrity check
+          </Button>
+
+          <Button
+            color="red"
+            variant="light"
+            leftSection={<IconTrash size={16} />}
+            disabled={orphanBlocks.length === 0}
+            loading={deletingBlockId === "__all__"}
+            onClick={() => void deleteOrphans(orphanBlocks.map(block => block.blockId))}
+          >
+            Delete all orphans
+          </Button>
+        </Group>
+
+        {report && (
+          <Group gap="xs">
+            <Badge variant="light">Layout blocks: {report.layoutBlockCount}</Badge>
+            <Badge variant="light">Automation blocks: {report.automationBlockCount}</Badge>
+            <Badge color={orphanBlocks.length === 0 ? "green" : "yellow"} variant="light">
+              Orphans: {orphanBlocks.length}
+            </Badge>
+          </Group>
+        )}
+      </Group>
+
+      {!report && (
+        <Text size="sm" c="dimmed">
+          Run the integrity check to find block action entries that no longer have a matching block in the layout.
+        </Text>
+      )}
+
+      {report && orphanBlocks.length === 0 && (
+        <Card withBorder p="md">
+          <Text size="sm" c="green" fw={600}>
+            No orphan block action entries found.
+          </Text>
+        </Card>
+      )}
+
+      {orphanBlocks.length > 0 && (
+        <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto" offsetScrollbars>
+          <Stack gap="sm">
+            {orphanBlocks.map(block => (
+              <Card key={block.blockId} withBorder p="sm">
+                <Group justify="space-between" align="center">
+                  <Stack gap={2}>
+                    <Text fw={700}>{block.blockId}</Text>
+                    <Group gap="xs">
+                      <Badge variant="light">Actions: {block.actionCount}</Badge>
+                      <Badge variant="light">Enter: {block.onTrainEnterCount}</Badge>
+                      <Badge variant="light">Leave: {block.onTrainLeaveCount}</Badge>
+                    </Group>
+                  </Stack>
+
+                  <Button
+                    size="xs"
+                    color="red"
+                    variant="light"
+                    leftSection={<IconTrash size={14} />}
+                    loading={deletingBlockId === block.blockId}
+                    disabled={deletingBlockId !== null && deletingBlockId !== block.blockId}
+                    onClick={() => void deleteOrphans([block.blockId])}
+                  >
+                    Delete
+                  </Button>
+                </Group>
+              </Card>
+            ))}
+          </Stack>
+        </ScrollArea>
+      )}
+    </Stack>
+  );
+}
+
 function CommandTab() {
   const [kind, setKind] = useState<CommandKind>("basicAccessory");
   const [address, setAddress] = useState<number | string>(1);
@@ -281,7 +439,7 @@ function InfoHelpTab() {
         </Stack>
 
         <Alert color="yellow" variant="light" title="Shared address warning">
-          If a basic accessory row shows shared address, more than one layout element uses the same physical accessory address. That usually means one command may control multiple devices, which is normally not recommended.
+          If a basic accessory row shows shared address, more than one layout element uses the same physical accessory address. One command may control multiple devices, which is normally not recommended.
         </Alert>
       </Stack>
     </ScrollArea>
@@ -311,6 +469,7 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
             <Tabs.Tab value="sensors"><TabLabel label="Sensors" count={sensors.length} /></Tabs.Tab>
             <Tabs.Tab value="turnouts"><TabLabel label="Turnouts" count={turnouts.length} /></Tabs.Tab>
             <Tabs.Tab value="accessories"><TabLabel label="Basic accessories" count={accessories.length} /></Tabs.Tab>
+            <Tabs.Tab value="integrity"><TabLabel label="Integrity" /></Tabs.Tab>
             <Tabs.Tab value="command"><TabLabel label="Command" /></Tabs.Tab>
             <Tabs.Tab value="info"><TabLabel label="Info / Help" /></Tabs.Tab>
           </Tabs.List>
@@ -339,6 +498,10 @@ export default function DiagnosticsDialog({ opened, onClose }: DiagnosticsDialog
 
           <Tabs.Panel value="accessories" pt="md" style={diagnosticsPanelStyle}>
             <BasicAccessoryTable items={accessories} />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="integrity" pt="md" style={diagnosticsPanelStyle}>
+            <IntegrityTab />
           </Tabs.Panel>
 
           <Tabs.Panel value="command" pt="md" style={diagnosticsPanelStyle}>
