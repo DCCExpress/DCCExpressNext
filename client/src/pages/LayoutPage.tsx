@@ -34,6 +34,11 @@ export default function LayoutPage({
     useState(false);
 
   const [
+    blockActionsDialogOpened,
+    setBlockActionsDialogOpened,
+  ] = useState(false);
+
+  const [
     signalLogicDialogOpened,
     setSignalLogicDialogOpened,
   ] = useState(false);
@@ -237,6 +242,12 @@ export default function LayoutPage({
       locoDialogOpened={locoDialogOpened}
       setLocoDialogOpened={
         setLocoDialogOpened
+      }
+      blockActionsDialogOpened={
+        blockActionsDialogOpened
+      }
+      setBlockActionsDialogOpened={
+        setBlockActionsDialogOpened
       }
       signalLogicDialogOpened={
         signalLogicDialogOpened
