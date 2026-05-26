@@ -112,8 +112,6 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         setAppSettingsDialogOpened={setAppSettingsDialogOpened}
         layout={layout}
         setTool={setTool}
-        onUpdateSelectedElement={onUpdateSelectedElement}
-        onSaveLayout={saveLayoutToServer}
       />
 
       <AppShell
