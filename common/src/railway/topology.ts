@@ -28,6 +28,9 @@ import {
   TrackStraightElement,
 } from "../layout/elements/TrackStraightElement.js";
 import {
+  TrackLevelCrossingElement,
+} from "../layout/elements/TrackLevelCrossingElement.js";
+import {
   TrackDirectionElement,
 } from "../layout/elements/TrackDirectionElement.js";
 import {
@@ -77,6 +80,7 @@ export type {
  */
 export {
   TrackStraightElement as TopologyStraightElement,
+  TrackLevelCrossingElement as TopologyLevelCrossingElement,
   TrackDirectionElement as TopologyDirectionElement,
   TrackEndElement as TopologyEndElement,
   TrackCornerElement as TopologyCornerElement,
@@ -182,6 +186,40 @@ function createStraightElement(
     ),
     data
   );
+}
+
+function createLevelCrossingElement(
+  data: SerializedLayoutElementDto
+): TrackLevelCrossingElement {
+  const element = applyTrackData(
+    new TrackLevelCrossingElement(
+      numberValue(data.x, 0),
+      numberValue(data.y, 0)
+    ),
+    data
+  );
+
+  element.barrierType = stringValue(
+    data.barrierType,
+    element.barrierType
+  ) as typeof element.barrierType;
+
+  element.barrierClosed = boolValue(
+    data.barrierClosed,
+    element.barrierClosed
+  );
+
+  element.lightsEnabled = boolValue(
+    data.lightsEnabled,
+    element.lightsEnabled
+  );
+
+  element.roadColor = stringValue(
+    data.roadColor,
+    element.roadColor
+  );
+
+  return element;
 }
 
 function createDirectionElement(
@@ -376,6 +414,7 @@ export type TopologyTurnoutElement =
 
 export type TopologyTrackElement =
   | TrackStraightElement
+  | TrackLevelCrossingElement
   | TrackDirectionElement
   | TrackEndElement
   | TrackCornerElement
@@ -411,6 +450,7 @@ export class RailwayTopologyLayout {
     return this.elements.filter(
       (element): element is TopologyTrackElement =>
         element instanceof TrackStraightElement ||
+        element instanceof TrackLevelCrossingElement ||
         element instanceof TrackDirectionElement ||
         element instanceof TrackEndElement ||
         element instanceof TrackCornerElement ||
@@ -499,6 +539,9 @@ function createTopologyElement(
   switch (data.type) {
     case ELEMENT_TYPES.TRACK_STRAIGHT:
       return createStraightElement(data);
+
+    case ELEMENT_TYPES.TRACK_LEVEL_CROSSING:
+      return createLevelCrossingElement(data);
 
     case ELEMENT_TYPES.TRACK_DIRECTION:
       return createDirectionElement(data);
