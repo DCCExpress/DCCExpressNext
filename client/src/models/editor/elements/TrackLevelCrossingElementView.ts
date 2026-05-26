@@ -254,9 +254,9 @@ export class TrackLevelCrossingElementView
     ctx.translate(x, y);
     ctx.rotate(angle);
 
-    ctx.fillStyle = "#343a40";
+    ctx.fillStyle = "#111111";
     ctx.beginPath();
-    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.lineWidth = 5;
@@ -289,18 +289,22 @@ export class TrackLevelCrossingElementView
     const lampActive = shouldBlink ? active : true;
 
     const lightColor = this.barrierClosed
-      ? lampActive ? "#ff0000" : "#5c1a1a"
-      : lampActive ? "#ffffff" : "#4a4a4a";
+      ? lampActive ? "#ff0000" : "#120000"
+      : lampActive ? "#ffffff" : "#050505";
 
     const highlightColor = this.barrierClosed
-      ? lampActive ? "#ff6b6b" : "#3a1010"
-      : lampActive ? "#ffffff" : "#2f2f2f";
+      ? lampActive ? "#ff6b6b" : "#050000"
+      : lampActive ? "#ffffff" : "#050505";
 
     ctx.save();
-    ctx.fillStyle = "#212529";
+    ctx.fillStyle = "#000000";
     ctx.beginPath();
     ctx.arc(x, y, 6, 0, Math.PI * 2);
     ctx.fill();
+
+    ctx.lineWidth = 0.75;
+    ctx.strokeStyle = "#f8f9fa";
+    ctx.stroke();
 
     ctx.fillStyle = lightColor;
     ctx.beginPath();
@@ -312,6 +316,17 @@ export class TrackLevelCrossingElementView
     ctx.arc(x + 2.5, y + 1, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+  }
+
+  private copyTrackRuntimeStateTo(
+    target: TrackStraightElementView
+  ): void {
+    target.state = this.state;
+    target.section = this.section;
+    target.isRoute = this.isRoute;
+    target.isBusy = this.isBusy;
+    target.isTransit = this.isTransit;
+    target.travelDirection = this.travelDirection;
   }
 
   private drawCrossingDetails(ctx: CanvasRenderingContext2D): void {
@@ -371,6 +386,7 @@ export class TrackLevelCrossingElementView
     straightPreview.selected = false;
     straightPreview.enabled = this.enabled;
     straightPreview.marked = this.marked;
+    this.copyTrackRuntimeStateTo(straightPreview);
     straightPreview.draw(ctx, options);
 
     this.drawCrossingDetails(ctx);
