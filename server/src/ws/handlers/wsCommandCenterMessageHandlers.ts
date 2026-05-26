@@ -5,10 +5,6 @@ import {
 } from "../../services/locoReservationStore.js";
 
 import {
-  updateLocoLastRunAtByAddress,
-} from "../../services/locoStore.js";
-
-import {
   routeGraphRuntimeStore,
 } from "../../services/routeGraphRuntimeStore.js";
 
@@ -32,46 +28,6 @@ function rejectMissingCommandCenter({
       message: "No command center available",
     },
   });
-}
-
-async function persistLocoLastRunAtIfStopped(
-  context: WsHandlerContext,
-  locoAddress: number,
-  previousSpeed: number | undefined,
-  nextSpeed: number
-): Promise<void> {
-  if (
-    nextSpeed !== 0 ||
-    previousSpeed === undefined ||
-    previousSpeed === 0
-  ) {
-    return;
-  }
-
-  const saved =
-    await updateLocoLastRunAtByAddress(locoAddress);
-
-  if (!saved) {
-    log(
-      "Loco stopped, but no matching persisted loco was found:",
-      locoAddress
-    );
-    return;
-  }
-
-  const syncedLoco =
-    context.commandCenter?.getLocoInfo(locoAddress);
-
-  if (syncedLoco) {
-    syncedLoco.lastRunAt = new Date().toISOString();
-
-    context.broadcast({
-      type: "locoState",
-      data: {
-        loco: syncedLoco,
-      },
-    });
-  }
 }
 
 function sendActiveRouteReservationSnapshots(context: WsHandlerContext): void {
@@ -220,12 +176,9 @@ export const handleCommandCenterMessage: WsMessageHandler = context => {
         direction,
       } = msg.data;
 
-      const previousSpeed =
-        commandCenter.getLocoInfo(locoAddress)?.speed;
-
       commandCenter
         .setLoco(locoAddress, speed, direction)
-        .then(async success => {
+        .then(success => {
           log("Set loco result:", success);
 
           if (success) {
@@ -240,13 +193,6 @@ export const handleCommandCenterMessage: WsMessageHandler = context => {
                 },
               });
             }
-
-            await persistLocoLastRunAtIfStopped(
-              context,
-              locoAddress,
-              previousSpeed,
-              speed
-            );
           }
 
           if (!success) {
