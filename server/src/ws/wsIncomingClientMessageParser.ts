@@ -75,7 +75,12 @@ function isSignalLogicCommandAction(value: unknown): value is SignalLogicCommand
 }
 
 function isBlockAutomationCommandAction(value: unknown): value is BlockAutomationCommandAction {
-  return value === "load" || value === "save";
+  return (
+    value === "load" ||
+    value === "save" ||
+    value === "integrityCheck" ||
+    value === "deleteOrphanBlocks"
+  );
 }
 
 function isTaskManagerCommandAction(value: unknown): value is TaskManagerCommandAction {
@@ -327,7 +332,16 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isBlockAutomationCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (data.action === "save" && !isRecord(data.document)) return invalidPayload(type, "document must be an object for save.");
-      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.document) ? { document: data.document } : {}) } as ClientWsPayloadMap[TType] };
+      if (data.action === "deleteOrphanBlocks" && !Array.isArray(data.blockIds)) return invalidPayload(type, "blockIds must be an array for deleteOrphanBlocks.");
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          ...(isRecord(data.document) ? { document: data.document } : {}),
+          ...(Array.isArray(data.blockIds) ? { blockIds: data.blockIds.filter((blockId): blockId is string => typeof blockId === "string") } : {}),
+        } as ClientWsPayloadMap[TType],
+      };
     }
 
     case "taskManagerCommand":
