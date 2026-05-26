@@ -18,6 +18,7 @@ import { TreeElementView } from "../../models/editor/elements/TreeElementView";
 import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
 import { AudioButtonElementView } from "../../models/editor/elements/AudioButtonElementView";
+import { AudioListButtonElementView } from "../../models/editor/elements/AudioListButtonElementView";
 import { RouteButtonElementView } from "../../models/editor/elements/RouteButtonElementView";
 import { TrackCrossingElementView } from "../../models/editor/elements/TrackCrossingElementView";
 import { ButtonScriptElementView } from "../../models/editor/elements/ButtonScriptElementView";
@@ -53,6 +54,7 @@ export default function ElementPickerDialog({
   const button = new ButtonElementView(0, 0);
   const buttonscript = new ButtonScriptElementView(0, 0);
   const audiobutton = new AudioButtonElementView(0, 0);
+  const audiolistbutton = new AudioListButtonElementView(0, 0);
   const routebutton = new RouteButtonElementView(0, 0);
   const extendedroutebutton = new ExtendedRouteButtonElementView(0, 0);
   const label = new LabelElementView(0, 0);
@@ -181,6 +183,10 @@ export default function ElementPickerDialog({
             />
             <ElementPreview element={audiobutton} label={t("editor.elements.audio")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.BUTTON_AUDIO);
+              onClose();
+            }} />
+            <ElementPreview element={audiolistbutton} label="Audio list" width={40} height={40} onClick={() => {
+              onPick(ELEMENT_TYPES.BUTTON_AUDIO_LIST);
               onClose();
             }} />
             <ElementPreview element={clock} scale={1} label={t("editor.elements.clock")} width={40} height={40} onClick={() => {
