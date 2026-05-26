@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "blocks": {
+    "389fdf2-889e-44bc-8013-d8aa373d": {
+      "onTrainEnter": [
+        {
+          "id": "7162a3d-9f09-4314-9174-9f966a8b",
+          "type": "playAudio",
+          "fileName": "Szfvarrol.V3.mp3"
+        },
+        {
+          "id": "c2af598-7317-4d16-a65d-6701d1ea",
+          "type": "wait",
+          "ms": 2000
+        },
+        {
+          "id": "eb655fe-799e-4f66-9b0e-75d03ba8",
+          "type": "playAudio",
+          "fileName": "mav_szignal.mp3"
+        }
+      ]
+    },
+    "c546f8e-3716-4cba-9f23-d2672fb0": {
+      "onTrainEnter": [
+        {
+          "id": "ccc1c9b-927d-405b-8fb7-0bc4a573",
+          "type": "playAudio",
+          "fileName": ""
+        }
+      ]
+    }
+  }
+}

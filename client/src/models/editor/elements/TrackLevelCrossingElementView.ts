@@ -277,46 +277,58 @@ export class TrackLevelCrossingElementView
     ctx.restore();
   }
 
-  private drawLight(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    active: boolean
-  ): void {
-    if (!this.lightsEnabled) return;
+ private drawLight(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  active: boolean
+): void {
+  if (!this.lightsEnabled) return;
 
-    const shouldBlink = this.blinkingEnabled;
-    const lampActive = shouldBlink ? active : true;
+  const shouldBlink = this.blinkingEnabled;
+  const lampActive = shouldBlink ? active : true;
 
-    const lightColor = this.barrierClosed
-      ? lampActive ? "#ff0000" : "#120000"
-      : lampActive ? "#ffffff" : "#050505";
+  const lightColor = this.barrierClosed
+    ? lampActive ? "#ff0000" : "#120000"
+    : lampActive ? "#ffffff" : "#050505";
 
-    const highlightColor = this.barrierClosed
-      ? lampActive ? "#ff6b6b" : "#050000"
-      : lampActive ? "#ffffff" : "#050505";
+  const highlightColor = this.barrierClosed
+    ? lampActive ? "#ff6b6b" : "#050000"
+    : lampActive ? "#ffffff" : "#050505";
 
-    ctx.save();
-    ctx.fillStyle = "#000000";
-    ctx.beginPath();
-    ctx.arc(x, y, 6, 0, Math.PI * 2);
-    ctx.fill();
+  const housingRadius = 7;      // eddig 6 volt
+  const ringRadius = 5.8;       // beljebb húzott fehér kör
+  const lensRadius = 3;
 
-    ctx.lineWidth = 0.75;
-    ctx.strokeStyle = "#f8f9fa";
-    ctx.stroke();
+  ctx.save();
 
-    ctx.fillStyle = lightColor;
-    ctx.beginPath();
-    ctx.arc(x - 2.5, y - 1, 3, 0, Math.PI * 2);
-    ctx.fill();
+  // külső fekete lámpaház
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.arc(x, y, housingRadius, 0, Math.PI * 2);
+  ctx.fill();
 
-    ctx.fillStyle = highlightColor;
-    ctx.beginPath();
-    ctx.arc(x + 2.5, y + 1, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
+  // belső fehér körvonal, hogy kívül fekete perem maradjon
+  ctx.beginPath();
+  ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+  ctx.lineWidth = 0.75;
+  ctx.strokeStyle = "#f8f9fa";
+  ctx.stroke();
+
+  // bal "lencse"
+  ctx.fillStyle = lightColor;
+  ctx.beginPath();
+  ctx.arc(x - 2.5, y - 1, lensRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // jobb "lencse"
+  ctx.fillStyle = highlightColor;
+  ctx.beginPath();
+  ctx.arc(x + 2.5, y + 1, lensRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
 
   private copyTrackRuntimeStateTo(
     target: TrackStraightElementView
