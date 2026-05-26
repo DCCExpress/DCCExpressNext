@@ -10,6 +10,7 @@ export const ELEMENT_TYPES = {
   TRACK_CORNER: "trackcorner",
   TRACK_CURVE: "trackcurve",
   TRACK_CROSSING: "trackcrossing",
+  TRACK_LEVEL_CROSSING: "tracklevelcrossing",
 
   TRACK_TURNOUT: "trackturnout",
   TRACK_TURNOUT_LEFT: "trackturnoutleft",
