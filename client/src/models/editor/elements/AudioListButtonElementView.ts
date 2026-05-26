@@ -10,7 +10,7 @@ import {
 } from "../../../helpers";
 import i18n from "../../../i18n";
 import { audioManager } from "../../../services/audioManager";
-import { BaseElementView } from "../core/BaseElementView";
+import { ClickableBaseElementView } from "../core/ClickableBaseElementView";
 import type {
   DrawOptions,
   IAudioListButtonElement,
@@ -19,8 +19,10 @@ import type { IEditableProperty } from "./PropertyDescriptor";
 
 export type AudioListButtonItem = AudioListButtonItemDto;
 
+const AUDIO_LIST_POPUP_ID = "dcc-audio-list-button-popup";
+
 export class AudioListButtonElementView
-  extends BaseElementView
+  extends ClickableBaseElementView
   implements IAudioListButtonElement {
   override type: typeof ELEMENT_TYPES.BUTTON_AUDIO_LIST =
     ELEMENT_TYPES.BUTTON_AUDIO_LIST;
@@ -74,6 +76,132 @@ export class AudioListButtonElementView
 
   isItemActive(item: AudioListButtonItem): boolean {
     return this.activeItemId === item.id;
+  }
+
+  override mouseDown(ev: MouseEvent): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.showRuntimePopup(ev.clientX, ev.clientY);
+  }
+
+  private closeRuntimePopup(): void {
+    document.getElementById(AUDIO_LIST_POPUP_ID)?.remove();
+  }
+
+  private showRuntimePopup(clientX: number, clientY: number): void {
+    this.closeRuntimePopup();
+
+    const popup = document.createElement("div");
+    popup.id = AUDIO_LIST_POPUP_ID;
+    popup.style.position = "fixed";
+    popup.style.left = `${clientX + 12}px`;
+    popup.style.top = `${clientY + 12}px`;
+    popup.style.minWidth = "280px";
+    popup.style.maxWidth = "380px";
+    popup.style.zIndex = "10000";
+    popup.style.padding = "10px";
+    popup.style.borderRadius = "8px";
+    popup.style.border = "1px solid rgba(128,128,128,0.35)";
+    popup.style.background = "var(--mantine-color-body, white)";
+    popup.style.color = "var(--mantine-color-text, #222)";
+    popup.style.boxShadow = "0 12px 30px rgba(0,0,0,0.25)";
+    popup.style.fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    popup.style.fontSize = "13px";
+
+    popup.addEventListener("mousedown", event => {
+      event.stopPropagation();
+    });
+
+    popup.addEventListener("pointerdown", event => {
+      event.stopPropagation();
+    });
+
+    const title = document.createElement("div");
+    title.textContent = this.label || "Audio list";
+    title.style.fontWeight = "700";
+    title.style.marginBottom = "8px";
+    popup.appendChild(title);
+
+    if (this.audioItems.length === 0) {
+      const empty = document.createElement("div");
+      empty.textContent = "No audio rows configured.";
+      empty.style.opacity = "0.65";
+      popup.appendChild(empty);
+    } else {
+      for (const item of this.audioItems) {
+        const row = document.createElement("div");
+        row.style.display = "grid";
+        row.style.gridTemplateColumns = "1fr auto";
+        row.style.gap = "10px";
+        row.style.alignItems = "center";
+        row.style.padding = "6px 0";
+        row.style.borderTop = "1px solid rgba(128,128,128,0.22)";
+
+        const text = document.createElement("div");
+        text.style.minWidth = "0";
+
+        const name = document.createElement("div");
+        name.textContent = item.name || "Audio";
+        name.style.fontWeight = "600";
+        name.style.overflow = "hidden";
+        name.style.textOverflow = "ellipsis";
+        name.style.whiteSpace = "nowrap";
+
+        const fileName = document.createElement("div");
+        fileName.textContent = item.fileName || "No file selected";
+        fileName.style.opacity = "0.65";
+        fileName.style.fontSize = "12px";
+        fileName.style.overflow = "hidden";
+        fileName.style.textOverflow = "ellipsis";
+        fileName.style.whiteSpace = "nowrap";
+
+        text.appendChild(name);
+        text.appendChild(fileName);
+
+        const play = document.createElement("button");
+        play.type = "button";
+        play.textContent = "▶";
+        play.title = "Play audio";
+        play.style.width = "32px";
+        play.style.height = "32px";
+        play.style.borderRadius = "8px";
+        play.style.border = "1px solid rgba(128,128,128,0.35)";
+        play.style.cursor = "pointer";
+        play.style.background = this.isItemActive(item)
+          ? "var(--mantine-primary-color-filled, #228be6)"
+          : "var(--mantine-color-default, #f1f3f5)";
+        play.style.color = this.isItemActive(item)
+          ? "white"
+          : "inherit";
+
+        play.addEventListener("click", event => {
+          event.preventDefault();
+          event.stopPropagation();
+          this.playItem(item, () => {
+            this.showRuntimePopup(clientX, clientY);
+          });
+        });
+
+        row.appendChild(text);
+        row.appendChild(play);
+        popup.appendChild(row);
+      }
+    }
+
+    const closeOnOutside = (event: MouseEvent | PointerEvent) => {
+      if (!popup.contains(event.target as Node)) {
+        this.closeRuntimePopup();
+        document.removeEventListener("mousedown", closeOnOutside, true);
+        document.removeEventListener("pointerdown", closeOnOutside, true);
+      }
+    };
+
+    window.setTimeout(() => {
+      document.addEventListener("mousedown", closeOnOutside, true);
+      document.addEventListener("pointerdown", closeOnOutside, true);
+    }, 0);
+
+    document.body.appendChild(popup);
   }
 
   draw(ctx: CanvasRenderingContext2D, options?: DrawOptions): void {
