@@ -1,22 +1,96 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button, Card, Stack, Text } from "@mantine/core";
 
+import type {
+  BlockAction,
+  BlockActionHook,
+  BlockAutomationDocumentDto,
+} from "../../../../common/src/types";
+import {
+  createEmptyBlockAutomationDocument,
+} from "../../../../common/src/blockAutomation";
+import {
+  loadBlockAutomationWs,
+  saveBlockAutomationWs,
+} from "../../api/blockAutomationWsApi";
 import BlockActionsDialog from "../../components/block-actions/BlockActionsDialog";
 import type { BlockElementView } from "../../models/editor/elements/BlockElementView";
 
+type BlockActions = Partial<Record<BlockActionHook, BlockAction[]>>;
+
 type BlockActionsPanelProps = {
   selectedElement: BlockElementView;
-  onUpdateSelectedElement: (element: BlockElementView) => void;
 };
+
+function cloneBlockActions(actions: BlockActions | undefined): BlockActions {
+  return structuredClone(actions ?? {});
+}
 
 export default function BlockActionsPanel({
   selectedElement,
-  onUpdateSelectedElement,
 }: BlockActionsPanelProps) {
   const [opened, setOpened] = useState(false);
-  const enterCount = selectedElement.actions?.onTrainEnter?.length ?? 0;
-  const leaveCount = selectedElement.actions?.onTrainLeave?.length ?? 0;
+  const [loading, setLoading] = useState(false);
+  const [document, setDocument] = useState<BlockAutomationDocumentDto>(
+    createEmptyBlockAutomationDocument()
+  );
+  const [draftActions, setDraftActions] = useState<BlockActions>({});
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  const currentActions = document.blocks[selectedElement.id] ?? {};
+  const enterCount = currentActions.onTrainEnter?.length ?? 0;
+  const leaveCount = currentActions.onTrainLeave?.length ?? 0;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAutomation = async (): Promise<void> => {
+      setLoading(true);
+      setErrorText(null);
+
+      try {
+        const loadedDocument = await loadBlockAutomationWs();
+
+        if (cancelled) return;
+
+        setDocument(loadedDocument);
+      } catch (error) {
+        if (cancelled) return;
+
+        setDocument(createEmptyBlockAutomationDocument());
+        setErrorText(error instanceof Error ? error.message : String(error));
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadAutomation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedElement.id]);
+
+  const openDialog = (): void => {
+    setDraftActions(cloneBlockActions(document.blocks[selectedElement.id]));
+    setOpened(true);
+  };
+
+  const saveActions = async (actions: BlockActions): Promise<void> => {
+    const nextDocument: BlockAutomationDocumentDto = {
+      version: 1,
+      blocks: {
+        ...document.blocks,
+        [selectedElement.id]: cloneBlockActions(actions),
+      },
+    };
+
+    const savedDocument = await saveBlockAutomationWs(nextDocument);
+    setDocument(savedDocument);
+  };
 
   return (
     <>
@@ -26,7 +100,17 @@ export default function BlockActionsPanel({
           <Text size="xs" c="dimmed">
             Enter: {enterCount}, Leave: {leaveCount}
           </Text>
-          <Button size="xs" variant="light" onClick={() => setOpened(true)}>
+          {errorText && (
+            <Text size="xs" c="red">
+              {errorText}
+            </Text>
+          )}
+          <Button
+            size="xs"
+            variant="light"
+            loading={loading}
+            onClick={openDialog}
+          >
             Edit block actions
           </Button>
         </Stack>
@@ -36,10 +120,11 @@ export default function BlockActionsPanel({
         opened={opened}
         blockId={selectedElement.id}
         blockName={selectedElement.name}
-        actions={selectedElement.actions ?? {}}
-        onChange={actions => {
-          selectedElement.actions = actions;
-          onUpdateSelectedElement(selectedElement);
+        actions={draftActions}
+        onChange={setDraftActions}
+        onSave={async () => {
+          await saveActions(draftActions);
+          setOpened(false);
         }}
         onClose={() => setOpened(false)}
       />
