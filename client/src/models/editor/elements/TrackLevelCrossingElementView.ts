@@ -300,7 +300,7 @@ export class TrackLevelCrossingElementView
   private drawCrossingDetails(ctx: CanvasRenderingContext2D): void {
     const closed = this.barrierClosed;
 
-    if (this.barrierType !== "none") {
+    if (this.barrierEnabled && this.barrierType !== "none") {
       const leftAngle = closed ? 0 : -Math.PI / 3;
       const rightAngle = closed ? Math.PI : Math.PI + Math.PI / 3;
 
@@ -386,6 +386,8 @@ export class TrackLevelCrossingElementView
     crossing.length = data.length;
     crossing.bg = data.bg;
     crossing.fg = data.fg;
+    crossing.basicAccessoryAddress = data.basicAccessoryAddress ?? 0;
+    crossing.barrierEnabled = data.barrierEnabled ?? true;
     crossing.barrierType = data.barrierType ?? "half";
     crossing.barrierClosed = data.barrierClosed ?? false;
     crossing.lightsEnabled = data.lightsEnabled ?? true;
@@ -403,6 +405,8 @@ export class TrackLevelCrossingElementView
     copy.selected = this.selected;
     copy.address = this.address;
     copy.length = this.length;
+    copy.basicAccessoryAddress = this.basicAccessoryAddress;
+    copy.barrierEnabled = this.barrierEnabled;
     copy.barrierType = this.barrierType;
     copy.barrierClosed = this.barrierClosed;
     copy.lightsEnabled = this.lightsEnabled;
@@ -414,6 +418,8 @@ export class TrackLevelCrossingElementView
   getEditableProperties(): IEditableProperty[] {
     return [
       ...getBaseEditableProperties(),
+      { key: "basicAccessoryAddress", label: "Basic accessory address", type: "number", min: 0 },
+      { key: "barrierEnabled", label: "Barrier", type: "checkbox" },
       { key: "barrierClosed", label: "Barrier closed", type: "checkbox" },
       { key: "lightsEnabled", label: "Lights", type: "checkbox" },
       { key: "roadColor", label: "Road color", type: "colorpicker" },
@@ -426,6 +432,8 @@ export class TrackLevelCrossingElementView
       <p>A straight track section with a road crossing overlay.</p>
       <ul>
         <li>It behaves like a straight track element for layout connectivity.</li>
+        <li>Basic accessory address is the future control address for the crossing accessory.</li>
+        <li>Use Barrier to show/hide barrier arms.</li>
         <li>Use Barrier closed to show closed barriers and active red warning lights.</li>
         <li>The first version is visual only; automation can be added later.</li>
       </ul>
