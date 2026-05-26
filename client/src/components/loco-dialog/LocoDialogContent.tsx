@@ -88,6 +88,7 @@ export default function LocoDialogContent({
         selectedId={selectedId}
         onSelect={setSelectedId}
         onAdd={addLoco}
+        
         onDeleteSelected={deleteSelectedLoco}
         hasSelectedLoco={!!selectedLoco}
         t={t}
