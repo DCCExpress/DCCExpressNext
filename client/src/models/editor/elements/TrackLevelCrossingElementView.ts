@@ -424,7 +424,6 @@ export class TrackLevelCrossingElementView
       { key: "basicAccessoryAddress", label: "Basic accessory address", type: "number", min: 0 },
       { key: "basicAccessoryClosedValue", label: "Accessory value closes barrier", type: "bittoggle" },
       { key: "barrierEnabled", label: "Barrier", type: "checkbox" },
-      { key: "barrierClosed", label: "Barrier closed", type: "checkbox" },
       { key: "lightsEnabled", label: "Lights", type: "checkbox" },
       { key: "roadColor", label: "Road color", type: "colorpicker" },
     ];
@@ -440,7 +439,6 @@ export class TrackLevelCrossingElementView
         <li>Basic accessory address is the future control address for the crossing accessory.</li>
         <li>Accessory value closes barrier defines whether value 1/true or 0/false means closed.</li>
         <li>Use Barrier to show/hide barrier arms.</li>
-        <li>Use Barrier closed to show closed barriers and active red warning lights.</li>
         <li>The first version is visual only; automation can be added later.</li>
       </ul>
     `;
