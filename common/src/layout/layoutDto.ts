@@ -105,6 +105,7 @@ export type SerializedLayoutElementDto = {
   barrierType?: LevelCrossingBarrierTypeDto;
   barrierClosed?: boolean;
   lightsEnabled?: boolean;
+  blinkingEnabled?: boolean;
   roadColor?: string;
 
   routeTurnouts?: RouteTurnoutItemDto[];
@@ -192,6 +193,7 @@ export interface TrackLevelCrossingElementDto extends TrackElementDto {
   barrierType: LevelCrossingBarrierTypeDto;
   barrierClosed: boolean;
   lightsEnabled: boolean;
+  blinkingEnabled: boolean;
   roadColor: string;
 }
 
