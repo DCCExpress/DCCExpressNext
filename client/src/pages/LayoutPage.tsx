@@ -48,6 +48,11 @@ export default function LayoutPage({
     setSignalLogicDialogOpened,
   ] = useState(false);
 
+  const [
+    requestedSignalLogicAddress,
+    setRequestedSignalLogicAddress,
+  ] = useState<number | null>(null);
+
   const [locos, setLocos] =
     useState<Loco[]>([]);
 
@@ -227,6 +232,11 @@ export default function LayoutPage({
     setBlockActionsDialogOpened(true);
   };
 
+  const openSignalLogicDialogForSignal = (signalAddress: number): void => {
+    setRequestedSignalLogicAddress(signalAddress);
+    setSignalLogicDialogOpened(true);
+  };
+
   const onFitLayout = (): void => {
     setFitCounter(previous => previous + 1);
   };
@@ -273,6 +283,15 @@ export default function LayoutPage({
       }
       setSignalLogicDialogOpened={
         setSignalLogicDialogOpened
+      }
+      requestedSignalLogicAddress={
+        requestedSignalLogicAddress
+      }
+      onRequestedSignalLogicAddressConsumed={() =>
+        setRequestedSignalLogicAddress(null)
+      }
+      onOpenSignalLogicForSignal={
+        openSignalLogicDialogForSignal
       }
       onLocosSaved={loadLocos}
       pickerOpened={pickerOpened}
