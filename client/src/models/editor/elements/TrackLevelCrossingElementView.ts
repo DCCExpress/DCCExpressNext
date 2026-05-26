@@ -285,13 +285,16 @@ export class TrackLevelCrossingElementView
   ): void {
     if (!this.lightsEnabled) return;
 
+    const shouldBlink = this.blinkingEnabled;
+    const lampActive = shouldBlink ? active : true;
+
     const lightColor = this.barrierClosed
-      ? active ? "#ff0000" : "#5c1a1a"
-      : "#ffffff";
+      ? lampActive ? "#ff0000" : "#5c1a1a"
+      : lampActive ? "#ffffff" : "#4a4a4a";
 
     const highlightColor = this.barrierClosed
-      ? active ? "#ff6b6b" : "#3a1010"
-      : "#ffffff";
+      ? lampActive ? "#ff6b6b" : "#3a1010"
+      : lampActive ? "#ffffff" : "#2f2f2f";
 
     ctx.save();
     ctx.fillStyle = "#212529";
@@ -337,8 +340,8 @@ export class TrackLevelCrossingElementView
       }
     }
 
-    this.drawLight(ctx, this.centerX - 18, this.centerY + 18, !closed || this.blinkOn);
-    this.drawLight(ctx, this.centerX + 18, this.centerY - 18, !closed || !this.blinkOn);
+    this.drawLight(ctx, this.centerX - 18, this.centerY + 18, this.blinkOn);
+    this.drawLight(ctx, this.centerX + 18, this.centerY - 18, !this.blinkOn);
   }
 
   draw(
@@ -406,6 +409,7 @@ export class TrackLevelCrossingElementView
     crossing.barrierType = data.barrierType ?? "half";
     crossing.barrierClosed = data.barrierClosed ?? false;
     crossing.lightsEnabled = data.lightsEnabled ?? true;
+    crossing.blinkingEnabled = data.blinkingEnabled ?? true;
     crossing.roadColor = data.roadColor ?? "#6c757d";
     crossing.blinkOn = true;
 
@@ -427,6 +431,7 @@ export class TrackLevelCrossingElementView
     copy.barrierType = this.barrierType;
     copy.barrierClosed = this.barrierClosed;
     copy.lightsEnabled = this.lightsEnabled;
+    copy.blinkingEnabled = this.blinkingEnabled;
     copy.roadColor = this.roadColor;
     copy.blinkOn = this.blinkOn;
 
@@ -441,6 +446,7 @@ export class TrackLevelCrossingElementView
       { key: "basicAccessoryClosedValue", label: "Accessory value closes barrier", type: "bittoggle" },
       { key: "barrierEnabled", label: "Barrier", type: "checkbox" },
       { key: "lightsEnabled", label: "Lights", type: "checkbox" },
+      { key: "blinkingEnabled", label: "Blinking", type: "checkbox" },
       { key: "roadColor", label: "Road color", type: "colorpicker" },
     ];
   }
@@ -455,6 +461,7 @@ export class TrackLevelCrossingElementView
         <li>Basic accessory address is the future control address for the crossing accessory.</li>
         <li>Accessory value closes barrier defines whether value 1/true or 0/false means closed.</li>
         <li>Use Barrier to show/hide barrier arms.</li>
+        <li>Use Blinking to enable/disable the runtime flashing animation.</li>
         <li>The first version is visual only; automation can be added later.</li>
       </ul>
     `;
