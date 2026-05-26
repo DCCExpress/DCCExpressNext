@@ -18,6 +18,7 @@ import { AudioButtonElementView } from "../elements/AudioButtonElementView";
 import { AudioListButtonElementView } from "../elements/AudioListButtonElementView";
 import { RouteButtonElementView } from "../elements/RouteButtonElementView";
 import { TrackCrossingElementView } from "../elements/TrackCrossingElementView";
+import { TrackLevelCrossingElementView } from "../elements/TrackLevelCrossingElementView";
 import { ButtonScriptElementView } from "../elements/ButtonScriptElementView";
 import { LabelElementView } from "../elements/LabelElementView";
 import { TrackDirectionElementView } from "../elements/TrackDirectionElementView";
@@ -29,6 +30,10 @@ export class ElementFactory {
     switch (data.type) {
       case ELEMENT_TYPES.TRACK_STRAIGHT: {
         return TrackStraightElementView.fromJSON(data)
+      }
+
+      case ELEMENT_TYPES.TRACK_LEVEL_CROSSING: {
+        return TrackLevelCrossingElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.TRACK_DIRECTION: {
