@@ -2,6 +2,7 @@
 
 import type {
   SignalLogicDocumentDto,
+  SignalLogicIntegrityReportDto,
   SignalLogicRuntimeStateDto,
   SignalLogicValidationIssue,
 } from "../../../common/src/signalLogic";
@@ -24,6 +25,8 @@ type SignalLogicResponse = {
   created?: boolean;
   state?: SignalLogicRuntimeStateDto;
   message?: string;
+  integrity?: SignalLogicIntegrityReportDto;
+  deletedSignalAddresses?: number[];
 };
 
 function toSignalLogicLoadResult(
@@ -67,6 +70,24 @@ async function requestSignalLogic(
   return toSignalLogicLoadResult(response);
 }
 
+async function requestSignalLogicIntegrity(
+  action: "integrityCheck" | "deleteOrphanSignals",
+  data: {
+    signalAddresses?: number[];
+  } = {},
+  errorMessage = "Signal logic integrity command failed."
+): Promise<SignalLogicResponse> {
+  return requestWsCommand(
+    "signalLogicCommand",
+    {
+      action,
+      ...data,
+    },
+    "signalLogicResponse",
+    errorMessage
+  );
+}
+
 export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
   return requestSignalLogic(
     "load",
@@ -107,4 +128,40 @@ export async function stopSignalLogicWs(): Promise<SignalLogicLoadResult> {
     {},
     "Could not stop signal logic."
   );
+}
+
+export async function checkSignalLogicIntegrityWs(): Promise<SignalLogicIntegrityReportDto> {
+  const response = await requestSignalLogicIntegrity(
+    "integrityCheck",
+    {},
+    "Could not check signal logic integrity."
+  );
+
+  if (!response.integrity) {
+    throw new Error("Signal logic integrity response did not contain a report.");
+  }
+
+  return response.integrity;
+}
+
+export async function deleteSignalLogicOrphansWs(
+  signalAddresses: number[]
+): Promise<{
+  integrity: SignalLogicIntegrityReportDto;
+  deletedSignalAddresses: number[];
+}> {
+  const response = await requestSignalLogicIntegrity(
+    "deleteOrphanSignals",
+    { signalAddresses },
+    "Could not delete orphan signal logic rule groups."
+  );
+
+  if (!response.integrity) {
+    throw new Error("Signal logic delete response did not contain an integrity report.");
+  }
+
+  return {
+    integrity: response.integrity,
+    deletedSignalAddresses: response.deletedSignalAddresses ?? [],
+  };
 }
