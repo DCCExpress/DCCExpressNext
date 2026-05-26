@@ -71,7 +71,15 @@ function isAppSettingsCommandAction(value: unknown): value is AppSettingsCommand
 }
 
 function isSignalLogicCommandAction(value: unknown): value is SignalLogicCommandAction {
-  return value === "load" || value === "save";
+  return (
+    value === "load" ||
+    value === "save" ||
+    value === "start" ||
+    value === "stop" ||
+    value === "state" ||
+    value === "integrityCheck" ||
+    value === "deleteOrphanSignals"
+  );
 }
 
 function isBlockAutomationCommandAction(value: unknown): value is BlockAutomationCommandAction {
@@ -324,7 +332,16 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isSignalLogicCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (data.action === "save" && !isRecord(data.document)) return invalidPayload(type, "document must be an object for save.");
-      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.document) ? { document: data.document } : {}) } as ClientWsPayloadMap[TType] };
+      if (data.action === "deleteOrphanSignals" && !Array.isArray(data.signalAddresses)) return invalidPayload(type, "signalAddresses must be an array for deleteOrphanSignals.");
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          ...(isRecord(data.document) ? { document: data.document } : {}),
+          ...(Array.isArray(data.signalAddresses) ? { signalAddresses: data.signalAddresses.filter((address): address is number => typeof address === "number") } : {}),
+        } as ClientWsPayloadMap[TType],
+      };
     }
 
     case "blockAutomationCommand": {
