@@ -31,6 +31,8 @@ type LayoutPageDialogsProps = {
 
   blockActionsDialogOpened: boolean;
   setBlockActionsDialogOpened: BooleanSetter;
+  requestedBlockActionsBlockId: string | null;
+  onRequestedBlockActionsBlockIdConsumed: () => void;
 
   signalLogicDialogOpened: boolean;
   setSignalLogicDialogOpened: BooleanSetter;
@@ -55,6 +57,8 @@ export default function LayoutPageDialogs({
 
   blockActionsDialogOpened,
   setBlockActionsDialogOpened,
+  requestedBlockActionsBlockId,
+  onRequestedBlockActionsBlockIdConsumed,
 
   signalLogicDialogOpened,
   setSignalLogicDialogOpened,
@@ -89,6 +93,8 @@ export default function LayoutPageDialogs({
           setBlockActionsDialogOpened(false)
         }
         layout={layout}
+        initialBlockId={requestedBlockActionsBlockId}
+        onInitialBlockIdConsumed={onRequestedBlockActionsBlockIdConsumed}
       />
 
       <SignalLogicDialog
