@@ -44,6 +44,30 @@ const enTranslation = {
     thanksDescription:
       "DCCExpress stands on the shoulders of excellent open-source tools, modern web technologies, and a good dose of AI-assisted brainstorming.",
   },
+  locodialog: {
+    ...en.locodialog,
+    tabs: {
+      general: "General",
+      functions: "Functions",
+      actions: "Actions",
+    },
+    train_type: "Train type",
+    occupancy_detection_position: "Occupancy detection position",
+    last_run_at: "Last run / stopped at",
+    last_run_at_empty: "Not recorded yet",
+    trainTypes: {
+      passenger: "Passenger",
+      freight: "Freight",
+      mixed: "Mixed",
+      maintenance: "Maintenance",
+      other: "Other",
+    },
+    occupancyDetectionPositions: {
+      forward: "Forward end",
+      reverse: "Reverse end",
+      both: "Both ends",
+    },
+  },
   settings: {
     ...en.settings,
     languages: {
@@ -62,6 +86,30 @@ const huTranslation = {
     thanksDescription:
       "A DCCExpress kiváló nyílt forráskódú eszközökre, modern webes technológiákra és egy jó adag AI-segített ötletelésre épül.",
   },
+  locodialog: {
+    ...hu.locodialog,
+    tabs: {
+      general: "Általános",
+      functions: "Funkciók",
+      actions: "Műveletek",
+    },
+    train_type: "Vonat típusa",
+    occupancy_detection_position: "Foglaltság érzékelése",
+    last_run_at: "Utolsó futás / megállás ideje",
+    last_run_at_empty: "Még nincs rögzítve",
+    trainTypes: {
+      passenger: "Személy",
+      freight: "Teher",
+      mixed: "Vegyes",
+      maintenance: "Üzemi / karbantartó",
+      other: "Egyéb",
+    },
+    occupancyDetectionPositions: {
+      forward: "Elöl (forward)",
+      reverse: "Hátul (reverse)",
+      both: "Mindkét végén",
+    },
+  },
   settings: {
     ...hu.settings,
     languages: {
@@ -79,6 +127,30 @@ const deTranslation = {
     ...de.home,
     thanksDescription:
       "DCCExpress baut auf hervorragenden Open-Source-Werkzeugen, modernen Webtechnologien und einer guten Portion KI-gestütztem Brainstorming auf.",
+  },
+  locodialog: {
+    ...de.locodialog,
+    tabs: {
+      general: "Allgemein",
+      functions: "Funktionen",
+      actions: "Aktionen",
+    },
+    train_type: "Zugtyp",
+    occupancy_detection_position: "Belegterkennung",
+    last_run_at: "Letzte Fahrt / Halt um",
+    last_run_at_empty: "Noch nicht erfasst",
+    trainTypes: {
+      passenger: "Personenzug",
+      freight: "Güterzug",
+      mixed: "Gemischt",
+      maintenance: "Dienst-/Wartungszug",
+      other: "Sonstiges",
+    },
+    occupancyDetectionPositions: {
+      forward: "Vorne (forward)",
+      reverse: "Hinten (reverse)",
+      both: "An beiden Enden",
+    },
   },
   settings: {
     ...de.settings,
