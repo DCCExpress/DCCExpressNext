@@ -121,6 +121,7 @@ export type LocoState = {
   address: number;
   speed: number;
   direction: Direction;
+  lastRunAt?: string;
   functions: Record<number, boolean>;
   reservation?: LocoReservation;
 };
