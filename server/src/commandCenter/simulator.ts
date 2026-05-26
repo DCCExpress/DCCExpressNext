@@ -13,7 +13,12 @@ import {
 
 import {
   log,
+  logError,
 } from "../utility.js";
+
+import {
+  updateLocoLastRunAtByAddress,
+} from "../services/locoStore.js";
 
 import {
   broadcastAll,
@@ -121,7 +126,7 @@ export class CommandCenterSimulator extends CommandCenter {
     );
   }
 
-  setLoco(
+  async setLoco(
     address: number,
     speed: number,
     direction: "forward" | "reverse"
@@ -129,8 +134,28 @@ export class CommandCenterSimulator extends CommandCenter {
     const loco =
       this.getOrCreateLoco(address);
 
+    const previousSpeed = loco.speed;
+
     loco.speed = speed;
     loco.direction = direction;
+
+    if (
+      speed === 0 &&
+      previousSpeed !== 0
+    ) {
+      const lastRunAt = new Date().toISOString();
+      loco.lastRunAt = lastRunAt;
+
+      try {
+        await updateLocoLastRunAtByAddress(address, lastRunAt);
+      } catch (error) {
+        logError("Sim: failed to persist loco lastRunAt:", {
+          address,
+          lastRunAt,
+          error,
+        });
+      }
+    }
 
     broadcastAll({
       type: "locoState",
@@ -139,7 +164,7 @@ export class CommandCenterSimulator extends CommandCenter {
       },
     });
 
-    return Promise.resolve(true);
+    return true;
   }
 
   setLocoFunction(
@@ -228,7 +253,7 @@ export class CommandCenterSimulator extends CommandCenter {
     return Promise.resolve(true);
   }
 
-  emergencyStop(): Promise<boolean> {
+  async emergencyStop(): Promise<boolean> {
     log("Sim: emergencyStop");
 
     this.powerInfo.emergencyStop = true;
@@ -238,7 +263,19 @@ export class CommandCenterSimulator extends CommandCenter {
         continue;
       }
 
+      const lastRunAt = new Date().toISOString();
       loco.speed = 0;
+      loco.lastRunAt = lastRunAt;
+
+      try {
+        await updateLocoLastRunAtByAddress(loco.address, lastRunAt);
+      } catch (error) {
+        logError("Sim: failed to persist loco lastRunAt on emergency stop:", {
+          address: loco.address,
+          lastRunAt,
+          error,
+        });
+      }
 
       broadcastAll({
         type: "locoState",
@@ -261,7 +298,7 @@ export class CommandCenterSimulator extends CommandCenter {
       data: powerInfo,
     });
 
-    return Promise.resolve(true);
+    return true;
   }
 
   setSensor(
