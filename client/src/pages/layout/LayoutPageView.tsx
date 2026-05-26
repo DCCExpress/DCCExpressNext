@@ -41,6 +41,9 @@ export type LayoutPageViewProps = {
   onOpenBlockActionsForBlock: (blockId: string) => void;
   signalLogicDialogOpened: boolean;
   setSignalLogicDialogOpened: BooleanSetter;
+  requestedSignalLogicAddress: number | null;
+  onRequestedSignalLogicAddressConsumed: () => void;
+  onOpenSignalLogicForSignal: (signalAddress: number) => void;
   onLocosSaved: () => Promise<void>;
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
@@ -86,7 +89,8 @@ export function LayoutPageView(props: LayoutPageViewProps) {
     blockActionsDialogOpened, setBlockActionsDialogOpened,
     requestedBlockActionsBlockId, onRequestedBlockActionsBlockIdConsumed,
     onOpenBlockActionsForBlock, signalLogicDialogOpened, setSignalLogicDialogOpened,
-    onLocosSaved, pickerOpened, setPickerOpened,
+    requestedSignalLogicAddress, onRequestedSignalLogicAddressConsumed,
+    onOpenSignalLogicForSignal, onLocosSaved, pickerOpened, setPickerOpened,
     appSettingsDialogOpened, setAppSettingsDialogOpened,
     editMode, setEditMode, locoPanelCollapsed, setLocoPanelCollapsed,
     propertyPanelCollapsed, setPropertyPanelCollapsed, rightPanelMode,
@@ -112,6 +116,8 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         onRequestedBlockActionsBlockIdConsumed={onRequestedBlockActionsBlockIdConsumed}
         signalLogicDialogOpened={signalLogicDialogOpened}
         setSignalLogicDialogOpened={setSignalLogicDialogOpened}
+        requestedSignalLogicAddress={requestedSignalLogicAddress}
+        onRequestedSignalLogicAddressConsumed={onRequestedSignalLogicAddressConsumed}
         pickerOpened={pickerOpened}
         setPickerOpened={setPickerOpened}
         appSettingsDialogOpened={appSettingsDialogOpened}
@@ -173,6 +179,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           setTurnoutSelection={setTurnoutSelection}
           onUpdateSelectedElement={onUpdateSelectedElement}
           onOpenBlockActionsForBlock={onOpenBlockActionsForBlock}
+          onOpenSignalLogicForSignal={onOpenSignalLogicForSignal}
           routesString={routesString}
           setCanvasBusy={setCanvasBusy}
           setCanvasBusyText={setCanvasBusyText}
