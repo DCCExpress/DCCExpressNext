@@ -15,6 +15,7 @@ import {
 
 import {
   readLocos,
+  updateLocoLastRunAtByAddress,
 } from "../services/locoStore.js";
 
 import {
@@ -295,6 +296,75 @@ export abstract class CommandCenter {
     }
 
     return this.syncLocoReservation(loco);
+  }
+
+  protected async setLocoRuntimeState(
+    address: number,
+    speed: number,
+    direction: "forward" | "reverse"
+  ): Promise<LocoState> {
+    const loco =
+      this.getOrCreateLoco(address);
+
+    const previousSpeed =
+      loco.speed;
+
+    loco.speed = speed;
+    loco.direction = direction;
+
+    await this.persistLocoLastRunAtIfStopped(
+      loco,
+      previousSpeed,
+      speed
+    );
+
+    return this.syncLocoReservation(loco);
+  }
+
+  protected async stopLocoRuntimeState(
+    loco: LocoState
+  ): Promise<void> {
+    const previousSpeed =
+      loco.speed;
+
+    loco.speed = 0;
+
+    await this.persistLocoLastRunAtIfStopped(
+      loco,
+      previousSpeed,
+      0
+    );
+  }
+
+  private async persistLocoLastRunAtIfStopped(
+    loco: LocoState,
+    previousSpeed: number,
+    nextSpeed: number
+  ): Promise<void> {
+    if (
+      nextSpeed !== 0 ||
+      previousSpeed === 0
+    ) {
+      return;
+    }
+
+    const lastRunAt =
+      new Date().toISOString();
+
+    loco.lastRunAt = lastRunAt;
+
+    const saved =
+      await updateLocoLastRunAtByAddress(
+        loco.address,
+        lastRunAt
+      );
+
+    if (!saved) {
+      log(
+        "Loco stopped, but no matching persisted loco was found:",
+        loco.address
+      );
+    }
   }
 
   abstract getLoco(
