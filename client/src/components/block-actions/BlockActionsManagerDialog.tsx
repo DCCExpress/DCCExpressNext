@@ -32,7 +32,7 @@ import {
 import type { LayoutView } from "../../models/editor/core/LayoutView";
 import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 import AppModal from "../common/AppModal";
-import { BlockActionsEditor } from "./BlockActionsDialog";
+import BlockActionsEditor from "./BlockActionsEditor";
 
 type BlockActions = Partial<Record<BlockActionHook, BlockAction[]>>;
 type BlockActionsDraft = Record<string, BlockActions>;
@@ -41,6 +41,8 @@ type BlockActionsManagerDialogProps = {
   opened: boolean;
   onClose: () => void;
   layout: LayoutView;
+  initialBlockId?: string | null;
+  onInitialBlockIdConsumed?: () => void;
 };
 
 function getBlockLabel(block: BlockElementView): string {
@@ -93,6 +95,8 @@ export default function BlockActionsManagerDialog({
   opened,
   onClose,
   layout,
+  initialBlockId,
+  onInitialBlockIdConsumed,
 }: BlockActionsManagerDialogProps) {
   const { t } = useTranslation();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
@@ -134,12 +138,18 @@ export default function BlockActionsManagerDialog({
 
         setDraftActions(createDraft(blocks, document));
         setSelectedBlockId(previous => {
+          if (initialBlockId && blocks.some(block => block.id === initialBlockId)) {
+            return initialBlockId;
+          }
+
           if (previous && blocks.some(block => block.id === previous)) {
             return previous;
           }
 
           return blocks[0]?.id ?? null;
         });
+
+        onInitialBlockIdConsumed?.();
       } catch (error) {
         if (cancelled) return;
 
@@ -157,7 +167,7 @@ export default function BlockActionsManagerDialog({
     return () => {
       cancelled = true;
     };
-  }, [opened, blocks]);
+  }, [opened, blocks, initialBlockId, onInitialBlockIdConsumed]);
 
   const updateSelectedBlockActions = (actions: BlockActions): void => {
     if (!selectedBlock) return;
