@@ -12,12 +12,15 @@ import LayoutPageView from "./layout/LayoutPageView";
 import { BaseElementView } from "../models/editor/core/BaseElementView";
 import { LayoutView } from "../models/editor/core/LayoutView";
 import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
+import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
 import { type EditorTool } from "../models/editor/types/EditorTypes";
 import { layoutStore } from "../services/layoutStore";
 import { routeGraphStore } from "../services/routeGraphStore";
 import { useTranslation } from "react-i18next";
 import { wsClient } from "../services/wsClient";
 import { wsApi } from "../services/wsApi";
+import { loadSignalLogicRulesWs, saveSignalLogicRulesWs } from "../api/signalLogicWsApi";
+import { generateId, showErrorMessage } from "../helpers";
 
 type LayoutPageProps = {
   onGoHome: () => void;
@@ -232,9 +235,75 @@ export default function LayoutPage({
     setBlockActionsDialogOpened(true);
   };
 
-  const openSignalLogicDialogForSignal = (signalAddress: number): void => {
+  const prepareSignalLogicRuleGroup = async (
+    signalAddress: number
+  ): Promise<void> => {
+    const result = await loadSignalLogicRulesWs();
+    const groups = [...result.document.groups];
+    const existingIndex = groups.findIndex(
+      group => group.signalAddress === signalAddress
+    );
+
+    if (existingIndex >= 0) {
+      const existingGroup = groups.splice(existingIndex, 1)[0];
+
+      if (!existingGroup) return;
+
+      groups.unshift(existingGroup);
+
+      if (existingIndex > 0) {
+        await saveSignalLogicRulesWs({
+          ...result.document,
+          groups,
+        });
+      }
+
+      return;
+    }
+
+    const signal = layoutRef.current
+      .getAllElements()
+      .find((element): element is TrackSignalElementView =>
+        element instanceof TrackSignalElementView &&
+        element.address === signalAddress
+      );
+
+    if (!signal) {
+      return;
+    }
+
+    const group = {
+      id: generateId(),
+      signalAddress,
+      defaultAspect: "red" as const,
+      rules: [{
+        id: generateId(),
+        aspect: "green" as const,
+        conditions: [],
+      }],
+    };
+
+    await saveSignalLogicRulesWs({
+      ...result.document,
+      groups: [group, ...groups],
+    });
+  };
+
+  const openSignalLogicDialogForSignal = async (signalAddress: number): Promise<void> => {
     setRequestedSignalLogicAddress(signalAddress);
-    setSignalLogicDialogOpened(true);
+
+    try {
+      await prepareSignalLogicRuleGroup(signalAddress);
+    } catch (error) {
+      showErrorMessage(
+        t("common.error"),
+        error instanceof Error
+          ? error.message
+          : String(error)
+      );
+    } finally {
+      setSignalLogicDialogOpened(true);
+    }
   };
 
   const onFitLayout = (): void => {
