@@ -9,6 +9,10 @@ import type {
 } from "./appSettings.js";
 
 import type {
+  BlockAutomationResponsePayload,
+} from "./blockAutomation.js";
+
+import type {
   ICommandCenter,
   Loco,
 } from "./domainTypes.js";
@@ -134,6 +138,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "commandCenterConfigCommand",
   "appSettingsCommand",
   "signalLogicCommand",
+  "blockAutomationCommand",
   "taskManagerCommand",
   "fastClockCommand",
   "fileCommand",
@@ -326,6 +331,7 @@ export type ServerWsPayloadMap = {
   appSettingsResponse: AppSettingsResponsePayload;
   signalLogicResponse: SignalLogicResponsePayload;
   signalLogicStateChanged: SignalLogicRuntimeStateDto;
+  blockAutomationResponse: BlockAutomationResponsePayload;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
 
