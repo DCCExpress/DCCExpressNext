@@ -121,17 +121,6 @@ export default function BlockActionsManagerDialog({
       }}
     >
       <Stack h="100%" gap="xs">
-        <Group justify="flex-end">
-          <Button
-            size="xs"
-            leftSection={<IconDeviceFloppy size={14} />}
-            loading={saving}
-            onClick={handleSave}
-          >
-            {t("common.save")}
-          </Button>
-        </Group>
-
         <Group align="stretch" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
           <Card withBorder w={280} p="sm" style={{ flex: "0 0 280px" }}>
             <Group justify="space-between" mb="sm">
@@ -208,6 +197,16 @@ export default function BlockActionsManagerDialog({
               </Stack>
             )}
           </Box>
+        </Group>
+
+        <Group justify="flex-end">
+          <Button
+            leftSection={<IconDeviceFloppy size={16} />}
+            loading={saving}
+            onClick={handleSave}
+          >
+            {t("common.save")}
+          </Button>
         </Group>
       </Stack>
     </AppModal>
