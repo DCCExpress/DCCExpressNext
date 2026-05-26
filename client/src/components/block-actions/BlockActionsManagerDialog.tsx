@@ -12,6 +12,7 @@ import {
   Title,
 } from "@mantine/core";
 
+import { IconDeviceFloppy } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import type { BlockAction, BlockActionHook } from "../../../../common/src/types";
@@ -25,6 +26,7 @@ type BlockActionsManagerDialogProps = {
   onClose: () => void;
   layout: LayoutView;
   onBlockUpdated: (block: BlockElementView) => void;
+  onSaveLayout: () => Promise<void>;
 };
 
 function getBlockLabel(block: BlockElementView): string {
@@ -46,9 +48,11 @@ export default function BlockActionsManagerDialog({
   onClose,
   layout,
   onBlockUpdated,
+  onSaveLayout,
 }: BlockActionsManagerDialogProps) {
   const { t } = useTranslation();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const blocks = useMemo(() => {
     return layout
@@ -83,6 +87,15 @@ export default function BlockActionsManagerDialog({
     onBlockUpdated(selectedBlock);
   };
 
+  const handleSave = async (): Promise<void> => {
+    setSaving(true);
+    try {
+      await onSaveLayout();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <AppModal
       opened={opened}
@@ -108,6 +121,17 @@ export default function BlockActionsManagerDialog({
       }}
     >
       <Stack h="100%" gap="xs">
+        <Group justify="flex-end">
+          <Button
+            size="xs"
+            leftSection={<IconDeviceFloppy size={14} />}
+            loading={saving}
+            onClick={handleSave}
+          >
+            {t("common.save")}
+          </Button>
+        </Group>
+
         <Group align="stretch" wrap="nowrap" style={{ flex: 1, minHeight: 0 }}>
           <Card withBorder w={280} p="sm" style={{ flex: "0 0 280px" }}>
             <Group justify="space-between" mb="sm">
@@ -184,10 +208,6 @@ export default function BlockActionsManagerDialog({
               </Stack>
             )}
           </Box>
-        </Group>
-
-        <Group justify="flex-end">
-          <Button variant="light" onClick={onClose}>{t("common.close")}</Button>
         </Group>
       </Stack>
     </AppModal>
