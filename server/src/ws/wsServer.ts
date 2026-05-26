@@ -17,6 +17,10 @@ import {
 } from "../services/commandCenterConfigStore.js";
 
 import {
+  blockAutomationStore,
+} from "../services/blockAutomationStore.js";
+
+import {
   editorEditModeStore,
 } from "../services/editorEditModeStore.js";
 
@@ -145,6 +149,7 @@ function canHandleWithoutCommandCenter(type: string): boolean {
     type === "scriptDocumentCommand" ||
     type === "appSettingsCommand" ||
     type === "signalLogicCommand" ||
+    type === "blockAutomationCommand" ||
     type === "taskManagerCommand" ||
     type === "fastClockCommand" ||
     type === "fileCommand"
@@ -162,6 +167,8 @@ async function initializeWebSocketRuntimeStores(): Promise<void> {
   await appSettingsStore.initialize();
 
   await layoutRuntimeStore.initialize();
+
+  await blockAutomationStore.initialize();
 
   const conf =
     await readCommandCenter();
