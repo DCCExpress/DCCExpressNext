@@ -20,6 +20,7 @@ type NumberSetter =
 
 export type UseLevelCrossingBlinkTaskParams = {
   editMode: boolean;
+  layout: LayoutView;
   layoutRef: MutableRefObject<LayoutView>;
   setInvalidateCounter: NumberSetter;
 };
@@ -28,6 +29,7 @@ const BLINK_PERIOD_MS = 500;
 
 export function useLevelCrossingBlinkTask({
   editMode,
+  layout,
   layoutRef,
   setInvalidateCounter,
 }: UseLevelCrossingBlinkTaskParams): void {
@@ -92,6 +94,7 @@ export function useLevelCrossingBlinkTask({
     };
   }, [
     editMode,
+    layout,
     layoutRef,
     setInvalidateCounter,
   ]);
