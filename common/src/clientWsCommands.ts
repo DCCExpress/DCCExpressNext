@@ -32,6 +32,10 @@ import type {
   SignalLogicDocumentDto,
 } from "./signalLogic.js";
 
+import type {
+  BlockAutomationCommandPayload,
+} from "./blockAutomation.js";
+
 export type EmptyClientWsCommandPayload = {};
 
 export type SetTrackPowerCommandPayload = {
@@ -269,6 +273,7 @@ export type ClientWsPayloadMap = {
   commandCenterConfigCommand: CommandCenterConfigCommandPayload;
   appSettingsCommand: AppSettingsCommandPayload;
   signalLogicCommand: SignalLogicCommandPayload;
+  blockAutomationCommand: BlockAutomationCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
   fileCommand: FileCommandPayload;
