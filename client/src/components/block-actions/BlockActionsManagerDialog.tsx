@@ -37,6 +37,11 @@ import BlockActionsEditor from "./BlockActionsEditor";
 type BlockActions = Partial<Record<BlockActionHook, BlockAction[]>>;
 type BlockActionsDraft = Record<string, BlockActions>;
 
+type ElementWithTrackInfo = {
+  trackName?: unknown;
+  section?: unknown;
+};
+
 type BlockActionsManagerDialogProps = {
   opened: boolean;
   onClose: () => void;
@@ -44,6 +49,27 @@ type BlockActionsManagerDialogProps = {
   initialBlockId?: string | null;
   onInitialBlockIdConsumed?: () => void;
 };
+
+function getTrackLabel(element: ElementWithTrackInfo): string {
+  const trackName = typeof element.trackName === "string"
+    ? element.trackName.trim()
+    : "";
+
+  if (trackName.length > 0) return trackName;
+
+  if (typeof element.section === "number" && element.section > 0) {
+    return `Pálya ${element.section}`;
+  }
+
+  return "Pálya nélkül";
+}
+
+function compareByName(a: string, b: string): number {
+  return a.localeCompare(b, undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
 
 function getBlockLabel(block: BlockElementView): string {
   const name = block.name.trim();
@@ -109,10 +135,11 @@ export default function BlockActionsManagerDialog({
     return layout
       .getAllElements()
       .filter((element): element is BlockElementView => element instanceof BlockElementView)
-      .sort((a, b) => getBlockLabel(a).localeCompare(getBlockLabel(b), undefined, {
-        numeric: true,
-        sensitivity: "base",
-      }));
+      .sort((a, b) => {
+        const trackCompare = compareByName(getTrackLabel(a), getTrackLabel(b));
+        if (trackCompare !== 0) return trackCompare;
+        return compareByName(getBlockLabel(a), getBlockLabel(b));
+      });
   }, [layout]);
 
   const selectedBlock = blocks.find(block => block.id === selectedBlockId) ?? blocks[0] ?? null;
@@ -256,9 +283,18 @@ export default function BlockActionsManagerDialog({
                       key={block.id}
                       variant={selected ? "filled" : "light"}
                       justify="space-between"
+                      h="auto"
+                      py={6}
                       onClick={() => setSelectedBlockId(block.id)}
                     >
-                      <span>{getBlockLabel(block)}</span>
+                      <Stack gap={0} align="flex-start" style={{ minWidth: 0 }}>
+                        <Text size="xs" c={selected ? "white" : "dimmed"} truncate="end">
+                          {getTrackLabel(block)}
+                        </Text>
+                        <Text size="sm" fw={600} truncate="end">
+                          {getBlockLabel(block)}
+                        </Text>
+                      </Stack>
                       <Badge size="xs" bg="cyan" c="white" variant="light" m={5}>
                         {actionCount}
                       </Badge>
@@ -279,7 +315,9 @@ export default function BlockActionsManagerDialog({
                 <Card withBorder p="sm">
                   <Group justify="space-between" align="center">
                     <Stack gap={2}>
-                      <Text fw={700}>{getBlockLabel(selectedBlock)}</Text>
+                      <Text fw={700}>
+                        {getTrackLabel(selectedBlock)} / {getBlockLabel(selectedBlock)}
+                      </Text>
                       <Text size="xs" c="dimmed">
                         {t("blockActions.blockDetails", {
                           id: selectedBlock.id,
@@ -300,7 +338,7 @@ export default function BlockActionsManagerDialog({
                 <Box style={{ flex: 1, minHeight: 0 }}>
                   <BlockActionsEditor
                     blockId={selectedBlock.id}
-                    blockName={selectedBlock.name}
+                    blockName={getBlockLabel(selectedBlock)}
                     actions={selectedBlockActions}
                     onChange={updateSelectedBlockActions}
                   />
