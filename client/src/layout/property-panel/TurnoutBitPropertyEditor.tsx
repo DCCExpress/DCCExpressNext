@@ -1,9 +1,10 @@
-import { Box, Group } from "@mantine/core";
+import { Box, Group, Text } from "@mantine/core";
 
 import BitToggleElement from "../../components/editor/BitToggleElement";
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import { TrackTurnoutLeftElementView } from "../../models/editor/elements/TrackTurnoutLeftElementView";
+import { TrackTurnoutRightElementView } from "../../models/editor/elements/TrackTurnoutRightElementView";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
 import { wsApi } from "../../services/wsApi";
 import { createTurnoutPreview } from "./previewFactories";
@@ -15,12 +16,28 @@ type TurnoutBitPropertyEditorProps = {
   onChange: PropertyChangeHandler;
 };
 
+function isTurnoutElement(
+  element: BaseElementView
+): element is TrackTurnoutLeftElementView | TrackTurnoutRightElementView {
+  return element instanceof TrackTurnoutLeftElementView || element instanceof TrackTurnoutRightElementView;
+}
+
 export default function TurnoutBitPropertyEditor({
   prop,
   selectedElement,
   onChange,
 }: TurnoutBitPropertyEditorProps) {
-  const propValue = Boolean((selectedElement as any)[prop.key]);
+  const values = selectedElement as unknown as Record<string, unknown>;
+  const propValue = Boolean(values[prop.key]);
+
+  if (!isTurnoutElement(selectedElement)) {
+    return (
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Text size="sm" fw={500}>{prop.label}</Text>
+        <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
+      </Group>
+    );
+  }
 
   return (
     <Group>
@@ -32,19 +49,12 @@ export default function TurnoutBitPropertyEditor({
             width={40}
             height={40}
             onClick={() => {
-              const turnout = selectedElement as TrackTurnoutLeftElementView;
-              wsApi.setTurnout(
-                turnout.turnoutAddress,
-                turnout.turnoutClosedValue
-              );
+              wsApi.setTurnout(selectedElement.turnoutAddress, selectedElement.turnoutClosedValue);
             }}
           />
         </Box>
 
-        <BitToggleElement
-          value={propValue}
-          onChange={value => onChange(prop, value)}
-        />
+        <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
       </Group>
 
       <Group>
@@ -55,19 +65,12 @@ export default function TurnoutBitPropertyEditor({
             width={40}
             height={40}
             onClick={() => {
-              const turnout = selectedElement as TrackTurnoutLeftElementView;
-              wsApi.setTurnout(
-                turnout.turnoutAddress,
-                !turnout.turnoutClosedValue
-              );
+              wsApi.setTurnout(selectedElement.turnoutAddress, !selectedElement.turnoutClosedValue);
             }}
           />
         </Box>
 
-        <BitToggleElement
-          value={!propValue}
-          onChange={value => onChange(prop, !value)}
-        />
+        <BitToggleElement value={!propValue} onChange={value => onChange(prop, !value)} />
       </Group>
     </Group>
   );
