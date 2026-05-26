@@ -21,6 +21,7 @@ import { AudioButtonElementView } from "../../models/editor/elements/AudioButton
 import { AudioListButtonElementView } from "../../models/editor/elements/AudioListButtonElementView";
 import { RouteButtonElementView } from "../../models/editor/elements/RouteButtonElementView";
 import { TrackCrossingElementView } from "../../models/editor/elements/TrackCrossingElementView";
+import { TrackLevelCrossingElementView } from "../../models/editor/elements/TrackLevelCrossingElementView";
 import { ButtonScriptElementView } from "../../models/editor/elements/ButtonScriptElementView";
 import { LabelElementView } from "../../models/editor/elements/LabelElementView";
 import { TrackDirectionElementView } from "../../models/editor/elements/TrackDirectionElementView";
@@ -41,6 +42,7 @@ export default function ElementPickerDialog({
   const { t } = useTranslation();
 
   const track = new TrackStraightElementView(0, 0);
+  const tracklevelcrossing = new TrackLevelCrossingElementView(0, 0);
   const trackdirection = new TrackDirectionElementView(0, 0);
   const trackend = new TrackEndElementView(0, 0);
   const trackcorner = new TrackCornerElementView(0, 0);
@@ -88,6 +90,10 @@ export default function ElementPickerDialog({
             }} />
             <ElementPreview element={track} label={t("editor.elements.straight")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_STRAIGHT);
+              onClose();
+            }} />
+            <ElementPreview element={tracklevelcrossing} label="Level crossing" width={40} height={40} onClick={() => {
+              onPick(ELEMENT_TYPES.TRACK_LEVEL_CROSSING);
               onClose();
             }} />
             <ElementPreview element={trackend} label={t("editor.elements.trackEnd")} width={40} height={40} onClick={() => {
