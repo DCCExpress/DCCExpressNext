@@ -21,6 +21,8 @@ export type AudioListButtonItem = AudioListButtonItemDto;
 
 const AUDIO_LIST_POPUP_ID = "dcc-audio-list-button-popup";
 
+let removeAudioListPopupListeners: (() => void) | null = null;
+
 export class AudioListButtonElementView
   extends ClickableBaseElementView
   implements IAudioListButtonElement {
@@ -85,6 +87,8 @@ export class AudioListButtonElementView
   }
 
   private closeRuntimePopup(): void {
+    removeAudioListPopupListeners?.();
+    removeAudioListPopupListeners = null;
     document.getElementById(AUDIO_LIST_POPUP_ID)?.remove();
   }
 
@@ -177,9 +181,8 @@ export class AudioListButtonElementView
         play.addEventListener("click", event => {
           event.preventDefault();
           event.stopPropagation();
-          this.playItem(item, () => {
-            this.showRuntimePopup(clientX, clientY);
-          });
+          this.closeRuntimePopup();
+          this.playItem(item);
         });
 
         row.appendChild(text);
@@ -191,14 +194,17 @@ export class AudioListButtonElementView
     const closeOnOutside = (event: MouseEvent | PointerEvent) => {
       if (!popup.contains(event.target as Node)) {
         this.closeRuntimePopup();
-        document.removeEventListener("mousedown", closeOnOutside, true);
-        document.removeEventListener("pointerdown", closeOnOutside, true);
       }
     };
 
     window.setTimeout(() => {
       document.addEventListener("mousedown", closeOnOutside, true);
       document.addEventListener("pointerdown", closeOnOutside, true);
+
+      removeAudioListPopupListeners = () => {
+        document.removeEventListener("mousedown", closeOnOutside, true);
+        document.removeEventListener("pointerdown", closeOnOutside, true);
+      };
     }, 0);
 
     document.body.appendChild(popup);
