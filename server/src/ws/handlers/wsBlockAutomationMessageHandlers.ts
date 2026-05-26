@@ -76,6 +76,42 @@ export const handleBlockAutomationMessage: WsMessageHandler = async context => {
         return true;
       }
 
+      case "integrityCheck": {
+        const integrity = await blockAutomationStore.checkIntegrity();
+
+        sendBlockAutomationResponse(context, {
+          requestId,
+          action,
+          ok: true,
+          integrity,
+        });
+
+        return true;
+      }
+
+      case "deleteOrphanBlocks": {
+        const blockIds = context.msg.data.blockIds ?? [];
+        const result = await blockAutomationStore.deleteBlocks(blockIds);
+
+        const payload: BlockAutomationResponsePayload = {
+          requestId,
+          action,
+          ok: true,
+          document: result.document,
+          integrity: result.integrity,
+          deletedBlockIds: result.deletedBlockIds,
+        };
+
+        sendBlockAutomationResponse(context, payload);
+
+        context.broadcast({
+          type: "blockAutomationResponse",
+          data: payload,
+        }, context.ws);
+
+        return true;
+      }
+
       default: {
         sendBlockAutomationResponse(context, {
           requestId,
