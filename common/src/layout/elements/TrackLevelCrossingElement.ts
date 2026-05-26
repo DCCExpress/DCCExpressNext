@@ -5,10 +5,10 @@ import type {
   TrackLevelCrossingElementDto,
 } from "../layoutDto.js";
 import {
-  TrackStraightElement,
-} from "./TrackStraightElement.js";
+  TrackElement,
+} from "../model/TrackElement.js";
 
-export class TrackLevelCrossingElement extends TrackStraightElement {
+export class TrackLevelCrossingElement extends TrackElement {
   override type: typeof ELEMENT_TYPES.TRACK_LEVEL_CROSSING =
     ELEMENT_TYPES.TRACK_LEVEL_CROSSING;
 
@@ -21,6 +21,7 @@ export class TrackLevelCrossingElement extends TrackStraightElement {
     super(x, y);
     this.type = ELEMENT_TYPES.TRACK_LEVEL_CROSSING;
     this.name = "Level crossing";
+    this.rotationStep = 45;
     this.length = 200;
   }
 
