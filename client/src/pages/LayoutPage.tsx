@@ -8,6 +8,7 @@ import { useLayoutPageShortcuts } from "../hooks/layout/useLayoutPageShortcuts";
 import { useLayoutRouteGraphBinding } from "../hooks/layout/useLayoutRouteGraphBinding";
 import { useLayoutPageBootstrap } from "../hooks/layout/useLayoutPageBootstrap";
 import { useLayoutRuntimeWsBindings } from "../hooks/layout/useLayoutRuntimeWsBindings";
+import { useLevelCrossingBlinkTask } from "../hooks/layout/useLevelCrossingBlinkTask";
 import LayoutPageView from "./layout/LayoutPageView";
 import { BaseElementView } from "../models/editor/core/BaseElementView";
 import { LayoutView } from "../models/editor/core/LayoutView";
@@ -196,6 +197,12 @@ export default function LayoutPage({
     setTool,
     setPickerOpened,
     setTurnoutSelection,
+    setInvalidateCounter,
+  });
+
+  useLevelCrossingBlinkTask({
+    editMode,
+    layoutRef,
     setInvalidateCounter,
   });
 
@@ -420,20 +427,7 @@ export default function LayoutPage({
       invalidateCounter={
         invalidateCounter
       }
-      setInvalidateCounter={
-        setInvalidateCounter
-      }
       fitCounter={fitCounter}
-      turnoutSelection={
-        turnoutSelection
-      }
-      setTurnoutSelection={
-        setTurnoutSelection
-      }
-      onUpdateSelectedElement={
-        handleUpdateSelectedElement
-      }
-      routesString={routesString}
     />
   );
 }
