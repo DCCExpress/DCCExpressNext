@@ -135,6 +135,44 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
         return true;
       }
 
+      case "integrityCheck": {
+        sendSignalLogicResponse(context, {
+          requestId,
+          action,
+          ok: true,
+          integrity: await signalLogicRulesStore.checkIntegrity(),
+          state: await signalLogicRuntimeService.getState(),
+        });
+
+        return true;
+      }
+
+      case "deleteOrphanSignals": {
+        const result = await signalLogicRulesStore.deleteSignalRuleGroups(
+          context.msg.data.signalAddresses ?? []
+        );
+        const state = await signalLogicRuntimeService.getState();
+        const payload: SignalLogicResponsePayload = {
+          requestId,
+          action,
+          ok: true,
+          document: result.document,
+          issues: validateSignalLogicDocument(result.document),
+          integrity: result.integrity,
+          deletedSignalAddresses: result.deletedSignalAddresses,
+          state,
+        };
+
+        sendSignalLogicResponse(context, payload);
+
+        context.broadcast({
+          type: "signalLogicResponse",
+          data: payload,
+        }, context.ws);
+
+        return true;
+      }
+
       case "start": {
         const state = await signalLogicRuntimeService.start();
         const document = signalLogicRulesStore.getDocument();
