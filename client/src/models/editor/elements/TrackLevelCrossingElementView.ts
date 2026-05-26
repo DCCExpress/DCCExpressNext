@@ -258,14 +258,14 @@ export class TrackLevelCrossingElementView
     ctx.arc(0, 0, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.strokeStyle = "#f8f9fa";
     ctx.beginPath();
     ctx.moveTo(2, 0);
     ctx.lineTo(24, 0);
     ctx.stroke();
 
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.strokeStyle = "#fa5252";
     ctx.setLineDash([5, 4]);
     ctx.beginPath();
@@ -279,20 +279,23 @@ export class TrackLevelCrossingElementView
   private drawLight(ctx: CanvasRenderingContext2D, x: number, y: number): void {
     if (!this.lightsEnabled) return;
 
+    const lightColor = this.barrierClosed ? "#ff0000" : "#ffffff";
+    const highlightColor = this.barrierClosed ? "#ff6b6b" : "#ffffff";
+
     ctx.save();
     ctx.fillStyle = "#212529";
     ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = this.barrierClosed ? "#ff0000" : "#7a1f1f";
+    ctx.fillStyle = lightColor;
     ctx.beginPath();
-    ctx.arc(x - 2, y - 1, 2, 0, Math.PI * 2);
+    ctx.arc(x - 2.5, y - 1, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = this.barrierClosed ? "#ff6b6b" : "#7a1f1f";
+    ctx.fillStyle = highlightColor;
     ctx.beginPath();
-    ctx.arc(x + 2, y + 1, 2, 0, Math.PI * 2);
+    ctx.arc(x + 2.5, y + 1, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
