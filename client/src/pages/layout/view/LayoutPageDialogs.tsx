@@ -46,6 +46,7 @@ type LayoutPageDialogsProps = {
   layout: LayoutView;
   setTool: EditorToolSetter;
   onUpdateSelectedElement: (element: BaseElementView | null) => void;
+  onSaveLayout: () => Promise<void>;
 };
 
 export default function LayoutPageDialogs({
@@ -71,6 +72,7 @@ export default function LayoutPageDialogs({
   layout,
   setTool,
   onUpdateSelectedElement,
+  onSaveLayout,
 }: LayoutPageDialogsProps) {
   return (
     <>
@@ -96,6 +98,7 @@ export default function LayoutPageDialogs({
         onBlockUpdated={(block: BlockElementView) =>
           onUpdateSelectedElement(block)
         }
+        onSaveLayout={onSaveLayout}
       />
 
       <SignalLogicDialog
