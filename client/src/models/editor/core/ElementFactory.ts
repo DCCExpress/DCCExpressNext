@@ -15,6 +15,7 @@ import { BlockElementView } from "../elements/BlockElementView";
 import { TreeElementView } from "../elements/TreeElementView";
 import { TrackSignalElementView } from "../elements/TrackSignalElementView";
 import { AudioButtonElementView } from "../elements/AudioButtonElementView";
+import { AudioListButtonElementView } from "../elements/AudioListButtonElementView";
 import { RouteButtonElementView } from "../elements/RouteButtonElementView";
 import { TrackCrossingElementView } from "../elements/TrackCrossingElementView";
 import { ButtonScriptElementView } from "../elements/ButtonScriptElementView";
@@ -96,6 +97,10 @@ export class ElementFactory {
 
       case ELEMENT_TYPES.BUTTON_AUDIO: {
         return AudioButtonElementView.fromJSON(data);
+      }
+
+      case ELEMENT_TYPES.BUTTON_AUDIO_LIST: {
+        return AudioListButtonElementView.fromJSON(data);
       }
 
       case ELEMENT_TYPES.BUTTON_ROUTE: {
