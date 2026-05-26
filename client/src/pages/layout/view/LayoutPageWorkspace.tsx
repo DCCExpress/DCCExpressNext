@@ -89,6 +89,7 @@ type LayoutPageWorkspaceProps = {
   ) => void;
 
   onOpenBlockActionsForBlock: (blockId: string) => void;
+  onOpenSignalLogicForSignal: (signalAddress: number) => void;
 
   routesString: string;
 
@@ -131,6 +132,7 @@ export default function LayoutPageWorkspace({
 
   onUpdateSelectedElement,
   onOpenBlockActionsForBlock,
+  onOpenSignalLogicForSignal,
 
   routesString,
 
@@ -305,6 +307,9 @@ export default function LayoutPageWorkspace({
                     setBusy={setBusy}
                     onOpenBlockActionsForBlock={
                       onOpenBlockActionsForBlock
+                    }
+                    onOpenSignalLogicForSignal={
+                      onOpenSignalLogicForSignal
                     }
                   />
                 </Card>
