@@ -45,6 +45,7 @@ type LayoutPageHeaderProps = {
   setTool: EditorToolSetter;
 
   setLocoDialogOpened: BooleanSetter;
+  setBlockActionsDialogOpened: BooleanSetter;
   setSignalLogicDialogOpened: BooleanSetter;
   setPickerOpened: BooleanSetter;
 
@@ -79,6 +80,7 @@ export default function LayoutPageHeader({
   setTool,
 
   setLocoDialogOpened,
+  setBlockActionsDialogOpened,
   setSignalLogicDialogOpened,
   setPickerOpened,
 
@@ -145,6 +147,9 @@ export default function LayoutPageHeader({
             onGoHome={onGoHome}
             onOpenLocos={() =>
               setLocoDialogOpened(true)
+            }
+            onOpenBlocks={() =>
+              setBlockActionsDialogOpened(true)
             }
             onOpenSignalLogic={() =>
               setSignalLogicDialogOpened(true)
