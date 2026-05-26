@@ -28,6 +28,18 @@ export type LocoFunction = {
   active?: boolean;
 };
 
+export type LocoTrainType =
+  | "passenger"
+  | "freight"
+  | "mixed"
+  | "maintenance"
+  | "other";
+
+export type LocoOccupancyDetectionPosition =
+  | "forward"
+  | "reverse"
+  | "both";
+
 export type LocoActionHook =
   | "beforeStart"
   | "afterStart"
@@ -86,6 +98,9 @@ export type Loco = {
   invert: boolean;
   image?: string;
   length: number;
+  trainType?: LocoTrainType;
+  occupancyDetectionPosition?: LocoOccupancyDetectionPosition;
+  lastRunAt?: string;
   functions: LocoFunction[];
   actions?: LocoActionHooks;
 };
