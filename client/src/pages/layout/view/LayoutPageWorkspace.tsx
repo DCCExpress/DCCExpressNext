@@ -88,6 +88,8 @@ type LayoutPageWorkspaceProps = {
     element: BaseElementView | null
   ) => void;
 
+  onOpenBlockActionsForBlock: (blockId: string) => void;
+
   routesString: string;
 
   setCanvasBusy: BooleanSetter;
@@ -128,6 +130,7 @@ export default function LayoutPageWorkspace({
   setTurnoutSelection,
 
   onUpdateSelectedElement,
+  onOpenBlockActionsForBlock,
 
   routesString,
 
@@ -300,6 +303,9 @@ export default function LayoutPageWorkspace({
                     onLayoutChange={onLayoutChange}
                     routes={routesString}
                     setBusy={setBusy}
+                    onOpenBlockActionsForBlock={
+                      onOpenBlockActionsForBlock
+                    }
                   />
                 </Card>
               )
