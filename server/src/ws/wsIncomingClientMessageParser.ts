@@ -2,6 +2,7 @@
 
 import type {
   AppSettingsCommandAction,
+  BlockAutomationCommandAction,
   ClientWsMessageType,
   ClientWsMessageUnion,
   ClientWsPayloadMap,
@@ -70,6 +71,10 @@ function isAppSettingsCommandAction(value: unknown): value is AppSettingsCommand
 }
 
 function isSignalLogicCommandAction(value: unknown): value is SignalLogicCommandAction {
+  return value === "load" || value === "save";
+}
+
+function isBlockAutomationCommandAction(value: unknown): value is BlockAutomationCommandAction {
   return value === "load" || value === "save";
 }
 
@@ -313,6 +318,14 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isSignalLogicCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+      if (data.action === "save" && !isRecord(data.document)) return invalidPayload(type, "document must be an object for save.");
+      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.document) ? { document: data.document } : {}) } as ClientWsPayloadMap[TType] };
+    }
+
+    case "blockAutomationCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isBlockAutomationCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (data.action === "save" && !isRecord(data.document)) return invalidPayload(type, "document must be an object for save.");
       return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.document) ? { document: data.document } : {}) } as ClientWsPayloadMap[TType] };
     }
