@@ -202,6 +202,7 @@ export default function LayoutPage({
 
   useLevelCrossingBlinkTask({
     editMode,
+    layout,
     layoutRef,
     setInvalidateCounter,
   });
