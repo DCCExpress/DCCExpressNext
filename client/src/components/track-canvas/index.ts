@@ -28,5 +28,6 @@ export * from "./trackCanvasSignalAspect";
 export * from "./trackCanvasSignalPopoverState";
 
 // UI
+export * from "./TrackCanvasAudioListPopover";
 export * from "./TrackCanvasBlockLocoPicker";
 export * from "./TrackCanvasSignalAspectPopover";
