@@ -99,6 +99,8 @@ export type SerializedLayoutElementDto = {
   script?: string;
   audioItems?: AudioListButtonItemDto[];
 
+  basicAccessoryAddress?: number;
+  barrierEnabled?: boolean;
   barrierType?: LevelCrossingBarrierTypeDto;
   barrierClosed?: boolean;
   lightsEnabled?: boolean;
@@ -183,6 +185,8 @@ export interface TrackStraightElementDto extends TrackElementDto {
 
 export interface TrackLevelCrossingElementDto extends TrackElementDto {
   type: "tracklevelcrossing";
+  basicAccessoryAddress: number;
+  barrierEnabled: boolean;
   barrierType: LevelCrossingBarrierTypeDto;
   barrierClosed: boolean;
   lightsEnabled: boolean;
