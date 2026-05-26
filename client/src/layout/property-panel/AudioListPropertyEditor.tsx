@@ -13,9 +13,9 @@ import {
   Modal,
   ScrollArea,
   Stack,
+  Table,
   Text,
   TextInput,
-  useComputedColorScheme,
 } from "@mantine/core";
 import {
   IconFolderOpen,
@@ -67,21 +67,12 @@ export default function AudioListPropertyEditor({
 }: AudioListPropertyEditorProps) {
   const [opened, setOpened] = useState(false);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
-  const computedColorScheme = useComputedColorScheme("light");
 
   if (!(selectedElement instanceof AudioListButtonElementView)) {
     return null;
   }
 
   const items = selectedElement.audioItems;
-
-  const cardBackground = computedColorScheme === "dark"
-    ? "var(--mantine-color-dark-5)"
-    : "var(--mantine-color-blue-0)";
-
-  const cardBorderColor = computedColorScheme === "dark"
-    ? "var(--mantine-color-dark-3)"
-    : "var(--mantine-color-blue-2)";
 
   const updateItems = (nextItems: AudioListButtonItemDto[]) => {
     selectedElement.audioItems = nextItems;
@@ -138,7 +129,7 @@ export default function AudioListPropertyEditor({
   };
 
   const handleDragStart = (
-    event: DragEvent<HTMLDivElement>,
+    event: DragEvent<HTMLTableRowElement>,
     itemId: string
   ): void => {
     setDraggedItemId(itemId);
@@ -195,156 +186,158 @@ export default function AudioListPropertyEditor({
             </Card>
           ) : (
             <ScrollArea.Autosize mah="min(560px, calc(100vh - 280px))" type="auto" offsetScrollbars>
-              <Stack gap="sm">
-                {items.map((item, index) => (
-                  <Card
-                    key={item.id}
-                    withBorder
-                    p="sm"
-                    draggable
-                    onDragStart={event => handleDragStart(event, item.id)}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={event => {
-                      event.preventDefault();
-                      event.dataTransfer.dropEffect = "move";
+              <Table striped highlightOnHover withTableBorder>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th style={{ width: 78 }}>Order</Table.Th>
+                    <Table.Th>Name</Table.Th>
+                    <Table.Th>File</Table.Th>
+                    <Table.Th style={{ width: 112 }}>Actions</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {items.map((item, index) => (
+                    <Table.Tr
+                      key={item.id}
+                      draggable
+                      onDragStart={event => handleDragStart(event, item.id)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={event => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
 
-                      if (draggedItemId && draggedItemId !== item.id) {
-                        moveDraggedItemToIndex(index);
-                      }
-                    }}
-                    style={{
-                      backgroundColor: cardBackground,
-                      borderColor: cardBorderColor,
-                      opacity: draggedItemId === item.id ? 0.35 : 1,
-                      transition: "opacity 120ms ease, transform 120ms ease, background-color 120ms ease, border-color 120ms ease",
-                    }}
-                  >
-                    <Stack gap="sm">
-                      <Group justify="space-between" wrap="nowrap">
-                        <Group gap="xs" wrap="nowrap">
+                        if (draggedItemId && draggedItemId !== item.id) {
+                          moveDraggedItemToIndex(index);
+                        }
+                      }}
+                      style={{
+                        opacity: draggedItemId === item.id ? 0.35 : 1,
+                        transition: "opacity 120ms ease, background-color 120ms ease",
+                        cursor: "grab",
+                      }}
+                    >
+                      <Table.Td>
+                        <Group gap={4} wrap="nowrap">
                           <ActionIcon
+                            size="sm"
                             variant="subtle"
                             color="gray"
+                            title="Drag to reorder"
                             style={{ cursor: "grab", touchAction: "none" }}
                           >
-                            <IconGripVertical size={18} />
+                            <IconGripVertical size={16} />
                           </ActionIcon>
 
                           <Badge
+                            size="sm"
                             variant="filled"
                             color={draggedItemId === item.id ? "orange" : "blue"}
-                            miw={draggedItemId === item.id ? 58 : 34}
+                            miw={draggedItemId === item.id ? 48 : 30}
                             ta="center"
                           >
                             {draggedItemId === item.id ? `→ #${index + 1}` : `#${index + 1}`}
                           </Badge>
-
-                          <Badge variant="light">
-                            {item.name || "Audio"}
-                          </Badge>
                         </Group>
-
-                        <ActionIcon
-                          size="sm"
-                          variant="light"
-                          color="red"
-                          title="Remove audio"
-                          onClick={() => removeItem(item.id)}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Group>
-
-                      <Group align="flex-end" wrap="wrap">
+                      </Table.Td>
+                      <Table.Td>
                         <TextInput
-                          label="Name"
                           size="xs"
                           value={item.name}
-                          w={210}
                           onChange={event =>
                             updateItem(item.id, { name: event.target.value })
                           }
                           onMouseDown={event => event.stopPropagation()}
                           onPointerDown={event => event.stopPropagation()}
                         />
-
+                      </Table.Td>
+                      <Table.Td>
                         <TextInput
-                          label="Audio file"
                           size="xs"
                           value={item.fileName}
-                          placeholder="station.mp3"
-                          w={320}
                           onChange={event =>
                             updateItem(item.id, { fileName: event.target.value })
                           }
                           onMouseDown={event => event.stopPropagation()}
                           onPointerDown={event => event.stopPropagation()}
                           rightSection={
-                            <Group gap={2} wrap="nowrap">
-                              <FileButton
-                                onChange={file => {
-                                  if (file) {
-                                    updateItem(item.id, { fileName: file.name });
-                                  }
-                                }}
-                                accept="audio/*"
-                              >
-                                {fileButtonProps => (
-                                  <ActionIcon
-                                    {...fileButtonProps}
-                                    size="sm"
-                                    variant="subtle"
-                                    title="Choose audio file"
-                                    onClick={event => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      fileButtonProps.onClick?.();
-                                    }}
-                                  >
-                                    <IconFolderOpen size={16} />
-                                  </ActionIcon>
-                                )}
-                              </FileButton>
-
-                              <ActionIcon
-                                size="sm"
-                                variant="subtle"
-                                title="Test audio"
-                                disabled={!item.fileName.trim()}
-                                onClick={event => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  selectedElement.playItem(item, () => {
-                                    onUpdateSelectedElement(selectedElement);
-                                  });
-                                }}
-                              >
-                                <IconPlayerPlayFilled size={16} />
-                              </ActionIcon>
-                            </Group>
+                            <FileButton
+                              onChange={file => {
+                                if (file) {
+                                  updateItem(item.id, { fileName: file.name });
+                                }
+                              }}
+                              accept="audio/*"
+                            >
+                              {fileButtonProps => (
+                                <ActionIcon
+                                  {...fileButtonProps}
+                                  size="sm"
+                                  variant="subtle"
+                                  title="Choose audio file"
+                                  onClick={event => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    fileButtonProps.onClick?.();
+                                  }}
+                                >
+                                  <IconFolderOpen size={16} />
+                                </ActionIcon>
+                              )}
+                            </FileButton>
                           }
-                          rightSectionWidth={68}
+                          rightSectionWidth={36}
                         />
-                      </Group>
-                    </Stack>
-                  </Card>
-                ))}
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap={4} wrap="nowrap">
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            title="Test audio"
+                            disabled={!item.fileName.trim()}
+                            onClick={event => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              selectedElement.playItem(item, () => {
+                                onUpdateSelectedElement(selectedElement);
+                              });
+                            }}
+                          >
+                            <IconPlayerPlayFilled size={16} />
+                          </ActionIcon>
 
-                {draggedItemId && items.length > 0 && (
-                  <Card
-                    withBorder
-                    p="sm"
-                    onDragOver={event => {
-                      event.preventDefault();
-                      event.dataTransfer.dropEffect = "move";
-                      moveDraggedItemToIndex(items.length);
-                    }}
-                    style={{ borderStyle: "dashed", opacity: 0.45 }}
-                  >
-                    <Text size="sm" c="dimmed" ta="center">Move to end</Text>
-                  </Card>
-                )}
-              </Stack>
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            color="red"
+                            title="Remove audio"
+                            onClick={() => removeItem(item.id)}
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+
+                  {draggedItemId && items.length > 0 && (
+                    <Table.Tr
+                      onDragOver={event => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                        moveDraggedItemToIndex(items.length);
+                      }}
+                      style={{ opacity: 0.55 }}
+                    >
+                      <Table.Td colSpan={4}>
+                        <Text size="sm" c="dimmed" ta="center">
+                          Move to end
+                        </Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
+                </Table.Tbody>
+              </Table>
             </ScrollArea.Autosize>
           )}
         </Stack>
