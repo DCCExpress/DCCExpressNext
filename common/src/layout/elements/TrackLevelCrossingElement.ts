@@ -18,6 +18,7 @@ export class TrackLevelCrossingElement extends TrackElement {
   barrierType: TrackLevelCrossingElementDto["barrierType"] = "half";
   barrierClosed = false;
   lightsEnabled = true;
+  blinkingEnabled = true;
   roadColor = "#6c757d";
 
   constructor(x: number, y: number) {
@@ -45,6 +46,7 @@ export class TrackLevelCrossingElement extends TrackElement {
     element.barrierType = data.barrierType ?? "half";
     element.barrierClosed = data.barrierClosed ?? false;
     element.lightsEnabled = data.lightsEnabled ?? true;
+    element.blinkingEnabled = data.blinkingEnabled ?? true;
     element.roadColor = data.roadColor ?? "#6c757d";
     return element;
   }
@@ -59,6 +61,7 @@ export class TrackLevelCrossingElement extends TrackElement {
       barrierType: this.barrierType,
       barrierClosed: this.barrierClosed,
       lightsEnabled: this.lightsEnabled,
+      blinkingEnabled: this.blinkingEnabled,
       roadColor: this.roadColor,
     };
   }
