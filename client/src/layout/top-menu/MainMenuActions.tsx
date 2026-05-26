@@ -16,6 +16,7 @@ type MainMenuActionsProps = {
   onOpenBlocks: () => void;
   onOpenSignalLogic: () => void;
   onOpenDiagnostics: () => void;
+  onOpenIntegrityCheck: () => void;
   onSaveLayout: () => void;
   onLoadLayout: () => void;
   onOpenAppSettingsDialog: () => void;
@@ -28,6 +29,7 @@ export default function MainMenuActions({
   onOpenBlocks,
   onOpenSignalLogic,
   onOpenDiagnostics,
+  onOpenIntegrityCheck,
   onSaveLayout,
   onLoadLayout,
   onOpenAppSettingsDialog,
@@ -104,6 +106,9 @@ export default function MainMenuActions({
             {t("signalLogic.menu")}
           </Menu.Item>
           <Divider />
+          <Menu.Item onClick={onOpenIntegrityCheck}>
+            Integrity check...
+          </Menu.Item>
           <Menu.Item onClick={onOpenDiagnostics}>
             Diagnostics...
           </Menu.Item>
