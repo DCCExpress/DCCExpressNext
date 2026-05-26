@@ -181,7 +181,7 @@ export interface TrackStraightElementDto extends TrackElementDto {
   type: "trackstraight";
 }
 
-export interface TrackLevelCrossingElementDto extends TrackStraightElementDto {
+export interface TrackLevelCrossingElementDto extends TrackElementDto {
   type: "tracklevelcrossing";
   barrierType: LevelCrossingBarrierTypeDto;
   barrierClosed: boolean;
