@@ -13,6 +13,7 @@ import { wsApi } from "./services/wsApi";
 import { wsClient } from "./services/wsClient";
 import { playServerAudio } from "./services/serverAudioPlayback";
 import { LayoutContextProvider } from "./context/LayoutContextProvider";
+import { installAutomationDialogRuntimeControlGuard } from "./automationDialogRuntimeControlGuard";
 
 export type AppPage = "home" | "layout" | "programmer";
 
@@ -29,6 +30,9 @@ export default function App() {
   const [page, setPage] = useState<AppPage>("home");
 
   useEffect(() => {
+    const uninstallAutomationDialogRuntimeControlGuard =
+      installAutomationDialogRuntimeControlGuard();
+
     wsApi.connect(getDefaultWsUrl());
 
     const unsubscribeAudio = wsClient.subscribeMessages(rawMessage => {
@@ -48,6 +52,7 @@ export default function App() {
 
     return () => {
       unsubscribeAudio();
+      uninstallAutomationDialogRuntimeControlGuard();
       wsApi.disconnect();
     };
   }, []);
