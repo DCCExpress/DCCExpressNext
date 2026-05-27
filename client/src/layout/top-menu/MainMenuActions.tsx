@@ -15,6 +15,7 @@ type MainMenuActionsProps = {
   onOpenLocos: () => void;
   onOpenBlocks: () => void;
   onOpenSignalLogic: () => void;
+  onOpenLevelCrossingLogic: () => void;
   onOpenDiagnostics: () => void;
   onOpenIntegrityCheck: () => void;
   onSaveLayout: () => void;
@@ -28,6 +29,7 @@ export default function MainMenuActions({
   onOpenLocos,
   onOpenBlocks,
   onOpenSignalLogic,
+  onOpenLevelCrossingLogic,
   onOpenDiagnostics,
   onOpenIntegrityCheck,
   onSaveLayout,
@@ -104,6 +106,9 @@ export default function MainMenuActions({
           <Menu.Item disabled>{t("Routes") + "..."}</Menu.Item>
           <Menu.Item onClick={onOpenSignalLogic}>
             {t("signalLogic.menu")}
+          </Menu.Item>
+          <Menu.Item onClick={onOpenLevelCrossingLogic}>
+            {t("levelCrossingLogic.menu")}
           </Menu.Item>
           <Divider />
           <Menu.Item onClick={onOpenIntegrityCheck}>
