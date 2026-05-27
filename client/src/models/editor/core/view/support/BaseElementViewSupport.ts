@@ -276,10 +276,7 @@ export function drawElementNeighbors(
 ): void {
   ctx.save();
 
-  const neighbors = [
-    element.getNextItemXy(),
-    element.getPrevItemXy(),
-  ];
+  const neighbors = element.getNeigbordsXy();
 
   ctx.fillStyle = "blue";
 
