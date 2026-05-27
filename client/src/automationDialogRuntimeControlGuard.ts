@@ -23,6 +23,8 @@ const AUTOSTART_LABELS = new Set([
   "Automatikus indítás",
 ]);
 
+const NOTICE_CLASS = "dcc-automation-editor-runtime-notice";
+
 function getText(element: Element): string {
   return (element.textContent ?? "").replace(/\s+/g, " ").trim();
 }
@@ -63,6 +65,36 @@ function hideAutostartCheckboxes(dialog: Element): void {
   });
 }
 
+function createNotice(): HTMLElement {
+  const notice = document.createElement("div");
+  notice.className = NOTICE_CLASS;
+  notice.textContent = "Runtime control is available in the StatusBar Automation dashboard. This dialog only edits automation rules.";
+  notice.style.margin = "0 0 8px 0";
+  notice.style.padding = "8px 10px";
+  notice.style.borderRadius = "8px";
+  notice.style.border = "1px solid #228be6";
+  notice.style.background = "rgba(34, 139, 230, 0.15)";
+  notice.style.color = "inherit";
+  notice.style.fontSize = "12px";
+  notice.style.lineHeight = "1.35";
+  return notice;
+}
+
+function insertRuntimeNotice(dialog: Element): void {
+  if (dialog.querySelector(`.${NOTICE_CLASS}`)) {
+    return;
+  }
+
+  const body = dialog.querySelector(".mantine-Modal-body")
+    ?? dialog.querySelector("[class*=Modal-body]")
+    ?? dialog;
+
+  body.insertBefore(
+    createNotice(),
+    body.firstChild
+  );
+}
+
 function applyAutomationDialogRuntimeControlGuard(): void {
   document.querySelectorAll('[role="dialog"], .mantine-Modal-content').forEach(dialog => {
     if (!isAutomationEditorDialog(dialog)) {
@@ -71,6 +103,7 @@ function applyAutomationDialogRuntimeControlGuard(): void {
 
     hideRuntimeButtons(dialog);
     hideAutostartCheckboxes(dialog);
+    insertRuntimeNotice(dialog);
   });
 }
 
