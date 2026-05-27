@@ -36,6 +36,10 @@ import type {
   BlockAutomationCommandPayload,
 } from "./blockAutomation.js";
 
+import type {
+  LevelCrossingCommandPayload,
+} from "./levelCrossingLogic.js";
+
 export type EmptyClientWsCommandPayload = {};
 
 export type SetTrackPowerCommandPayload = {
@@ -277,6 +281,7 @@ export type ClientWsPayloadMap = {
   appSettingsCommand: AppSettingsCommandPayload;
   signalLogicCommand: SignalLogicCommandPayload;
   blockAutomationCommand: BlockAutomationCommandPayload;
+  levelCrossingCommand: LevelCrossingCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
   fileCommand: FileCommandPayload;
