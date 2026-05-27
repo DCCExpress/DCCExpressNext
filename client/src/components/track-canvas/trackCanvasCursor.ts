@@ -17,6 +17,10 @@ import {
 } from "../../models/editor/elements/BlockElementView";
 
 import {
+  TrackLevelCrossingElementView,
+} from "../../models/editor/elements/TrackLevelCrossingElementView";
+
+import {
   TrackSignalElementView,
 } from "../../models/editor/elements/TrackSignalElementView";
 
@@ -47,6 +51,7 @@ export function isTrackCanvasPointerElement(
     element instanceof TrackTurnoutTwoWayElementView ||
     element instanceof TrackTurnoutDoubleElementView ||
     element instanceof TrackSignalElementView ||
+    element instanceof TrackLevelCrossingElementView ||
     element instanceof ClickableBaseElementView ||
     element instanceof AudioButtonElementView ||
     element instanceof BlockElementView
