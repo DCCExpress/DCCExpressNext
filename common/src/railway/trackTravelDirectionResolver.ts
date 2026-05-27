@@ -241,6 +241,10 @@ export class TrackTravelDirectionResolver {
         continue;
       }
 
+      if (result.some(existing => existing.id === candidate.id)) {
+        continue;
+      }
+
       result.push(candidate);
     }
 
@@ -269,16 +273,16 @@ export class TrackTravelDirectionResolver {
       ];
     }
 
-    return [
+    return element.getNeighborPointPairs().flatMap(pair => [
       {
-        side: "next",
-        point: element.getNextItemXy(),
+        side: "prev" as const,
+        point: pair[0],
       },
       {
-        side: "prev",
-        point: element.getPrevItemXy(),
+        side: "next" as const,
+        point: pair[1],
       },
-    ];
+    ]);
   }
 
   private getSideTowards(
