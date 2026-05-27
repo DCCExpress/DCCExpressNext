@@ -12,6 +12,7 @@ import AppSettingsDialog from "../../../components/app-settings/AppSettingsDialo
 import BlockActionsManagerDialog from "../../../components/block-actions/BlockActionsManagerDialog";
 import ElementPickerDialog from "../../../components/editor/ElementPickerDialog";
 import FullscreenLoader from "../../../components/FullscreenLoader";
+import LevelCrossingLogicDialog from "../../../components/level-crossing-logic/LevelCrossingLogicDialog";
 import LocoDialog from "../../../components/LocoDialog";
 import SignalLogicDialog from "../../../components/signal-logic/SignalLogicDialog";
 
@@ -38,6 +39,11 @@ type LayoutPageDialogsProps = {
   setSignalLogicDialogOpened: BooleanSetter;
   requestedSignalLogicAddress: number | null;
   onRequestedSignalLogicAddressConsumed: () => void;
+
+  levelCrossingLogicDialogOpened: boolean;
+  setLevelCrossingLogicDialogOpened: BooleanSetter;
+  requestedLevelCrossingElementId: string | null;
+  onRequestedLevelCrossingElementIdConsumed: () => void;
 
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
@@ -66,6 +72,11 @@ export default function LayoutPageDialogs({
   setSignalLogicDialogOpened,
   requestedSignalLogicAddress,
   onRequestedSignalLogicAddressConsumed,
+
+  levelCrossingLogicDialogOpened,
+  setLevelCrossingLogicDialogOpened,
+  requestedLevelCrossingElementId,
+  onRequestedLevelCrossingElementIdConsumed,
 
   pickerOpened,
   setPickerOpened,
@@ -109,6 +120,18 @@ export default function LayoutPageDialogs({
           onRequestedSignalLogicAddressConsumed();
         }}
         layout={layout}
+      />
+
+      <LevelCrossingLogicDialog
+        key={requestedLevelCrossingElementId ?? "all-level-crossings"}
+        opened={levelCrossingLogicDialogOpened}
+        onClose={() => {
+          setLevelCrossingLogicDialogOpened(false);
+          onRequestedLevelCrossingElementIdConsumed();
+        }}
+        layout={layout}
+        initialLevelCrossingElementId={requestedLevelCrossingElementId}
+        onInitialLevelCrossingElementIdConsumed={onRequestedLevelCrossingElementIdConsumed}
       />
 
       <ElementPickerDialog
