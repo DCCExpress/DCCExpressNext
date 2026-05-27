@@ -14,6 +14,8 @@ import type {
   RotationStepDto,
 } from "../layoutDto.js";
 
+export type NeighborPointPair = [Point, Point];
+
 /**
  * Grafikamentes, szerveroldalon is használható layout elem alap.
  */
@@ -144,10 +146,16 @@ export abstract class BaseElement {
     return getDirectionXy(this.pos, this.rotation + 180);
   }
 
-  getNeigbordsXy(): Point[] {
+  getNeighborPointPairs(): NeighborPointPair[] {
     return [
-      this.getNextItemXy(),
-      this.getPrevItemXy(),
+      [
+        this.getPrevItemXy(),
+        this.getNextItemXy(),
+      ],
     ];
+  }
+
+  getNeigbordsXy(): Point[] {
+    return this.getNeighborPointPairs().flat();
   }
 }
