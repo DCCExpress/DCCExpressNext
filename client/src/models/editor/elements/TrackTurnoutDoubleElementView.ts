@@ -9,7 +9,6 @@ import {
   drawElementSelection,
   endElementDraw,
   getBaseEditableProperties,
-  getBaseHelp,
   getCenterX,
   getCenterY,
   getGridSizeX,
@@ -41,6 +40,9 @@ import {
   DrawOptions,
   ITrackTurnoutDoubleElement,
 } from "../types/EditorTypes";
+import type {
+  IEditableProperty,
+} from "./PropertyDescriptor";
 
 export default class TrackTurnoutDoubleElementView
   extends CommonTrackTurnoutDoubleElement
@@ -60,12 +62,17 @@ export default class TrackTurnoutDoubleElementView
     return getTrackTravelDirectionArrow(this);
   }
 
-
   selected: boolean = false;
   marked: boolean = false;
   enabled: boolean = true;
   alpha: number = 0.5;
   debug: boolean = false;
+
+  /**
+   * Used only by ElementPreview in the property panel.
+   */
+  firstPreviewClosed: boolean | null = null;
+  secondPreviewClosed: boolean | null = null;
 
   get GridSizeX(): number {
     return getGridSizeX();
@@ -198,14 +205,58 @@ export default class TrackTurnoutDoubleElementView
     drawElementNeighbors(this, ctx);
   }
 
-  getEditableProperties() {
-    return getBaseEditableProperties();
+  getEditableProperties(): IEditableProperty[] {
+    return [
+      ...getBaseEditableProperties(),
+      {
+        label: "Turnout 1 Address",
+        key: "turnout1Address",
+        type: "number",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Turnout 1 Closed Value",
+        key: "turnout1ClosedValue",
+        type: "bittoggle",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Turnout 2 Address",
+        key: "turnout2Address",
+        type: "number",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Turnout 2 Closed Value",
+        key: "turnout2ClosedValue",
+        type: "bittoggle",
+        readonly: false,
+        validate: () => true,
+      },
+    ];
   }
 
   getHelp(): string {
-    return getBaseHelp();
+    return `
+      <h3 style="margin-top:0;">Double turnout</h3>
+      <p>
+        The double turnout is controlled by two accessory addresses.
+        Each motor has its own address and closed-value mapping.
+      </p>
+      <ul>
+        <li><b>Turnout 1 Address</b>: accessory address of the first motor.</li>
+        <li><b>Turnout 1 Closed Value</b>: physical value that represents the logical closed state of the first motor.</li>
+        <li><b>Turnout 2 Address</b>: accessory address of the second motor.</li>
+        <li><b>Turnout 2 Closed Value</b>: physical value that represents the logical closed state of the second motor.</li>
+      </ul>
+      <p>
+        The route graph can use both motors together when it calculates a path through this element.
+      </p>
+    `;
   }
-
 
   type: typeof ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE =
     ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE;
@@ -223,8 +274,14 @@ export default class TrackTurnoutDoubleElementView
   ): void {
     if (!this.visible) return;
 
+    const firstClosed =
+      this.firstPreviewClosed ?? false;
+
+    const secondClosed =
+      this.secondPreviewClosed ?? false;
+
     this.beginDraw(ctx, options);
-    this.drawTurnout(ctx, false, false);
+    this.drawTurnout(ctx, firstClosed, secondClosed);
     this.endDraw(ctx);
     this.drawSelection(ctx);
   }
@@ -427,6 +484,8 @@ export default class TrackTurnoutDoubleElementView
       length: this.length,
       turnout1Address: this.turnout1Address,
       turnout2Address: this.turnout2Address,
+      turnout1ClosedValue: this.turnout1ClosedValue,
+      turnout2ClosedValue: this.turnout2ClosedValue,
     };
   }
 
@@ -449,6 +508,8 @@ export default class TrackTurnoutDoubleElementView
     element.fg = data.fg;
     element.turnout1Address = data.turnout1Address;
     element.turnout2Address = data.turnout2Address;
+    element.turnout1ClosedValue = data.turnout1ClosedValue ?? element.turnout1ClosedValue;
+    element.turnout2ClosedValue = data.turnout2ClosedValue ?? element.turnout2ClosedValue;
 
     return element;
   }
@@ -467,6 +528,8 @@ export default class TrackTurnoutDoubleElementView
     copy.length = this.length;
     copy.turnout1Address = this.turnout1Address;
     copy.turnout2Address = this.turnout2Address;
+    copy.turnout1ClosedValue = this.turnout1ClosedValue;
+    copy.turnout2ClosedValue = this.turnout2ClosedValue;
 
     return copy;
   }
