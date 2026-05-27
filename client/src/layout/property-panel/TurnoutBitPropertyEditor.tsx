@@ -73,6 +73,15 @@ function getPhysicalValueForLogicalState(
     : !closedValue;
 }
 
+function getClosedValueFromPhysicalValue(
+  physicalValue: boolean,
+  logicalClosed: boolean
+): boolean {
+  return logicalClosed
+    ? physicalValue
+    : !physicalValue;
+}
+
 function setDoubleTurnoutPosition(
   selectedElement: TrackTurnoutDoubleElementView,
   position: DoubleTurnoutPosition
@@ -125,44 +134,68 @@ function renderDoubleTurnoutEditor(
     <Stack gap="xs">
       <Text size="sm" fw={500}>Double turnout positions</Text>
 
-      {DOUBLE_TURNOUT_POSITIONS.map(position => (
-        <Group
-          key={position.label}
-          justify="space-between"
-          align="center"
-          wrap="nowrap"
-        >
-          <Box className="route-turnout-preview-button">
-            <ElementPreview
-              element={createDoubleTurnoutPreview(
-                selectedElement,
-                position.firstClosed,
-                position.secondClosed
-              )}
-              label={position.label}
-              width={46}
-              height={46}
-              onClick={() => {
-                setDoubleTurnoutPosition(
-                  selectedElement,
-                  position
-                );
-              }}
-            />
-          </Box>
+      {DOUBLE_TURNOUT_POSITIONS.map(position => {
+        const firstPhysicalValue = getPhysicalValueForLogicalState(
+          selectedElement.turnout1ClosedValue,
+          position.firstClosed
+        );
 
-          <Group gap="xs" wrap="nowrap">
-            <BitToggleElement
-              value={position.firstClosed}
-              onChange={value => onChange(firstClosedValueProperty, value)}
-            />
-            <BitToggleElement
-              value={position.secondClosed}
-              onChange={value => onChange(secondClosedValueProperty, value)}
-            />
+        const secondPhysicalValue = getPhysicalValueForLogicalState(
+          selectedElement.turnout2ClosedValue,
+          position.secondClosed
+        );
+
+        return (
+          <Group
+            key={position.label}
+            justify="space-between"
+            align="center"
+            wrap="nowrap"
+          >
+            <Box className="route-turnout-preview-button">
+              <ElementPreview
+                element={createDoubleTurnoutPreview(
+                  selectedElement,
+                  position.firstClosed,
+                  position.secondClosed
+                )}
+                label={position.label}
+                width={46}
+                height={46}
+                onClick={() => {
+                  setDoubleTurnoutPosition(
+                    selectedElement,
+                    position
+                  );
+                }}
+              />
+            </Box>
+
+            <Group gap="xs" wrap="nowrap">
+              <BitToggleElement
+                value={firstPhysicalValue}
+                onChange={value => onChange(
+                  firstClosedValueProperty,
+                  getClosedValueFromPhysicalValue(
+                    value,
+                    position.firstClosed
+                  )
+                )}
+              />
+              <BitToggleElement
+                value={secondPhysicalValue}
+                onChange={value => onChange(
+                  secondClosedValueProperty,
+                  getClosedValueFromPhysicalValue(
+                    value,
+                    position.secondClosed
+                  )
+                )}
+              />
+            </Group>
           </Group>
-        </Group>
-      ))}
+        );
+      })}
     </Stack>
   );
 }
