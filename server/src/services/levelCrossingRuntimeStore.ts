@@ -83,6 +83,22 @@ function getRouteReserved(
   return matches;
 }
 
+function getAccessoryActive(address: number): LevelCrossingConditionValue {
+  const commandCenter = CommandCenter.getActive();
+
+  if (!commandCenter) {
+    return "unknown";
+  }
+
+  const accessory = commandCenter
+    .getAccessories()
+    .find(item => item.address === address);
+
+  return accessory === undefined
+    ? "unknown"
+    : Boolean(accessory.active);
+}
+
 async function setCrossingState(
   logic: LevelCrossingLogic,
   state: LevelCrossingRuntimeState
@@ -121,6 +137,7 @@ const serverRuntimeDataProvider = {
   getSensorActive,
   getBlockOccupied,
   getRouteReserved,
+  getAccessoryActive,
 };
 
 const serverRuntimeActionSink = {
