@@ -9,6 +9,10 @@ import {
 } from "../../../../common/src/signalLogic.js";
 
 import {
+  automationRuntimeService,
+} from "../../services/automationRuntimeService.js";
+
+import {
   signalLogicRulesStore,
 } from "../../services/signalLogicRulesStore.js";
 
@@ -175,6 +179,7 @@ export const handleSignalLogicMessage: WsMessageHandler = async context => {
 
       case "start": {
         const state = await signalLogicRuntimeService.start();
+        await automationRuntimeService.start();
         const document = signalLogicRulesStore.getDocument();
 
         sendSignalLogicResponse(context, {
