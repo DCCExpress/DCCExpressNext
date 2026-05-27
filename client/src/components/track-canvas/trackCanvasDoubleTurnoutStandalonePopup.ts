@@ -125,13 +125,14 @@ export function openStandaloneDoubleTurnoutPopover(
 
   popup.className = "track-canvas-double-turnout-popup";
   popup.style.position = "fixed";
-  popup.style.left = `${clientX + 12}px`;
-  popup.style.top = `${clientY + 12}px`;
+  popup.style.left = `${clientX}px`;
+  popup.style.top = `${clientY}px`;
+  popup.style.transform = "translate(-50%, -50%)";
   popup.style.zIndex = "10000";
   popup.style.display = "flex";
   popup.style.gap = "4px";
   popup.style.padding = "4px";
-  popup.style.background = "var(--mantine-color-body, #fff)";
+  popup.style.background = "#f8f9fa";
   popup.style.border = "1px solid #444";
   popup.style.borderRadius = "6px";
   popup.style.boxShadow = "0 8px 24px rgba(0,0,0,0.25)";
@@ -155,7 +156,7 @@ export function openStandaloneDoubleTurnoutPopover(
     button.style.height = "76px";
     button.style.border = "1px solid #444";
     button.style.borderRadius = "4px";
-    button.style.background = "#e5e7eb";
+    button.style.background = "#e9ecef";
     button.style.cursor = "pointer";
     button.style.padding = "0";
     button.style.display = "flex";
@@ -163,6 +164,7 @@ export function openStandaloneDoubleTurnoutPopover(
     button.style.alignItems = "center";
     button.style.justifyContent = "center";
     button.style.gap = "0";
+    button.style.color = "#111";
 
     const canvas = document.createElement("canvas");
     canvas.width = 40;
@@ -170,6 +172,13 @@ export function openStandaloneDoubleTurnoutPopover(
     canvas.style.width = "40px";
     canvas.style.height = "40px";
     canvas.style.display = "block";
+    canvas.style.background = "#e9ecef";
+
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = "#e9ecef";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     const label = document.createElement("div");
     label.textContent = position.label;
