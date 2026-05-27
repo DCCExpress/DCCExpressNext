@@ -54,6 +54,12 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
   turnout2ClosedValue: boolean = true;
 
   /**
+   * Runtime physical feedback values from the command center.
+   */
+  turnout1Closed: boolean = false;
+  turnout2Closed: boolean = false;
+
+  /**
    * Backward-compatible alias for legacy code paths that still treat a
    * turnout as a single accessory. The first motor is exposed here; route
    * graph edges still use both turnout1Address and turnout2Address.
@@ -72,6 +78,22 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
 
   set turnoutClosedValue(value: boolean) {
     this.turnout1ClosedValue = value;
+  }
+
+  get turnoutClosed(): boolean {
+    return this.turnout1Closed;
+  }
+
+  set turnoutClosed(value: boolean) {
+    this.turnout1Closed = value;
+  }
+
+  get firstLogicalClosed(): boolean {
+    return this.turnout1Closed === this.turnout1ClosedValue;
+  }
+
+  get secondLogicalClosed(): boolean {
+    return this.turnout2Closed === this.turnout2ClosedValue;
   }
 
   /**
