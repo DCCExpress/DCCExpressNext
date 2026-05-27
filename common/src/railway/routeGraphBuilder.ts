@@ -19,16 +19,14 @@ import {
   isTopologyTurnoutElement,
   type TravelDirection,
 } from "./topology.js";
+import TrackTurnoutDoubleElement from "../layout/elements/TrackTurnoutDoubleElement.js";
 import { TrackTravelDirectionResolver } from "./trackTravelDirectionResolver.js";
 
-type TurnoutSide =
-  | "entry"
-  | "straight"
-  | "div";
+type TurnoutSide = string;
 
 type TurnoutExit = {
   exitSide: TurnoutSide;
-  turnoutState: TurnoutStateRequirement;
+  turnoutStates: TurnoutStateRequirement[];
 };
 
 type TrackConnectionGroup = {
@@ -121,15 +119,9 @@ export class RouteGraphBuilder {
 
   private discoverPhysicalSections(): void {
     for (const turnout of this.turnouts) {
-      const connections = turnout.getConnections();
+      const connections = this.getTurnoutConnectionPoints(turnout);
 
-      const connectionPositions = [
-        connections.entry,
-        connections.straight,
-        connections.div,
-      ];
-
-      for (const pos of connectionPositions) {
+      for (const pos of Object.values(connections)) {
         const firstElem =
           this.topology.getPhysicalTrackAt(pos);
 
@@ -468,19 +460,11 @@ export class RouteGraphBuilder {
 
   private createRouteEdges(): void {
     for (const turnout of this.turnouts) {
-      const connections = turnout.getConnections();
+      const connections = this.getTurnoutConnectionPoints(turnout);
 
-      const sides: TurnoutSide[] = [
-        "entry",
-        "straight",
-        "div",
-      ];
-
-      for (const side of sides) {
+      for (const [side, point] of Object.entries(connections)) {
         const connectedElem =
-          this.topology.getPhysicalTrackAt(
-            connections[side]
-          );
+          this.topology.getPhysicalTrackAt(point);
 
         if (!connectedElem) {
           continue;
@@ -554,14 +538,18 @@ export class RouteGraphBuilder {
     for (const exit of exits) {
       const nextTurnoutStates = [
         ...turnoutStates,
-        exit.turnoutState,
+        ...exit.turnoutStates,
       ];
 
       const connections =
-        turnout.getConnections();
+        this.getTurnoutConnectionPoints(turnout);
 
       const exitPos =
         connections[exit.exitSide];
+
+      if (!exitPos) {
+        continue;
+      }
 
       const nextElem =
         this.topology.getPhysicalTrackAt(exitPos);
@@ -647,7 +635,9 @@ export class RouteGraphBuilder {
     turnoutStates: TurnoutStateRequirement[],
     locoDirection: TravelDirection
   ): void {
-    const turnoutKey = turnoutStates
+    const normalizedStates = this.normalizeTurnoutStates(turnoutStates);
+
+    const turnoutKey = normalizedStates
       .map(state =>
         `${state.address}:${state.closed ? "C" : "T"}`
       )
@@ -666,16 +656,62 @@ export class RouteGraphBuilder {
       new Edge(
         from,
         to,
-        turnoutStates,
+        normalizedStates,
         locoDirection
       )
     );
+  }
+
+  private normalizeTurnoutStates(
+    turnoutStates: TurnoutStateRequirement[]
+  ): TurnoutStateRequirement[] {
+    const byAddress = new Map<number, boolean>();
+
+    for (const state of turnoutStates) {
+      if (state.address <= 0) {
+        continue;
+      }
+
+      const existing = byAddress.get(state.address);
+
+      if (existing !== undefined && existing !== state.closed) {
+        return turnoutStates;
+      }
+
+      byAddress.set(state.address, state.closed);
+    }
+
+    return [...byAddress.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([address, closed]) => ({
+        address,
+        closed,
+      }));
   }
 
   private getAllowedTurnoutExits(
     turnout: TopologyTurnoutElement,
     enteredSide: TurnoutSide
   ): TurnoutExit[] {
+    if (turnout instanceof TrackTurnoutDoubleElement) {
+      return turnout
+        .getOppositeRoutesFromSide(enteredSide as any)
+        .map(route => {
+          const exitSide =
+            turnout.getRouteExitSide(route, enteredSide as any);
+
+          if (!exitSide) {
+            return null;
+          }
+
+          return {
+            exitSide,
+            turnoutStates: [...route.turnoutStates],
+          };
+        })
+        .filter((exit): exit is TurnoutExit => exit !== null);
+    }
+
     const straightState: TurnoutStateRequirement = {
       address: turnout.turnoutAddress,
       closed: true,
@@ -691,11 +727,11 @@ export class RouteGraphBuilder {
         return [
           {
             exitSide: "straight",
-            turnoutState: straightState,
+            turnoutStates: [straightState],
           },
           {
             exitSide: "div",
-            turnoutState: divState,
+            turnoutStates: [divState],
           },
         ];
 
@@ -703,7 +739,7 @@ export class RouteGraphBuilder {
         return [
           {
             exitSide: "entry",
-            turnoutState: straightState,
+            turnoutStates: [straightState],
           },
         ];
 
@@ -711,28 +747,31 @@ export class RouteGraphBuilder {
         return [
           {
             exitSide: "entry",
-            turnoutState: divState,
+            turnoutStates: [divState],
           },
         ];
+
+      default:
+        return [];
     }
+  }
+
+  private getTurnoutConnectionPoints(
+    turnout: TopologyTurnoutElement
+  ): Record<string, TopologyPoint> {
+    return turnout.getConnections() as unknown as Record<string, TopologyPoint>;
   }
 
   private getTurnoutSideConnectedToElement(
     turnout: TopologyTurnoutElement,
     other: TopologyTrackElement
   ): TurnoutSide | undefined {
-    const connections = turnout.getConnections();
+    const connections = this.getTurnoutConnectionPoints(turnout);
 
-    if (connections.entry.isEqual(other.pos)) {
-      return "entry";
-    }
-
-    if (connections.straight.isEqual(other.pos)) {
-      return "straight";
-    }
-
-    if (connections.div.isEqual(other.pos)) {
-      return "div";
+    for (const [side, point] of Object.entries(connections)) {
+      if (point.isEqual(other.pos)) {
+        return side;
+      }
     }
 
     return undefined;
