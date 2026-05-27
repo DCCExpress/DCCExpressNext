@@ -30,8 +30,8 @@ import {
 } from "react";
 
 import type {
-  SignalLogicRuntimeStateDto,
-} from "../../../common/src/signalLogic";
+  AutomationRuntimeStatePayload,
+} from "../../../common/src/types";
 
 import type {
   TaskManagerSnapshot,
@@ -50,10 +50,10 @@ import { useScriptStatus } from "../hooks/useScriptStatus";
 import { useServerRuntimeStats } from "../hooks/useServerRuntimeStats";
 import { useWsStatus } from "../hooks/useWsStatus";
 import {
-  getSignalLogicRuntimeStateWs,
-  startSignalLogicWs,
-  stopSignalLogicWs,
-} from "../api/signalLogicWsApi";
+  getAutomationRuntimeStateWs,
+  startAutomationRuntimeWs,
+  stopAutomationRuntimeWs,
+} from "../api/automationWsApi";
 import { isServerAudioPlaybackEnabled, subscribeServerAudioPlaybackChanged, toggleServerAudioPlaybackEnabled } from "../services/audioPlaybackSettings";
 import { scriptEngine } from "../services/scriptEngine";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
@@ -69,9 +69,10 @@ type StatusBarProps = {
   onOpenSignalLogicDialog: () => void;
 };
 
-const DEFAULT_DISPATCHER_STATE: SignalLogicRuntimeStateDto = {
+const DEFAULT_AUTOMATION_STATE: AutomationRuntimeStatePayload = {
   running: false,
-  autostart: false,
+  tickMs: 500,
+  modules: [],
 };
 
 export default function StatusBar({
@@ -93,8 +94,8 @@ export default function StatusBar({
   const [scriptEditorOpened, setScriptEditorOpened] = useState(false);
   const [taskDialogOpened, setTaskDialogOpened] = useState(false);
   const [taskSnapshot, setTaskSnapshot] = useState<TaskManagerSnapshot | null>(null);
-  const [dispatcherState, setDispatcherState] = useState<SignalLogicRuntimeStateDto>(DEFAULT_DISPATCHER_STATE);
-  const [dispatcherBusy, setDispatcherBusy] = useState(false);
+  const [automationState, setAutomationState] = useState<AutomationRuntimeStatePayload>(DEFAULT_AUTOMATION_STATE);
+  const [automationBusy, setAutomationBusy] = useState(false);
   const [serverAudioEnabled, setServerAudioEnabled] = useState(() => isServerAudioPlaybackEnabled());
 
   const wsConnected = wsStatus === "connected";
@@ -116,12 +117,14 @@ export default function StatusBar({
             ? "blue"
             : "gray";
 
-  const dispatcherIsRunning = dispatcherState.running;
+  const automationIsRunning = automationState.running;
+  const enabledAutomationModules = automationState.modules.filter(module => module.enabled);
+  const automationLabel = `AUTO ${enabledAutomationModules.length}/${automationState.modules.length}`;
 
-  const dispatcherBadgeColor =
-    dispatcherBusy
+  const automationBadgeColor =
+    automationBusy
       ? "orange"
-      : dispatcherIsRunning
+      : automationIsRunning
         ? "green"
         : "gray";
 
@@ -158,9 +161,9 @@ export default function StatusBar({
 
   useEffect(() => {
     const unsubscribe = wsClient.on(
-      "signalLogicStateChanged",
+      "automationRuntimeStateChanged",
       data => {
-        setDispatcherState(data);
+        setAutomationState(data);
       }
     );
 
@@ -169,19 +172,19 @@ export default function StatusBar({
 
   useEffect(() => {
     if (!wsConnected) {
-      setDispatcherState(previous => ({
+      setAutomationState(previous => ({
         ...previous,
         running: false,
       }));
       return;
     }
 
-    void getSignalLogicRuntimeStateWs()
+    void getAutomationRuntimeStateWs()
       .then(result => {
-        setDispatcherState(result.state);
+        setAutomationState(result.state);
       })
       .catch(error => {
-        console.error("Could not load Signal Control state:", error);
+        console.error("Could not load automation runtime state:", error);
       });
   }, [wsConnected]);
 
@@ -204,26 +207,26 @@ export default function StatusBar({
     handleStartScript();
   };
 
-  const handleToggleDispatcher = (): void => {
-    if (!wsConnected || dispatcherBusy) {
+  const handleToggleAutomation = (): void => {
+    if (!wsConnected || automationBusy) {
       return;
     }
 
-    setDispatcherBusy(true);
+    setAutomationBusy(true);
 
-    const request = dispatcherIsRunning
-      ? stopSignalLogicWs()
-      : startSignalLogicWs();
+    const request = automationIsRunning
+      ? stopAutomationRuntimeWs()
+      : startAutomationRuntimeWs();
 
     void request
       .then(result => {
-        setDispatcherState(result.state);
+        setAutomationState(result.state);
       })
       .catch(error => {
-        console.error("Could not toggle Signal Control:", error);
+        console.error("Could not toggle automation runtime:", error);
       })
       .finally(() => {
-        setDispatcherBusy(false);
+        setAutomationBusy(false);
       });
   };
 
@@ -332,24 +335,24 @@ export default function StatusBar({
             <IconEdit size={14} />
           </StatusActionIcon>
 
-          <StatusBadge color={dispatcherBadgeColor}>
+          <StatusBadge color={automationBadgeColor}>
             <Group gap={4} wrap="nowrap">
               <IconTrafficLights size={13} />
-              <span>{dispatcherIsRunning ? "RUNNING" : "STOPPED"}</span>
+              <span>{automationIsRunning ? `${automationLabel} RUN` : `${automationLabel} STOP`}</span>
             </Group>
           </StatusBadge>
 
           <StatusActionIcon
-            tooltip={dispatcherIsRunning ? "Stop Signal Control" : "Start Signal Control"}
-            color={dispatcherIsRunning ? "red" : "green"}
-            disabled={!wsConnected || dispatcherBusy}
-            onClick={handleToggleDispatcher}
+            tooltip={automationIsRunning ? "Stop automation runtime" : "Start automation runtime"}
+            color={automationIsRunning ? "red" : "green"}
+            disabled={!wsConnected || automationBusy}
+            onClick={handleToggleAutomation}
           >
-            {dispatcherIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}
+            {automationIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}
           </StatusActionIcon>
 
           <StatusActionIcon
-            tooltip="Edit Signal Control rules"
+            tooltip="Edit signal logic rules"
             color="blue"
             onClick={onOpenSignalLogicDialog}
           >
