@@ -215,6 +215,71 @@ export default function RightPropertyPanel({
     }
   };
 
+  const handleReleaseExtendedRoute = async (): Promise<void> => {
+    if (!(selectedElement instanceof ExtendedRouteButtonElementView)) {
+      return;
+    }
+
+    if (!selectedElement.fromBlockId || !selectedElement.toBlockId) {
+      showWarningMessage(
+        t("common.error"),
+        t("routesPanel.selectBothBlocks")
+      );
+      return;
+    }
+
+    let graph = routeGraph;
+
+    try {
+      if (!graph) {
+        graph = await ensureRouteGraphLoaded();
+      }
+
+      if (!graph) {
+        showWarningMessage(t("common.error"), t("routesPanel.noServerGraph"));
+        return;
+      }
+
+      const fromBlock = graph.findBlockById(selectedElement.fromBlockId);
+      const toBlock = graph.findBlockById(selectedElement.toBlockId);
+
+      if (!fromBlock || !toBlock) {
+        showWarningMessage(
+          t("common.error"),
+          t("routesPanel.selectedBlocksMissing")
+        );
+        return;
+      }
+
+      setBusy?.(
+        true,
+        t("routesPanel.releaseRequested", {
+          from: fromBlock.label,
+          to: toBlock.label,
+        })
+      );
+
+      wsApi.releaseRouteReservation(fromBlock.name, toBlock.name);
+
+      showOkMessage(
+        t("routesPanel.releaseRequest"),
+        t("routesPanel.releaseRequested", {
+          from: fromBlock.label,
+          to: toBlock.label,
+        })
+      );
+    } catch (error) {
+      showErrorMessage(
+        t("common.error"),
+        error instanceof Error
+          ? error.message
+          : t("routesPanel.automaticRouteFailed")
+      );
+    } finally {
+      setBusy?.(false);
+    }
+  };
+
   useEffect(() => {
     if (editMode && selectedElement instanceof ExtendedRouteButtonElementView) {
       if (!routeGraph) {
@@ -298,6 +363,7 @@ export default function RightPropertyPanel({
             selectedElement={selectedElement}
             onRefreshRouteGraph={refreshExtendedRouteGraph}
             onTestRoute={handleTestExtendedRoute}
+            onReleaseRoute={handleReleaseExtendedRoute}
           />
         )}
 
