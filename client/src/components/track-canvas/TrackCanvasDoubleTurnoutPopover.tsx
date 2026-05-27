@@ -109,6 +109,8 @@ export function TrackCanvasDoubleTurnoutPopover({
   state,
   onClose,
 }: TrackCanvasDoubleTurnoutPopoverProps) {
+  const turnout = state.turnout;
+
   return (
     <Popover
       opened={state.opened}
@@ -157,35 +159,35 @@ export function TrackCanvasDoubleTurnoutPopover({
       >
         <Stack gap="xs">
           <Group gap={4}>
-            {state.turnout && DOUBLE_TURNOUT_POSITIONS.map(position => (
-              <Box
-                key={position.label}
-                className="signal-aspect-button"
-                onClick={() => {
-                  if (!state.turnout) {
-                    return;
-                  }
+            {turnout && DOUBLE_TURNOUT_POSITIONS.map(position => {
+              const currentTurnout = turnout;
 
-                  onClose();
-                  setDoubleTurnoutPosition(
-                    state.turnout,
-                    position
-                  );
-                }}
-              >
-                <ElementPreview
-                  style={{ cursor: "pointer" }}
-                  element={createDoubleTurnoutPreview(
-                    state.turnout,
-                    position.firstClosed,
-                    position.secondClosed
-                  )}
-                  label={position.label}
-                  width={40}
-                  height={40}
-                />
-              </Box>
-            ))}
+              return (
+                <Box
+                  key={position.label}
+                  className="signal-aspect-button"
+                  onClick={() => {
+                    onClose();
+                    setDoubleTurnoutPosition(
+                      currentTurnout,
+                      position
+                    );
+                  }}
+                >
+                  <ElementPreview
+                    style={{ cursor: "pointer" }}
+                    element={createDoubleTurnoutPreview(
+                      currentTurnout,
+                      position.firstClosed,
+                      position.secondClosed
+                    )}
+                    label={position.label}
+                    width={40}
+                    height={40}
+                  />
+                </Box>
+              );
+            })}
           </Group>
         </Stack>
       </Popover.Dropdown>
