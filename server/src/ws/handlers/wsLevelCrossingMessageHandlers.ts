@@ -3,6 +3,10 @@ import type {
 } from "../../../../common/src/levelCrossingLogic.js";
 
 import {
+  automationRuntimeService,
+} from "../../services/automationRuntimeService.js";
+
+import {
   levelCrossingLogicStore,
 } from "../../services/levelCrossingLogicStore.js";
 
@@ -84,6 +88,7 @@ export const handleLevelCrossingMessage: WsMessageHandler = async context => {
 
       case "start": {
         const runtime = await levelCrossingRuntimeStore.start();
+        await automationRuntimeService.start();
         const payload: LevelCrossingResponsePayload = {
           requestId,
           action,
