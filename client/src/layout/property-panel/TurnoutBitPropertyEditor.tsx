@@ -1,4 +1,4 @@
-import { Box, Group, Stack, Text } from "@mantine/core";
+import { Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 
 import BitToggleElement from "../../components/editor/BitToggleElement";
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
@@ -17,6 +17,35 @@ type TurnoutBitPropertyEditorProps = {
   onChange: PropertyChangeHandler;
 };
 
+type DoubleTurnoutPositionPreview = {
+  label: string;
+  firstClosed: boolean;
+  secondClosed: boolean;
+};
+
+const DOUBLE_TURNOUT_POSITION_PREVIEWS: DoubleTurnoutPositionPreview[] = [
+  {
+    label: "Open / Open",
+    firstClosed: false,
+    secondClosed: false,
+  },
+  {
+    label: "Open / Closed",
+    firstClosed: false,
+    secondClosed: true,
+  },
+  {
+    label: "Closed / Open",
+    firstClosed: true,
+    secondClosed: false,
+  },
+  {
+    label: "Closed / Closed",
+    firstClosed: true,
+    secondClosed: true,
+  },
+];
+
 function isTurnoutElement(
   element: BaseElementView
 ): element is TrackTurnoutLeftElementView | TrackTurnoutRightElementView {
@@ -29,15 +58,6 @@ function isDoubleTurnoutClosedValueProperty(
   return prop.key === "turnout1ClosedValue" || prop.key === "turnout2ClosedValue";
 }
 
-function getDoubleTurnoutAddress(
-  element: TrackTurnoutDoubleElementView,
-  prop: IEditableProperty
-): number {
-  return prop.key === "turnout1ClosedValue"
-    ? element.turnout1Address
-    : element.turnout2Address;
-}
-
 function getPhysicalValueForLogicalState(
   closedValue: boolean,
   logicalClosed: boolean
@@ -47,17 +67,62 @@ function getPhysicalValueForLogicalState(
     : !closedValue;
 }
 
-function getDoubleTurnoutLogicalPreview(
+function setDoubleTurnoutPosition(
   element: TrackTurnoutDoubleElementView,
-  prop: IEditableProperty,
-  logicalClosed: boolean
-): BaseElementView {
-  const isFirstMotor = prop.key === "turnout1ClosedValue";
+  firstClosed: boolean,
+  secondClosed: boolean
+): void {
+  wsApi.setTurnout(
+    element.turnout1Address,
+    getPhysicalValueForLogicalState(
+      element.turnout1ClosedValue,
+      firstClosed
+    )
+  );
 
-  return createDoubleTurnoutPreview(
-    element,
-    isFirstMotor ? logicalClosed : element.firstLogicalClosed,
-    isFirstMotor ? element.secondLogicalClosed : logicalClosed
+  wsApi.setTurnout(
+    element.turnout2Address,
+    getPhysicalValueForLogicalState(
+      element.turnout2ClosedValue,
+      secondClosed
+    )
+  );
+}
+
+function renderDoubleTurnoutPositionPreviews(
+  selectedElement: TrackTurnoutDoubleElementView
+) {
+  return (
+    <Stack gap="xs">
+      <Text size="sm" fw={500}>Turnout positions</Text>
+
+      <SimpleGrid cols={2} spacing="xs">
+        {DOUBLE_TURNOUT_POSITION_PREVIEWS.map(position => (
+          <Box
+            key={position.label}
+            className="route-turnout-preview-button"
+          >
+            <ElementPreview
+              element={createDoubleTurnoutPreview(
+                selectedElement,
+                position.firstClosed,
+                position.secondClosed
+              )}
+              label={position.label}
+              width={46}
+              height={46}
+              onClick={() => {
+                setDoubleTurnoutPosition(
+                  selectedElement,
+                  position.firstClosed,
+                  position.secondClosed
+                );
+              }}
+            />
+          </Box>
+        ))}
+      </SimpleGrid>
+    </Stack>
   );
 }
 
@@ -67,7 +132,8 @@ function renderDoubleTurnoutEditor(
   propValue: boolean,
   onChange: PropertyChangeHandler
 ) {
-  const address = getDoubleTurnoutAddress(selectedElement, prop);
+  const showPositionPreviews =
+    prop.key === "turnout1ClosedValue";
 
   return (
     <Stack gap="xs">
@@ -76,37 +142,7 @@ function renderDoubleTurnoutEditor(
         <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
       </Group>
 
-      <Group>
-        <Box className="route-turnout-preview-button">
-          <ElementPreview
-            element={getDoubleTurnoutLogicalPreview(selectedElement, prop, true)}
-            label="Closed"
-            width={40}
-            height={40}
-            onClick={() => {
-              wsApi.setTurnout(
-                address,
-                getPhysicalValueForLogicalState(propValue, true)
-              );
-            }}
-          />
-        </Box>
-
-        <Box className="route-turnout-preview-button">
-          <ElementPreview
-            element={getDoubleTurnoutLogicalPreview(selectedElement, prop, false)}
-            label="Opened"
-            width={40}
-            height={40}
-            onClick={() => {
-              wsApi.setTurnout(
-                address,
-                getPhysicalValueForLogicalState(propValue, false)
-              );
-            }}
-          />
-        </Box>
-      </Group>
+      {showPositionPreviews && renderDoubleTurnoutPositionPreviews(selectedElement)}
     </Stack>
   );
 }
