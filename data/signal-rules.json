@@ -3,18 +3,6 @@
   "autostart": true,
   "groups": [
     {
-      "id": "d085b02-a2b8-48a7-aaf3-bddb9c7f",
-      "signalAddress": 1,
-      "defaultAspect": "red",
-      "rules": [
-        {
-          "id": "9001b7f-0d5d-4813-8d37-b1b00f97",
-          "aspect": "green",
-          "conditions": []
-        }
-      ]
-    },
-    {
       "id": "451c813-1a8b-4bae-b307-499e8978",
       "signalAddress": 135,
       "defaultAspect": "red",
@@ -36,6 +24,18 @@
               "closed": true
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "d085b02-a2b8-48a7-aaf3-bddb9c7f",
+      "signalAddress": 1,
+      "defaultAspect": "red",
+      "rules": [
+        {
+          "id": "9001b7f-0d5d-4813-8d37-b1b00f97",
+          "aspect": "green",
+          "conditions": []
         }
       ]
     },
