@@ -2,11 +2,42 @@
 
 const AUTOMATION_EDITOR_TITLES = [
   "Signal logic",
+  "Signal Logic",
+  "SignalLogic",
+  "Signal control",
   "Jelzőlogika",
+  "Jelző logika",
+  "Jelzővezérlés",
+  "Jelző vezérlés",
   "Signallogik",
+  "Signalsteuerung",
   "Sorompólogika",
+  "Sorompó logika",
   "Level crossing logic",
   "Bahnübergang-Logik",
+];
+
+const SIGNAL_LOGIC_EDITOR_MARKERS = [
+  "Rules",
+  "Preview",
+  "Script",
+  "Szabályok",
+  "Előnézet",
+  "Kód",
+  "Regeln",
+  "Vorschau",
+];
+
+const LEVEL_CROSSING_EDITOR_MARKERS = [
+  "Close triggers",
+  "Additional open conditions",
+  "Actions",
+  "Zárási feltételek",
+  "További nyitási feltételek",
+  "Műveletek",
+  "Schließauslöser",
+  "Zusätzliche Öffnungsbedingungen",
+  "Aktionen",
 ];
 
 const RUNTIME_BUTTON_LABELS = new Set([
@@ -29,9 +60,26 @@ function getText(element: Element): string {
   return (element.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
+function containsAllMarkers(text: string, markers: string[]): boolean {
+  return markers.every(marker => text.includes(marker));
+}
+
+function containsAnyMarker(text: string, markers: string[]): boolean {
+  return markers.some(marker => text.includes(marker));
+}
+
 function isAutomationEditorDialog(dialog: Element): boolean {
   const text = getText(dialog);
-  return AUTOMATION_EDITOR_TITLES.some(title => text.includes(title));
+
+  if (containsAnyMarker(text, AUTOMATION_EDITOR_TITLES)) {
+    return true;
+  }
+
+  if (containsAllMarkers(text, SIGNAL_LOGIC_EDITOR_MARKERS)) {
+    return true;
+  }
+
+  return containsAllMarkers(text, LEVEL_CROSSING_EDITOR_MARKERS);
 }
 
 function hideElement(element: HTMLElement): void {
@@ -118,12 +166,17 @@ export function installAutomationDialogRuntimeControlGuard(): () => void {
     applyAutomationDialogRuntimeControlGuard();
   });
 
+  const intervalId = window.setInterval(() => {
+    applyAutomationDialogRuntimeControlGuard();
+  }, 500);
+
   observer.observe(document.body, {
     childList: true,
     subtree: true,
   });
 
   return () => {
+    window.clearInterval(intervalId);
     observer.disconnect();
   };
 }
