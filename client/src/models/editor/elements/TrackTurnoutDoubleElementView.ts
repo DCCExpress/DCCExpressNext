@@ -41,6 +41,14 @@ import type {
   DrawOptions,
   ITrackTurnoutDoubleElement,
 } from "../types/EditorTypes";
+import type {
+  IEditableProperty,
+} from "./PropertyDescriptor";
+
+type CanvasPoint = {
+  x: number;
+  y: number;
+};
 
 export default class TrackTurnoutDoubleElementView
   extends CommonTrackTurnoutDoubleElement
@@ -207,7 +215,7 @@ export default class TrackTurnoutDoubleElementView
     return getTrackTravelDirectionArrow(this);
   }
 
-  getEditableProperties() {
+  getEditableProperties(): IEditableProperty[] {
     return [
       ...getBaseEditableProperties(),
       {
@@ -278,6 +286,43 @@ export default class TrackTurnoutDoubleElementView
     ctx.strokeStyle = this.TrackPrimaryColor;
     ctx.lineWidth = this.TrackWidth7;
 
+    this.drawBaseTrack(ctx);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle = this.stateColor;
+    ctx.lineWidth = this.TrackWidth3;
+
+    const firstTarget =
+      this.getFirstArmTarget(firstClosed);
+
+    ctx.moveTo(this.centerX, this.centerY);
+    ctx.lineTo(firstTarget.x, firstTarget.y);
+    ctx.stroke();
+
+    ctx.beginPath();
+
+    const secondTarget =
+      this.getSecondArmTarget(secondClosed);
+
+    ctx.moveTo(this.centerX, this.centerY);
+    ctx.lineTo(secondTarget.x, secondTarget.y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "black";
+    ctx.fillStyle =
+      this.locked
+        ? this.turnoutLocked
+        : this.turnoutUnLocked;
+
+    ctx.arc(this.centerX, this.centerY, 3, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  private drawBaseTrack(ctx: CanvasRenderingContext2D): void {
     if (this.rotation == 0 || this.rotation == 180) {
       ctx.moveTo(this.posLeft, this.centerY);
       ctx.lineTo(this.posRight, this.centerY);
@@ -299,164 +344,104 @@ export default class TrackTurnoutDoubleElementView
       ctx.moveTo(this.posRight, this.posTop);
       ctx.lineTo(this.posLeft, this.posBottom);
     }
+  }
 
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.strokeStyle = this.stateColor;
-    ctx.lineWidth = this.TrackWidth3;
-
+  private getFirstArmTarget(closed: boolean): CanvasPoint {
     const dx = this.width / 5;
 
-    if (this.rotation == 0) {
-      if (firstClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.posTop + dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.centerY);
-      }
-    } else if (this.rotation == 45) {
-      if (firstClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.centerX, this.posTop + dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.posTop + dx);
-      }
-    } else if (this.rotation == 90) {
-      if (firstClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.posTop + dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.centerX, this.posTop + dx);
-      }
-    } else if (this.rotation == 135) {
-      if (firstClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.centerY);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.posTop + dx);
-      }
-    } else if (this.rotation == 180) {
-      if (firstClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.centerY);
-      }
-    } else if (this.rotation == 225) {
-      if (firstClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.centerX, this.posBottom - dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
-      }
-    } else if (this.rotation == 270) {
-      if (firstClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.centerX, this.posBottom - dx);
-      }
-    } else if (this.rotation == 315) {
-      if (firstClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.centerY);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
-      }
+    switch (this.rotation) {
+      case 0:
+        return closed
+          ? { x: this.posLeft + dx, y: this.posTop + dx }
+          : { x: this.posLeft + dx, y: this.centerY };
+
+      case 45:
+        return closed
+          ? { x: this.centerX, y: this.posTop + dx }
+          : { x: this.posLeft + dx, y: this.posTop + dx };
+
+      case 90:
+        return closed
+          ? { x: this.posRight - dx, y: this.posTop + dx }
+          : { x: this.centerX, y: this.posTop + dx };
+
+      case 135:
+        return closed
+          ? { x: this.posRight - dx, y: this.centerY }
+          : { x: this.posRight - dx, y: this.posTop + dx };
+
+      case 180:
+        return closed
+          ? { x: this.posRight - dx, y: this.posBottom - dx }
+          : { x: this.posRight - dx, y: this.centerY };
+
+      case 225:
+        return closed
+          ? { x: this.centerX, y: this.posBottom - dx }
+          : { x: this.posRight - dx, y: this.posBottom - dx };
+
+      case 270:
+        return closed
+          ? { x: this.posLeft + dx, y: this.posBottom - dx }
+          : { x: this.centerX, y: this.posBottom - dx };
+
+      case 315:
+        return closed
+          ? { x: this.posLeft + dx, y: this.centerY }
+          : { x: this.posLeft + dx, y: this.posBottom - dx };
+
+      default:
+        return { x: this.centerX, y: this.centerY };
     }
+  }
 
-    ctx.stroke();
+  private getSecondArmTarget(closed: boolean): CanvasPoint {
+    const dx = this.width / 5;
 
-    ctx.beginPath();
+    switch (this.rotation) {
+      case 0:
+        return closed
+          ? { x: this.posRight - dx, y: this.posBottom - dx }
+          : { x: this.posRight - dx, y: this.centerY };
 
-    if (this.rotation == 0) {
-      if (secondClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.centerY);
-      }
-    } else if (this.rotation == 45) {
-      if (secondClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.centerX, this.posBottom - dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
-      }
-    } else if (this.rotation == 90) {
-      if (secondClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.centerX, this.posBottom - dx);
-      }
-    } else if (this.rotation == 135) {
-      if (secondClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.centerY);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
-      }
-    } else if (this.rotation == 180) {
-      if (secondClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.posTop + dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.centerY);
-      }
-    } else if (this.rotation == 225) {
-      if (secondClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.centerX, this.posTop + dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posLeft + dx, this.posTop + dx);
-      }
-    } else if (this.rotation == 270) {
-      if (secondClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.posTop + dx);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.centerX, this.posTop + dx);
-      }
-    } else if (this.rotation == 315) {
-      if (secondClosed) {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.centerY);
-      } else {
-        ctx.moveTo(this.centerX, this.centerY);
-        ctx.lineTo(this.posRight - dx, this.posTop + dx);
-      }
+      case 45:
+        return closed
+          ? { x: this.centerX, y: this.posBottom - dx }
+          : { x: this.posRight - dx, y: this.posBottom - dx };
+
+      case 90:
+        return closed
+          ? { x: this.posLeft + dx, y: this.posBottom - dx }
+          : { x: this.centerX, y: this.posBottom - dx };
+
+      case 135:
+        return closed
+          ? { x: this.posLeft + dx, y: this.centerY }
+          : { x: this.posLeft + dx, y: this.posBottom - dx };
+
+      case 180:
+        return closed
+          ? { x: this.posLeft + dx, y: this.posTop + dx }
+          : { x: this.posLeft + dx, y: this.centerY };
+
+      case 225:
+        return closed
+          ? { x: this.centerX, y: this.posTop + dx }
+          : { x: this.posLeft + dx, y: this.posTop + dx };
+
+      case 270:
+        return closed
+          ? { x: this.posRight - dx, y: this.posTop + dx }
+          : { x: this.centerX, y: this.posTop + dx };
+
+      case 315:
+        return closed
+          ? { x: this.posRight - dx, y: this.centerY }
+          : { x: this.posRight - dx, y: this.posTop + dx };
+
+      default:
+        return { x: this.centerX, y: this.centerY };
     }
-
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "black";
-    ctx.fillStyle =
-      this.locked
-        ? this.turnoutLocked
-        : this.turnoutUnLocked;
-
-    ctx.arc(this.centerX, this.centerY, 3, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.stroke();
   }
 
   private drawAddressLabels(ctx: CanvasRenderingContext2D): void {
