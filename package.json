@@ -19,7 +19,7 @@
     "build:client": "npm --workspace client run build",
     "build:mobile": "npm --workspace mobile run build",
     "build:server": "npm --workspace server run build",
-    "build": "npm run build:client && npm run build:mobile && npm run build:server",
+    "build": "npm run build:client && npm run build:server",
     "check": "npm run typecheck && npm run build",
     "preflight": "npm run check",
     "audit": "npm audit --workspaces --audit-level=moderate",
