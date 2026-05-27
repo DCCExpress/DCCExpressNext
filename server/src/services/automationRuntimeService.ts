@@ -23,7 +23,7 @@ export type AutomationRuntimeModule = {
   id: string;
   name: string;
   isEnabled: () => boolean | Promise<boolean>;
-  evaluateOnce: (nowMs: number) => void | Promise<void>;
+  evaluateOnce: (nowMs: number) => unknown | Promise<unknown>;
 };
 
 type BroadcastFn = (
