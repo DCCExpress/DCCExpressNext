@@ -146,6 +146,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "signalLogicCommand",
   "blockAutomationCommand",
   "levelCrossingCommand",
+  "automationCommand",
   "taskManagerCommand",
   "fastClockCommand",
   "fileCommand",
@@ -295,6 +296,10 @@ export type AutomationRuntimeStatePayload = {
   modules: AutomationModuleStatePayload[];
 };
 
+export type AutomationResponsePayload = WsCommandResponseMeta & {
+  state?: AutomationRuntimeStatePayload;
+};
+
 export type ServerWsPayloadMap = {
   "ws:welcome": { message: string };
   error: { message: string };
@@ -356,6 +361,7 @@ export type ServerWsPayloadMap = {
   blockAutomationResponse: BlockAutomationResponsePayload;
   levelCrossingResponse: LevelCrossingResponsePayload;
   levelCrossingStateChanged: LevelCrossingRuntimeStateDto;
+  automationResponse: AutomationResponsePayload;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
 
