@@ -77,6 +77,49 @@ export type LevelCrossingLogic = {
   actions: LevelCrossingAction[];
 };
 
+export type LevelCrossingLogicDocumentDto = {
+  version: 1;
+  autostart: boolean;
+  crossings: LevelCrossingLogic[];
+};
+
+export type LevelCrossingRuntimeEntryDto = {
+  logicId: string;
+  levelCrossingElementId: string;
+  state: LevelCrossingRuntimeState;
+  lastChangedAtMs: number;
+  lastEvaluation?: LevelCrossingEvaluationResult;
+};
+
+export type LevelCrossingRuntimeStateDto = {
+  running: boolean;
+  autostart: boolean;
+  crossings: LevelCrossingRuntimeEntryDto[];
+};
+
+export type LevelCrossingCommandAction =
+  | "load"
+  | "save"
+  | "start"
+  | "stop"
+  | "snapshot"
+  | "evaluateOnce";
+
+export type LevelCrossingCommandPayload = {
+  requestId: string;
+  action: LevelCrossingCommandAction;
+  document?: LevelCrossingLogicDocumentDto;
+};
+
+export type LevelCrossingResponsePayload = {
+  requestId: string;
+  action: LevelCrossingCommandAction;
+  ok: boolean;
+  message?: string;
+  document?: LevelCrossingLogicDocumentDto;
+  runtime?: LevelCrossingRuntimeStateDto;
+};
+
 export type LevelCrossingConditionValue = boolean | "unknown";
 
 export type LevelCrossingEvaluationContext = {
@@ -94,6 +137,12 @@ export type LevelCrossingEvaluationResult = {
   reason: "disabled" | "close-trigger" | "open-allowed" | "hold-closed";
 };
 
+export const DEFAULT_LEVEL_CROSSING_LOGIC_DOCUMENT: LevelCrossingLogicDocumentDto = {
+  version: 1,
+  autostart: false,
+  crossings: [],
+};
+
 export function createDefaultLevelCrossingLogic(
   id: string,
   levelCrossingElementId: string
@@ -108,6 +157,20 @@ export function createDefaultLevelCrossingLogic(
     openDelayMs: 1000,
     minClosedMs: 3000,
     actions: [],
+  };
+}
+
+export function normalizeLevelCrossingLogicDocument(input: unknown): LevelCrossingLogicDocumentDto {
+  if (!isRecord(input)) {
+    return DEFAULT_LEVEL_CROSSING_LOGIC_DOCUMENT;
+  }
+
+  const rawCrossings = Array.isArray(input.crossings) ? input.crossings : [];
+
+  return {
+    version: 1,
+    autostart: Boolean(input.autostart),
+    crossings: rawCrossings.map((raw, index) => normalizeLevelCrossingLogic(raw, index)),
   };
 }
 
@@ -188,6 +251,113 @@ export function evaluateLevelCrossingLogic(
   };
 }
 
+function normalizeLevelCrossingLogic(input: unknown, index: number): LevelCrossingLogic {
+  const raw = isRecord(input) ? input : {};
+  const fallbackId = `level-crossing-logic-${index + 1}`;
+  const id = getNonEmptyString(raw.id, fallbackId);
+  const levelCrossingElementId = getNonEmptyString(raw.levelCrossingElementId, "");
+
+  return {
+    id,
+    levelCrossingElementId,
+    enabled: raw.enabled !== false,
+    closeTriggers: normalizeConditionList(raw.closeTriggers, id, "close"),
+    openConditions: normalizeConditionList(raw.openConditions, id, "open"),
+    closeDelayMs: getSafeInteger(raw.closeDelayMs, 0),
+    openDelayMs: getSafeInteger(raw.openDelayMs, 1000),
+    minClosedMs: getSafeInteger(raw.minClosedMs, 3000),
+    actions: normalizeActionList(raw.actions, id),
+  };
+}
+
+function normalizeConditionList(
+  input: unknown,
+  logicId: string,
+  scope: "close" | "open"
+): LevelCrossingCondition[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input.map((condition, index) =>
+    normalizeCondition(condition, `${logicId}-${scope}-condition-${index + 1}`)
+  );
+}
+
+function normalizeCondition(input: unknown, fallbackId: string): LevelCrossingCondition {
+  const raw = isRecord(input) ? input : {};
+  const id = getNonEmptyString(raw.id, fallbackId);
+  const label = getOptionalNonEmptyString(raw.label);
+  const operator = raw.operator === "isNot" ? "isNot" : "is";
+  const common = label === undefined ? { id, operator } : { id, label, operator };
+
+  if (raw.type === "block") {
+    return {
+      ...common,
+      type: "block",
+      blockId: getNonEmptyString(raw.blockId, ""),
+      occupied: raw.occupied !== false,
+    };
+  }
+
+  if (raw.type === "route") {
+    const fromBlockId = getOptionalNonEmptyString(raw.fromBlockId);
+    const toBlockId = getOptionalNonEmptyString(raw.toBlockId);
+
+    return {
+      ...common,
+      type: "route",
+      ...(fromBlockId === undefined ? {} : { fromBlockId }),
+      ...(toBlockId === undefined ? {} : { toBlockId }),
+      reserved: raw.reserved !== false,
+    };
+  }
+
+  return {
+    ...common,
+    type: "sensor",
+    sensorAddress: getSafeInteger(raw.sensorAddress, 0),
+    active: raw.active !== false,
+  };
+}
+
+function normalizeActionList(input: unknown, logicId: string): LevelCrossingAction[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input.map((action, index) =>
+    normalizeAction(action, `${logicId}-action-${index + 1}`)
+  );
+}
+
+function normalizeAction(input: unknown, fallbackId: string): LevelCrossingAction {
+  const raw = isRecord(input) ? input : {};
+  const id = getNonEmptyString(raw.id, fallbackId);
+
+  if (raw.type === "setElementState") {
+    return {
+      id,
+      type: "setElementState",
+      closedState: normalizeRuntimeState(raw.closedState, "closed"),
+      openState: normalizeRuntimeState(raw.openState, "open"),
+    };
+  }
+
+  return {
+    id,
+    type: "setAccessory",
+    address: getSafeInteger(raw.address, 0),
+    activeWhenClosed: raw.activeWhenClosed !== false,
+  };
+}
+
+function normalizeRuntimeState(input: unknown, fallback: LevelCrossingRuntimeState): LevelCrossingRuntimeState {
+  return input === "open" || input === "closing" || input === "closed" || input === "opening"
+    ? input
+    : fallback;
+}
+
 function getExpectedConditionValue(condition: LevelCrossingCondition): boolean {
   switch (condition.type) {
     case "sensor":
@@ -199,4 +369,25 @@ function getExpectedConditionValue(condition: LevelCrossingCondition): boolean {
     case "route":
       return condition.reserved;
   }
+}
+
+function getSafeInteger(input: unknown, fallback: number): number {
+  const value = Number(input);
+  return Number.isFinite(value) ? Math.trunc(value) : fallback;
+}
+
+function getNonEmptyString(input: unknown, fallback: string): string {
+  return typeof input === "string" && input.trim().length > 0
+    ? input
+    : fallback;
+}
+
+function getOptionalNonEmptyString(input: unknown): string | undefined {
+  return typeof input === "string" && input.trim().length > 0
+    ? input
+    : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
