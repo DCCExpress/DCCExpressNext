@@ -50,6 +50,7 @@ import type {
 } from "../../models/editor/types/EditorTypes";
 
 import type {
+  DoubleTurnoutPopoverState,
   DragState,
   PanState,
   SelectionState,
@@ -66,11 +67,6 @@ import {
   getAllLayoutElements,
 } from "./trackCanvasSelection";
 
-import {
-  closeStandaloneDoubleTurnoutPopover,
-  openStandaloneDoubleTurnoutPopover,
-} from "./trackCanvasDoubleTurnoutStandalonePopup";
-
 type MouseDownRef<T> = {
   current: T;
 };
@@ -85,6 +81,7 @@ export type TrackCanvasMouseDownContext = {
   selectedElementRef: MouseDownRef<BaseElementView | null>;
   currentCursorRef: MouseDownRef<BaseElementView | null>;
   signalAspectPopoverRef: MouseDownRef<SignalAspectPopoverState>;
+  doubleTurnoutPopoverRef: MouseDownRef<DoubleTurnoutPopoverState>;
   panRef: MouseDownRef<PanState>;
   dragRef: MouseDownRef<DragState>;
   selectionRef: MouseDownRef<SelectionState>;
@@ -106,6 +103,17 @@ export type TrackCanvasMouseDownContext = {
     clientY: number
   ) => void;
   closeSignalAspectPopover: () => void;
+  openDoubleTurnoutPopover: (
+    turnout: TrackTurnoutDoubleElementView,
+    clientX: number,
+    clientY: number
+  ) => void;
+  reopenDoubleTurnoutPopover: (
+    turnout: TrackTurnoutDoubleElementView,
+    clientX: number,
+    clientY: number
+  ) => void;
+  closeDoubleTurnoutPopover: () => void;
   handleClickableDown: (
     hitElement: BaseElementView | null,
     event: MouseEvent | PointerEvent
@@ -128,6 +136,7 @@ export function handleTrackCanvasMouseDown(
     selectedElementRef,
     currentCursorRef,
     signalAspectPopoverRef,
+    doubleTurnoutPopoverRef,
     panRef,
     dragRef,
     selectionRef,
@@ -141,6 +150,9 @@ export function handleTrackCanvasMouseDown(
     openSignalAspectPopover,
     reopenSignalAspectPopover,
     closeSignalAspectPopover,
+    openDoubleTurnoutPopover,
+    reopenDoubleTurnoutPopover,
+    closeDoubleTurnoutPopover,
     handleClickableDown,
     invalidate,
     t,
@@ -168,7 +180,9 @@ export function handleTrackCanvasMouseDown(
       closeSignalAspectPopover();
     }
 
-    closeStandaloneDoubleTurnoutPopover();
+    if (doubleTurnoutPopoverRef.current.opened) {
+      closeDoubleTurnoutPopover();
+    }
 
     panRef.current.isPanning = true;
     panRef.current.lastX = event.clientX;
@@ -244,7 +258,9 @@ export function handleTrackCanvasMouseDown(
     }
 
     if (hitElement instanceof TrackSignalElementView) {
-      closeStandaloneDoubleTurnoutPopover();
+      if (doubleTurnoutPopoverRef.current.opened) {
+        closeDoubleTurnoutPopover();
+      }
 
       if (signalAspectPopoverRef.current.opened) {
         reopenSignalAspectPopover(
@@ -268,11 +284,19 @@ export function handleTrackCanvasMouseDown(
         closeSignalAspectPopover();
       }
 
-      openStandaloneDoubleTurnoutPopover(
-        hitElement,
-        event.clientX,
-        event.clientY
-      );
+      if (doubleTurnoutPopoverRef.current.opened) {
+        reopenDoubleTurnoutPopover(
+          hitElement,
+          event.clientX,
+          event.clientY
+        );
+      } else {
+        openDoubleTurnoutPopover(
+          hitElement,
+          event.clientX,
+          event.clientY
+        );
+      }
 
       return;
     }
@@ -282,7 +306,9 @@ export function handleTrackCanvasMouseDown(
     closeSignalAspectPopover();
   }
 
-  closeStandaloneDoubleTurnoutPopover();
+  if (doubleTurnoutPopoverRef.current.opened) {
+    closeDoubleTurnoutPopover();
+  }
 
   if (toolRef.current.mode === "cursor" && !editModeRef.current) {
     if (handleClickableDown(hitElement, event)) {
