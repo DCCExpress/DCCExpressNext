@@ -208,7 +208,37 @@ export default class TrackTurnoutDoubleElementView
   }
 
   getEditableProperties() {
-    return getBaseEditableProperties();
+    return [
+      ...getBaseEditableProperties(),
+      {
+        label: "Turnout 1 Address",
+        key: "turnout1Address",
+        type: "number",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Turnout 2 Address",
+        key: "turnout2Address",
+        type: "number",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Double Turnout Positions",
+        key: "turnout1ClosedValue",
+        type: "bittoggle",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Turnout 2 Closed Value",
+        key: "turnout2ClosedValue",
+        type: "bittoggle",
+        readonly: false,
+        validate: () => true,
+      },
+    ];
   }
 
   getHelp(): string {
