@@ -11,6 +11,9 @@ import type {
   TrackCrossingElementDto,
 } from "../layoutDto.js";
 import {
+  type NeighborPointPair,
+} from "../model/BaseElement.js";
+import {
   TrackElement,
 } from "../model/TrackElement.js";
 
@@ -24,16 +27,24 @@ export class TrackCrossingElement extends TrackElement {
     this.rotationStep = 45;
   }
 
-  override getNeigbordsXy(): Point[] {
+  override getNeighborPointPairs(): NeighborPointPair[] {
     const [straightAngle, crossingAngle] =
       this.getCrossingLineAngles();
 
     return [
-      getDirectionXy(this.pos, straightAngle),
-      getDirectionXy(this.pos, straightAngle + 180),
-      getDirectionXy(this.pos, crossingAngle),
-      getDirectionXy(this.pos, crossingAngle + 180),
+      [
+        getDirectionXy(this.pos, straightAngle + 180),
+        getDirectionXy(this.pos, straightAngle),
+      ],
+      [
+        getDirectionXy(this.pos, crossingAngle + 180),
+        getDirectionXy(this.pos, crossingAngle),
+      ],
     ];
+  }
+
+  override getNeigbordsXy(): Point[] {
+    return this.getNeighborPointPairs().flat();
   }
 
   private getCrossingLineAngles(): [number, number] {
