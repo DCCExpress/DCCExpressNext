@@ -7,12 +7,14 @@ type ExtendedRouteActionsProps = {
   selectedElement: ExtendedRouteButtonElementView;
   onRefreshRouteGraph: () => Promise<void>;
   onTestRoute: () => Promise<void>;
+  onReleaseRoute: () => Promise<void>;
 };
 
 export default function ExtendedRouteActions({
   selectedElement,
   onRefreshRouteGraph,
   onTestRoute,
+  onReleaseRoute,
 }: ExtendedRouteActionsProps) {
   const { t } = useTranslation();
 
@@ -43,6 +45,18 @@ export default function ExtendedRouteActions({
           disabled={!selectedElement.fromBlockId || !selectedElement.toBlockId}
         >
           {t("graph.solver.testRoute")}
+        </Button>
+
+        <Button
+          size="xs"
+          color="orange"
+          variant="light"
+          onClick={() => {
+            void onReleaseRoute();
+          }}
+          disabled={!selectedElement.fromBlockId || !selectedElement.toBlockId}
+        >
+          {t("routesPanel.releaseRequest")}
         </Button>
       </Stack>
     </Card>
