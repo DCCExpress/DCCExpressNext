@@ -74,9 +74,9 @@ function applyAutomationDialogRuntimeControlGuard(): void {
   });
 }
 
-export function installAutomationDialogRuntimeControlGuard(): void {
-  if (typeof window === "undefined") {
-    return;
+export function installAutomationDialogRuntimeControlGuard(): () => void {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return () => {};
   }
 
   applyAutomationDialogRuntimeControlGuard();
@@ -89,4 +89,8 @@ export function installAutomationDialogRuntimeControlGuard(): void {
     childList: true,
     subtree: true,
   });
+
+  return () => {
+    observer.disconnect();
+  };
 }
