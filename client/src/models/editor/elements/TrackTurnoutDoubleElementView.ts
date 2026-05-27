@@ -9,6 +9,7 @@ import {
   drawElementSelection,
   endElementDraw,
   getBaseEditableProperties,
+  getBaseHelp,
   getCenterX,
   getCenterY,
   getGridSizeX,
@@ -40,9 +41,6 @@ import type {
   DrawOptions,
   ITrackTurnoutDoubleElement,
 } from "../types/EditorTypes";
-import type {
-  IEditableProperty,
-} from "./PropertyDescriptor";
 
 export default class TrackTurnoutDoubleElementView
   extends CommonTrackTurnoutDoubleElement
@@ -52,13 +50,6 @@ export default class TrackTurnoutDoubleElementView
   enabled: boolean = true;
   alpha: number = 0.5;
   debug: boolean = false;
-
-  /**
-   * Used only by ElementPreview in the property panel.
-   * Null means: draw the real runtime state received from WS.
-   */
-  firstPreviewClosed: boolean | null = null;
-  secondPreviewClosed: boolean | null = null;
 
   type: typeof ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE =
     ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE;
@@ -216,58 +207,12 @@ export default class TrackTurnoutDoubleElementView
     return getTrackTravelDirectionArrow(this);
   }
 
-  getEditableProperties(): IEditableProperty[] {
-    return [
-      ...getBaseEditableProperties(),
-      {
-        label: "Turnout 1 Address",
-        key: "turnout1Address",
-        type: "number",
-        readonly: false,
-        validate: () => true,
-      },
-      {
-        label: "Turnout 1 Closed Value",
-        key: "turnout1ClosedValue",
-        type: "bittoggle",
-        readonly: false,
-        validate: () => true,
-      },
-      {
-        label: "Turnout 2 Address",
-        key: "turnout2Address",
-        type: "number",
-        readonly: false,
-        validate: () => true,
-      },
-      {
-        label: "Turnout 2 Closed Value",
-        key: "turnout2ClosedValue",
-        type: "bittoggle",
-        readonly: false,
-        validate: () => true,
-      },
-    ];
+  getEditableProperties() {
+    return getBaseEditableProperties();
   }
 
   getHelp(): string {
-    return `
-      <h3 style="margin-top:0;">Double turnout</h3>
-      <p>
-        The double turnout is controlled by two accessory addresses.
-        Each motor has its own address and closed-value mapping.
-      </p>
-      <ul>
-        <li><b>Turnout 1 Address</b>: accessory address of the first motor.</li>
-        <li><b>Turnout 1 Closed Value</b>: physical value that represents the logical closed state of the first motor.</li>
-        <li><b>Turnout 2 Address</b>: accessory address of the second motor.</li>
-        <li><b>Turnout 2 Closed Value</b>: physical value that represents the logical closed state of the second motor.</li>
-      </ul>
-      <p>
-        The bit toggles only configure the physical value mapping.
-        The Closed / Opened previews send turnout commands when clicked.
-      </p>
-    `;
+    return getBaseHelp();
   }
 
   draw(
@@ -276,14 +221,12 @@ export default class TrackTurnoutDoubleElementView
   ): void {
     if (!this.visible) return;
 
-    const firstClosed =
-      this.firstPreviewClosed ?? this.firstLogicalClosed;
-
-    const secondClosed =
-      this.secondPreviewClosed ?? this.secondLogicalClosed;
-
     this.beginDraw(ctx, options);
-    this.drawTurnout(ctx, firstClosed, secondClosed);
+    this.drawTurnout(
+      ctx,
+      this.firstLogicalClosed,
+      this.secondLogicalClosed
+    );
     this.endDraw(ctx);
 
     this.beginDraw(ctx);
