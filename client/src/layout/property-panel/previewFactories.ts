@@ -1,6 +1,7 @@
 import { ELEMENT_TYPES } from "../../../../common/src/layout/elementTypes";
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import { TrackSignalElementView } from "../../models/editor/elements/TrackSignalElementView";
+import TrackTurnoutDoubleElementView from "../../models/editor/elements/TrackTurnoutDoubleElementView";
 import { TrackTurnoutLeftElementView } from "../../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../../models/editor/elements/TrackTurnoutRightElementView";
 
@@ -31,6 +32,30 @@ export function createTurnoutPreview(
   }
 
   return createFallbackTurnoutPreview();
+}
+
+export function createDoubleTurnoutPreview(
+  selectedElement: TrackTurnoutDoubleElementView,
+  firstClosed: boolean,
+  secondClosed: boolean
+): BaseElementView {
+  const turnout = new TrackTurnoutDoubleElementView(0, 0);
+
+  turnout.rotation = selectedElement.rotation;
+  turnout.turnout1Address = selectedElement.turnout1Address;
+  turnout.turnout2Address = selectedElement.turnout2Address;
+  turnout.turnout1ClosedValue = selectedElement.turnout1ClosedValue;
+  turnout.turnout2ClosedValue = selectedElement.turnout2ClosedValue;
+
+  turnout.turnout1Closed = firstClosed
+    ? turnout.turnout1ClosedValue
+    : !turnout.turnout1ClosedValue;
+
+  turnout.turnout2Closed = secondClosed
+    ? turnout.turnout2ClosedValue
+    : !turnout.turnout2ClosedValue;
+
+  return turnout;
 }
 
 export function createSignalPreview(
