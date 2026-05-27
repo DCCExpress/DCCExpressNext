@@ -4,10 +4,10 @@ import {
   RailwayTopologyLayout,
   TopologyDirectionElement,
   type TopologyTrackElement,
-  type TopologyTurnoutElement,
   isTopologyTurnoutElement,
   type TravelDirection,
 } from "./topology.js";
+import TrackTurnoutDoubleElement from "../layout/elements/TrackTurnoutDoubleElement.js";
 
 type TurnoutSide =
   | "entry"
@@ -254,7 +254,10 @@ export class TrackTravelDirectionResolver {
   private getConnectionPoints(
     element: TopologyTrackElement
   ): ConnectionPoint[] {
-    if (isTopologyTurnoutElement(element)) {
+    if (
+      isTopologyTurnoutElement(element) &&
+      !(element instanceof TrackTurnoutDoubleElement)
+    ) {
       const connections = element.getConnections();
 
       return [
@@ -308,7 +311,10 @@ export class TrackTravelDirectionResolver {
       return null;
     }
 
-    if (isTopologyTurnoutElement(element)) {
+    if (
+      isTopologyTurnoutElement(element) &&
+      !(element instanceof TrackTurnoutDoubleElement)
+    ) {
       if (direction === "forward") {
         return side === "entry"
           ? "backward"
@@ -336,7 +342,10 @@ export class TrackTravelDirectionResolver {
     side: ConnectionSide,
     desiredFlowSide: FlowSide
   ): TravelDirection {
-    if (isTopologyTurnoutElement(element)) {
+    if (
+      isTopologyTurnoutElement(element) &&
+      !(element instanceof TrackTurnoutDoubleElement)
+    ) {
       if (desiredFlowSide === "forward") {
         return side === "entry"
           ? "reverse"
