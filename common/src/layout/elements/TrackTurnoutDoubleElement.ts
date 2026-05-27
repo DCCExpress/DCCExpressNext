@@ -52,6 +52,30 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
   turnout2Address: number = 0;
 
   /**
+   * Backward-compatible alias for legacy code paths that still treat a
+   * turnout as a single accessory. The first motor is exposed here; route
+   * graph edges still use both turnout1Address and turnout2Address.
+   */
+  get turnoutAddress(): number {
+    return this.turnout1Address;
+  }
+
+  set turnoutAddress(value: number) {
+    this.turnout1Address = value;
+  }
+
+  /**
+   * Double turnouts currently use logical states directly for each motor.
+   */
+  get turnoutClosedValue(): boolean {
+    return true;
+  }
+
+  set turnoutClosedValue(_value: boolean) {
+    // Compatibility no-op.
+  }
+
+  /**
    * Publikus konstruktor kell, hogy a kliensoldali
    * TrackElementViewMixin(CommonTrackTurnoutDoubleElement)
    * használni tudja ezt a common domain osztályt.
