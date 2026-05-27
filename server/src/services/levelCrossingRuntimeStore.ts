@@ -1,12 +1,19 @@
 import type {
   LevelCrossingConditionValue,
+  LevelCrossingLogic,
   LevelCrossingLogicDocumentDto,
+  LevelCrossingRuntimeState,
   LevelCrossingRuntimeStateDto,
 } from "../../../common/src/levelCrossingLogic.js";
 
 import {
   CommandCenter,
 } from "../commandCenter/CommandCenter.js";
+
+import {
+  log,
+  logError,
+} from "../utility.js";
 
 import {
   routeGraphRuntimeStore,
@@ -72,14 +79,56 @@ function getRouteReserved(
   return matches;
 }
 
+async function setCrossingState(
+  logic: LevelCrossingLogic,
+  state: LevelCrossingRuntimeState
+): Promise<void> {
+  log(
+    `[LevelCrossingRuntime] ${logic.levelCrossingElementId || logic.id} -> ${state}`
+  );
+}
+
+async function setAccessory(
+  address: number,
+  active: boolean,
+  logic: LevelCrossingLogic
+): Promise<void> {
+  const commandCenter = CommandCenter.getActive();
+
+  if (!commandCenter) {
+    logError(
+      `[LevelCrossingRuntime] Cannot set accessory #${address}: no command center.`,
+      logic.id
+    );
+    return;
+  }
+
+  const success = await commandCenter.setBasicAccessory(address, active);
+
+  if (!success) {
+    logError(
+      `[LevelCrossingRuntime] Failed to set accessory #${address} to ${active ? "active" : "inactive"}.`,
+      logic.id
+    );
+  }
+}
+
 const serverRuntimeDataProvider = {
   getSensorActive,
   getBlockOccupied,
   getRouteReserved,
 };
 
+const serverRuntimeActionSink = {
+  setCrossingState,
+  setAccessory,
+};
+
 class LevelCrossingRuntimeStore {
-  private readonly service = new LevelCrossingRuntimeService(serverRuntimeDataProvider);
+  private readonly service = new LevelCrossingRuntimeService(
+    serverRuntimeDataProvider,
+    serverRuntimeActionSink
+  );
   private initialized = false;
 
   async initialize(): Promise<void> {
