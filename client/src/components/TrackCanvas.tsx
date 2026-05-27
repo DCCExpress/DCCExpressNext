@@ -1,32 +1,32 @@
 import { useMantineColorScheme } from "@mantine/core";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { generateId, showErrorMessage, showWarningMessage } from "../helpers";
+import { useTranslation } from "react-i18next";
+
 import { BaseElementView } from "../models/editor/core/BaseElementView";
 import { isTurnoutElement } from "../models/editor/core/LayoutView";
 import { TrackTurnoutLeftElementView } from "../models/editor/elements/TrackTurnoutLeftElementView";
 import { TrackTurnoutRightElementView } from "../models/editor/elements/TrackTurnoutRightElementView";
-import { EditorTool } from "../models/editor/types/EditorTypes";
-
-import { useCommandCenter } from "../context/CommandCenterContext";
-import { useEditorSettings } from "../context/EditorSettingsContext";
+import TrackTurnoutDoubleElementView from "../models/editor/elements/TrackTurnoutDoubleElementView";
 import { AudioButtonElementView } from "../models/editor/elements/AudioButtonElementView";
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
 import { RouteButtonElementView } from "../models/editor/elements/RouteButtonElementView";
 import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
+import { EditorTool } from "../models/editor/types/EditorTypes";
+import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
+import { useCommandCenter } from "../context/CommandCenterContext";
+import { useEditorSettings } from "../context/EditorSettingsContext";
 import { fastClockStore } from "../services/fastClockStore";
-import { wsApi } from "../services/wsApi";
 import "../styles/TrackCanvas.css";
 
-import { ELEMENT_TYPES } from "../../../common/src/layout/elementTypes";
-import { useTranslation } from "react-i18next";
-import { subscribeCanvasImageCache } from "../models/editor/rendering/ImageCache";
 import {
   clamp,
   createCursorElement,
   closeTrackCanvasSignalAspectPopover,
+  closeTrackCanvasDoubleTurnoutPopover,
   drawScene,
   TrackCanvasBlockLocoPicker,
   TrackCanvasSignalAspectPopover,
+  TrackCanvasDoubleTurnoutPopover,
   handleTrackCanvasClickableDown,
   handleTrackCanvasClickableUp,
   fitLayoutToView,
@@ -40,13 +40,16 @@ import {
   getSelectionRect,
   loadSavedViewState,
   openTrackCanvasSignalAspectPopover,
+  openTrackCanvasDoubleTurnoutPopover,
   registerTrackCanvasEventListeners,
   reopenTrackCanvasSignalAspectPopover,
+  reopenTrackCanvasDoubleTurnoutPopover,
   saveViewState,
   screenToGrid,
   stopTrackCanvasInteraction,
   syncClockElementsWithFastClock,
   type CanvasSize,
+  type DoubleTurnoutPopoverState,
   type DragState,
   type PanState,
   type PinchState,
@@ -66,7 +69,7 @@ export default function TrackCanvas({
   onBeforeLayoutChange,
   selectedElement,
   onSelectedElementChange,
-  invalidateCounter: invalidateCounter,
+  invalidateCounter,
   onInvalidate,
   fitCounter,
   turnoutSelectionMode,
@@ -76,67 +79,16 @@ export default function TrackCanvas({
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { colorScheme } = useMantineColorScheme();
+  const commandCenter = useCommandCenter();
+  const { settings } = useEditorSettings();
 
   const [mouseGrid, setMouseGrid] = useState({ x: 0, y: 0 });
   const [hoverGrid, setHoverGrid] = useState<{ x: number; y: number } | null>(null);
   const [currentCursor, setCurrentCursor] = useState<BaseElementView | null>(null);
   const [drawVersion, setDrawVersion] = useState(0);
-  const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0, });
-
-  const drawRafRef = useRef<number | null>(null);
-  const mountedRef = useRef(true);
-  const turnoutSelectionModeRef = useRef(false);
-  //const [lo]
+  const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0 });
   const [locoPickerOpen, setLocoPickerOpen] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<BlockElementView | null>(null);
-
-  const touchPointsRef = useRef<Map<number, TouchPoint>>(new Map());
-  const viewRef = useRef<ViewState>(loadSavedViewState());
-  const panRef = useRef<PanState>({
-    isPanning: false,
-    lastX: 0,
-    lastY: 0,
-  });
-  const dragRef = useRef<DragState>({
-    isDraggingElement: false,
-    elementId: null,
-    startMouseGridX: 0,
-    startMouseGridY: 0,
-    startElementX: 0,
-    startElementY: 0,
-    draggedElements: [],
-  });
-
-  const selectionRef = useRef<SelectionState>({
-    isSelecting: false,
-    additive: false,
-    startGridX: 0,
-    startGridY: 0,
-    endGridX: 0,
-    endGridY: 0,
-  });
-
-  const pointerPanRef = useRef<PointerPanState>({
-    activePointerId: null,
-    isTouchPanning: false,
-  });
-
-  const pinchRef = useRef<PinchState>({
-    isPinching: false,
-    pointer1Id: null,
-    pointer2Id: null,
-    startDistance: 0,
-    startScale: 1,
-    worldCenterX: 0,
-    worldCenterY: 0,
-  });
-  const prevToolRef = useRef<EditorTool | null>(null);
-
-  const layoutRef = useRef(layout);
-  const toolRef = useRef(tool);
-  const editModeRef = useRef(editMode);
-  const selectedElementRef = useRef<BaseElementView | null>(selectedElement);
-  const currentCursorRef = useRef<BaseElementView | null>(currentCursor);
 
   const [signalAspectPopover, setSignalAspectPopover] =
     useState<SignalAspectPopoverState>({
@@ -147,10 +99,59 @@ export default function TrackCanvas({
       previews: null,
     });
 
+  const [doubleTurnoutPopover, setDoubleTurnoutPopover] =
+    useState<DoubleTurnoutPopoverState>({
+      opened: false,
+      x: 0,
+      y: 0,
+      turnout: null,
+    });
+
+  const drawRafRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
+  const turnoutSelectionModeRef = useRef(false);
+  const touchPointsRef = useRef<Map<number, TouchPoint>>(new Map());
+  const viewRef = useRef<ViewState>(loadSavedViewState());
+  const panRef = useRef<PanState>({ isPanning: false, lastX: 0, lastY: 0 });
+  const dragRef = useRef<DragState>({
+    isDraggingElement: false,
+    elementId: null,
+    startMouseGridX: 0,
+    startMouseGridY: 0,
+    startElementX: 0,
+    startElementY: 0,
+    draggedElements: [],
+  });
+  const selectionRef = useRef<SelectionState>({
+    isSelecting: false,
+    additive: false,
+    startGridX: 0,
+    startGridY: 0,
+    endGridX: 0,
+    endGridY: 0,
+  });
+  const pointerPanRef = useRef<PointerPanState>({
+    activePointerId: null,
+    isTouchPanning: false,
+  });
+  const pinchRef = useRef<PinchState>({
+    isPinching: false,
+    pointer1Id: null,
+    pointer2Id: null,
+    startDistance: 0,
+    startScale: 1,
+    worldCenterX: 0,
+    worldCenterY: 0,
+  });
+
+  const layoutRef = useRef(layout);
+  const toolRef = useRef(tool);
+  const editModeRef = useRef(editMode);
+  const selectedElementRef = useRef<BaseElementView | null>(selectedElement);
+  const currentCursorRef = useRef<BaseElementView | null>(currentCursor);
   const signalAspectPopoverRef = useRef(signalAspectPopover);
-  useEffect(() => {
-    signalAspectPopoverRef.current = signalAspectPopover;
-  }, [signalAspectPopover]);
+  const doubleTurnoutPopoverRef = useRef(doubleTurnoutPopover);
+  const commandCenterRef = useRef(commandCenter);
 
   const requestDraw = useCallback(() => {
     if (drawRafRef.current !== null) {
@@ -164,13 +165,90 @@ export default function TrackCanvas({
         return;
       }
 
-      setDrawVersion((prev) => prev + 1);
+      setDrawVersion(prev => prev + 1);
     });
   }, []);
 
   const invalidate = useCallback(() => {
     requestDraw();
   }, [requestDraw]);
+
+  const persistView = () => {
+    saveViewState(viewRef.current);
+  };
+
+  const openSignalAspectPopover = (
+    signal: TrackSignalElementView,
+    clientX: number,
+    clientY: number
+  ) => {
+    openTrackCanvasSignalAspectPopover(
+      setSignalAspectPopover,
+      signal,
+      clientX,
+      clientY
+    );
+  };
+
+  const closeSignalAspectPopover = () => {
+    closeTrackCanvasSignalAspectPopover(setSignalAspectPopover);
+  };
+
+  const reopenSignalAspectPopover = (
+    signal: TrackSignalElementView,
+    clientX: number,
+    clientY: number
+  ) => {
+    reopenTrackCanvasSignalAspectPopover(
+      setSignalAspectPopover,
+      signal,
+      clientX,
+      clientY
+    );
+  };
+
+  const openDoubleTurnoutPopover = (
+    turnout: TrackTurnoutDoubleElementView,
+    clientX: number,
+    clientY: number
+  ) => {
+    openTrackCanvasDoubleTurnoutPopover(
+      setDoubleTurnoutPopover,
+      turnout,
+      clientX,
+      clientY
+    );
+  };
+
+  const closeDoubleTurnoutPopover = () => {
+    closeTrackCanvasDoubleTurnoutPopover(setDoubleTurnoutPopover);
+  };
+
+  const reopenDoubleTurnoutPopover = (
+    turnout: TrackTurnoutDoubleElementView,
+    clientX: number,
+    clientY: number
+  ) => {
+    reopenTrackCanvasDoubleTurnoutPopover(
+      setDoubleTurnoutPopover,
+      turnout,
+      clientX,
+      clientY
+    );
+  };
+
+  const setRouteTurnoutsMarked = (rb: RouteButtonElementView) => {
+    const elems = layoutRef.current.getAllElements();
+
+    for (const elem of elems) {
+      if (isTurnoutElement(elem)) {
+        const found = rb.routeTurnouts.find(e => e.turnoutId === elem.id);
+        elem.marked = Boolean(found);
+      }
+    }
+
+    invalidate();
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -185,12 +263,17 @@ export default function TrackCanvas({
     };
   }, []);
 
-  const commandCenter = useCommandCenter();
-  const commandCenterRef = useRef(commandCenter);
-
   useEffect(() => {
     commandCenterRef.current = commandCenter;
   }, [commandCenter]);
+
+  useEffect(() => {
+    signalAspectPopoverRef.current = signalAspectPopover;
+  }, [signalAspectPopover]);
+
+  useEffect(() => {
+    doubleTurnoutPopoverRef.current = doubleTurnoutPopover;
+  }, [doubleTurnoutPopover]);
 
   useEffect(() => {
     return subscribeCanvasImageCache(() => {
@@ -204,45 +287,45 @@ export default function TrackCanvas({
     return fastClockStore.subscribe(() => {
       invalidate();
     });
-  }, []);
+  }, [invalidate]);
 
   useEffect(() => {
     invalidate();
-  }, [invalidateCounter]);
-
-  const { settings } = useEditorSettings();
-  // useEffect(() => {
-  //   alert("OK" + settings.showAddress)
-  // }, [settings])
-
-  const persistView = () => {
-    saveViewState(viewRef.current);
-  };
+  }, [invalidateCounter, invalidate]);
 
   useEffect(() => {
     layoutRef.current = layout;
     onSelectedElementChange(null);
     layout.unselectAll();
-  }, [layout]);
+  }, [layout, onSelectedElementChange]);
 
   useEffect(() => {
     toolRef.current = tool;
     layout.unselectAll();
     setHoverGrid(null);
-  }, [tool]);
+  }, [tool, layout]);
 
   useEffect(() => {
     editModeRef.current = editMode;
     setHoverGrid(null);
+
+    if (editMode) {
+      if (signalAspectPopoverRef.current.opened) {
+        closeSignalAspectPopover();
+      }
+
+      if (doubleTurnoutPopoverRef.current.opened) {
+        closeDoubleTurnoutPopover();
+      }
+    }
   }, [editMode]);
 
   useEffect(() => {
-
-    if (selectedElementRef.current && selectedElementRef.current instanceof RouteButtonElementView) {
-      if (layoutRef.current) {
-        const elems = layoutRef.current.getAllElements();
-        elems.forEach(elem => { elem.marked = false; })
-      }
+    if (selectedElementRef.current instanceof RouteButtonElementView) {
+      const elems = layoutRef.current.getAllElements();
+      elems.forEach(elem => {
+        elem.marked = false;
+      });
     }
 
     selectedElementRef.current = selectedElement;
@@ -260,10 +343,7 @@ export default function TrackCanvas({
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-
-    fitLayoutToView(layoutRef.current, viewRef.current, width, height);
+    fitLayoutToView(layoutRef.current, viewRef.current, rect.width, rect.height);
     persistView();
     invalidate();
   }, [fitCounter]);
@@ -272,21 +352,18 @@ export default function TrackCanvas({
     if (selectedElement) {
       layout.setSelected(selectedElement);
     } else {
-      // csak akkor unselectelünk, ha tényleg nincs több kijelölt elem
-      const hasAnySelected = getAllLayoutElements(layout).some((el) => el.selected);
+      const hasAnySelected = getAllLayoutElements(layout).some(el => el.selected);
       if (!hasAnySelected) {
         layout.unselectAll();
       }
     }
 
     invalidate();
-
-  }, [selectedElement, layout]);
+  }, [selectedElement, layout, invalidate]);
 
   useEffect(() => {
     onSelectedElementChange(null);
-    prevToolRef.current = tool;
-  }, [tool]);
+  }, [tool, onSelectedElementChange]);
 
   useEffect(() => {
     if (tool.mode !== "draw") {
@@ -302,11 +379,8 @@ export default function TrackCanvas({
   }, [tool]);
 
   useEffect(() => {
-    if (editMode && signalAspectPopoverRef.current.opened) {
-      closeSignalAspectPopover();
-    }
     invalidate();
-  }, [layout, colorScheme, tool, mouseGrid, hoverGrid, editMode, currentCursor]);
+  }, [layout, colorScheme, tool, mouseGrid, hoverGrid, editMode, currentCursor, invalidate]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -330,6 +404,11 @@ export default function TrackCanvas({
       if (signalAspectPopoverRef.current.opened) {
         closeSignalAspectPopover();
       }
+
+      if (doubleTurnoutPopoverRef.current.opened) {
+        closeDoubleTurnoutPopover();
+      }
+
       updateSize();
     });
 
@@ -340,48 +419,27 @@ export default function TrackCanvas({
     };
   }, []);
 
-  const setRouteTurnoutsMarked = (rb: RouteButtonElementView) => {
-    const elems = layoutRef.current.getAllElements();
-    for (const elem of elems) {
-      if (isTurnoutElement(elem)) {
-        const found = rb.routeTurnouts.find((e) => e.turnoutId === elem.id);
-        if (found) {
-          elem.marked = true;
-        } else {
-          elem.marked = false;
-        }
-      }
-    }
-    invalidate();
-  };
-
   useEffect(() => {
-
     turnoutSelectionModeRef.current = turnoutSelectionMode;
 
-    if (layoutRef.current) {
-      const elems = layoutRef.current.getAllElements();
-      if (turnoutSelectionMode) {
-        for (const elem of elems) {
-          if (elem instanceof TrackTurnoutLeftElementView || elem instanceof TrackTurnoutRightElementView) {
-            elem.enabled = true;
-          } else {
-            elem.enabled = false;
-          }
-        }
+    const elems = layoutRef.current.getAllElements();
 
-        setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElementView);
+    if (turnoutSelectionMode) {
+      for (const elem of elems) {
+        elem.enabled = elem instanceof TrackTurnoutLeftElementView ||
+          elem instanceof TrackTurnoutRightElementView;
+      }
 
-      } else {
-        for (const elem of elems) {
-          elem.enabled = true;
-          elem.marked = false;
-        }
+      if (selectedElementRef.current instanceof RouteButtonElementView) {
+        setRouteTurnoutsMarked(selectedElementRef.current);
+      }
+    } else {
+      for (const elem of elems) {
+        elem.enabled = true;
+        elem.marked = false;
       }
     }
-
-
-  }, [turnoutSelectionMode])
+  }, [turnoutSelectionMode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -401,11 +459,9 @@ export default function TrackCanvas({
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
 
-    //if(turnoutSelectionModeRef.current){
     if (selectedElementRef.current instanceof RouteButtonElementView) {
-      setRouteTurnoutsMarked(selectedElementRef.current as RouteButtonElementView);
+      setRouteTurnoutsMarked(selectedElementRef.current);
     }
-    //}
 
     syncClockElementsWithFastClock(layout);
 
@@ -428,10 +484,20 @@ export default function TrackCanvas({
       turnoutSelectionMode,
       locos || []
     );
-    //}, [canvasSize, editMode, colorScheme, mouseGrid, tool, hoverGrid, currentCursor, layout, drawVersion, selectedElement, settings, turnoutSelectionMode]);
-    // Mouse grid és hover grid nélkül, mert az csak a hover effekt miatt van, és az nem igényel teljes újradraw-t
-  }, [canvasSize, editMode, colorScheme, tool, currentCursor, layout, drawVersion, invalidateCounter, selectedElement, settings, turnoutSelectionMode]);
-
+  }, [
+    canvasSize,
+    editMode,
+    colorScheme,
+    tool,
+    currentCursor,
+    layout,
+    drawVersion,
+    invalidateCounter,
+    selectedElement,
+    settings,
+    turnoutSelectionMode,
+    locos,
+  ]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -448,18 +514,6 @@ export default function TrackCanvas({
       });
     };
 
-    const reopenSignalAspectPopover = (
-      signal: TrackSignalElementView,
-      clientX: number,
-      clientY: number
-    ) => {
-      reopenTrackCanvasSignalAspectPopover(
-        setSignalAspectPopover,
-        signal,
-        clientX,
-        clientY
-      );
-    };
     const handleClickableDown = (
       hitElement: BaseElementView | null,
       ev: MouseEvent | PointerEvent
@@ -480,10 +534,7 @@ export default function TrackCanvas({
       hitElement: BaseElementView | null,
       ev: MouseEvent | PointerEvent
     ): boolean => {
-      return handleTrackCanvasClickableUp(
-        hitElement,
-        ev
-      );
+      return handleTrackCanvasClickableUp(hitElement, ev);
     };
 
     const handleMouseDown = (ev: MouseEvent) => {
@@ -497,6 +548,7 @@ export default function TrackCanvas({
         selectedElementRef,
         currentCursorRef,
         signalAspectPopoverRef,
+        doubleTurnoutPopoverRef,
         panRef,
         dragRef,
         selectionRef,
@@ -510,6 +562,9 @@ export default function TrackCanvas({
         openSignalAspectPopover,
         reopenSignalAspectPopover,
         closeSignalAspectPopover,
+        openDoubleTurnoutPopover,
+        reopenDoubleTurnoutPopover,
+        closeDoubleTurnoutPopover,
         handleClickableDown,
         invalidate,
         t,
@@ -533,6 +588,7 @@ export default function TrackCanvas({
         invalidate,
       });
     };
+
     const stopInteraction = () => {
       stopTrackCanvasInteraction({
         canvas,
@@ -550,29 +606,21 @@ export default function TrackCanvas({
     };
 
     const handleMouseUp = (ev: MouseEvent) => {
-
-      if (!editModeRef.current && ev.button == 0) {
+      if (!editModeRef.current && ev.button === 0) {
         const rect = canvas.getBoundingClientRect();
         const mouseX = ev.clientX - rect.left;
         const mouseY = ev.clientY - rect.top;
-
         const grid = screenToGrid(
           mouseX,
           mouseY,
           viewRef.current,
           layoutRef.current.gridSize
         );
-
         const hitElement = layoutRef.current.getElement(grid.x, grid.y);
-        // if (hitElement) {
-        //   if (hitElement instanceof ClickableBaseElementView) {
-        //     const elem = hitElement as ClickableBaseElementView
-        //     elem.mouseUp(ev);
-        //   }
-        // }
         handleClickableUp(hitElement, ev);
         return;
       }
+
       stopInteraction();
     };
 
@@ -585,11 +633,6 @@ export default function TrackCanvas({
       ev.preventDefault();
     };
 
-    // =======================================================
-    // TABLET
-    // =======================================================
-
-    // #region TABLET
     const handlePointerDown = (ev: PointerEvent) => {
       if (ev.pointerType !== "touch") return;
 
@@ -597,7 +640,6 @@ export default function TrackCanvas({
 
       const currentLayout = layoutRef.current;
       const currentTool = toolRef.current;
-
       const rect = canvas.getBoundingClientRect();
       const mouseX = ev.clientX - rect.left;
       const mouseY = ev.clientY - rect.top;
@@ -613,16 +655,8 @@ export default function TrackCanvas({
 
       const hitElement = currentLayout.getElement(grid.x, grid.y);
 
-      //alert("PointerDown")
-      // if (!editModeRef.current) {
-      //   if (currentTool.mode === "cursor" && hitElement instanceof ClickableBaseElementView) {
-      //     hitElement.mouseDown(ev as any);
-      //   }
-      // }
-
       if (!editModeRef.current) {
-
-        if (!editModeRef.current && hitElement instanceof AudioButtonElementView) {
+        if (hitElement instanceof AudioButtonElementView) {
           hitElement.press(() => {
             invalidate();
           });
@@ -636,15 +670,14 @@ export default function TrackCanvas({
           return;
         }
 
-        if (!editModeRef.current && hitElement instanceof BlockElementView) {
-          ev.preventDefault();
+        if (hitElement instanceof BlockElementView) {
           ev.stopPropagation();
-
           setSelectedBlock(hitElement);
 
           window.setTimeout(() => {
             setLocoPickerOpen(true);
           }, 100);
+
           try {
             canvas.setPointerCapture(ev.pointerId);
           } catch {
@@ -655,6 +688,10 @@ export default function TrackCanvas({
         }
 
         if (hitElement instanceof TrackSignalElementView) {
+          if (doubleTurnoutPopoverRef.current.opened) {
+            closeDoubleTurnoutPopover();
+          }
+
           if (signalAspectPopoverRef.current.opened) {
             reopenSignalAspectPopover(hitElement, ev.clientX, ev.clientY);
           } else {
@@ -666,16 +703,40 @@ export default function TrackCanvas({
           } catch {
             // ignore
           }
-          return;
 
-        } else if (signalAspectPopoverRef.current.opened) {
+          return;
+        }
+
+        if (hitElement instanceof TrackTurnoutDoubleElementView) {
+          if (signalAspectPopoverRef.current.opened) {
+            closeSignalAspectPopover();
+          }
+
+          if (doubleTurnoutPopoverRef.current.opened) {
+            reopenDoubleTurnoutPopover(hitElement, ev.clientX, ev.clientY);
+          } else {
+            openDoubleTurnoutPopover(hitElement, ev.clientX, ev.clientY);
+          }
+
+          try {
+            canvas.setPointerCapture(ev.pointerId);
+          } catch {
+            // ignore
+          }
+
+          return;
+        }
+
+        if (signalAspectPopoverRef.current.opened) {
           closeSignalAspectPopover();
           return;
         }
 
-        // if (currentTool.mode === "cursor" && hitElement instanceof ClickableBaseElementView) {
-        //   hitElement.mouseDown(ev as any);
-        // }
+        if (doubleTurnoutPopoverRef.current.opened) {
+          closeDoubleTurnoutPopover();
+          return;
+        }
+
         if (currentTool.mode === "cursor") {
           if (handleClickableDown(hitElement, ev)) {
             try {
@@ -694,23 +755,19 @@ export default function TrackCanvas({
       if (points.length === 1) {
         pointerPanRef.current.activePointerId = ev.pointerId;
         pointerPanRef.current.isTouchPanning = true;
-
         panRef.current.isPanning = true;
         panRef.current.lastX = ev.clientX;
         panRef.current.lastY = ev.clientY;
-
         pinchRef.current.isPinching = false;
         pinchRef.current.pointer1Id = null;
         pinchRef.current.pointer2Id = null;
-
         canvas.style.cursor = "grabbing";
       } else if (points.length === 2) {
-        const [p1, p2] = points!;
-
+        const [p1, p2] = points;
         if (!p1 || !p2) return;
+
         const pt1 = p1[1];
         const pt2 = p2[1];
-
         const midpoint = getMidpoint(pt1, pt2);
         const startDistance = getDistance(pt1, pt2);
 
@@ -724,7 +781,6 @@ export default function TrackCanvas({
             (midpoint.x - viewRef.current.offsetX) / viewRef.current.scale;
           pinchRef.current.worldCenterY =
             (midpoint.y - viewRef.current.offsetY) / viewRef.current.scale;
-
           pointerPanRef.current.isTouchPanning = false;
           pointerPanRef.current.activePointerId = null;
           panRef.current.isPanning = false;
@@ -755,19 +811,19 @@ export default function TrackCanvas({
         currentLayout.gridSize
       );
 
-      setMouseGrid((prev) =>
-        prev.x === grid.x && prev.y === grid.y ? prev : { x: grid.x, y: grid.y }
+      setMouseGrid(prev =>
+        prev.x === grid.x && prev.y === grid.y
+          ? prev
+          : { x: grid.x, y: grid.y }
       );
 
       if (pinchRef.current.isPinching) {
         const id1 = pinchRef.current.pointer1Id;
         const id2 = pinchRef.current.pointer2Id;
-
         if (id1 == null || id2 == null) return;
 
         const pt1 = touchPointsRef.current.get(id1);
         const pt2 = touchPointsRef.current.get(id2);
-
         if (!pt1 || !pt2) return;
 
         ev.preventDefault();
@@ -802,7 +858,6 @@ export default function TrackCanvas({
 
       panRef.current.lastX = ev.clientX;
       panRef.current.lastY = ev.clientY;
-
       viewRef.current.offsetX += dx;
       viewRef.current.offsetY += dy;
 
@@ -815,40 +870,20 @@ export default function TrackCanvas({
 
       const rect = canvas.getBoundingClientRect();
 
-      // if (!editModeRef.current) {
-      //   const rect = canvas.getBoundingClientRect();
-      //   const mouseX = ev.clientX - rect.left;
-      //   const mouseY = ev.clientY - rect.top;
-
-      //   const grid = screenToGrid(
-      //     mouseX,
-      //     mouseY,
-      //     viewRef.current,
-      //     layoutRef.current.gridSize
-      //   );
-
-      //   const hitElement = layoutRef.current.getElement(grid.x, grid.y);
-      //   if (hitElement instanceof ClickableBaseElementView) {
-      //     hitElement.mouseUp(ev as any);
-      //   }
-      // }
       if (!editModeRef.current) {
-        const rect = canvas.getBoundingClientRect();
         const mouseX = ev.clientX - rect.left;
         const mouseY = ev.clientY - rect.top;
-
         const grid = screenToGrid(
           mouseX,
           mouseY,
           viewRef.current,
           layoutRef.current.gridSize
         );
-
         const hitElement = layoutRef.current.getElement(grid.x, grid.y);
         handleClickableUp(hitElement, ev);
       }
-      touchPointsRef.current.delete(ev.pointerId);
 
+      touchPointsRef.current.delete(ev.pointerId);
       const remaining = Array.from(touchPointsRef.current.entries());
 
       if (pinchRef.current.isPinching) {
@@ -858,11 +893,9 @@ export default function TrackCanvas({
 
         if (remaining.length === 1) {
           const [id, pt] = remaining[0]!;
-
           pointerPanRef.current.activePointerId = id;
           pointerPanRef.current.isTouchPanning = true;
           panRef.current.isPanning = true;
-
           panRef.current.lastX = pt.x + rect.left;
           panRef.current.lastY = pt.y + rect.top;
         }
@@ -875,11 +908,9 @@ export default function TrackCanvas({
       if (touchPointsRef.current.size === 0) {
         pointerPanRef.current.activePointerId = null;
         pointerPanRef.current.isTouchPanning = false;
-
         pinchRef.current.isPinching = false;
         pinchRef.current.pointer1Id = null;
         pinchRef.current.pointer2Id = null;
-
         stopInteraction();
       } else {
         persistView();
@@ -897,14 +928,11 @@ export default function TrackCanvas({
       if (ev.pointerType !== "touch") return;
 
       touchPointsRef.current.delete(ev.pointerId);
-
       pointerPanRef.current.activePointerId = null;
       pointerPanRef.current.isTouchPanning = false;
-
       pinchRef.current.isPinching = false;
       pinchRef.current.pointer1Id = null;
       pinchRef.current.pointer2Id = null;
-
       stopInteraction();
 
       try {
@@ -913,7 +941,6 @@ export default function TrackCanvas({
         // ignore
       }
     };
-    // #endregion
 
     return registerTrackCanvasEventListeners(
       canvas,
@@ -930,7 +957,6 @@ export default function TrackCanvas({
         handlePointerCancel,
       }
     );
-    // }, [onLayoutChange, tool, onBeforeLayoutChange]);
   }, []);
 
   useEffect(() => {
@@ -960,30 +986,6 @@ export default function TrackCanvas({
     };
   }, []);
 
-  // =======================================================
-  // popover
-  // =======================================================
-  const openSignalAspectPopover = (
-    signal: TrackSignalElementView,
-    clientX: number,
-    clientY: number
-  ) => {
-    openTrackCanvasSignalAspectPopover(
-      setSignalAspectPopover,
-      signal,
-      clientX,
-      clientY
-    );
-  };
-
-  const closeSignalAspectPopover = () => {
-    closeTrackCanvasSignalAspectPopover(
-      setSignalAspectPopover
-    );
-  };
-
-  const handleLocoSelected = (locoId: string) => { };
-
   return (
     <>
       <canvas tabIndex={0} ref={canvasRef} className="track-canvas" />
@@ -991,6 +993,11 @@ export default function TrackCanvas({
       <TrackCanvasSignalAspectPopover
         state={signalAspectPopover}
         onClose={closeSignalAspectPopover}
+      />
+
+      <TrackCanvasDoubleTurnoutPopover
+        state={doubleTurnoutPopover}
+        onClose={closeDoubleTurnoutPopover}
       />
 
       <TrackCanvasBlockLocoPicker
