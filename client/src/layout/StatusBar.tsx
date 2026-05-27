@@ -41,6 +41,7 @@ import type {
 } from "../../../common/src/signalLogic";
 
 import type {
+  LevelCrossingRuntimeEntryDto,
   LevelCrossingRuntimeStateDto,
 } from "../../../common/src/levelCrossingLogic";
 
@@ -79,7 +80,11 @@ import {
   startLevelCrossingRuntimeWs,
   stopLevelCrossingRuntimeWs,
 } from "../api/levelCrossingWsApi";
-import { isServerAudioPlaybackEnabled, subscribeServerAudioPlaybackChanged, toggleServerAudioPlaybackEnabled } from "../services/audioPlaybackSettings";
+import {
+  isServerAudioPlaybackEnabled,
+  subscribeServerAudioPlaybackChanged,
+  toggleServerAudioPlaybackEnabled,
+} from "../services/audioPlaybackSettings";
 import { scriptEngine } from "../services/scriptEngine";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { wsApi } from "../services/wsApi";
@@ -93,6 +98,8 @@ type StatusBarProps = {
   setRightPanelMode: Dispatch<SetStateAction<RightPanelMode>>;
   onOpenSignalLogicDialog: () => void;
 };
+
+type AutomationModuleId = "signalLogic" | "levelCrossing";
 
 const DEFAULT_AUTOMATION_STATE: AutomationRuntimeStatePayload = {
   running: false,
@@ -116,6 +123,42 @@ function getModuleState(
   moduleId: string
 ): AutomationModuleStatePayload | undefined {
   return automationState.modules.find(module => module.id === moduleId);
+}
+
+function formatTime(ms: number | undefined): string {
+  if (ms === undefined || !Number.isFinite(ms)) {
+    return "-";
+  }
+
+  return new Date(ms).toLocaleTimeString();
+}
+
+function getCrossingBadgeColor(entry: LevelCrossingRuntimeEntryDto): string {
+  switch (entry.state) {
+    case "closed":
+      return "red";
+    case "closing":
+    case "opening":
+      return "orange";
+    case "open":
+      return "green";
+    default:
+      return "gray";
+  }
+}
+
+function describeEvaluation(entry: LevelCrossingRuntimeEntryDto): string {
+  const evaluation = entry.lastEvaluation;
+
+  if (!evaluation) {
+    return "-";
+  }
+
+  const unknown = evaluation.hasUnknownCloseCondition || evaluation.hasUnknownOpenCondition
+    ? " / unknown"
+    : "";
+
+  return `${evaluation.reason}; close=${evaluation.shouldClose ? "yes" : "no"}; open=${evaluation.mayOpen ? "yes" : "no"}${unknown}`;
 }
 
 export default function StatusBar({
@@ -173,7 +216,7 @@ export default function StatusBar({
   const automationBadgeColor =
     automationBusy
       ? "orange"
-      : activeAutomationModuleCount === 0
+      : automationModuleCount === 0 || activeAutomationModuleCount === 0
         ? "gray"
         : activeAutomationModuleCount === automationModuleCount
           ? "green"
@@ -181,7 +224,6 @@ export default function StatusBar({
 
   const signalLogicModule = getModuleState(automationState, "signalLogic");
   const levelCrossingModule = getModuleState(automationState, "levelCrossing");
-
   const automationAutostart = signalLogicState.autostart || levelCrossingState.autostart;
 
   const automationRows = useMemo(() => [
@@ -226,6 +268,26 @@ export default function StatusBar({
       : activeTaskCount > 0
         ? "orange"
         : "gray";
+
+  const refreshAutomationDashboard = async (): Promise<void> => {
+    if (!wsConnected) {
+      return;
+    }
+
+    try {
+      const [automation, signalLogic, levelCrossing] = await Promise.all([
+        getAutomationRuntimeStateWs(),
+        getSignalLogicRuntimeStateWs(),
+        getLevelCrossingRuntimeSnapshotWs(),
+      ]);
+
+      setAutomationState(automation.state);
+      setSignalLogicState(signalLogic.state);
+      setLevelCrossingState(levelCrossing);
+    } catch (error) {
+      console.error("Could not refresh automation dashboard:", error);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = wsClient.on(
@@ -275,26 +337,6 @@ export default function StatusBar({
   useEffect(() => {
     return subscribeServerAudioPlaybackChanged(setServerAudioEnabled);
   }, []);
-
-  const refreshAutomationDashboard = async (): Promise<void> => {
-    if (!wsConnected) {
-      return;
-    }
-
-    try {
-      const [automation, signalLogic, levelCrossing] = await Promise.all([
-        getAutomationRuntimeStateWs(),
-        getSignalLogicRuntimeStateWs(),
-        getLevelCrossingRuntimeSnapshotWs(),
-      ]);
-
-      setAutomationState(automation.state);
-      setSignalLogicState(signalLogic.state);
-      setLevelCrossingState(levelCrossing);
-    } catch (error) {
-      console.error("Could not refresh automation dashboard:", error);
-    }
-  };
 
   const handleStartScript = (): void => {
     scriptEngine.runCurrent({
@@ -371,7 +413,7 @@ export default function StatusBar({
   };
 
   const handleToggleAutomationModule = (
-    moduleId: "signalLogic" | "levelCrossing",
+    moduleId: AutomationModuleId,
     enabled: boolean
   ): void => {
     if (!wsConnected || automationBusy) {
@@ -399,7 +441,7 @@ export default function StatusBar({
   };
 
   const handleToggleModuleAutostart = (
-    moduleId: "signalLogic" | "levelCrossing",
+    moduleId: AutomationModuleId,
     enabled: boolean
   ): void => {
     if (!wsConnected || automationBusy) {
@@ -706,6 +748,38 @@ export default function StatusBar({
               ))}
             </Table.Tbody>
           </Table>
+
+          <Text size="sm" fw={600}>Level crossing runtime</Text>
+          {levelCrossingState.crossings.length === 0 ? (
+            <Text size="sm" c="dimmed">No level crossing runtime entries.</Text>
+          ) : (
+            <ScrollArea h={220}>
+              <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Element</Table.Th>
+                    <Table.Th>State</Table.Th>
+                    <Table.Th>Last changed</Table.Th>
+                    <Table.Th>Last evaluation</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {levelCrossingState.crossings.map(entry => (
+                    <Table.Tr key={entry.logicId}>
+                      <Table.Td>{entry.levelCrossingElementId || entry.logicId}</Table.Td>
+                      <Table.Td>
+                        <StatusBadge color={getCrossingBadgeColor(entry)}>
+                          {entry.state.toUpperCase()}
+                        </StatusBadge>
+                      </Table.Td>
+                      <Table.Td>{formatTime(entry.lastChangedAtMs)}</Table.Td>
+                      <Table.Td>{describeEvaluation(entry)}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </ScrollArea>
+          )}
         </Stack>
       </Modal>
 
