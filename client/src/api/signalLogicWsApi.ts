@@ -11,12 +11,6 @@ import {
   requestWsCommand,
 } from "./wsRequest";
 
-import {
-  getAutomationRuntimeStateWs,
-  startAutomationRuntimeWs,
-  stopAutomationRuntimeWs,
-} from "./automationWsApi";
-
 export type SignalLogicLoadResult = {
   document: SignalLogicDocumentDto;
   issues: SignalLogicValidationIssue[];
@@ -57,7 +51,7 @@ function toSignalLogicLoadResult(
 }
 
 async function requestSignalLogic(
-  action: "load" | "save" | "state",
+  action: "load" | "save" | "start" | "stop" | "state",
   data: {
     document?: SignalLogicDocumentDto;
   } = {},
@@ -121,38 +115,19 @@ export async function getSignalLogicRuntimeStateWs(): Promise<SignalLogicLoadRes
 }
 
 export async function startSignalLogicWs(): Promise<SignalLogicLoadResult> {
-  const [rules] = await Promise.all([
-    loadSignalLogicRulesWs(),
-    startAutomationRuntimeWs(),
-  ]);
-
-  const automation = await getAutomationRuntimeStateWs();
-  const module = automation.state.modules.find(item => item.id === "signalLogic");
-
-  return {
-    ...rules,
-    state: {
-      running: automation.state.running && module?.enabled === true,
-      autostart: rules.document.autostart,
-    },
-    message: "Signal logic is controlled by the shared automation runtime.",
-  };
+  return requestSignalLogic(
+    "start",
+    {},
+    "Could not enable signal logic automation module."
+  );
 }
 
 export async function stopSignalLogicWs(): Promise<SignalLogicLoadResult> {
-  const [rules] = await Promise.all([
-    loadSignalLogicRulesWs(),
-    stopAutomationRuntimeWs(),
-  ]);
-
-  return {
-    ...rules,
-    state: {
-      running: false,
-      autostart: rules.document.autostart,
-    },
-    message: "Signal logic is controlled by the shared automation runtime.",
-  };
+  return requestSignalLogic(
+    "stop",
+    {},
+    "Could not disable signal logic automation module."
+  );
 }
 
 export async function checkSignalLogicIntegrityWs(): Promise<SignalLogicIntegrityReportDto> {
