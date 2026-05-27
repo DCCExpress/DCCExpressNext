@@ -184,7 +184,7 @@ export function TrackCanvasDoubleTurnoutPopover({
                     label={position.label}
                     width={40}
                     height={40}
-                    translateX={-10}
+                    
                   />
                 </Box>
               );
