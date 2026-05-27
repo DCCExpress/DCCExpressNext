@@ -90,6 +90,7 @@ type LayoutPageWorkspaceProps = {
 
   onOpenBlockActionsForBlock: (blockId: string) => void;
   onOpenSignalLogicForSignal: (signalAddress: number) => void;
+  onOpenLevelCrossingLogicForElement: (elementId: string) => void;
 
   routesString: string;
 
@@ -133,6 +134,7 @@ export default function LayoutPageWorkspace({
   onUpdateSelectedElement,
   onOpenBlockActionsForBlock,
   onOpenSignalLogicForSignal,
+  onOpenLevelCrossingLogicForElement,
 
   routesString,
 
@@ -310,6 +312,9 @@ export default function LayoutPageWorkspace({
                     }
                     onOpenSignalLogicForSignal={
                       onOpenSignalLogicForSignal
+                    }
+                    onOpenLevelCrossingLogicForElement={
+                      onOpenLevelCrossingLogicForElement
                     }
                   />
                 </Card>
