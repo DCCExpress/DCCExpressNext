@@ -30,15 +30,9 @@ import {
   getTrackTravelDirectionArrow,
 } from "../core/view/support/TrackElementViewSupport";
 import CommonTrackTurnoutDoubleElement from "../../../../../common/src/layout/elements/TrackTurnoutDoubleElement";
-import type {
-  DoubleTurnoutSide,
-} from "../../../../../common/src/layout/elements/TrackTurnoutDoubleElement";
 import {
   ELEMENT_TYPES,
 } from "../../../../../common/src/layout/elementTypes";
-import type {
-  Point,
-} from "../../../../../common/src/Rect";
 import {
   generateId,
 } from "../../../helpers";
@@ -307,29 +301,176 @@ export default class TrackTurnoutDoubleElementView
     firstClosed: boolean,
     secondClosed: boolean
   ): void {
-    const connections = this.getConnections();
-
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
     ctx.beginPath();
     ctx.strokeStyle = this.TrackPrimaryColor;
     ctx.lineWidth = this.TrackWidth7;
-    this.drawConnectionLine(ctx, connections.aStraight, connections.bStraight);
-    this.drawConnectionLine(ctx, connections.aDiv, connections.bDiv);
+
+    if (this.rotation == 0 || this.rotation == 180) {
+      ctx.moveTo(this.posLeft, this.centerY);
+      ctx.lineTo(this.posRight, this.centerY);
+      ctx.moveTo(this.posLeft, this.posTop);
+      ctx.lineTo(this.posRight, this.posBottom);
+    } else if (this.rotation == 45 || this.rotation == 225) {
+      ctx.moveTo(this.centerX, this.posTop);
+      ctx.lineTo(this.centerX, this.posBottom);
+      ctx.moveTo(this.posLeft, this.posTop);
+      ctx.lineTo(this.posRight, this.posBottom);
+    } else if (this.rotation == 90 || this.rotation == 270) {
+      ctx.moveTo(this.centerX, this.posTop);
+      ctx.lineTo(this.centerX, this.posBottom);
+      ctx.moveTo(this.posRight, this.posTop);
+      ctx.lineTo(this.posLeft, this.posBottom);
+    } else if (this.rotation == 135 || this.rotation == 315) {
+      ctx.moveTo(this.posLeft, this.centerY);
+      ctx.lineTo(this.posRight, this.centerY);
+      ctx.moveTo(this.posRight, this.posTop);
+      ctx.lineTo(this.posLeft, this.posBottom);
+    }
+
     ctx.stroke();
 
     ctx.beginPath();
     ctx.strokeStyle = this.stateColor;
     ctx.lineWidth = this.TrackWidth3;
-    this.drawCenterToSide(
-      ctx,
-      firstClosed ? "aDiv" : "aStraight"
-    );
-    this.drawCenterToSide(
-      ctx,
-      secondClosed ? "bDiv" : "bStraight"
-    );
+
+    const dx = this.width / 5;
+
+    if (this.rotation == 0) {
+      if (firstClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.posTop + dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.centerY);
+      }
+    } else if (this.rotation == 45) {
+      if (firstClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posTop + dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.posTop + dx);
+      }
+    } else if (this.rotation == 90) {
+      if (firstClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.posTop + dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posTop + dx);
+      }
+    } else if (this.rotation == 135) {
+      if (firstClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.centerY);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.posTop + dx);
+      }
+    } else if (this.rotation == 180) {
+      if (firstClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.centerY);
+      }
+    } else if (this.rotation == 225) {
+      if (firstClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posBottom - dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
+      }
+    } else if (this.rotation == 270) {
+      if (firstClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posBottom - dx);
+      }
+    } else if (this.rotation == 315) {
+      if (firstClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.centerY);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
+      }
+    }
+
+    ctx.stroke();
+
+    ctx.beginPath();
+
+    if (this.rotation == 0) {
+      if (secondClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.centerY);
+      }
+    } else if (this.rotation == 45) {
+      if (secondClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posBottom - dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.posBottom - dx);
+      }
+    } else if (this.rotation == 90) {
+      if (secondClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posBottom - dx);
+      }
+    } else if (this.rotation == 135) {
+      if (secondClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.centerY);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.posBottom - dx);
+      }
+    } else if (this.rotation == 180) {
+      if (secondClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.posTop + dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.centerY);
+      }
+    } else if (this.rotation == 225) {
+      if (secondClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posTop + dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posLeft + dx, this.posTop + dx);
+      }
+    } else if (this.rotation == 270) {
+      if (secondClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.posTop + dx);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.centerX, this.posTop + dx);
+      }
+    } else if (this.rotation == 315) {
+      if (secondClosed) {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.centerY);
+      } else {
+        ctx.moveTo(this.centerX, this.centerY);
+        ctx.lineTo(this.posRight - dx, this.posTop + dx);
+      }
+    }
+
     ctx.stroke();
 
     ctx.beginPath();
@@ -343,42 +484,6 @@ export default class TrackTurnoutDoubleElementView
     ctx.arc(this.centerX, this.centerY, 3, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
-  }
-
-  private drawConnectionLine(
-    ctx: CanvasRenderingContext2D,
-    from: Point,
-    to: Point
-  ): void {
-    const p1 = this.getElementEdgePoint(from);
-    const p2 = this.getElementEdgePoint(to);
-
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-  }
-
-  private drawCenterToSide(
-    ctx: CanvasRenderingContext2D,
-    side: DoubleTurnoutSide
-  ): void {
-    const point = this.getConnections()[side];
-    const target = this.getElementEdgePoint(point);
-
-    ctx.moveTo(this.centerX, this.centerY);
-    ctx.lineTo(target.x, target.y);
-  }
-
-  private getElementEdgePoint(point: Point): { x: number; y: number } {
-    const targetCenterX =
-      point.x * this.GridSizeX + this.GridSizeX / 2;
-
-    const targetCenterY =
-      point.y * this.GridSizeY + this.GridSizeY / 2;
-
-    return {
-      x: this.centerX + (targetCenterX - this.centerX) * 0.5,
-      y: this.centerY + (targetCenterY - this.centerY) * 0.5,
-    };
   }
 
   private drawAddressLabels(ctx: CanvasRenderingContext2D): void {
