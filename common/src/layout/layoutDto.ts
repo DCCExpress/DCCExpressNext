@@ -85,6 +85,8 @@ export type SerializedLayoutElementDto = {
 
   turnout1Address?: number;
   turnout2Address?: number;
+  turnout1ClosedValue?: boolean;
+  turnout2ClosedValue?: boolean;
 
   kind?: SensorKindDto;
   colorOn?: string;
@@ -237,6 +239,8 @@ export interface TrackTurnoutDoubleElementDto extends TrackElementDto {
   type: "trackturnoutdouble";
   turnout1Address: number;
   turnout2Address: number;
+  turnout1ClosedValue: boolean;
+  turnout2ClosedValue: boolean;
 }
 
 export interface TrackTurnoutThreeWayElementDto extends TrackElementDto {
