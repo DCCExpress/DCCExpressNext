@@ -1,6 +1,7 @@
 // src/services/wsApi.ts
 
 import type {
+  AutomationCommandAction,
   ClientWsMessageType,
   ClientWsPayloadMap,
   Direction,
@@ -281,6 +282,16 @@ class WebSocketApi {
       requestId,
       action,
       ...(document === undefined ? {} : { document }),
+    });
+  }
+
+  automationCommand(
+    requestId: string,
+    action: AutomationCommandAction
+  ): boolean {
+    return this.send("automationCommand", {
+      requestId,
+      action,
     });
   }
 
