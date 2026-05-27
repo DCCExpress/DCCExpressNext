@@ -50,6 +50,8 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
 
   turnout1Address: number = 0;
   turnout2Address: number = 0;
+  turnout1ClosedValue: boolean = true;
+  turnout2ClosedValue: boolean = true;
 
   /**
    * Backward-compatible alias for legacy code paths that still treat a
@@ -64,15 +66,12 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
     this.turnout1Address = value;
   }
 
-  /**
-   * Double turnouts currently use logical states directly for each motor.
-   */
   get turnoutClosedValue(): boolean {
-    return true;
+    return this.turnout1ClosedValue;
   }
 
-  set turnoutClosedValue(_value: boolean) {
-    // Compatibility no-op.
+  set turnoutClosedValue(value: boolean) {
+    this.turnout1ClosedValue = value;
   }
 
   /**
@@ -127,11 +126,11 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
         turnoutStates: [
           {
             address: this.turnout1Address,
-            closed: false,
+            closed: !this.turnout1ClosedValue,
           },
           {
             address: this.turnout2Address,
-            closed: false,
+            closed: !this.turnout2ClosedValue,
           },
         ],
       },
@@ -141,11 +140,11 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
         turnoutStates: [
           {
             address: this.turnout1Address,
-            closed: false,
+            closed: !this.turnout1ClosedValue,
           },
           {
             address: this.turnout2Address,
-            closed: true,
+            closed: this.turnout2ClosedValue,
           },
         ],
       },
@@ -155,11 +154,11 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
         turnoutStates: [
           {
             address: this.turnout1Address,
-            closed: true,
+            closed: this.turnout1ClosedValue,
           },
           {
             address: this.turnout2Address,
-            closed: false,
+            closed: !this.turnout2ClosedValue,
           },
         ],
       },
@@ -169,11 +168,11 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
         turnoutStates: [
           {
             address: this.turnout1Address,
-            closed: true,
+            closed: this.turnout1ClosedValue,
           },
           {
             address: this.turnout2Address,
-            closed: true,
+            closed: this.turnout2ClosedValue,
           },
         ],
       },
@@ -232,6 +231,8 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
     element.fg = data.fg;
     element.turnout1Address = data.turnout1Address;
     element.turnout2Address = data.turnout2Address;
+    element.turnout1ClosedValue = data.turnout1ClosedValue ?? element.turnout1ClosedValue;
+    element.turnout2ClosedValue = data.turnout2ClosedValue ?? element.turnout2ClosedValue;
     return element;
   }
 
@@ -241,6 +242,8 @@ export default class TrackTurnoutDoubleElement extends TrackElement {
       type: ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE,
       turnout1Address: this.turnout1Address,
       turnout2Address: this.turnout2Address,
+      turnout1ClosedValue: this.turnout1ClosedValue,
+      turnout2ClosedValue: this.turnout2ClosedValue,
     };
   }
 }
