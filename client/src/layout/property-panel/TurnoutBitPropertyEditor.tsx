@@ -50,12 +50,9 @@ export default function TurnoutBitPropertyEditor({
 
   return (
     <Stack gap="xs">
-      <Group justify="space-between" align="center" wrap="nowrap">
-        <Text size="sm" fw={500}>{prop.label}</Text>
-        <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
-      </Group>
+      <Text size="sm" fw={500}>{prop.label}</Text>
 
-      <Group>
+      <Group justify="space-between" align="center" wrap="nowrap">
         <Box className="route-turnout-preview-button">
           <ElementPreview
             element={createTurnoutPreview(selectedElement, true)}
@@ -71,6 +68,10 @@ export default function TurnoutBitPropertyEditor({
           />
         </Box>
 
+        <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
+      </Group>
+
+      <Group justify="space-between" align="center" wrap="nowrap">
         <Box className="route-turnout-preview-button">
           <ElementPreview
             element={createTurnoutPreview(selectedElement, false)}
@@ -85,6 +86,8 @@ export default function TurnoutBitPropertyEditor({
             }}
           />
         </Box>
+
+        <BitToggleElement value={!propValue} onChange={value => onChange(prop, !value)} />
       </Group>
     </Stack>
   );
