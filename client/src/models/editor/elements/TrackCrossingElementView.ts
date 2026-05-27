@@ -70,7 +70,7 @@ export class TrackCrossingElementView
   marked: boolean = false;
   enabled: boolean = true;
   alpha: number = 0.5;
-  debug: boolean = false;
+  debug: boolean = true;
 
   get GridSizeX(): number {
     return getGridSizeX();
