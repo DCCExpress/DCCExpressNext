@@ -38,63 +38,74 @@ function getDoubleTurnoutAddress(
     : element.turnout2Address;
 }
 
+function getPhysicalValueForLogicalState(
+  closedValue: boolean,
+  logicalClosed: boolean
+): boolean {
+  return logicalClosed
+    ? closedValue
+    : !closedValue;
+}
+
+function getDoubleTurnoutLogicalPreview(
+  element: TrackTurnoutDoubleElementView,
+  prop: IEditableProperty,
+  logicalClosed: boolean
+): BaseElementView {
+  const isFirstMotor = prop.key === "turnout1ClosedValue";
+
+  return createDoubleTurnoutPreview(
+    element,
+    isFirstMotor ? logicalClosed : element.firstLogicalClosed,
+    isFirstMotor ? element.secondLogicalClosed : logicalClosed
+  );
+}
+
 function renderDoubleTurnoutEditor(
   prop: IEditableProperty,
   selectedElement: TrackTurnoutDoubleElementView,
   propValue: boolean,
   onChange: PropertyChangeHandler
 ) {
-  const isFirstMotor = prop.key === "turnout1ClosedValue";
   const address = getDoubleTurnoutAddress(selectedElement, prop);
-
-  const closedPreview = createDoubleTurnoutPreview(
-    selectedElement,
-    isFirstMotor ? true : selectedElement.turnout1ClosedValue,
-    isFirstMotor ? selectedElement.turnout2ClosedValue : true
-  );
-
-  const openedPreview = createDoubleTurnoutPreview(
-    selectedElement,
-    isFirstMotor ? false : selectedElement.turnout1ClosedValue,
-    isFirstMotor ? selectedElement.turnout2ClosedValue : false
-  );
 
   return (
     <Stack gap="xs">
-      <Text size="sm" fw={500}>{prop.label}</Text>
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Text size="sm" fw={500}>{prop.label}</Text>
+        <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
+      </Group>
 
       <Group>
-        <Group>
-          <Box className="route-turnout-preview-button">
-            <ElementPreview
-              element={closedPreview}
-              label="Closed"
-              width={40}
-              height={40}
-              onClick={() => {
-                wsApi.setTurnout(address, propValue);
-              }}
-            />
-          </Box>
+        <Box className="route-turnout-preview-button">
+          <ElementPreview
+            element={getDoubleTurnoutLogicalPreview(selectedElement, prop, true)}
+            label="Closed"
+            width={40}
+            height={40}
+            onClick={() => {
+              wsApi.setTurnout(
+                address,
+                getPhysicalValueForLogicalState(propValue, true)
+              );
+            }}
+          />
+        </Box>
 
-          <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
-        </Group>
-
-        <Group>
-          <Box className="route-turnout-preview-button">
-            <ElementPreview
-              element={openedPreview}
-              label="Opened"
-              width={40}
-              height={40}
-              onClick={() => {
-                wsApi.setTurnout(address, !propValue);
-              }}
-            />
-          </Box>
-
-          <BitToggleElement value={!propValue} onChange={value => onChange(prop, !value)} />
-        </Group>
+        <Box className="route-turnout-preview-button">
+          <ElementPreview
+            element={getDoubleTurnoutLogicalPreview(selectedElement, prop, false)}
+            label="Opened"
+            width={40}
+            height={40}
+            onClick={() => {
+              wsApi.setTurnout(
+                address,
+                getPhysicalValueForLogicalState(propValue, false)
+              );
+            }}
+          />
+        </Box>
       </Group>
     </Stack>
   );
@@ -130,7 +141,12 @@ export default function TurnoutBitPropertyEditor({
   }
 
   return (
-    <Group>
+    <Stack gap="xs">
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Text size="sm" fw={500}>{prop.label}</Text>
+        <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
+      </Group>
+
       <Group>
         <Box className="route-turnout-preview-button">
           <ElementPreview
@@ -139,15 +155,14 @@ export default function TurnoutBitPropertyEditor({
             width={40}
             height={40}
             onClick={() => {
-              wsApi.setTurnout(selectedElement.turnoutAddress, selectedElement.turnoutClosedValue);
+              wsApi.setTurnout(
+                selectedElement.turnoutAddress,
+                getPhysicalValueForLogicalState(selectedElement.turnoutClosedValue, true)
+              );
             }}
           />
         </Box>
 
-        <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
-      </Group>
-
-      <Group>
         <Box className="route-turnout-preview-button">
           <ElementPreview
             element={createTurnoutPreview(selectedElement, false)}
@@ -155,13 +170,14 @@ export default function TurnoutBitPropertyEditor({
             width={40}
             height={40}
             onClick={() => {
-              wsApi.setTurnout(selectedElement.turnoutAddress, !selectedElement.turnoutClosedValue);
+              wsApi.setTurnout(
+                selectedElement.turnoutAddress,
+                getPhysicalValueForLogicalState(selectedElement.turnoutClosedValue, false)
+              );
             }}
           />
         </Box>
-
-        <BitToggleElement value={!propValue} onChange={value => onChange(prop, !value)} />
       </Group>
-    </Group>
+    </Stack>
   );
 }
