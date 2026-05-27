@@ -9,6 +9,7 @@ import {
   drawElementSelection,
   endElementDraw,
   getBaseEditableProperties,
+  getBaseHelp,
   getCenterX,
   getCenterY,
   getGridSizeX,
@@ -474,20 +475,15 @@ export class TrackLevelCrossingElementView
       {
         label: "Road color",
         key: "roadColor",
-        type: "color",
+        type: "colorpicker",
         readonly: false,
         validate: () => true,
       },
       {
         label: "Barrier type",
         key: "barrierType",
-        type: "select",
+        type: "string",
         readonly: false,
-        options: [
-          { label: "None", value: "none" },
-          { label: "Half", value: "half" },
-          { label: "Full", value: "full" },
-        ],
         validate: () => true,
       },
       {
@@ -526,5 +522,19 @@ export class TrackLevelCrossingElementView
         validate: () => true,
       },
     ];
+  }
+
+  getHelp(): string {
+    return `${getBaseHelp()}
+      <h3>Level crossing</h3>
+      <p>
+        The level crossing draws a road crossing over the track and can control
+        a basic accessory for the barriers and warning lights.
+      </p>
+      <ul>
+        <li><b>Barrier type</b>: none, half, or full.</li>
+        <li><b>Basic accessory address</b>: accessory address used when clicking the crossing in run mode.</li>
+        <li><b>Basic accessory closed value</b>: physical value that represents the logical closed state.</li>
+      </ul>`;
   }
 }
