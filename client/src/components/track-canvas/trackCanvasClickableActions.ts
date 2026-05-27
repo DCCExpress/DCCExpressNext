@@ -30,6 +30,10 @@ import {
 } from "../../models/editor/elements/TrackLevelCrossingElementView";
 
 import {
+  TrackSensorElementView,
+} from "../../models/editor/elements/TrackSensorElementView";
+
+import {
   wsApi,
 } from "../../services/wsApi";
 
@@ -74,6 +78,19 @@ function executeLevelCrossingToggle(
   );
 }
 
+function executeSensorToggle(
+  sensor: TrackSensorElementView
+): void {
+  if (sensor.address <= 0) {
+    return;
+  }
+
+  wsApi.setSensor(
+    sensor.address,
+    !sensor.on
+  );
+}
+
 export function handleTrackCanvasClickableDown(
   hitElement: BaseElementView | null,
   event: MouseEvent | PointerEvent,
@@ -81,6 +98,11 @@ export function handleTrackCanvasClickableDown(
 ): boolean {
   if (!hitElement) {
     return false;
+  }
+
+  if (hitElement instanceof TrackSensorElementView) {
+    executeSensorToggle(hitElement);
+    return true;
   }
 
   if (hitElement instanceof TrackLevelCrossingElementView) {
@@ -134,7 +156,10 @@ export function handleTrackCanvasClickableUp(
     return false;
   }
 
-  if (hitElement instanceof TrackLevelCrossingElementView) {
+  if (
+    hitElement instanceof TrackSensorElementView ||
+    hitElement instanceof TrackLevelCrossingElementView
+  ) {
     return true;
   }
 
