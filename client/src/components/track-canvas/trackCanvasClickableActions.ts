@@ -26,6 +26,14 @@ import {
 } from "../../models/editor/elements/RouteButtonElementView";
 
 import {
+  TrackLevelCrossingElementView,
+} from "../../models/editor/elements/TrackLevelCrossingElementView";
+
+import {
+  wsApi,
+} from "../../services/wsApi";
+
+import {
   executeExtendedRouteButton,
   executeRouteButton,
   type RouteBusySetter,
@@ -38,6 +46,34 @@ export type TrackCanvasClickableActionContext = {
   setBusy?: RouteBusySetter | undefined;
 };
 
+function getPhysicalValueForLogicalBarrierState(
+  crossing: TrackLevelCrossingElementView,
+  logicalClosed: boolean
+): boolean {
+  return logicalClosed
+    ? crossing.basicAccessoryClosedValue
+    : !crossing.basicAccessoryClosedValue;
+}
+
+function executeLevelCrossingToggle(
+  crossing: TrackLevelCrossingElementView
+): void {
+  if (crossing.basicAccessoryAddress <= 0) {
+    return;
+  }
+
+  const nextClosed =
+    !crossing.barrierClosed;
+
+  wsApi.setBasicAccessory(
+    crossing.basicAccessoryAddress,
+    getPhysicalValueForLogicalBarrierState(
+      crossing,
+      nextClosed
+    )
+  );
+}
+
 export function handleTrackCanvasClickableDown(
   hitElement: BaseElementView | null,
   event: MouseEvent | PointerEvent,
@@ -45,6 +81,11 @@ export function handleTrackCanvasClickableDown(
 ): boolean {
   if (!hitElement) {
     return false;
+  }
+
+  if (hitElement instanceof TrackLevelCrossingElementView) {
+    executeLevelCrossingToggle(hitElement);
+    return true;
   }
 
   if (
@@ -91,6 +132,10 @@ export function handleTrackCanvasClickableUp(
 ): boolean {
   if (!hitElement) {
     return false;
+  }
+
+  if (hitElement instanceof TrackLevelCrossingElementView) {
+    return true;
   }
 
   if (
