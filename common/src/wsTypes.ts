@@ -283,6 +283,18 @@ export type TaskManagerResponsePayload = WsCommandResponseMeta & {
   loadResult?: LoadTrainTasksResult;
 };
 
+export type AutomationModuleStatePayload = {
+  id: string;
+  name: string;
+  enabled: boolean;
+};
+
+export type AutomationRuntimeStatePayload = {
+  running: boolean;
+  tickMs: number;
+  modules: AutomationModuleStatePayload[];
+};
+
 export type ServerWsPayloadMap = {
   "ws:welcome": { message: string };
   error: { message: string };
@@ -332,6 +344,7 @@ export type ServerWsPayloadMap = {
   runtimeVariablesSnapshot: RuntimeVariablesSnapshotPayload;
 
   serverRuntimeStatsChanged: ServerRuntimeStatsSnapshot;
+  automationRuntimeStateChanged: AutomationRuntimeStatePayload;
 
   layoutResponse: LayoutResponsePayload;
   locosResponse: LocosResponsePayload;
