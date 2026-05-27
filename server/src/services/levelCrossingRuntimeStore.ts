@@ -6,6 +6,10 @@ import type {
   LevelCrossingRuntimeStateDto,
 } from "../../../common/src/levelCrossingLogic.js";
 
+import type {
+  AutomationRuntimeModule,
+} from "./automationRuntimeService.js";
+
 import {
   CommandCenter,
 } from "../commandCenter/CommandCenter.js";
@@ -84,7 +88,7 @@ async function setCrossingState(
   state: LevelCrossingRuntimeState
 ): Promise<void> {
   log(
-    `[LevelCrossingRuntime] ${logic.levelCrossingElementId || logic.id} -> ${state}`
+    `[LevelCrossingAutomation] ${logic.levelCrossingElementId || logic.id} -> ${state}`
   );
 }
 
@@ -97,7 +101,7 @@ async function setAccessory(
 
   if (!commandCenter) {
     logError(
-      `[LevelCrossingRuntime] Cannot set accessory #${address}: no command center.`,
+      `[LevelCrossingAutomation] Cannot set accessory #${address}: no command center.`,
       logic.id
     );
     return;
@@ -107,7 +111,7 @@ async function setAccessory(
 
   if (!success) {
     logError(
-      `[LevelCrossingRuntime] Failed to set accessory #${address} to ${active ? "active" : "inactive"}.`,
+      `[LevelCrossingAutomation] Failed to set accessory #${address} to ${active ? "active" : "inactive"}.`,
       logic.id
     );
   }
@@ -124,12 +128,20 @@ const serverRuntimeActionSink = {
   setAccessory,
 };
 
-class LevelCrossingRuntimeStore {
+class LevelCrossingRuntimeStore implements AutomationRuntimeModule {
+  readonly id = "levelCrossing";
+  readonly name = "Level crossings";
+
   private readonly service = new LevelCrossingRuntimeService(
     serverRuntimeDataProvider,
     serverRuntimeActionSink
   );
   private initialized = false;
+  private enabled = false;
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
 
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -157,12 +169,14 @@ class LevelCrossingRuntimeStore {
 
   async start(): Promise<LevelCrossingRuntimeStateDto> {
     await this.initialize();
+    this.enabled = true;
     this.service.start();
     return this.service.snapshot();
   }
 
   async stop(): Promise<LevelCrossingRuntimeStateDto> {
     await this.initialize();
+    this.enabled = false;
     this.service.stop();
     return this.service.snapshot();
   }
@@ -172,9 +186,14 @@ class LevelCrossingRuntimeStore {
     return this.service.snapshot();
   }
 
-  async evaluateOnce(): Promise<LevelCrossingRuntimeStateDto> {
+  async evaluateOnce(nowMs = Date.now()): Promise<LevelCrossingRuntimeStateDto> {
     await this.initialize();
-    return this.service.evaluateOnce();
+
+    if (!this.enabled) {
+      return this.service.snapshot();
+    }
+
+    return this.service.evaluateOnce(nowMs);
   }
 }
 
