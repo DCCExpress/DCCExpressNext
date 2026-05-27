@@ -179,6 +179,17 @@ export type SignalLogicCommandPayload = {
   signalAddresses?: number[];
 };
 
+export type AutomationCommandAction =
+  | "snapshot"
+  | "start"
+  | "stop"
+  | "evaluateOnce";
+
+export type AutomationCommandPayload = {
+  requestId: string;
+  action: AutomationCommandAction;
+};
+
 export type TaskManagerCommandAction =
   | "snapshot"
   | "add"
@@ -282,6 +293,7 @@ export type ClientWsPayloadMap = {
   signalLogicCommand: SignalLogicCommandPayload;
   blockAutomationCommand: BlockAutomationCommandPayload;
   levelCrossingCommand: LevelCrossingCommandPayload;
+  automationCommand: AutomationCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
   fileCommand: FileCommandPayload;
