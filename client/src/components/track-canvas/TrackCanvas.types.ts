@@ -115,6 +115,7 @@ export type SelectionState = {
   startGridX: number;
   startGridY: number;
   endGridX: number;
+  endGridY: number;
 };
 
 export type SignalAspectValue = 1 | 2 | 3 | 4;
