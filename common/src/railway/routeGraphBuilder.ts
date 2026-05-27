@@ -12,17 +12,13 @@ import {
 
 import {
   RailwayTopologyLayout,
-  getDirectionPoint,
   type TopologyBlockElement,
   type TopologyPoint,
-  type TopologySensorElement,
-  type TopologySignalElement,
   type TopologyTrackElement,
   type TopologyTurnoutElement,
   isTopologyTurnoutElement,
   type TravelDirection,
 } from "./topology.js";
-import { TrackCrossingElement } from "../layout/elements/TrackCrossingElement.js";
 import { TrackTravelDirectionResolver } from "./trackTravelDirectionResolver.js";
 
 type TurnoutSide =
@@ -39,6 +35,10 @@ type TrackConnectionGroup = {
   index: number;
   endpoints: TopologyPoint[];
 };
+
+type LinearConnectionSide =
+  | "prev"
+  | "next";
 
 export class RouteGraphBuilder {
   private readonly graph = new Graph();
@@ -87,6 +87,7 @@ export class RouteGraphBuilder {
     this.markTurnoutsVisited();
     this.discoverPhysicalSections();
     this.discoverSectionsFromDirectionElements();
+    this.discoverRemainingTrackConnectionSections();
     this.createRouteEdges();
 
     return this.graph;
@@ -166,6 +167,23 @@ export class RouteGraphBuilder {
     }
   }
 
+  private discoverRemainingTrackConnectionSections(): void {
+    const physicalTracks =
+      this.topology.getPhysicalTrackElements();
+
+    for (const elem of physicalTracks) {
+      if (isTopologyTurnoutElement(elem)) {
+        continue;
+      }
+
+      if (this.areAllTrackConnectionsVisited(elem)) {
+        continue;
+      }
+
+      this.createPhysicalSection(elem);
+    }
+  }
+
   private createPhysicalSection(
     firstElem: TopologyTrackElement,
     incomingPos?: TopologyPoint
@@ -183,6 +201,7 @@ export class RouteGraphBuilder {
     );
 
     if (sectionElements.length === 0) {
+      this.nextSectionNumber--;
       return;
     }
 
@@ -222,9 +241,6 @@ export class RouteGraphBuilder {
         obj.section = section;
       }
 
-      obj.isVisited =
-        this.areAllTrackConnectionsVisited(obj);
-
       this.addSectionElementOnce(
         sectionElements,
         obj
@@ -242,6 +258,9 @@ export class RouteGraphBuilder {
           sectionElements
         );
       }
+
+      obj.isVisited =
+        this.areAllTrackConnectionsVisited(obj);
     }
   }
 
@@ -727,17 +746,17 @@ export class RouteGraphBuilder {
       return "unknown";
     }
 
-    const towardsNext =
-      sectionElem.getNextItemXy().isEqual(turnout.pos);
+    const side =
+      this.getLinearConnectionSideTowards(
+        sectionElem,
+        turnout.pos
+      );
 
-    const towardsPrev =
-      sectionElem.getPrevItemXy().isEqual(turnout.pos);
-
-    if (towardsNext) {
+    if (side === "next") {
       return sectionElem.travelDirection;
     }
 
-    if (towardsPrev) {
+    if (side === "prev") {
       return sectionElem.travelDirection === "forward"
         ? "reverse"
         : "forward";
@@ -825,6 +844,23 @@ export class RouteGraphBuilder {
     ).length > 0;
   }
 
+  private getLinearConnectionSideTowards(
+    element: TopologyTrackElement,
+    point: TopologyPoint
+  ): LinearConnectionSide | undefined {
+    for (const pair of element.getNeighborPointPairs()) {
+      if (pair[0].isEqual(point)) {
+        return "prev";
+      }
+
+      if (pair[1].isEqual(point)) {
+        return "next";
+      }
+    }
+
+    return undefined;
+  }
+
   private getTrackConnectionGroupsForIncoming(
     element: TopologyTrackElement,
     incomingPos?: TopologyPoint
@@ -846,64 +882,12 @@ export class RouteGraphBuilder {
   private getTrackConnectionGroups(
     element: TopologyTrackElement
   ): TrackConnectionGroup[] {
-    if (element instanceof TrackCrossingElement) {
-      return this.getCrossingConnectionGroups(element);
-    }
-
-    return [
-      {
-        index: 0,
-        endpoints: [
-          element.getPrevItemXy(),
-          element.getNextItemXy(),
-        ],
-      },
-    ];
-  }
-
-  private getCrossingConnectionGroups(
-    element: TrackCrossingElement
-  ): TrackConnectionGroup[] {
-    const rotation =
-      element.normalizeRotation(element.rotation);
-
-    const angles = this.getCrossingLineAngles(rotation);
-
-    return angles.map((angle, index) => ({
-      index,
-      endpoints: [
-        getDirectionPoint(element.pos, angle + 180),
-        getDirectionPoint(element.pos, angle),
-      ],
-    }));
-  }
-
-  private getCrossingLineAngles(
-    rotation: number
-  ): [number, number] {
-    switch (rotation) {
-      case 0:
-      case 180:
-        return [0, 45];
-
-      case 45:
-      case 225:
-        return [90, 45];
-
-      case 90:
-      case 270:
-        return [90, 135];
-
-      case 135:
-      case 315:
-        return [0, 135];
-
-      default:
-        return [
-          rotation,
-          rotation + 45,
-        ];
-    }
+    return element.getNeighborPointPairs().map(
+      (pair, index) => ({
+        index,
+        endpoints: [...pair],
+      })
+    );
   }
 
   private getTrackConnectionKey(
