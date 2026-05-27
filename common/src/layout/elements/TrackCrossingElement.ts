@@ -1,4 +1,10 @@
 import {
+  getDirectionXy,
+} from "../../helpers.js";
+import type {
+  Point,
+} from "../../Rect.js";
+import {
   ELEMENT_TYPES,
 } from "../elementTypes.js";
 import type {
@@ -16,6 +22,47 @@ export class TrackCrossingElement extends TrackElement {
     super(x, y);
     this.type = ELEMENT_TYPES.TRACK_CROSSING;
     this.rotationStep = 45;
+  }
+
+  override getNeigbordsXy(): Point[] {
+    const [straightAngle, crossingAngle] =
+      this.getCrossingLineAngles();
+
+    return [
+      getDirectionXy(this.pos, straightAngle),
+      getDirectionXy(this.pos, straightAngle + 180),
+      getDirectionXy(this.pos, crossingAngle),
+      getDirectionXy(this.pos, crossingAngle + 180),
+    ];
+  }
+
+  private getCrossingLineAngles(): [number, number] {
+    const rotation =
+      this.normalizeRotation(this.rotation);
+
+    switch (rotation) {
+      case 0:
+      case 180:
+        return [0, 45];
+
+      case 45:
+      case 225:
+        return [90, 45];
+
+      case 90:
+      case 270:
+        return [90, 135];
+
+      case 135:
+      case 315:
+        return [0, 135];
+
+      default:
+        return [
+          rotation,
+          rotation + 45,
+        ];
+    }
   }
 
   static fromJSON(data: TrackCrossingElementDto): TrackCrossingElement {
