@@ -233,6 +233,29 @@ export function useLayoutRuntimeWsBindings({
                 turnout.turnoutClosed = data.closed;
                 changed = true;
               }
+
+              continue;
+            }
+
+            if (
+              element.type === ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE
+            ) {
+              const turnout = element as unknown as {
+                turnout1Address: number;
+                turnout2Address: number;
+                turnout1Closed: boolean;
+                turnout2Closed: boolean;
+              };
+
+              if (turnout.turnout1Address === data.address) {
+                turnout.turnout1Closed = data.closed;
+                changed = true;
+              }
+
+              if (turnout.turnout2Address === data.address) {
+                turnout.turnout2Closed = data.closed;
+                changed = true;
+              }
             }
           }
 
