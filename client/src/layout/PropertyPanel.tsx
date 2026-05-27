@@ -41,6 +41,7 @@ type PropertyPanelProps = {
   setBusy?: (busy: boolean, text?: string) => void;
   onOpenBlockActionsForBlock: (blockId: string) => void;
   onOpenSignalLogicForSignal: (signalAddress: number) => void;
+  onOpenLevelCrossingLogicForElement: (elementId: string) => void;
 };
 
 function updateElementProperty(
@@ -92,6 +93,7 @@ export default function RightPropertyPanel({
   setBusy,
   onOpenBlockActionsForBlock,
   onOpenSignalLogicForSignal,
+  onOpenLevelCrossingLogicForElement,
 }: PropertyPanelProps) {
   const { t } = useTranslation();
   const {
@@ -372,6 +374,7 @@ export default function RightPropertyPanel({
         {selectedElement instanceof TrackLevelCrossingElementView && (
           <LevelCrossingAutomationPanel
             selectedElement={selectedElement}
+            onOpenLevelCrossingLogicForElement={onOpenLevelCrossingLogicForElement}
           />
         )}
 
