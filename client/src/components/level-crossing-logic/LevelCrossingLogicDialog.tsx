@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type {
+  LevelCrossingCondition,
   LevelCrossingLogic,
   LevelCrossingLogicDocumentDto,
   LevelCrossingRuntimeStateDto,
@@ -35,8 +36,11 @@ import {
 } from "../../api/levelCrossingWsApi";
 import { generateId } from "../../helpers";
 import type { LayoutView } from "../../models/editor/core/LayoutView";
+import { BlockElementView } from "../../models/editor/elements/BlockElementView";
 import { TrackLevelCrossingElementView } from "../../models/editor/elements/TrackLevelCrossingElementView";
 import AppModal from "../common/AppModal";
+import LevelCrossingActionsEditor from "./LevelCrossingActionsEditor";
+import LevelCrossingConditionListEditor from "./LevelCrossingConditionListEditor";
 
 type LevelCrossingLogicDialogProps = {
   opened: boolean;
@@ -50,6 +54,11 @@ type CrossingOption = {
   id: string;
   label: string;
   element: TrackLevelCrossingElementView;
+};
+
+type SelectItem = {
+  value: string;
+  label: string;
 };
 
 const DEFAULT_RUNTIME_STATE: LevelCrossingRuntimeStateDto = {
@@ -84,10 +93,42 @@ const LABELS = {
     closeDelayMs: "Close delay (ms)",
     openDelayMs: "Open delay (ms)",
     minClosedMs: "Minimum closed time (ms)",
-    summary: "Automation summary",
-    closeTriggersCount: (count: number) => `Close triggers: ${count}`,
-    openConditionsCount: (count: number) => `Open conditions: ${count}`,
-    actionsCount: (count: number) => `Actions: ${count}`,
+    timing: "Timing",
+    closeTriggersTitle: "Close triggers",
+    closeTriggersDescription: "The crossing closes when any of these conditions is true.",
+    openConditionsTitle: "Open conditions",
+    openConditionsDescription: "The crossing opens only when all of these conditions are true. If empty, it opens when no close trigger is active.",
+    actionsTitle: "Actions",
+    actionsDescription: "Actions executed when the crossing changes state.",
+    emptyConditions: "No conditions configured.",
+    addSensor: "Sensor",
+    addBlock: "Block",
+    addRoute: "Route",
+    type: "Type",
+    sensor: "Sensor",
+    block: "Block",
+    route: "Route reservation",
+    sensorAddress: "Sensor address",
+    blockId: "Block",
+    fromBlock: "From block",
+    toBlock: "To block",
+    anyBlock: "Any",
+    expectedState: "Expected state",
+    sensorActive: "Active",
+    sensorInactive: "Inactive",
+    blockOccupied: "Occupied",
+    blockFree: "Free",
+    routeReserved: "Reserved",
+    routeNotReserved: "Not reserved",
+    delete: "Delete",
+    emptyActions: "No actions configured.",
+    addAccessory: "Accessory",
+    actionType: "Action type",
+    accessoryAction: "Set accessory",
+    accessoryAddress: "Accessory address",
+    activeWhenClosed: "When closed",
+    active: "Active",
+    inactive: "Inactive",
   },
   hu: {
     title: "Sorompólogika",
@@ -114,10 +155,42 @@ const LABELS = {
     closeDelayMs: "Zárási késleltetés (ms)",
     openDelayMs: "Nyitási késleltetés (ms)",
     minClosedMs: "Minimális zárva tartás (ms)",
-    summary: "Automatika összefoglaló",
-    closeTriggersCount: (count: number) => `Zárási feltételek: ${count}`,
-    openConditionsCount: (count: number) => `Nyitási feltételek: ${count}`,
-    actionsCount: (count: number) => `Műveletek: ${count}`,
+    timing: "Időzítés",
+    closeTriggersTitle: "Zárási feltételek",
+    closeTriggersDescription: "A sorompó lezár, ha ezek közül bármelyik feltétel igaz.",
+    openConditionsTitle: "Nyitási feltételek",
+    openConditionsDescription: "A sorompó csak akkor nyit, ha ezek közül minden feltétel igaz. Ha üres, akkor akkor nyit, ha nincs aktív zárási feltétel.",
+    actionsTitle: "Műveletek",
+    actionsDescription: "Állapotváltáskor végrehajtott műveletek.",
+    emptyConditions: "Nincs feltétel beállítva.",
+    addSensor: "Szenzor",
+    addBlock: "Blokk",
+    addRoute: "Útvonal",
+    type: "Típus",
+    sensor: "Szenzor",
+    block: "Blokk",
+    route: "Útvonalfoglalás",
+    sensorAddress: "Szenzor címe",
+    blockId: "Blokk",
+    fromBlock: "Induló blokk",
+    toBlock: "Cél blokk",
+    anyBlock: "Bármelyik",
+    expectedState: "Elvárt állapot",
+    sensorActive: "Aktív",
+    sensorInactive: "Inaktív",
+    blockOccupied: "Foglalt",
+    blockFree: "Szabad",
+    routeReserved: "Foglalt útvonal",
+    routeNotReserved: "Nincs foglalva",
+    delete: "Törlés",
+    emptyActions: "Nincs művelet beállítva.",
+    addAccessory: "Accessory",
+    actionType: "Művelet típusa",
+    accessoryAction: "Accessory állítás",
+    accessoryAddress: "Accessory cím",
+    activeWhenClosed: "Zárt állapotban",
+    active: "Aktív",
+    inactive: "Inaktív",
   },
   de: {
     title: "Bahnübergang-Logik",
@@ -144,10 +217,42 @@ const LABELS = {
     closeDelayMs: "Schließverzögerung (ms)",
     openDelayMs: "Öffnungsverzögerung (ms)",
     minClosedMs: "Mindest-Schließzeit (ms)",
-    summary: "Automatik-Zusammenfassung",
-    closeTriggersCount: (count: number) => `Schließauslöser: ${count}`,
-    openConditionsCount: (count: number) => `Öffnungsbedingungen: ${count}`,
-    actionsCount: (count: number) => `Aktionen: ${count}`,
+    timing: "Zeitsteuerung",
+    closeTriggersTitle: "Schließauslöser",
+    closeTriggersDescription: "Der Bahnübergang schließt, wenn eine dieser Bedingungen wahr ist.",
+    openConditionsTitle: "Öffnungsbedingungen",
+    openConditionsDescription: "Der Bahnübergang öffnet nur, wenn alle Bedingungen wahr sind. Wenn leer, öffnet er, wenn kein Schließauslöser aktiv ist.",
+    actionsTitle: "Aktionen",
+    actionsDescription: "Aktionen, die bei Zustandsänderungen ausgeführt werden.",
+    emptyConditions: "Keine Bedingungen konfiguriert.",
+    addSensor: "Sensor",
+    addBlock: "Block",
+    addRoute: "Route",
+    type: "Typ",
+    sensor: "Sensor",
+    block: "Block",
+    route: "Routenreservierung",
+    sensorAddress: "Sensoradresse",
+    blockId: "Block",
+    fromBlock: "Von Block",
+    toBlock: "Nach Block",
+    anyBlock: "Beliebig",
+    expectedState: "Erwarteter Zustand",
+    sensorActive: "Aktiv",
+    sensorInactive: "Inaktiv",
+    blockOccupied: "Belegt",
+    blockFree: "Frei",
+    routeReserved: "Reserviert",
+    routeNotReserved: "Nicht reserviert",
+    delete: "Löschen",
+    emptyActions: "Keine Aktionen konfiguriert.",
+    addAccessory: "Zubehör",
+    actionType: "Aktionstyp",
+    accessoryAction: "Zubehör schalten",
+    accessoryAddress: "Zubehöradresse",
+    activeWhenClosed: "Wenn geschlossen",
+    active: "Aktiv",
+    inactive: "Inaktiv",
   },
 } as const;
 
@@ -183,6 +288,15 @@ function getCrossingLabel(
 ): string {
   const name = element.name?.trim();
   return name || `#${index + 1} (${element.x}, ${element.y})`;
+}
+
+function getBlockLabel(
+  element: BlockElementView,
+  index: number
+): string {
+  const name = element.name?.trim();
+  const text = element.text?.trim();
+  return name || text || `Block #${index + 1} (${element.x}, ${element.y})`;
 }
 
 export default function LevelCrossingLogicDialog({
@@ -221,10 +335,60 @@ export default function LevelCrossingLogicDialog({
       }));
   }, [layout]);
 
+  const blockOptions = useMemo<SelectItem[]>(() => {
+    return layout
+      .getAllElements()
+      .filter((element): element is BlockElementView =>
+        element instanceof BlockElementView
+      )
+      .map((element, index) => ({
+        value: element.id,
+        label: getBlockLabel(element, index),
+      }));
+  }, [layout]);
+
   const selectedCrossing = crossings.find(crossing => crossing.id === selectedElementId) ?? crossings[0] ?? null;
   const selectedLogic = selectedCrossing
     ? document.crossings.find(logic => logic.levelCrossingElementId === selectedCrossing.id) ?? null
     : null;
+
+  const conditionLabels = {
+    empty: labels.emptyConditions,
+    addSensor: labels.addSensor,
+    addBlock: labels.addBlock,
+    addRoute: labels.addRoute,
+    type: labels.type,
+    sensor: labels.sensor,
+    block: labels.block,
+    route: labels.route,
+    sensorAddress: labels.sensorAddress,
+    blockId: labels.blockId,
+    fromBlock: labels.fromBlock,
+    toBlock: labels.toBlock,
+    anyBlock: labels.anyBlock,
+    expectedState: labels.expectedState,
+    sensorActive: labels.sensorActive,
+    sensorInactive: labels.sensorInactive,
+    blockOccupied: labels.blockOccupied,
+    blockFree: labels.blockFree,
+    routeReserved: labels.routeReserved,
+    routeNotReserved: labels.routeNotReserved,
+    delete: labels.delete,
+  };
+
+  const actionLabels = {
+    title: labels.actionsTitle,
+    description: labels.actionsDescription,
+    empty: labels.emptyActions,
+    addAccessory: labels.addAccessory,
+    actionType: labels.actionType,
+    accessoryAction: labels.accessoryAction,
+    accessoryAddress: labels.accessoryAddress,
+    activeWhenClosed: labels.activeWhenClosed,
+    active: labels.active,
+    inactive: labels.inactive,
+    delete: labels.delete,
+  };
 
   const clearMessages = (): void => {
     setStatusText(null);
@@ -316,6 +480,14 @@ export default function LevelCrossingLogicDialog({
     }));
   };
 
+  const updateCloseTriggers = (closeTriggers: LevelCrossingCondition[]): void => {
+    updateSelectedLogic(logic => ({ ...logic, closeTriggers }));
+  };
+
+  const updateOpenConditions = (openConditions: LevelCrossingCondition[]): void => {
+    updateSelectedLogic(logic => ({ ...logic, openConditions }));
+  };
+
   const setAutostart = (autostart: boolean): void => {
     clearMessages();
     setDocument(previous => ({ ...previous, autostart }));
@@ -357,13 +529,13 @@ export default function LevelCrossingLogicDialog({
       opened={opened}
       onClose={onClose}
       title={labels.title}
-      size={1050}
+      size={1200}
       centered
       draggable
       styles={{
         content: {
-          height: "min(760px, calc(100vh - 48px))",
-          maxHeight: "min(760px, calc(100vh - 48px))",
+          height: "min(820px, calc(100vh - 48px))",
+          maxHeight: "min(820px, calc(100vh - 48px))",
           display: "flex",
           flexDirection: "column",
         },
@@ -483,80 +655,101 @@ export default function LevelCrossingLogicDialog({
           </Card>
 
           <Card withBorder p="md" style={{ flex: 1, minWidth: 0 }}>
-            {!selectedCrossing ? (
-              <Text c="dimmed">{labels.selectOrAdd}</Text>
-            ) : !selectedLogic ? (
-              <Stack gap="sm">
-                <Title order={5}>{selectedCrossing.label}</Title>
-                <Text c="dimmed">{labels.noEntryForSelected}</Text>
-                <Button
-                  size="xs"
-                  leftSection={<IconPlus size={14} />}
-                  onClick={() => void ensureSelectedLogic()}
-                >
-                  {labels.createEntry}
-                </Button>
-              </Stack>
-            ) : (
-              <Stack gap="md">
-                <Title order={5}>{selectedCrossing.label}</Title>
+            <ScrollArea h="100%" type="auto" offsetScrollbars>
+              {!selectedCrossing ? (
+                <Text c="dimmed">{labels.selectOrAdd}</Text>
+              ) : !selectedLogic ? (
+                <Stack gap="sm">
+                  <Title order={5}>{selectedCrossing.label}</Title>
+                  <Text c="dimmed">{labels.noEntryForSelected}</Text>
+                  <Button
+                    size="xs"
+                    leftSection={<IconPlus size={14} />}
+                    onClick={() => void ensureSelectedLogic()}
+                  >
+                    {labels.createEntry}
+                  </Button>
+                </Stack>
+              ) : (
+                <Stack gap="md">
+                  <Title order={5}>{selectedCrossing.label}</Title>
 
-                <Switch
-                  label={labels.enabled}
-                  checked={selectedLogic.enabled}
-                  onChange={event => updateSelectedLogic(logic => ({
-                    ...logic,
-                    enabled: event.currentTarget.checked,
-                  }))}
-                />
-
-                <Group grow>
-                  <NumberInput
-                    label={labels.closeDelayMs}
-                    value={selectedLogic.closeDelayMs}
-                    min={0}
-                    step={100}
-                    onChange={value => updateSelectedLogic(logic => ({
+                  <Switch
+                    label={labels.enabled}
+                    checked={selectedLogic.enabled}
+                    onChange={event => updateSelectedLogic(logic => ({
                       ...logic,
-                      closeDelayMs: Number(value ?? 0),
+                      enabled: event.currentTarget.checked,
                     }))}
                   />
-                  <NumberInput
-                    label={labels.openDelayMs}
-                    value={selectedLogic.openDelayMs}
-                    min={0}
-                    step={100}
-                    onChange={value => updateSelectedLogic(logic => ({
-                      ...logic,
-                      openDelayMs: Number(value ?? 0),
-                    }))}
-                  />
-                  <NumberInput
-                    label={labels.minClosedMs}
-                    value={selectedLogic.minClosedMs}
-                    min={0}
-                    step={100}
-                    onChange={value => updateSelectedLogic(logic => ({
-                      ...logic,
-                      minClosedMs: Number(value ?? 0),
-                    }))}
-                  />
-                </Group>
 
-                <Card withBorder p="sm">
-                  <Text size="sm" fw={600}>{labels.summary}</Text>
-                  <Text size="sm" c="dimmed">
-                    {labels.closeTriggersCount(selectedLogic.closeTriggers.length)}
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    {labels.openConditionsCount(selectedLogic.openConditions.length)}
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    {labels.actionsCount(selectedLogic.actions.length)}
-                  </Text>
-                </Card>
-              </Stack>
-            )}
+                  <Card withBorder p="sm">
+                    <Stack gap="xs">
+                      <Text size="sm" fw={600}>{labels.timing}</Text>
+                      <Group grow>
+                        <NumberInput
+                          label={labels.closeDelayMs}
+                          value={selectedLogic.closeDelayMs}
+                          min={0}
+                          step={100}
+                          onChange={value => updateSelectedLogic(logic => ({
+                            ...logic,
+                            closeDelayMs: Number(value ?? 0),
+                          }))}
+                        />
+                        <NumberInput
+                          label={labels.openDelayMs}
+                          value={selectedLogic.openDelayMs}
+                          min={0}
+                          step={100}
+                          onChange={value => updateSelectedLogic(logic => ({
+                            ...logic,
+                            openDelayMs: Number(value ?? 0),
+                          }))}
+                        />
+                        <NumberInput
+                          label={labels.minClosedMs}
+                          value={selectedLogic.minClosedMs}
+                          min={0}
+                          step={100}
+                          onChange={value => updateSelectedLogic(logic => ({
+                            ...logic,
+                            minClosedMs: Number(value ?? 0),
+                          }))}
+                        />
+                      </Group>
+                    </Stack>
+                  </Card>
+
+                  <LevelCrossingConditionListEditor
+                    title={labels.closeTriggersTitle}
+                    description={labels.closeTriggersDescription}
+                    conditions={selectedLogic.closeTriggers}
+                    onChange={updateCloseTriggers}
+                    blockOptions={blockOptions}
+                    labels={conditionLabels}
+                  />
+
+                  <LevelCrossingConditionListEditor
+                    title={labels.openConditionsTitle}
+                    description={labels.openConditionsDescription}
+                    conditions={selectedLogic.openConditions}
+                    onChange={updateOpenConditions}
+                    blockOptions={blockOptions}
+                    labels={conditionLabels}
+                  />
+
+                  <LevelCrossingActionsEditor
+                    actions={selectedLogic.actions}
+                    onChange={actions => updateSelectedLogic(logic => ({
+                      ...logic,
+                      actions,
+                    }))}
+                    labels={actionLabels}
+                  />
+                </Stack>
+              )}
+            </ScrollArea>
           </Card>
         </Group>
       </Stack>
