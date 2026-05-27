@@ -24,3 +24,4 @@ export * from "./serverRuntimeStats.js";
 export * from "./signalLogic.js";
 export * from "./runtimeVariables.js";
 export * from "./blockAutomation.js";
+export * from "./levelCrossingLogic.js";
