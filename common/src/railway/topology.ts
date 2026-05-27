@@ -51,6 +51,7 @@ import {
 import {
   TrackTurnoutRightElement,
 } from "../layout/elements/TrackTurnoutRightElement.js";
+import TrackTurnoutDoubleElement from "../layout/elements/TrackTurnoutDoubleElement.js";
 import {
   BlockElement,
 } from "../layout/elements/BlockElement.js";
@@ -88,6 +89,7 @@ export {
   TrackCrossingElement as TopologyCrossingElement,
   TrackTurnoutLeftElement as TopologyTurnoutLeftElement,
   TrackTurnoutRightElement as TopologyTurnoutRightElement,
+  TrackTurnoutDoubleElement as TopologyTurnoutDoubleElement,
   BlockElement as TopologyBlockElement,
   TrackSensorElement as TopologySensorElement,
   TrackSignalElement as TopologySignalElement,
@@ -330,6 +332,30 @@ function createTurnoutRightElement(
   return element;
 }
 
+function createTurnoutDoubleElement(
+  data: SerializedLayoutElementDto
+): TrackTurnoutDoubleElement {
+  const element = applyTrackData(
+    new TrackTurnoutDoubleElement(
+      numberValue(data.x, 0),
+      numberValue(data.y, 0)
+    ),
+    data
+  );
+
+  element.turnout1Address = numberValue(
+    data.turnout1Address,
+    element.turnout1Address
+  );
+
+  element.turnout2Address = numberValue(
+    data.turnout2Address,
+    element.turnout2Address
+  );
+
+  return element;
+}
+
 function createBlockElement(
   data: SerializedLayoutElementDto
 ): BlockElement {
@@ -410,7 +436,8 @@ function createSignalElement(
 
 export type TopologyTurnoutElement =
   | TrackTurnoutLeftElement
-  | TrackTurnoutRightElement;
+  | TrackTurnoutRightElement
+  | TrackTurnoutDoubleElement;
 
 export type TopologyTrackElement =
   | TrackStraightElement
@@ -433,7 +460,8 @@ export function isTopologyTurnoutElement(
 ): element is TopologyTurnoutElement {
   return (
     element instanceof TrackTurnoutLeftElement ||
-    element instanceof TrackTurnoutRightElement
+    element instanceof TrackTurnoutRightElement ||
+    element instanceof TrackTurnoutDoubleElement
   );
 }
 
@@ -563,6 +591,9 @@ function createTopologyElement(
 
     case ELEMENT_TYPES.TRACK_TURNOUT_RIGHT:
       return createTurnoutRightElement(data);
+
+    case ELEMENT_TYPES.TRACK_TURNOUT_DOUBLE:
+      return createTurnoutDoubleElement(data);
 
     case ELEMENT_TYPES.TRACK_BLOCK:
       return createBlockElement(data);
