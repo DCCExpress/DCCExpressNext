@@ -22,6 +22,11 @@ import type {
 } from "./layout/layoutDto.js";
 
 import type {
+  LevelCrossingResponsePayload,
+  LevelCrossingRuntimeStateDto,
+} from "./levelCrossingLogic.js";
+
+import type {
   RouteGraphResponseDto,
 } from "./railway/routeGraphDto.js";
 
@@ -140,6 +145,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "appSettingsCommand",
   "signalLogicCommand",
   "blockAutomationCommand",
+  "levelCrossingCommand",
   "taskManagerCommand",
   "fastClockCommand",
   "fileCommand",
@@ -335,6 +341,8 @@ export type ServerWsPayloadMap = {
   signalLogicResponse: SignalLogicResponsePayload;
   signalLogicStateChanged: SignalLogicRuntimeStateDto;
   blockAutomationResponse: BlockAutomationResponsePayload;
+  levelCrossingResponse: LevelCrossingResponsePayload;
+  levelCrossingStateChanged: LevelCrossingRuntimeStateDto;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
 
