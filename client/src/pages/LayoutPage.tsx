@@ -57,6 +57,16 @@ export default function LayoutPage({
     setRequestedSignalLogicAddress,
   ] = useState<number | null>(null);
 
+  const [
+    levelCrossingLogicDialogOpened,
+    setLevelCrossingLogicDialogOpened,
+  ] = useState(false);
+
+  const [
+    requestedLevelCrossingElementId,
+    setRequestedLevelCrossingElementId,
+  ] = useState<string | null>(null);
+
   const [locos, setLocos] =
     useState<Loco[]>([]);
 
@@ -243,6 +253,11 @@ export default function LayoutPage({
     setBlockActionsDialogOpened(true);
   };
 
+  const openLevelCrossingLogicDialogForElement = (elementId: string): void => {
+    setRequestedLevelCrossingElementId(elementId);
+    setLevelCrossingLogicDialogOpened(true);
+  };
+
   const prepareSignalLogicRuleGroup = async (
     signalAddress: number
   ): Promise<void> => {
@@ -369,6 +384,21 @@ export default function LayoutPage({
       }
       onOpenSignalLogicForSignal={
         openSignalLogicDialogForSignal
+      }
+      levelCrossingLogicDialogOpened={
+        levelCrossingLogicDialogOpened
+      }
+      setLevelCrossingLogicDialogOpened={
+        setLevelCrossingLogicDialogOpened
+      }
+      requestedLevelCrossingElementId={
+        requestedLevelCrossingElementId
+      }
+      onRequestedLevelCrossingElementIdConsumed={() =>
+        setRequestedLevelCrossingElementId(null)
+      }
+      onOpenLevelCrossingLogicForElement={
+        openLevelCrossingLogicDialogForElement
       }
       onLocosSaved={loadLocos}
       pickerOpened={pickerOpened}
