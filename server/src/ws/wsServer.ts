@@ -150,6 +150,7 @@ function canHandleWithoutCommandCenter(type: string): boolean {
     type === "appSettingsCommand" ||
     type === "signalLogicCommand" ||
     type === "blockAutomationCommand" ||
+    type === "levelCrossingCommand" ||
     type === "taskManagerCommand" ||
     type === "fastClockCommand" ||
     type === "fileCommand"
