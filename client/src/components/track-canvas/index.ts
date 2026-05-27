@@ -22,12 +22,14 @@ export * from "./trackCanvasMouseDown";
 export * from "./trackCanvasMouseMove";
 export * from "./trackCanvasWheel";
 
-// Routes and signals
+// Routes, signals and turnout popovers
 export * from "./trackCanvasRouteActions";
 export * from "./trackCanvasSignalAspect";
 export * from "./trackCanvasSignalPopoverState";
+export * from "./trackCanvasDoubleTurnoutPopoverState";
 
 // UI
 export * from "./TrackCanvasAudioListPopover";
 export * from "./TrackCanvasBlockLocoPicker";
 export * from "./TrackCanvasSignalAspectPopover";
+export * from "./TrackCanvasDoubleTurnoutPopover";
