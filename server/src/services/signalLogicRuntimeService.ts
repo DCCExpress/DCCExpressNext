@@ -36,6 +36,10 @@ import {
   signalLogicRulesStore,
 } from "./signalLogicRulesStore.js";
 
+import type {
+  AutomationRuntimeModule,
+} from "./automationRuntimeService.js";
+
 type BroadcastFn = (
   message: TypedServerWsMessage
 ) => void;
@@ -51,12 +55,11 @@ type SignalLogicEvaluationContext = {
   sensors: Map<number, boolean>;
 };
 
-const SIGNAL_LOGIC_TICK_MS = 500;
+class SignalLogicRuntimeService implements AutomationRuntimeModule {
+  readonly id = "signalLogic";
+  readonly name = "Signal logic";
 
-class SignalLogicRuntimeService {
   private running = false;
-  private tickTimer: ReturnType<typeof setTimeout> | null = null;
-  private tickInProgress = false;
   private configured = false;
   private autoStartAttempted = false;
   private getCommandCenter: () => CommandCenter | null = () => null;
@@ -75,6 +78,10 @@ class SignalLogicRuntimeService {
     this.configured = true;
   }
 
+  isEnabled(): boolean {
+    return this.running;
+  }
+
   async getState(): Promise<SignalLogicRuntimeStateDto> {
     await signalLogicRulesStore.initialize();
     const document = signalLogicRulesStore.getDocument();
@@ -91,7 +98,7 @@ class SignalLogicRuntimeService {
     const document = signalLogicRulesStore.getDocument();
 
     if (!document.autostart) {
-      log("[SignalLogicRuntime] autostart disabled");
+      log("[SignalLogicAutomation] autostart disabled");
       return this.getState();
     }
 
@@ -104,28 +111,28 @@ class SignalLogicRuntimeService {
     }
 
     if (!this.configured) {
-      log("[SignalLogicRuntime] autostart skipped: runtime is not configured");
+      log("[SignalLogicAutomation] autostart skipped: automation is not configured");
       return this.getState();
     }
 
     if (!layoutRuntimeStore.hasLayout()) {
-      log("[SignalLogicRuntime] autostart skipped: no layout loaded");
+      log("[SignalLogicAutomation] autostart skipped: no layout loaded");
       return this.getState();
     }
 
     if (!railwayTopologyStore.hasTopology()) {
-      log("[SignalLogicRuntime] autostart skipped: no topology available");
+      log("[SignalLogicAutomation] autostart skipped: no topology available");
       return this.getState();
     }
 
     if (!this.getCommandCenter()) {
-      log("[SignalLogicRuntime] autostart skipped: no command center available");
+      log("[SignalLogicAutomation] autostart skipped: no command center available");
       return this.getState();
     }
 
     this.autoStartAttempted = true;
 
-    log("[SignalLogicRuntime] autostart enabled, starting");
+    log("[SignalLogicAutomation] autostart enabled");
 
     return this.start();
   }
@@ -134,7 +141,7 @@ class SignalLogicRuntimeService {
     await signalLogicRulesStore.initialize();
 
     if (!this.configured) {
-      throw new Error("Signal logic runtime is not configured.");
+      throw new Error("Signal logic automation is not configured.");
     }
 
     if (this.running) {
@@ -144,9 +151,8 @@ class SignalLogicRuntimeService {
     this.running = true;
     this.lastAppliedAspects.clear();
 
-    log("[SignalLogicRuntime] started");
+    log("[SignalLogicAutomation] enabled");
 
-    this.scheduleNextTick(0);
     await this.broadcastState();
 
     return this.getState();
@@ -158,59 +164,23 @@ class SignalLogicRuntimeService {
     }
 
     this.running = false;
-    this.clearTickTimer();
-    this.tickInProgress = false;
 
-    log("[SignalLogicRuntime] stopped");
+    log("[SignalLogicAutomation] disabled");
 
     await this.broadcastState();
 
     return this.getState();
   }
 
-  private clearTickTimer(): void {
-    if (!this.tickTimer) {
-      return;
-    }
-
-    clearTimeout(this.tickTimer);
-    this.tickTimer = null;
-  }
-
-  private scheduleNextTick(delayMs = SIGNAL_LOGIC_TICK_MS): void {
-    this.clearTickTimer();
-
+  async evaluateOnce(_nowMs = Date.now()): Promise<void> {
     if (!this.running) {
       return;
     }
 
-    this.tickTimer = setTimeout(() => {
-      void this.tick();
-    }, delayMs);
-  }
-
-  private async tick(): Promise<void> {
-    if (!this.running || this.tickInProgress) {
-      return;
-    }
-
-    this.tickInProgress = true;
-
-    try {
-      await this.evaluateOnce();
-    } catch (error) {
-      logError("[SignalLogicRuntime] tick failed:", error);
-    } finally {
-      this.tickInProgress = false;
-      this.scheduleNextTick();
-    }
-  }
-
-  private async evaluateOnce(): Promise<void> {
     const commandCenter = this.getCommandCenter();
 
     if (!commandCenter) {
-      log("[SignalLogicRuntime] no command center available, skipping tick");
+      log("[SignalLogicAutomation] no command center available, skipping tick");
       return;
     }
 
@@ -318,7 +288,7 @@ class SignalLogicRuntimeService {
       );
     } catch (error) {
       logError(
-        `[SignalLogicRuntime] failed to set signal #${signalAddress} to ${aspect}:`,
+        `[SignalLogicAutomation] failed to set signal #${signalAddress} to ${aspect}:`,
         error
       );
       return;
@@ -327,7 +297,7 @@ class SignalLogicRuntimeService {
     this.lastAppliedAspects.set(signalAddress, aspect);
 
     log(
-      `[SignalLogicRuntime] signal #${signalAddress} => ${aspect}`
+      `[SignalLogicAutomation] signal #${signalAddress} => ${aspect}`
     );
   }
 
