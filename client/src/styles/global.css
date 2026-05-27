@@ -73,12 +73,6 @@
   animation: homeGlowFloatAmber 6s ease-in-out infinite;
 }
 
-.mantine-Modal-content:has(textarea[readonly]) button:has(svg.tabler-icon-player-play),
-.mantine-Modal-content:has(textarea[readonly]) button:has(svg.tabler-icon-player-stop),
-.mantine-Modal-content:has(textarea[readonly]) .mantine-Checkbox-root {
-  display: none !important;
-}
-
 @keyframes blinkBadge {
   0% {
     opacity: 1;
