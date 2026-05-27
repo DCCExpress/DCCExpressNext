@@ -13,12 +13,14 @@ import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor"
 import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
 import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
+import { TrackLevelCrossingElementView } from "../models/editor/elements/TrackLevelCrossingElementView";
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { useRouteGraph } from "../hooks/useRouteGraph";
 import { wsApi } from "../services/wsApi";
 import { getGraphBlockSelectData } from "../services/routeGraphUi";
 import BlockActionsPanel from "./property-panel/BlockActionsPanel";
 import ExtendedRouteActions from "./property-panel/ExtendedRouteActions";
+import LevelCrossingAutomationPanel from "./property-panel/LevelCrossingAutomationPanel";
 import PropertyFieldRenderer from "./property-panel/PropertyFieldRenderer";
 import PropertyPanelHelp from "./property-panel/PropertyPanelHelp";
 import SignalLogicPanel from "./property-panel/SignalLogicPanel";
@@ -364,6 +366,12 @@ export default function RightPropertyPanel({
             onRefreshRouteGraph={refreshExtendedRouteGraph}
             onTestRoute={handleTestExtendedRoute}
             onReleaseRoute={handleReleaseExtendedRoute}
+          />
+        )}
+
+        {selectedElement instanceof TrackLevelCrossingElementView && (
+          <LevelCrossingAutomationPanel
+            selectedElement={selectedElement}
           />
         )}
 
