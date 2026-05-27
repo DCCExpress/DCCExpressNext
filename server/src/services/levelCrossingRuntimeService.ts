@@ -1,4 +1,5 @@
 import type {
+  LevelCrossingAccessoryAction,
   LevelCrossingConditionValue,
   LevelCrossingEvaluationContext,
   LevelCrossingLogic,
@@ -18,6 +19,7 @@ export type LevelCrossingRuntimeDataProvider = {
   getSensorActive: (sensorAddress: number) => LevelCrossingConditionValue;
   getBlockOccupied: (blockId: string) => LevelCrossingConditionValue;
   getRouteReserved: (fromBlockId?: string, toBlockId?: string) => LevelCrossingConditionValue;
+  getAccessoryActive?: (address: number) => LevelCrossingConditionValue;
 };
 
 export type LevelCrossingRuntimeActionSink = {
@@ -99,6 +101,8 @@ export class LevelCrossingRuntimeService {
 
   private async evaluateLogic(logic: LevelCrossingLogic, nowMs: number): Promise<void> {
     const entry = this.getOrCreateEntry(logic, nowMs);
+    this.syncEntryFromAccessoryFeedback(logic, entry, nowMs);
+
     const context: LevelCrossingEvaluationContext = {
       getSensorActive: this.dataProvider.getSensorActive,
       getBlockOccupied: this.dataProvider.getBlockOccupied,
@@ -139,6 +143,61 @@ export class LevelCrossingRuntimeService {
     if (nowMs - entry.pendingSinceMs >= logic.openDelayMs) {
       await this.applyState(logic, entry, "open", nowMs);
     }
+  }
+
+  private syncEntryFromAccessoryFeedback(
+    logic: LevelCrossingLogic,
+    entry: RuntimeEntryInternal,
+    nowMs: number
+  ): void {
+    const closed = this.getPhysicalClosedStateFromAccessory(logic);
+
+    if (closed === "unknown" || closed === null) {
+      return;
+    }
+
+    const physicalState: LevelCrossingRuntimeState = closed
+      ? "closed"
+      : "open";
+
+    if (entry.state === physicalState) {
+      return;
+    }
+
+    entry.state = physicalState;
+    entry.lastChangedAtMs = nowMs;
+    entry.closedSinceMs = physicalState === "closed"
+      ? nowMs
+      : null;
+    entry.pendingState = null;
+    entry.pendingSinceMs = null;
+  }
+
+  private getPhysicalClosedStateFromAccessory(
+    logic: LevelCrossingLogic
+  ): boolean | "unknown" | null {
+    const getAccessoryActive = this.dataProvider.getAccessoryActive;
+
+    if (!getAccessoryActive) {
+      return null;
+    }
+
+    const action = logic.actions.find(
+      (item): item is LevelCrossingAccessoryAction =>
+        item.type === "setAccessory" && item.address > 0
+    );
+
+    if (!action) {
+      return null;
+    }
+
+    const active = getAccessoryActive(action.address);
+
+    if (active === "unknown") {
+      return "unknown";
+    }
+
+    return active === action.activeWhenClosed;
   }
 
   private async applyState(
