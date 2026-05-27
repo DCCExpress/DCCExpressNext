@@ -694,22 +694,23 @@ export class RouteGraphBuilder {
     enteredSide: TurnoutSide
   ): TurnoutExit[] {
     if (turnout instanceof TrackTurnoutDoubleElement) {
-      return turnout
-        .getOppositeRoutesFromSide(enteredSide as any)
-        .map(route => {
-          const exitSide =
-            turnout.getRouteExitSide(route, enteredSide as any);
+      const exits: TurnoutExit[] = [];
 
-          if (!exitSide) {
-            return null;
-          }
+      for (const route of turnout.getOppositeRoutesFromSide(enteredSide as any)) {
+        const exitSide =
+          turnout.getRouteExitSide(route, enteredSide as any);
 
-          return {
-            exitSide,
-            turnoutStates: [...route.turnoutStates],
-          };
-        })
-        .filter((exit): exit is TurnoutExit => exit !== null);
+        if (!exitSide) {
+          continue;
+        }
+
+        exits.push({
+          exitSide,
+          turnoutStates: [...route.turnoutStates],
+        });
+      }
+
+      return exits;
     }
 
     const straightState: TurnoutStateRequirement = {
