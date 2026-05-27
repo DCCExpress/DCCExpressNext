@@ -25,6 +25,8 @@ import type {
   TrackSignalElementView,
 } from "../../models/editor/elements/TrackSignalElementView";
 
+import type TrackTurnoutDoubleElementView from "../../models/editor/elements/TrackTurnoutDoubleElementView";
+
 import type {
   EditorTool,
 } from "../../models/editor/types/EditorTypes";
@@ -113,7 +115,6 @@ export type SelectionState = {
   startGridX: number;
   startGridY: number;
   endGridX: number;
-  endGridY: number;
 };
 
 export type SignalAspectValue = 1 | 2 | 3 | 4;
@@ -124,6 +125,13 @@ export type SignalAspectPopoverState = {
   y: number;
   signal: TrackSignalElementView | null;
   previews: SignalAspectPreviews | null;
+};
+
+export type DoubleTurnoutPopoverState = {
+  opened: boolean;
+  x: number;
+  y: number;
+  turnout: TrackTurnoutDoubleElementView | null;
 };
 
 export type AudioListPopoverState = {
