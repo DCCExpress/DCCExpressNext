@@ -2,6 +2,7 @@
 
 import type {
   AppSettingsCommandAction,
+  AutomationCommandAction,
   BlockAutomationCommandAction,
   ClientWsMessageType,
   ClientWsMessageUnion,
@@ -11,6 +12,7 @@ import type {
   FastClockCommandAction,
   FileCommandAction,
   LayoutCommandAction,
+  LevelCrossingCommandAction,
   LocosCommandAction,
   ReservationOwnerType,
   ScriptDocumentCommandAction,
@@ -91,6 +93,26 @@ function isBlockAutomationCommandAction(value: unknown): value is BlockAutomatio
   );
 }
 
+function isLevelCrossingCommandAction(value: unknown): value is LevelCrossingCommandAction {
+  return (
+    value === "load" ||
+    value === "save" ||
+    value === "start" ||
+    value === "stop" ||
+    value === "snapshot" ||
+    value === "evaluateOnce"
+  );
+}
+
+function isAutomationCommandAction(value: unknown): value is AutomationCommandAction {
+  return (
+    value === "snapshot" ||
+    value === "start" ||
+    value === "stop" ||
+    value === "evaluateOnce"
+  );
+}
+
 function isTaskManagerCommandAction(value: unknown): value is TaskManagerCommandAction {
   return (
     value === "snapshot" || value === "add" || value === "update" || value === "delete" ||
@@ -132,7 +154,7 @@ function parseTaskManagerCommand<TType extends ClientWsMessageType>(type: TType,
         action: data.action,
         locoId: data.locoId,
         hook: data.hook,
-      } as unknown as ClientWsPayloadMap[TType],
+      } as unknown as ClientWsPayloadMap<TType>,
     };
   }
 
@@ -151,7 +173,7 @@ function parseTaskManagerCommand<TType extends ClientWsMessageType>(type: TType,
         hook: data.hook,
         actions: data.actions,
         ...(typeof data.blockName === "string" ? { blockName: data.blockName } : {}),
-      } as unknown as ClientWsPayloadMap[TType],
+      } as unknown as ClientWsPayloadMap<TType>,
     };
   }
 
@@ -172,7 +194,7 @@ function parseTaskManagerCommand<TType extends ClientWsMessageType>(type: TType,
       action: data.action,
       ...(typeof data.taskId === "string" ? { taskId: data.taskId } : {}),
       ...(isRecord(data.input) ? { input: data.input } : {}),
-    } as ClientWsPayloadMap[TType],
+    } as ClientWsPayloadMap<TType>,
   };
 }
 
@@ -182,7 +204,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
     case "setProgrammingPower": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.on !== "boolean") return invalidPayload(type, "on must be boolean.");
-      return { ok: true, data: { on: data.on } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { on: data.on } as ClientWsPayloadMap<TType> };
     }
 
     case "emergencyStop":
@@ -204,7 +226,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
     case "writeDccExDirectCommand": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.command !== "string") return invalidPayload(type, "command must be string.");
-      return { ok: true, data: { command: data.command } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { command: data.command } as ClientWsPayloadMap<TType> };
     }
 
     case "setLoco": {
@@ -212,13 +234,13 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.locoAddress !== "number") return invalidPayload(type, "locoAddress must be number.");
       if (typeof data.speed !== "number") return invalidPayload(type, "speed must be number.");
       if (!isDirection(data.direction)) return invalidPayload(type, "direction must be forward or reverse.");
-      return { ok: true, data: { locoAddress: data.locoAddress, speed: data.speed, direction: data.direction } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { locoAddress: data.locoAddress, speed: data.speed, direction: data.direction } as ClientWsPayloadMap<TType> };
     }
 
     case "getLoco": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.locoAddress !== "number") return invalidPayload(type, "locoAddress must be number.");
-      return { ok: true, data: { locoAddress: data.locoAddress } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { locoAddress: data.locoAddress } as ClientWsPayloadMap<TType> };
     }
 
     case "setLocoFunction": {
@@ -226,7 +248,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.locoAddress !== "number") return invalidPayload(type, "locoAddress must be number.");
       if (typeof data.functionNumber !== "number") return invalidPayload(type, "functionNumber must be number.");
       if (typeof data.active !== "boolean") return invalidPayload(type, "active must be boolean.");
-      return { ok: true, data: { locoAddress: data.locoAddress, functionNumber: data.functionNumber, active: data.active } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { locoAddress: data.locoAddress, functionNumber: data.functionNumber, active: data.active } as ClientWsPayloadMap<TType> };
     }
 
     case "reserveLoco": {
@@ -236,35 +258,35 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (!isReservationOwnerType(data.ownerType)) return invalidPayload(type, "ownerType must be task, client or system.");
       if (data.ownerName !== undefined && typeof data.ownerName !== "string") return invalidPayload(type, "ownerName must be string when present.");
       if (data.reason !== undefined && typeof data.reason !== "string") return invalidPayload(type, "reason must be string when present.");
-      return { ok: true, data: { locoAddress: data.locoAddress, ownerId: data.ownerId, ownerType: data.ownerType, ...(typeof data.ownerName === "string" ? { ownerName: data.ownerName } : {}), ...(typeof data.reason === "string" ? { reason: data.reason } : {}) } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { locoAddress: data.locoAddress, ownerId: data.ownerId, ownerType: data.ownerType, ...(typeof data.ownerName === "string" ? { ownerName: data.ownerName } : {}), ...(typeof data.reason === "string" ? { reason: data.reason } : {}) } as ClientWsPayloadMap<TType> };
     }
 
     case "releaseLocoReservation": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.locoAddress !== "number") return invalidPayload(type, "locoAddress must be number.");
       if (typeof data.ownerId !== "string") return invalidPayload(type, "ownerId must be string.");
-      return { ok: true, data: { locoAddress: data.locoAddress, ownerId: data.ownerId } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { locoAddress: data.locoAddress, ownerId: data.ownerId } as ClientWsPayloadMap<TType> };
     }
 
     case "setTurnout": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.address !== "number") return invalidPayload(type, "address must be number.");
       if (typeof data.closed !== "boolean") return invalidPayload(type, "closed must be boolean.");
-      return { ok: true, data: { address: data.address, closed: data.closed } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { address: data.address, closed: data.closed } as ClientWsPayloadMap<TType> };
     }
 
     case "setSensor": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.address !== "number") return invalidPayload(type, "address must be number.");
       if (typeof data.on !== "boolean") return invalidPayload(type, "on must be boolean.");
-      return { ok: true, data: { address: data.address, on: data.on } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { address: data.address, on: data.on } as ClientWsPayloadMap<TType> };
     }
 
     case "setBasicAccessory": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.address !== "number") return invalidPayload(type, "address must be number.");
       if (typeof data.active !== "boolean") return invalidPayload(type, "active must be boolean.");
-      return { ok: true, data: { address: data.address, active: data.active } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { address: data.address, active: data.active } as ClientWsPayloadMap<TType> };
     }
 
     case "setBlock":
@@ -272,7 +294,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.blockId !== "string") return invalidPayload(type, "blockId must be string.");
       if (data.locoId !== null && typeof data.locoId !== "string") return invalidPayload(type, "locoId must be string or null.");
-      return { ok: true, data: { blockId: data.blockId, locoId: data.locoId } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { blockId: data.blockId, locoId: data.locoId } as ClientWsPayloadMap<TType> };
     }
 
     case "reserveRoute":
@@ -280,7 +302,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.fromBlockName !== "string") return invalidPayload(type, "fromBlockName must be string.");
       if (typeof data.toBlockName !== "string") return invalidPayload(type, "toBlockName must be string.");
-      return { ok: true, data: { fromBlockName: data.fromBlockName, toBlockName: data.toBlockName } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { fromBlockName: data.fromBlockName, toBlockName: data.toBlockName } as ClientWsPayloadMap<TType> };
     }
 
     case "layoutCommand": {
@@ -288,7 +310,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isLayoutCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if ((data.action === "save" || data.action === "refreshRuntime") && !isRecord(data.layout)) return invalidPayload(type, "layout must be an object for save and refreshRuntime.");
-      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.layout) ? { layout: data.layout } : {}) } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.layout) ? { layout: data.layout } : {}) } as ClientWsPayloadMap<TType> };
     }
 
     case "locosCommand": {
@@ -296,7 +318,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isLocosCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (data.action === "save" && !Array.isArray(data.locos)) return invalidPayload(type, "locos must be an array for save.");
-      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(Array.isArray(data.locos) ? { locos: data.locos } : {}) } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(Array.isArray(data.locos) ? { locos: data.locos } : {}) } as ClientWsPayloadMap<TType> };
     }
 
     case "scriptDocumentCommand": {
@@ -308,7 +330,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
         if (data.document.content !== undefined && typeof data.document.content !== "string") return invalidPayload(type, "document.content must be string when present.");
         if (data.document.autoStart !== undefined && typeof data.document.autoStart !== "boolean") return invalidPayload(type, "document.autoStart must be boolean when present.");
       }
-      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.document) ? { document: data.document } : {}) } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.document) ? { document: data.document } : {}) } as ClientWsPayloadMap<TType> };
     }
 
     case "commandCenterConfigCommand": {
@@ -316,7 +338,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isCommandCenterConfigCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (data.action === "save" && !isRecord(data.config)) return invalidPayload(type, "config must be an object for save.");
-      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.config) ? { config: data.config } : {}) } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.config) ? { config: data.config } : {}) } as ClientWsPayloadMap<TType> };
     }
 
     case "appSettingsCommand": {
@@ -324,7 +346,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isAppSettingsCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (data.action === "save" && !isRecord(data.settings)) return invalidPayload(type, "settings must be an object for save.");
-      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.settings) ? { settings: data.settings } : {}) } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(isRecord(data.settings) ? { settings: data.settings } : {}) } as ClientWsPayloadMap<TType> };
     }
 
     case "signalLogicCommand": {
@@ -340,7 +362,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
           action: data.action,
           ...(isRecord(data.document) ? { document: data.document } : {}),
           ...(Array.isArray(data.signalAddresses) ? { signalAddresses: data.signalAddresses.filter((address): address is number => typeof address === "number") } : {}),
-        } as ClientWsPayloadMap[TType],
+        } as ClientWsPayloadMap<TType>,
       };
     }
 
@@ -357,7 +379,35 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
           action: data.action,
           ...(isRecord(data.document) ? { document: data.document } : {}),
           ...(Array.isArray(data.blockIds) ? { blockIds: data.blockIds.filter((blockId): blockId is string => typeof blockId === "string") } : {}),
-        } as ClientWsPayloadMap[TType],
+        } as ClientWsPayloadMap<TType>,
+      };
+    }
+
+    case "levelCrossingCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isLevelCrossingCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+      if (data.action === "save" && !isRecord(data.document)) return invalidPayload(type, "document must be an object for save.");
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+          ...(isRecord(data.document) ? { document: data.document } : {}),
+        } as ClientWsPayloadMap<TType>,
+      };
+    }
+
+    case "automationCommand": {
+      if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
+      if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
+      if (!isAutomationCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
+      return {
+        ok: true,
+        data: {
+          requestId: data.requestId,
+          action: data.action,
+        } as ClientWsPayloadMap<TType>,
       };
     }
 
@@ -369,7 +419,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (typeof data.requestId !== "string" || data.requestId.trim().length === 0) return invalidPayload(type, "requestId must be string.");
       if (!isFastClockCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (data.action === "setSpeed" && (typeof data.speed !== "number" || !Number.isFinite(data.speed) || data.speed < 1)) return invalidPayload(type, "speed must be a number greater than or equal to 1.");
-      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(typeof data.speed === "number" ? { speed: data.speed } : {}) } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { requestId: data.requestId, action: data.action, ...(typeof data.speed === "number" ? { speed: data.speed } : {}) } as ClientWsPayloadMap<TType> };
     }
 
     case "fileCommand": {
@@ -378,7 +428,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (!isFileCommandAction(data.action)) return invalidPayload(type, "action is invalid.");
       if (typeof data.fileName !== "string" || data.fileName.trim().length === 0) return invalidPayload(type, "fileName must be string.");
       if (data.action === "writeText" && typeof data.content !== "string") return invalidPayload(type, "content must be string for writeText.");
-      return { ok: true, data: { requestId: data.requestId, action: data.action, fileName: data.fileName, ...(typeof data.content === "string" ? { content: data.content } : {}), ...(data.data !== undefined ? { data: data.data } : {}) } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { requestId: data.requestId, action: data.action, fileName: data.fileName, ...(typeof data.content === "string" ? { content: data.content } : {}), ...(data.data !== undefined ? { data: data.data } : {}) } as ClientWsPayloadMap<TType> };
     }
 
     case "runScript": {
@@ -386,7 +436,7 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
       if (data.script !== undefined && typeof data.script !== "string") return invalidPayload(type, "script must be string when present.");
       if (!isScriptRunSource(data.source)) return invalidPayload(type, "source must be a supported ScriptRunSource.");
       if (data.elementId !== null && typeof data.elementId !== "string") return invalidPayload(type, "elementId must be string or null.");
-      return { ok: true, data: { ...(typeof data.script === "string" ? { script: data.script } : {}), source: data.source, elementId: data.elementId } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { ...(typeof data.script === "string" ? { script: data.script } : {}), source: data.source, elementId: data.elementId } as ClientWsPayloadMap<TType> };
     }
 
     case "startTask":
@@ -396,20 +446,20 @@ function parsePayload<TType extends ClientWsMessageType>(type: TType, data: unkn
     case "resumeTask": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.taskIdOrName !== "string") return invalidPayload(type, "taskIdOrName must be string.");
-      return { ok: true, data: { taskIdOrName: data.taskIdOrName } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { taskIdOrName: data.taskIdOrName } as ClientWsPayloadMap<TType> };
     }
 
     case "setRuntimeVariable": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (!isRuntimeVariableKey(data.key)) return invalidPayload(type, "key must be a known runtime variable.");
       if (data.key === "editor.editMode" && typeof data.value !== "boolean") return invalidPayload(type, "editor.editMode value must be boolean.");
-      return { ok: true, data: { key: data.key, value: data.value } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { key: data.key, value: data.value } as ClientWsPayloadMap<TType> };
     }
 
     case "setEditorEditMode": {
       if (!isRecord(data)) return invalidPayload(type, "data must be an object.");
       if (typeof data.editMode !== "boolean") return invalidPayload(type, "editMode must be boolean.");
-      return { ok: true, data: { editMode: data.editMode } as ClientWsPayloadMap[TType] };
+      return { ok: true, data: { editMode: data.editMode } as ClientWsPayloadMap<TType> };
     }
 
     default:
