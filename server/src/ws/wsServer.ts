@@ -43,6 +43,10 @@ import {
 } from "../services/scriptRuntimeStore.js";
 
 import {
+  automationRuntimeService,
+} from "../services/automationRuntimeService.js";
+
+import {
   signalLogicRuntimeService,
 } from "../services/signalLogicRuntimeService.js";
 
@@ -184,6 +188,10 @@ async function initializeWebSocketRuntimeStores(): Promise<void> {
   await taskRuntimeStore.initialize();
 
   await signalLogicRuntimeService.autoStartIfEnabled();
+
+  if ((await automationRuntimeService.getState()).modules.some(module => module.enabled)) {
+    await automationRuntimeService.start();
+  }
 
   await scriptRuntimeStore.initialize();
   await scriptRuntimeStore.autoStartIfEnabled();
