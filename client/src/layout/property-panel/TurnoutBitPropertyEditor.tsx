@@ -1,4 +1,4 @@
-import { Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Box, Group, Stack, Text } from "@mantine/core";
 
 import BitToggleElement from "../../components/editor/BitToggleElement";
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
@@ -94,36 +94,45 @@ function setDoubleTurnoutPosition(
   );
 }
 
+function createClosedValueProperty(
+  label: string,
+  key: "turnout1ClosedValue" | "turnout2ClosedValue"
+): IEditableProperty {
+  return {
+    label,
+    key,
+    type: "bittoggle",
+    readonly: false,
+    validate: () => true,
+  };
+}
+
 function renderDoubleTurnoutEditor(
   selectedElement: TrackTurnoutDoubleElementView,
   onChange: PropertyChangeHandler
 ) {
-  const firstClosedValueProperty: IEditableProperty = {
-    label: "Turnout 1 Closed Value",
-    key: "turnout1ClosedValue",
-    type: "bittoggle",
-    readonly: false,
-    validate: () => true,
-  };
+  const firstClosedValueProperty = createClosedValueProperty(
+    "Turnout 1 Closed Value",
+    "turnout1ClosedValue"
+  );
 
-  const secondClosedValueProperty: IEditableProperty = {
-    label: "Turnout 2 Closed Value",
-    key: "turnout2ClosedValue",
-    type: "bittoggle",
-    readonly: false,
-    validate: () => true,
-  };
+  const secondClosedValueProperty = createClosedValueProperty(
+    "Turnout 2 Closed Value",
+    "turnout2ClosedValue"
+  );
 
   return (
     <Stack gap="xs">
       <Text size="sm" fw={500}>Double turnout positions</Text>
 
-      <SimpleGrid cols={2} spacing="xs">
-        {DOUBLE_TURNOUT_POSITIONS.map(position => (
-          <Box
-            key={position.label}
-            className="route-turnout-preview-button"
-          >
+      {DOUBLE_TURNOUT_POSITIONS.map(position => (
+        <Group
+          key={position.label}
+          justify="space-between"
+          align="center"
+          wrap="nowrap"
+        >
+          <Box className="route-turnout-preview-button">
             <ElementPreview
               element={createDoubleTurnoutPreview(
                 selectedElement,
@@ -141,36 +150,19 @@ function renderDoubleTurnoutEditor(
               }}
             />
           </Box>
-        ))}
-      </SimpleGrid>
 
-      <Group justify="space-between" align="center" wrap="nowrap">
-        <Text size="sm" fw={500}>Turnout 1 Closed Value</Text>
-        <Group gap="xs" wrap="nowrap">
-          <BitToggleElement
-            value={selectedElement.turnout1ClosedValue}
-            onChange={value => onChange(firstClosedValueProperty, value)}
-          />
-          <BitToggleElement
-            value={!selectedElement.turnout1ClosedValue}
-            onChange={value => onChange(firstClosedValueProperty, !value)}
-          />
+          <Group gap="xs" wrap="nowrap">
+            <BitToggleElement
+              value={position.firstClosed}
+              onChange={value => onChange(firstClosedValueProperty, value)}
+            />
+            <BitToggleElement
+              value={position.secondClosed}
+              onChange={value => onChange(secondClosedValueProperty, value)}
+            />
+          </Group>
         </Group>
-      </Group>
-
-      <Group justify="space-between" align="center" wrap="nowrap">
-        <Text size="sm" fw={500}>Turnout 2 Closed Value</Text>
-        <Group gap="xs" wrap="nowrap">
-          <BitToggleElement
-            value={selectedElement.turnout2ClosedValue}
-            onChange={value => onChange(secondClosedValueProperty, value)}
-          />
-          <BitToggleElement
-            value={!selectedElement.turnout2ClosedValue}
-            onChange={value => onChange(secondClosedValueProperty, !value)}
-          />
-        </Group>
-      </Group>
+      ))}
     </Stack>
   );
 }
