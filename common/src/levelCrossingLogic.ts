@@ -288,8 +288,12 @@ function normalizeCondition(input: unknown, fallbackId: string): LevelCrossingCo
   const raw = isRecord(input) ? input : {};
   const id = getNonEmptyString(raw.id, fallbackId);
   const label = getOptionalNonEmptyString(raw.label);
-  const operator = raw.operator === "isNot" ? "isNot" : "is";
-  const common = label === undefined ? { id, operator } : { id, label, operator };
+  const operator: LevelCrossingConditionOperator = raw.operator === "isNot" ? "isNot" : "is";
+  const common: LevelCrossingConditionBase = {
+    id,
+    operator,
+    ...(label === undefined ? {} : { label }),
+  };
 
   if (raw.type === "block") {
     return {
