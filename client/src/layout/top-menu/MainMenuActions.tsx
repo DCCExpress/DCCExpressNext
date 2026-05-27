@@ -24,6 +24,24 @@ type MainMenuActionsProps = {
   onOpenHelp: () => void;
 };
 
+const MENU_LABELS = {
+  en: {
+    levelCrossingLogic: "Level crossing logic...",
+  },
+  hu: {
+    levelCrossingLogic: "Sorompólogika...",
+  },
+  de: {
+    levelCrossingLogic: "Bahnübergang-Logik...",
+  },
+} as const;
+
+function getMenuLabels(language: string) {
+  if (language.startsWith("hu")) return MENU_LABELS.hu;
+  if (language.startsWith("de")) return MENU_LABELS.de;
+  return MENU_LABELS.en;
+}
+
 export default function MainMenuActions({
   onGoHome,
   onOpenLocos,
@@ -37,7 +55,8 @@ export default function MainMenuActions({
   onOpenAppSettingsDialog,
   onOpenHelp,
 }: MainMenuActionsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const labels = getMenuLabels(i18n.language);
 
   const handleSaveLayout = async () => {
     try {
@@ -108,7 +127,7 @@ export default function MainMenuActions({
             {t("signalLogic.menu")}
           </Menu.Item>
           <Menu.Item onClick={onOpenLevelCrossingLogic}>
-            {t("levelCrossingLogic.menu")}
+            {labels.levelCrossingLogic}
           </Menu.Item>
           <Divider />
           <Menu.Item onClick={onOpenIntegrityCheck}>
