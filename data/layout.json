@@ -3187,8 +3187,10 @@
           "fg": "white",
           "address": 0,
           "length": 200,
-          "turnout1Address": 0,
-          "turnout2Address": 0
+          "turnout1Address": 14,
+          "turnout2Address": 15,
+          "turnout1ClosedValue": true,
+          "turnout2ClosedValue": true
         }
       ]
     }
