@@ -2757,22 +2757,6 @@
           "roadColor": "#6c757d"
         },
         {
-          "id": "9c07b8d-9718-4279-b26f-47104db9",
-          "type": "trackcrossing",
-          "name": "element",
-          "layerName": "track",
-          "x": 42,
-          "y": 7,
-          "w": 1,
-          "h": 1,
-          "rotation": 135,
-          "rotationStep": 45,
-          "bg": "black",
-          "fg": "white",
-          "address": 0,
-          "length": 200
-        },
-        {
           "id": "9adc0a7-100f-4d4b-899f-7b00b27d",
           "type": "trackstraight",
           "name": "element",
@@ -3045,22 +3029,6 @@
           "length": 200
         },
         {
-          "id": "9d0de58-8e65-458e-8fea-1d0408c4",
-          "type": "trackstraight",
-          "name": "element",
-          "layerName": "track",
-          "x": 39,
-          "y": 7,
-          "w": 1,
-          "h": 1,
-          "rotation": 0,
-          "rotationStep": 45,
-          "bg": "black",
-          "fg": "white",
-          "address": 0,
-          "length": 200
-        },
-        {
           "id": "ae08a0a-5e76-4a90-80cb-ba479a1c",
           "type": "trackstraight",
           "name": "element",
@@ -3187,6 +3155,40 @@
           "fg": "white",
           "address": 0,
           "length": 200
+        },
+        {
+          "id": "d5ee5d2-9d57-4118-a943-19b4d5c1",
+          "type": "trackdirection",
+          "name": "element",
+          "layerName": "track",
+          "x": 39,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "rotation": 0,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "address": 0,
+          "length": 200
+        },
+        {
+          "id": "b9613c8-e95e-4795-a5a3-3272897b",
+          "type": "trackturnoutdouble",
+          "name": "trackturnoutdouble",
+          "layerName": "track",
+          "x": 42,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "rotation": 135,
+          "rotationStep": 45,
+          "bg": "black",
+          "fg": "white",
+          "address": 0,
+          "length": 200,
+          "turnout1Address": 0,
+          "turnout2Address": 0
         }
       ]
     }
