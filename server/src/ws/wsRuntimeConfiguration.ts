@@ -29,8 +29,16 @@ import {
 } from "../services/serverRuntimeStatsStore.js";
 
 import {
+  automationRuntimeService,
+} from "../services/automationRuntimeService.js";
+
+import {
   signalLogicRuntimeService,
 } from "../services/signalLogicRuntimeService.js";
+
+import {
+  levelCrossingRuntimeStore,
+} from "../services/levelCrossingRuntimeStore.js";
 
 import type {
   TypedServerWsMessage,
@@ -69,6 +77,15 @@ export function configureWebSocketRuntimes({
     getCommandCenter,
     getLogicalTurnoutState,
   });
+
+  automationRuntimeService.configure({
+    broadcast: message => {
+      broadcast(message);
+    },
+  });
+
+  automationRuntimeService.register(signalLogicRuntimeService);
+  automationRuntimeService.register(levelCrossingRuntimeStore);
 
   serverRuntimeStatsStore.configure({
     broadcast: message => {
