@@ -37,6 +37,10 @@ import {
 } from "./handlers/wsBlockAutomationMessageHandlers.js";
 
 import {
+  handleLevelCrossingMessage,
+} from "./handlers/wsLevelCrossingMessageHandlers.js";
+
+import {
   handleTaskManagerMessage,
 } from "./handlers/wsTaskManagerMessageHandlers.js";
 
@@ -88,6 +92,7 @@ const handlers = [
   handleAppSettingsMessage,
   handleSignalLogicMessage,
   handleBlockAutomationMessage,
+  handleLevelCrossingMessage,
   handleTaskManagerMessage,
   handleFastClockMessage,
   handleFileMessage,
