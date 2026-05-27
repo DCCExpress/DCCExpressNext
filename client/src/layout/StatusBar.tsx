@@ -1,4 +1,5 @@
 import {
+  Checkbox,
   Divider,
   Group,
   Modal,
@@ -24,14 +25,24 @@ import {
 
 import {
   useEffect,
+  useMemo,
   useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
 
 import type {
+  AutomationModuleStatePayload,
   AutomationRuntimeStatePayload,
 } from "../../../common/src/types";
+
+import type {
+  SignalLogicRuntimeStateDto,
+} from "../../../common/src/signalLogic";
+
+import type {
+  LevelCrossingRuntimeStateDto,
+} from "../../../common/src/levelCrossingLogic";
 
 import type {
   TaskManagerSnapshot,
@@ -54,6 +65,20 @@ import {
   startAutomationRuntimeWs,
   stopAutomationRuntimeWs,
 } from "../api/automationWsApi";
+import {
+  getSignalLogicRuntimeStateWs,
+  loadSignalLogicRulesWs,
+  saveSignalLogicRulesWs,
+  startSignalLogicWs,
+  stopSignalLogicWs,
+} from "../api/signalLogicWsApi";
+import {
+  getLevelCrossingRuntimeSnapshotWs,
+  loadLevelCrossingLogicWs,
+  saveLevelCrossingLogicWs,
+  startLevelCrossingRuntimeWs,
+  stopLevelCrossingRuntimeWs,
+} from "../api/levelCrossingWsApi";
 import { isServerAudioPlaybackEnabled, subscribeServerAudioPlaybackChanged, toggleServerAudioPlaybackEnabled } from "../services/audioPlaybackSettings";
 import { scriptEngine } from "../services/scriptEngine";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
@@ -75,10 +100,27 @@ const DEFAULT_AUTOMATION_STATE: AutomationRuntimeStatePayload = {
   modules: [],
 };
 
+const DEFAULT_SIGNAL_LOGIC_STATE: SignalLogicRuntimeStateDto = {
+  running: false,
+  autostart: false,
+};
+
+const DEFAULT_LEVEL_CROSSING_STATE: LevelCrossingRuntimeStateDto = {
+  running: false,
+  autostart: false,
+  crossings: [],
+};
+
+function getModuleState(
+  automationState: AutomationRuntimeStatePayload,
+  moduleId: string
+): AutomationModuleStatePayload | undefined {
+  return automationState.modules.find(module => module.id === moduleId);
+}
+
 export default function StatusBar({
   rightPanelMode,
   setRightPanelMode,
-  onOpenSignalLogicDialog,
 }: StatusBarProps) {
   const wsStatus = useWsStatus();
   const serverStats = useServerRuntimeStats();
@@ -93,8 +135,11 @@ export default function StatusBar({
 
   const [scriptEditorOpened, setScriptEditorOpened] = useState(false);
   const [taskDialogOpened, setTaskDialogOpened] = useState(false);
+  const [automationDialogOpened, setAutomationDialogOpened] = useState(false);
   const [taskSnapshot, setTaskSnapshot] = useState<TaskManagerSnapshot | null>(null);
   const [automationState, setAutomationState] = useState<AutomationRuntimeStatePayload>(DEFAULT_AUTOMATION_STATE);
+  const [signalLogicState, setSignalLogicState] = useState<SignalLogicRuntimeStateDto>(DEFAULT_SIGNAL_LOGIC_STATE);
+  const [levelCrossingState, setLevelCrossingState] = useState<LevelCrossingRuntimeStateDto>(DEFAULT_LEVEL_CROSSING_STATE);
   const [automationBusy, setAutomationBusy] = useState(false);
   const [serverAudioEnabled, setServerAudioEnabled] = useState(() => isServerAudioPlaybackEnabled());
 
@@ -118,15 +163,51 @@ export default function StatusBar({
             : "gray";
 
   const automationIsRunning = automationState.running;
+  const automationModuleCount = automationState.modules.length;
   const enabledAutomationModules = automationState.modules.filter(module => module.enabled);
-  const automationLabel = `AUTO ${enabledAutomationModules.length}/${automationState.modules.length}`;
+  const activeAutomationModuleCount = automationIsRunning
+    ? enabledAutomationModules.length
+    : 0;
+  const automationLabel = `AUTO ${activeAutomationModuleCount}/${automationModuleCount}`;
 
   const automationBadgeColor =
     automationBusy
       ? "orange"
-      : automationIsRunning
-        ? "green"
-        : "gray";
+      : activeAutomationModuleCount === 0
+        ? "gray"
+        : activeAutomationModuleCount === automationModuleCount
+          ? "green"
+          : "orange";
+
+  const signalLogicModule = getModuleState(automationState, "signalLogic");
+  const levelCrossingModule = getModuleState(automationState, "levelCrossing");
+
+  const automationAutostart = signalLogicState.autostart || levelCrossingState.autostart;
+
+  const automationRows = useMemo(() => [
+    {
+      id: "signalLogic" as const,
+      name: "Signal logic",
+      description: "Signal control automation",
+      module: signalLogicModule,
+      autostart: signalLogicState.autostart,
+      effectiveRunning: automationIsRunning && signalLogicModule?.enabled === true,
+    },
+    {
+      id: "levelCrossing" as const,
+      name: "Level crossing supervision",
+      description: "Barrier / level crossing automation",
+      module: levelCrossingModule,
+      autostart: levelCrossingState.autostart,
+      effectiveRunning: automationIsRunning && levelCrossingModule?.enabled === true,
+    },
+  ], [
+    automationIsRunning,
+    levelCrossingModule,
+    levelCrossingState.autostart,
+    signalLogicModule,
+    signalLogicState.autostart,
+  ]);
 
   const runningTaskCount = taskSnapshot?.tasks.filter(task =>
     task.status === "running" || task.status === "finishing"
@@ -176,21 +257,44 @@ export default function StatusBar({
         ...previous,
         running: false,
       }));
+      setSignalLogicState(previous => ({
+        ...previous,
+        running: false,
+      }));
+      setLevelCrossingState(previous => ({
+        ...previous,
+        running: false,
+      }));
       return;
     }
 
-    void getAutomationRuntimeStateWs()
-      .then(result => {
-        setAutomationState(result.state);
-      })
-      .catch(error => {
-        console.error("Could not load automation runtime state:", error);
-      });
+    void refreshAutomationDashboard();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wsConnected]);
 
   useEffect(() => {
     return subscribeServerAudioPlaybackChanged(setServerAudioEnabled);
   }, []);
+
+  const refreshAutomationDashboard = async (): Promise<void> => {
+    if (!wsConnected) {
+      return;
+    }
+
+    try {
+      const [automation, signalLogic, levelCrossing] = await Promise.all([
+        getAutomationRuntimeStateWs(),
+        getSignalLogicRuntimeStateWs(),
+        getLevelCrossingRuntimeSnapshotWs(),
+      ]);
+
+      setAutomationState(automation.state);
+      setSignalLogicState(signalLogic.state);
+      setLevelCrossingState(levelCrossing);
+    } catch (error) {
+      console.error("Could not refresh automation dashboard:", error);
+    }
+  };
 
   const handleStartScript = (): void => {
     scriptEngine.runCurrent({
@@ -222,8 +326,113 @@ export default function StatusBar({
       .then(result => {
         setAutomationState(result.state);
       })
+      .then(() => refreshAutomationDashboard())
       .catch(error => {
         console.error("Could not toggle automation runtime:", error);
+      })
+      .finally(() => {
+        setAutomationBusy(false);
+      });
+  };
+
+  const handleOpenAutomation = (): void => {
+    setAutomationDialogOpened(true);
+    void refreshAutomationDashboard();
+  };
+
+  const handleToggleAutomationAutostart = (enabled: boolean): void => {
+    if (!wsConnected || automationBusy) {
+      return;
+    }
+
+    setAutomationBusy(true);
+
+    void Promise.all([
+      loadSignalLogicRulesWs().then(result =>
+        saveSignalLogicRulesWs({
+          ...result.document,
+          autostart: enabled,
+        })
+      ),
+      loadLevelCrossingLogicWs().then(document =>
+        saveLevelCrossingLogicWs({
+          ...document,
+          autostart: enabled,
+        })
+      ),
+    ])
+      .then(() => refreshAutomationDashboard())
+      .catch(error => {
+        console.error("Could not toggle automation autostart:", error);
+      })
+      .finally(() => {
+        setAutomationBusy(false);
+      });
+  };
+
+  const handleToggleAutomationModule = (
+    moduleId: "signalLogic" | "levelCrossing",
+    enabled: boolean
+  ): void => {
+    if (!wsConnected || automationBusy) {
+      return;
+    }
+
+    setAutomationBusy(true);
+
+    const request = moduleId === "signalLogic"
+      ? (enabled ? startSignalLogicWs() : stopSignalLogicWs()).then(result => {
+          setSignalLogicState(result.state);
+        })
+      : (enabled ? startLevelCrossingRuntimeWs() : stopLevelCrossingRuntimeWs()).then(result => {
+          setLevelCrossingState(result);
+        });
+
+    void request
+      .then(() => refreshAutomationDashboard())
+      .catch(error => {
+        console.error(`Could not toggle automation module ${moduleId}:`, error);
+      })
+      .finally(() => {
+        setAutomationBusy(false);
+      });
+  };
+
+  const handleToggleModuleAutostart = (
+    moduleId: "signalLogic" | "levelCrossing",
+    enabled: boolean
+  ): void => {
+    if (!wsConnected || automationBusy) {
+      return;
+    }
+
+    setAutomationBusy(true);
+
+    const request = moduleId === "signalLogic"
+      ? loadSignalLogicRulesWs().then(result =>
+          saveSignalLogicRulesWs({
+            ...result.document,
+            autostart: enabled,
+          }).then(saved => {
+            setSignalLogicState(saved.state);
+          })
+        )
+      : loadLevelCrossingLogicWs().then(document =>
+          saveLevelCrossingLogicWs({
+            ...document,
+            autostart: enabled,
+          }).then(savedDocument => {
+            setLevelCrossingState(previous => ({
+              ...previous,
+              autostart: savedDocument.autostart,
+            }));
+          })
+        );
+
+    void request
+      .then(() => refreshAutomationDashboard())
+      .catch(error => {
+        console.error(`Could not toggle automation module autostart ${moduleId}:`, error);
       })
       .finally(() => {
         setAutomationBusy(false);
@@ -352,11 +561,11 @@ export default function StatusBar({
           </StatusActionIcon>
 
           <StatusActionIcon
-            tooltip="Edit signal logic rules"
+            tooltip="Open automation status"
             color="blue"
-            onClick={onOpenSignalLogicDialog}
+            onClick={handleOpenAutomation}
           >
-            <IconEdit size={14} />
+            <IconListDetails size={14} />
           </StatusActionIcon>
 
           <Divider orientation="vertical" />
@@ -410,6 +619,95 @@ export default function StatusBar({
         onClose={() => setScriptEditorOpened(false)}
         title="Script editor"
       />
+
+      <Modal opened={automationDialogOpened} onClose={() => setAutomationDialogOpened(false)} title="Automation" size="xl" centered>
+        <Stack gap="sm">
+          <Group gap="xs">
+            <StatusBadge color={automationBadgeColor}>
+              Automation task: {automationIsRunning ? "RUNNING" : "STOPPED"}
+            </StatusBadge>
+
+            <StatusBadge color={automationAutostart ? "green" : "gray"}>
+              Autostart: {automationAutostart ? "ON" : "OFF"}
+            </StatusBadge>
+
+            <StatusBadge color="blue">
+              Tick: {automationState.tickMs} ms
+            </StatusBadge>
+          </Group>
+
+          <Group gap="xs">
+            <StatusActionIcon tooltip="Refresh automation state" color="blue" onClick={() => void refreshAutomationDashboard()}>
+              <IconListDetails size={14} />
+            </StatusActionIcon>
+
+            <StatusActionIcon tooltip="Start automation runtime" color="green" disabled={!wsConnected || automationBusy} onClick={() => {
+              if (!automationIsRunning) handleToggleAutomation();
+            }}>
+              <IconPlayerPlayFilled size={14} />
+            </StatusActionIcon>
+
+            <StatusActionIcon tooltip="Stop automation runtime" color="red" disabled={!wsConnected || automationBusy} onClick={() => {
+              if (automationIsRunning) handleToggleAutomation();
+            }}>
+              <IconPlayerStopFilled size={14} />
+            </StatusActionIcon>
+
+            <Checkbox
+              label="Autostart all automation modules"
+              checked={automationAutostart}
+              disabled={!wsConnected || automationBusy}
+              onChange={event => handleToggleAutomationAutostart(event.currentTarget.checked)}
+            />
+          </Group>
+
+          <Table striped highlightOnHover withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Automation module</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th>Enabled</Table.Th>
+                <Table.Th>Autostart</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {automationRows.map(row => (
+                <Table.Tr key={row.id}>
+                  <Table.Td>
+                    <Stack gap={0}>
+                      <Text size="sm" fw={600}>{row.name}</Text>
+                      <Text size="xs" c="dimmed">{row.description}</Text>
+                    </Stack>
+                  </Table.Td>
+                  <Table.Td>
+                    <StatusBadge color={row.effectiveRunning ? "green" : row.module?.enabled ? "orange" : "gray"}>
+                      {row.effectiveRunning
+                        ? "RUNNING"
+                        : row.module?.enabled
+                          ? "ENABLED / TASK STOPPED"
+                          : "DISABLED"}
+                    </StatusBadge>
+                  </Table.Td>
+                  <Table.Td>
+                    <Checkbox
+                      checked={row.module?.enabled === true}
+                      disabled={!wsConnected || automationBusy}
+                      onChange={event => handleToggleAutomationModule(row.id, event.currentTarget.checked)}
+                    />
+                  </Table.Td>
+                  <Table.Td>
+                    <Checkbox
+                      checked={row.autostart}
+                      disabled={!wsConnected || automationBusy}
+                      onChange={event => handleToggleModuleAutostart(row.id, event.currentTarget.checked)}
+                    />
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Stack>
+      </Modal>
 
       <Modal opened={taskDialogOpened} onClose={() => setTaskDialogOpened(false)} title="Tasks" size="xl" centered>
         <Stack gap="sm">
