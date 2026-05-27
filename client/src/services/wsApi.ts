@@ -4,6 +4,8 @@ import type {
   ClientWsMessageType,
   ClientWsPayloadMap,
   Direction,
+  LevelCrossingCommandAction,
+  LevelCrossingLogicDocumentDto,
   ReservationOwnerType,
   RuntimeVariableKey,
   RuntimeVariableValue,
@@ -268,6 +270,18 @@ class WebSocketApi {
 
   getRouteReservations(): boolean {
     return this.send("getRouteReservations", {});
+  }
+
+  levelCrossingCommand(
+    requestId: string,
+    action: LevelCrossingCommandAction,
+    document?: LevelCrossingLogicDocumentDto
+  ): boolean {
+    return this.send("levelCrossingCommand", {
+      requestId,
+      action,
+      ...(document === undefined ? {} : { document }),
+    });
   }
 
   runScript(script: string | undefined, source: ScriptRunSource, elementId: string | null): boolean {
