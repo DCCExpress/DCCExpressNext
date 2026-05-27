@@ -12,6 +12,7 @@ import {
 
 import {
   RailwayTopologyLayout,
+  getDirectionPoint,
   type TopologyBlockElement,
   type TopologyPoint,
   type TopologySensorElement,
@@ -21,6 +22,7 @@ import {
   isTopologyTurnoutElement,
   type TravelDirection,
 } from "./topology.js";
+import { TrackCrossingElement } from "../layout/elements/TrackCrossingElement.js";
 import { TrackTravelDirectionResolver } from "./trackTravelDirectionResolver.js";
 
 type TurnoutSide =
@@ -31,6 +33,11 @@ type TurnoutSide =
 type TurnoutExit = {
   exitSide: TurnoutSide;
   turnoutState: TurnoutStateRequirement;
+};
+
+type TrackConnectionGroup = {
+  index: number;
+  endpoints: TopologyPoint[];
 };
 
 export class RouteGraphBuilder {
@@ -46,6 +53,19 @@ export class RouteGraphBuilder {
    * Duplikált edge-ek ellen.
    */
   private readonly createdEdgeKeys =
+    new Set<string>();
+
+  /**
+   * Track elem kapcsolatcsoport -> section szám.
+   *
+   * Normál sínnél egyetlen kapcsolatcsoport van: prev <-> next.
+   * Crossingnál két független kapcsolatcsoport van, ezért ugyanaz az elem
+   * két külön fizikai section része is lehet.
+   */
+  private readonly sectionByTrackConnectionKey =
+    new Map<string, number>();
+
+  private readonly visitedTrackConnectionKeys =
     new Set<string>();
 
   private turnouts: TopologyTurnoutElement[] = [];
@@ -75,6 +95,14 @@ export class RouteGraphBuilder {
   private resetRoutes(): void {
     const elems =
       this.topology.getPhysicalTrackElements();
+
+    this.sectionNodes.clear();
+    this.createdEdgeKeys.clear();
+    this.sectionByTrackConnectionKey.clear();
+    this.visitedTrackConnectionKeys.clear();
+
+    this.nextSectionNumber = 1;
+    this.turnouts = [];
 
     for (const elem of elems) {
       elem.isVisited = false;
@@ -112,11 +140,15 @@ export class RouteGraphBuilder {
           continue;
         }
 
-        if (firstElem.isVisited) {
+        if (!this.hasTrackConnectionAt(firstElem, turnout.pos)) {
           continue;
         }
 
-        this.createPhysicalSection(firstElem);
+        if (this.isTrackConnectionVisited(firstElem, turnout.pos)) {
+          continue;
+        }
+
+        this.createPhysicalSection(firstElem, turnout.pos);
       }
     }
   }
@@ -126,7 +158,7 @@ export class RouteGraphBuilder {
       this.topology.getDirectionElements();
 
     for (const directionElement of directionElements) {
-      if (directionElement.isVisited) {
+      if (this.areAllTrackConnectionsVisited(directionElement)) {
         continue;
       }
 
@@ -135,7 +167,8 @@ export class RouteGraphBuilder {
   }
 
   private createPhysicalSection(
-    firstElem: TopologyTrackElement
+    firstElem: TopologyTrackElement,
+    incomingPos?: TopologyPoint
   ): void {
     const sectionNumber =
       this.nextSectionNumber++;
@@ -144,9 +177,14 @@ export class RouteGraphBuilder {
 
     this.walkTrackSection(
       firstElem,
+      incomingPos,
       sectionNumber,
       sectionElements
     );
+
+    if (sectionElements.length === 0) {
+      return;
+    }
 
     const node = this.createSectionGraphNode(
       sectionNumber,
@@ -159,30 +197,52 @@ export class RouteGraphBuilder {
 
   private walkTrackSection(
     obj: TopologyTrackElement,
+    incomingPos: TopologyPoint | undefined,
     section: number,
     sectionElements: TopologyTrackElement[]
   ): void {
-    obj.isVisited = true;
-    obj.section = section;
+    const groups =
+      this.getTrackConnectionGroupsForIncoming(
+        obj,
+        incomingPos
+      );
 
-    sectionElements.push(obj);
+    for (const group of groups) {
+      const key =
+        this.getTrackConnectionKey(obj, group.index);
 
-    const nextPos = obj.getNextItemXy();
-    const prevPos = obj.getPrevItemXy();
+      if (this.visitedTrackConnectionKeys.has(key)) {
+        continue;
+      }
 
-    this.walkTrackSectionDirection(
-      obj,
-      nextPos,
-      section,
-      sectionElements
-    );
+      this.visitedTrackConnectionKeys.add(key);
+      this.sectionByTrackConnectionKey.set(key, section);
 
-    this.walkTrackSectionDirection(
-      obj,
-      prevPos,
-      section,
-      sectionElements
-    );
+      if (obj.section === 0) {
+        obj.section = section;
+      }
+
+      obj.isVisited =
+        this.areAllTrackConnectionsVisited(obj);
+
+      this.addSectionElementOnce(
+        sectionElements,
+        obj
+      );
+
+      for (const endpoint of group.endpoints) {
+        if (incomingPos?.isEqual(endpoint)) {
+          continue;
+        }
+
+        this.walkTrackSectionDirection(
+          obj,
+          endpoint,
+          section,
+          sectionElements
+        );
+      }
+    }
   }
 
   private walkTrackSectionDirection(
@@ -202,23 +262,31 @@ export class RouteGraphBuilder {
       return;
     }
 
-    const isConnectedBack =
-      current.pos.isEqual(next.getNextItemXy()) ||
-      current.pos.isEqual(next.getPrevItemXy());
-
-    if (!isConnectedBack) {
+    if (!this.hasTrackConnectionAt(next, current.pos)) {
       return;
     }
 
-    if (next.isVisited) {
+    if (this.isTrackConnectionVisited(next, current.pos)) {
       return;
     }
 
     this.walkTrackSection(
       next,
+      current.pos,
       section,
       sectionElements
     );
+  }
+
+  private addSectionElementOnce(
+    sectionElements: TopologyTrackElement[],
+    elem: TopologyTrackElement
+  ): void {
+    if (sectionElements.some(existing => existing.id === elem.id)) {
+      return;
+    }
+
+    sectionElements.push(elem);
   }
 
   private createSectionGraphNode(
@@ -403,14 +471,18 @@ export class RouteGraphBuilder {
           continue;
         }
 
-        if (!connectedElem.section) {
+        const connectedSection =
+          this.getSectionForTrackConnection(
+            connectedElem,
+            turnout.pos
+          );
+
+        if (!connectedSection) {
           continue;
         }
 
         const fromNode =
-          this.sectionNodes.get(
-            connectedElem.section
-          );
+          this.sectionNodes.get(connectedSection);
 
         if (!fromNode) {
           continue;
@@ -483,6 +555,7 @@ export class RouteGraphBuilder {
         this.finishRouteEdge(
           fromNode,
           nextElem,
+          turnout.pos,
           nextTurnoutStates,
           locoDirection
         );
@@ -516,15 +589,22 @@ export class RouteGraphBuilder {
   private finishRouteEdge(
     fromNode: GraphNode,
     targetElem: TopologyTrackElement,
+    connectedFrom: TopologyPoint,
     turnoutStates: TurnoutStateRequirement[],
     locoDirection: TravelDirection
   ): void {
-    if (!targetElem.section) {
+    const targetSection =
+      this.getSectionForTrackConnection(
+        targetElem,
+        connectedFrom
+      );
+
+    if (!targetSection) {
       return;
     }
 
     const toNode =
-      this.sectionNodes.get(targetElem.section);
+      this.sectionNodes.get(targetSection);
 
     if (!toNode) {
       return;
@@ -664,5 +744,172 @@ export class RouteGraphBuilder {
     }
 
     return "unknown";
+  }
+
+  private getSectionForTrackConnection(
+    element: TopologyTrackElement,
+    connectedFrom: TopologyPoint
+  ): number {
+    const group =
+      this.getTrackConnectionGroupsForIncoming(
+        element,
+        connectedFrom
+      )[0];
+
+    if (!group) {
+      return 0;
+    }
+
+    const key =
+      this.getTrackConnectionKey(
+        element,
+        group.index
+      );
+
+    return (
+      this.sectionByTrackConnectionKey.get(key) ??
+      element.section ??
+      0
+    );
+  }
+
+  private isTrackConnectionVisited(
+    element: TopologyTrackElement,
+    connectedFrom: TopologyPoint
+  ): boolean {
+    const groups =
+      this.getTrackConnectionGroupsForIncoming(
+        element,
+        connectedFrom
+      );
+
+    return (
+      groups.length > 0 &&
+      groups.every(group =>
+        this.visitedTrackConnectionKeys.has(
+          this.getTrackConnectionKey(
+            element,
+            group.index
+          )
+        )
+      )
+    );
+  }
+
+  private areAllTrackConnectionsVisited(
+    element: TopologyTrackElement
+  ): boolean {
+    const groups =
+      this.getTrackConnectionGroups(element);
+
+    return (
+      groups.length > 0 &&
+      groups.every(group =>
+        this.visitedTrackConnectionKeys.has(
+          this.getTrackConnectionKey(
+            element,
+            group.index
+          )
+        )
+      )
+    );
+  }
+
+  private hasTrackConnectionAt(
+    element: TopologyTrackElement,
+    point: TopologyPoint
+  ): boolean {
+    return this.getTrackConnectionGroupsForIncoming(
+      element,
+      point
+    ).length > 0;
+  }
+
+  private getTrackConnectionGroupsForIncoming(
+    element: TopologyTrackElement,
+    incomingPos?: TopologyPoint
+  ): TrackConnectionGroup[] {
+    const groups =
+      this.getTrackConnectionGroups(element);
+
+    if (!incomingPos) {
+      return groups;
+    }
+
+    return groups.filter(group =>
+      group.endpoints.some(endpoint =>
+        endpoint.isEqual(incomingPos)
+      )
+    );
+  }
+
+  private getTrackConnectionGroups(
+    element: TopologyTrackElement
+  ): TrackConnectionGroup[] {
+    if (element instanceof TrackCrossingElement) {
+      return this.getCrossingConnectionGroups(element);
+    }
+
+    return [
+      {
+        index: 0,
+        endpoints: [
+          element.getPrevItemXy(),
+          element.getNextItemXy(),
+        ],
+      },
+    ];
+  }
+
+  private getCrossingConnectionGroups(
+    element: TrackCrossingElement
+  ): TrackConnectionGroup[] {
+    const rotation =
+      element.normalizeRotation(element.rotation);
+
+    const angles = this.getCrossingLineAngles(rotation);
+
+    return angles.map((angle, index) => ({
+      index,
+      endpoints: [
+        getDirectionPoint(element.pos, angle + 180),
+        getDirectionPoint(element.pos, angle),
+      ],
+    }));
+  }
+
+  private getCrossingLineAngles(
+    rotation: number
+  ): [number, number] {
+    switch (rotation) {
+      case 0:
+      case 180:
+        return [0, 45];
+
+      case 45:
+      case 225:
+        return [90, 45];
+
+      case 90:
+      case 270:
+        return [90, 135];
+
+      case 135:
+      case 315:
+        return [0, 135];
+
+      default:
+        return [
+          rotation,
+          rotation + 45,
+        ];
+    }
+  }
+
+  private getTrackConnectionKey(
+    element: TopologyTrackElement,
+    groupIndex: number
+  ): string {
+    return `${element.id}:${groupIndex}`;
   }
 }
