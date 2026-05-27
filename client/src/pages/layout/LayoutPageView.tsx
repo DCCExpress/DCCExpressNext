@@ -44,6 +44,11 @@ export type LayoutPageViewProps = {
   requestedSignalLogicAddress: number | null;
   onRequestedSignalLogicAddressConsumed: () => void;
   onOpenSignalLogicForSignal: (signalAddress: number) => void;
+  levelCrossingLogicDialogOpened: boolean;
+  setLevelCrossingLogicDialogOpened: BooleanSetter;
+  requestedLevelCrossingElementId: string | null;
+  onRequestedLevelCrossingElementIdConsumed: () => void;
+  onOpenLevelCrossingLogicForElement: (elementId: string) => void;
   onLocosSaved: () => Promise<void>;
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
@@ -90,16 +95,18 @@ export function LayoutPageView(props: LayoutPageViewProps) {
     requestedBlockActionsBlockId, onRequestedBlockActionsBlockIdConsumed,
     onOpenBlockActionsForBlock, signalLogicDialogOpened, setSignalLogicDialogOpened,
     requestedSignalLogicAddress, onRequestedSignalLogicAddressConsumed,
-    onOpenSignalLogicForSignal, onLocosSaved, pickerOpened, setPickerOpened,
-    appSettingsDialogOpened, setAppSettingsDialogOpened,
-    editMode, setEditMode, locoPanelCollapsed, setLocoPanelCollapsed,
-    propertyPanelCollapsed, setPropertyPanelCollapsed, rightPanelMode,
-    setRightPanelMode, tool, setTool, saveLayoutToServer,
-    loadLayoutFromServer, canUndo, canRedo, undo, redo,
-    onOpenAppSettingsDialog, onFitLayout, locos, layout, onLayoutChange,
-    onBeforeLayoutChange, selectedElement, onSelectedElementChange,
-    invalidateCounter, setInvalidateCounter, fitCounter, turnoutSelection,
-    setTurnoutSelection, onUpdateSelectedElement, routesString,
+    onOpenSignalLogicForSignal, levelCrossingLogicDialogOpened,
+    setLevelCrossingLogicDialogOpened, requestedLevelCrossingElementId,
+    onRequestedLevelCrossingElementIdConsumed, onOpenLevelCrossingLogicForElement,
+    onLocosSaved, pickerOpened, setPickerOpened, appSettingsDialogOpened,
+    setAppSettingsDialogOpened, editMode, setEditMode, locoPanelCollapsed,
+    setLocoPanelCollapsed, propertyPanelCollapsed, setPropertyPanelCollapsed,
+    rightPanelMode, setRightPanelMode, tool, setTool, saveLayoutToServer,
+    loadLayoutFromServer, canUndo, canRedo, undo, redo, onOpenAppSettingsDialog,
+    onFitLayout, locos, layout, onLayoutChange, onBeforeLayoutChange,
+    selectedElement, onSelectedElementChange, invalidateCounter, setInvalidateCounter,
+    fitCounter, turnoutSelection, setTurnoutSelection, onUpdateSelectedElement,
+    routesString,
   } = props;
 
   return (
@@ -118,6 +125,10 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         setSignalLogicDialogOpened={setSignalLogicDialogOpened}
         requestedSignalLogicAddress={requestedSignalLogicAddress}
         onRequestedSignalLogicAddressConsumed={onRequestedSignalLogicAddressConsumed}
+        levelCrossingLogicDialogOpened={levelCrossingLogicDialogOpened}
+        setLevelCrossingLogicDialogOpened={setLevelCrossingLogicDialogOpened}
+        requestedLevelCrossingElementId={requestedLevelCrossingElementId}
+        onRequestedLevelCrossingElementIdConsumed={onRequestedLevelCrossingElementIdConsumed}
         pickerOpened={pickerOpened}
         setPickerOpened={setPickerOpened}
         appSettingsDialogOpened={appSettingsDialogOpened}
@@ -146,6 +157,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           setLocoDialogOpened={setLocoDialogOpened}
           setBlockActionsDialogOpened={setBlockActionsDialogOpened}
           setSignalLogicDialogOpened={setSignalLogicDialogOpened}
+          setLevelCrossingLogicDialogOpened={setLevelCrossingLogicDialogOpened}
           setPickerOpened={setPickerOpened}
           saveLayoutToServer={saveLayoutToServer}
           loadLayoutFromServer={loadLayoutFromServer}
@@ -180,6 +192,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           onUpdateSelectedElement={onUpdateSelectedElement}
           onOpenBlockActionsForBlock={onOpenBlockActionsForBlock}
           onOpenSignalLogicForSignal={onOpenSignalLogicForSignal}
+          onOpenLevelCrossingLogicForElement={onOpenLevelCrossingLogicForElement}
           routesString={routesString}
           setCanvasBusy={setCanvasBusy}
           setCanvasBusyText={setCanvasBusyText}
