@@ -277,58 +277,54 @@ export class TrackLevelCrossingElementView
     ctx.restore();
   }
 
- private drawLight(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  active: boolean
-): void {
-  if (!this.lightsEnabled) return;
+  private drawLight(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    active: boolean
+  ): void {
+    if (!this.lightsEnabled) return;
 
-  const shouldBlink = this.blinkingEnabled;
-  const lampActive = shouldBlink ? active : true;
+    const shouldBlink = this.blinkingEnabled;
+    const lampActive = shouldBlink ? active : true;
 
-  const lightColor = this.barrierClosed
-    ? lampActive ? "#ff0000" : "#120000"
-    : lampActive ? "#ffffff" : "#050505";
+    const lightColor = this.barrierClosed
+      ? lampActive ? "#ff0000" : "#120000"
+      : lampActive ? "#ffffff" : "#050505";
 
-  const highlightColor = this.barrierClosed
-    ? lampActive ? "#ff6b6b" : "#050000"
-    : lampActive ? "#ffffff" : "#050505";
+    const highlightColor = this.barrierClosed
+      ? lampActive ? "#ff6b6b" : "#050000"
+      : lampActive ? "#ffffff" : "#050505";
 
-  const housingRadius = 7;      // eddig 6 volt
-  const ringRadius = 5.8;       // beljebb húzott fehér kör
-  const lensRadius = 3;
+    const housingRadius = 7;
+    const ringRadius = 5.8;
+    const lensRadius = 3;
 
-  ctx.save();
+    ctx.save();
 
-  // külső fekete lámpaház
-  ctx.fillStyle = "#000000";
-  ctx.beginPath();
-  ctx.arc(x, y, housingRadius, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.fillStyle = "#000000";
+    ctx.beginPath();
+    ctx.arc(x, y, housingRadius, 0, Math.PI * 2);
+    ctx.fill();
 
-  // belső fehér körvonal, hogy kívül fekete perem maradjon
-  ctx.beginPath();
-  ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
-  ctx.lineWidth = 0.75;
-  ctx.strokeStyle = "#f8f9fa";
-  ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+    ctx.lineWidth = 0.75;
+    ctx.strokeStyle = "#f8f9fa";
+    ctx.stroke();
 
-  // bal "lencse"
-  ctx.fillStyle = lightColor;
-  ctx.beginPath();
-  ctx.arc(x - 2.5, y - 1, lensRadius, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.fillStyle = lightColor;
+    ctx.beginPath();
+    ctx.arc(x - 2.5, y, lensRadius, 0, Math.PI * 2);
+    ctx.fill();
 
-  // jobb "lencse"
-  ctx.fillStyle = highlightColor;
-  ctx.beginPath();
-  ctx.arc(x + 2.5, y + 1, lensRadius, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.fillStyle = highlightColor;
+    ctx.beginPath();
+    ctx.arc(x + 2.5, y, lensRadius, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.restore();
-}
+    ctx.restore();
+  }
 
   private copyTrackRuntimeStateTo(
     target: TrackStraightElementView
@@ -420,78 +416,115 @@ export class TrackLevelCrossingElementView
   static fromJSON(
     data: ITrackLevelCrossingElement
   ): TrackLevelCrossingElementView {
-    const crossing = new TrackLevelCrossingElementView(data.x, data.y);
+    const element = new TrackLevelCrossingElementView(data.x, data.y);
+    element.id = data.id;
+    element.name = data.name;
+    element.layerName = data.layerName;
+    element.rotation = data.rotation;
+    element.rotationStep = data.rotationStep;
+    element.address = data.address;
+    element.length = data.length;
+    element.bg = data.bg;
+    element.fg = data.fg;
+    element.roadColor = data.roadColor;
+    element.barrierType = data.barrierType;
+    element.barrierEnabled = data.barrierEnabled;
+    element.lightsEnabled = data.lightsEnabled;
+    element.blinkingEnabled = data.blinkingEnabled;
+    element.basicAccessoryAddress = data.basicAccessoryAddress;
+    element.basicAccessoryClosedValue = data.basicAccessoryClosedValue;
+    return element;
+  }
 
-    crossing.id = data.id;
-    crossing.name = data.name;
-    crossing.layerName = data.layerName;
-    crossing.rotation = data.rotation;
-    crossing.rotationStep = data.rotationStep;
-    crossing.address = data.address;
-    crossing.length = data.length;
-    crossing.bg = data.bg;
-    crossing.fg = data.fg;
-    crossing.basicAccessoryAddress = data.basicAccessoryAddress ?? 0;
-    crossing.basicAccessoryClosedValue = data.basicAccessoryClosedValue ?? true;
-    crossing.barrierEnabled = data.barrierEnabled ?? true;
-    crossing.barrierType = data.barrierType ?? "half";
-    crossing.barrierClosed = data.barrierClosed ?? false;
-    crossing.lightsEnabled = data.lightsEnabled ?? true;
-    crossing.blinkingEnabled = data.blinkingEnabled ?? true;
-    crossing.roadColor = data.roadColor ?? "#6c757d";
-    crossing.blinkOn = true;
-
-    return crossing;
+  toJSON(): ITrackLevelCrossingElement {
+    return {
+      ...super.toJSON(),
+      type: ELEMENT_TYPES.TRACK_LEVEL_CROSSING,
+      roadColor: this.roadColor,
+      barrierType: this.barrierType,
+      barrierEnabled: this.barrierEnabled,
+      lightsEnabled: this.lightsEnabled,
+      blinkingEnabled: this.blinkingEnabled,
+      basicAccessoryAddress: this.basicAccessoryAddress,
+      basicAccessoryClosedValue: this.basicAccessoryClosedValue,
+    };
   }
 
   clone(): TrackLevelCrossingElementView {
     const copy = new TrackLevelCrossingElementView(this.x, this.y);
-
     copy.id = generateId();
     copy.rotation = this.rotation;
     copy.rotationStep = this.rotationStep;
-    copy.selected = this.selected;
     copy.address = this.address;
     copy.length = this.length;
-    copy.basicAccessoryAddress = this.basicAccessoryAddress;
-    copy.basicAccessoryClosedValue = this.basicAccessoryClosedValue;
-    copy.barrierEnabled = this.barrierEnabled;
+    copy.roadColor = this.roadColor;
     copy.barrierType = this.barrierType;
-    copy.barrierClosed = this.barrierClosed;
+    copy.barrierEnabled = this.barrierEnabled;
     copy.lightsEnabled = this.lightsEnabled;
     copy.blinkingEnabled = this.blinkingEnabled;
-    copy.roadColor = this.roadColor;
-    copy.blinkOn = this.blinkOn;
-
+    copy.basicAccessoryAddress = this.basicAccessoryAddress;
+    copy.basicAccessoryClosedValue = this.basicAccessoryClosedValue;
+    copy.barrierClosed = this.barrierClosed;
     return copy;
   }
 
   getEditableProperties(): IEditableProperty[] {
     return [
       ...getBaseEditableProperties(),
-      { key: "address", label: "Track/occupancy address", type: "number", min: 0 },
-      { key: "basicAccessoryAddress", label: "Basic accessory address", type: "number", min: 0 },
-      { key: "basicAccessoryClosedValue", label: "Accessory value closes barrier", type: "bittoggle" },
-      { key: "barrierEnabled", label: "Barrier", type: "checkbox" },
-      { key: "lightsEnabled", label: "Lights", type: "checkbox" },
-      { key: "blinkingEnabled", label: "Blinking", type: "checkbox" },
-      { key: "roadColor", label: "Road color", type: "colorpicker" },
+      {
+        label: "Road color",
+        key: "roadColor",
+        type: "color",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Barrier type",
+        key: "barrierType",
+        type: "select",
+        readonly: false,
+        options: [
+          { label: "None", value: "none" },
+          { label: "Half", value: "half" },
+          { label: "Full", value: "full" },
+        ],
+        validate: () => true,
+      },
+      {
+        label: "Barrier enabled",
+        key: "barrierEnabled",
+        type: "boolean",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Lights enabled",
+        key: "lightsEnabled",
+        type: "boolean",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Blinking enabled",
+        key: "blinkingEnabled",
+        type: "boolean",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Basic accessory address",
+        key: "basicAccessoryAddress",
+        type: "number",
+        readonly: false,
+        validate: () => true,
+      },
+      {
+        label: "Basic accessory closed value",
+        key: "basicAccessoryClosedValue",
+        type: "boolean",
+        readonly: false,
+        validate: () => true,
+      },
     ];
-  }
-
-  getHelp(): string {
-    return `
-      <h3 style="margin-top:0;">Level crossing</h3>
-      <p>A straight track section with a road crossing overlay.</p>
-      <ul>
-        <li>It behaves like a straight track element for layout connectivity.</li>
-        <li>Track/occupancy address is the track sensor address inherited from normal track elements.</li>
-        <li>Basic accessory address is the future control address for the crossing accessory.</li>
-        <li>Accessory value closes barrier defines whether value 1/true or 0/false means closed.</li>
-        <li>Use Barrier to show/hide barrier arms.</li>
-        <li>Use Blinking to enable/disable the runtime flashing animation.</li>
-        <li>The first version is visual only; automation can be added later.</li>
-      </ul>
-    `;
   }
 }
