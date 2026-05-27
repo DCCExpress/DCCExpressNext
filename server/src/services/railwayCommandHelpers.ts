@@ -4,6 +4,8 @@ import type {
   SignalAspect,
 } from "../../../common/src/signalLogic.js";
 
+import TrackTurnoutDoubleElement from "../../../common/src/layout/elements/TrackTurnoutDoubleElement.js";
+
 import type {
   CommandCenter,
 } from "../commandCenter/CommandCenter.js";
@@ -12,10 +14,61 @@ import {
   railwayTopologyStore,
 } from "./railwayTopologyStore.js";
 
+import type {
+  TopologyTurnoutElement,
+} from "../../../common/src/railway/topology.js";
+
 type SetBasicAccessoryFn = (
   address: number,
   active: boolean
 ) => Promise<boolean>;
+
+export function findTurnoutByAccessoryAddress(
+  address: number
+): TopologyTurnoutElement | undefined {
+  return railwayTopologyStore
+    .getTopology()
+    ?.getTurnouts()
+    .find(turnout =>
+      isTurnoutMatchingAccessoryAddress(
+        turnout,
+        address
+      )
+    );
+}
+
+export function isTurnoutMatchingAccessoryAddress(
+  turnout: TopologyTurnoutElement,
+  address: number
+): boolean {
+  if (turnout instanceof TrackTurnoutDoubleElement) {
+    return (
+      turnout.turnout1Address === address ||
+      turnout.turnout2Address === address
+    );
+  }
+
+  return turnout.turnoutAddress === address;
+}
+
+export function getTurnoutPhysicalClosedValue(
+  turnout: TopologyTurnoutElement,
+  address: number,
+  logicalClosed: boolean
+): boolean {
+  if (turnout instanceof TrackTurnoutDoubleElement) {
+    if (
+      turnout.turnout1Address === address ||
+      turnout.turnout2Address === address
+    ) {
+      return logicalClosed;
+    }
+
+    return logicalClosed;
+  }
+
+  return logicalClosed === turnout.turnoutClosedValue;
+}
 
 export function getLogicalTurnoutStateFromCommandCenter(
   commandCenter: CommandCenter | null,
@@ -29,12 +82,13 @@ export function getLogicalTurnoutStateFromCommandCenter(
   }
 
   const turnout =
-    railwayTopologyStore
-      .getTopology()
-      ?.getTurnouts()
-      .find(item => item.turnoutAddress === address);
+    findTurnoutByAccessoryAddress(address);
 
   if (!turnout) {
+    return physicalClosed;
+  }
+
+  if (turnout instanceof TrackTurnoutDoubleElement) {
     return physicalClosed;
   }
 
