@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import {
   AccessoryInfo,
   BlockState,
+  Direction,
   Loco,
   LocoState,
   PowerInfo,
@@ -65,6 +66,9 @@ export abstract class CommandCenter {
 
   protected locos: Map<number, LocoState> =
     new Map();
+
+  private readonly locoDirectionInvertByAddress =
+    new Map<number, boolean>();
 
   private blocks: Map<string, BlockState> =
     new Map();
@@ -131,8 +135,14 @@ export abstract class CommandCenter {
 
   setLocos(locos: Loco[]): void {
     this.locos.clear();
+    this.locoDirectionInvertByAddress.clear();
 
     for (const loco of locos) {
+      this.locoDirectionInvertByAddress.set(
+        loco.address,
+        Boolean(loco.invert)
+      );
+
       const locoState: LocoState = {
         ...loco,
         speed: 0,
@@ -254,10 +264,24 @@ export abstract class CommandCenter {
     address: number
   ): Promise<TurnoutInfo | null>;
 
-  abstract setLoco(
+  setLoco(
     address: number,
     speed: number,
-    direction: "forward" | "reverse"
+    direction: Direction
+  ): Promise<boolean> {
+    return this.setPhysicalLoco(
+      address,
+      speed,
+      this.toPhysicalLocoDirection(address, direction),
+      direction
+    );
+  }
+
+  protected abstract setPhysicalLoco(
+    address: number,
+    speed: number,
+    physicalDirection: Direction,
+    logicalDirection: Direction
   ): Promise<boolean>;
 
   abstract setLocoFunction(
@@ -350,18 +374,74 @@ export abstract class CommandCenter {
     return this.syncLocoReservation(loco);
   }
 
-  protected async setLocoRuntimeState(
+  protected isLocoDirectionInverted(
+    address: number
+  ): boolean {
+    return this.locoDirectionInvertByAddress.get(address) ?? false;
+  }
+
+  protected invertLocoDirection(
+    direction: Direction
+  ): Direction {
+    return direction === "forward"
+      ? "reverse"
+      : "forward";
+  }
+
+  protected toPhysicalLocoDirection(
+    address: number,
+    logicalDirection: Direction
+  ): Direction {
+    return this.isLocoDirectionInverted(address)
+      ? this.invertLocoDirection(logicalDirection)
+      : logicalDirection;
+  }
+
+  protected toLogicalLocoDirection(
+    address: number,
+    physicalDirection: Direction
+  ): Direction {
+    return this.isLocoDirectionInverted(address)
+      ? this.invertLocoDirection(physicalDirection)
+      : physicalDirection;
+  }
+
+  protected setLocoRuntimeStateSync(
     address: number,
     speed: number,
-    direction: "forward" | "reverse"
-  ): Promise<LocoState> {
+    logicalDirection: Direction
+  ): LocoState {
     const loco =
       this.getOrCreateLoco(address);
 
     loco.speed = speed;
-    loco.direction = direction;
+    loco.direction = logicalDirection;
 
     return this.syncLocoReservation(loco);
+  }
+
+  protected async setLocoRuntimeState(
+    address: number,
+    speed: number,
+    logicalDirection: Direction
+  ): Promise<LocoState> {
+    return this.setLocoRuntimeStateSync(
+      address,
+      speed,
+      logicalDirection
+    );
+  }
+
+  protected setLocoRuntimeStateFromPhysical(
+    address: number,
+    speed: number,
+    physicalDirection: Direction
+  ): LocoState {
+    return this.setLocoRuntimeStateSync(
+      address,
+      speed,
+      this.toLogicalLocoDirection(address, physicalDirection)
+    );
   }
 
   protected async stopLocoRuntimeState(
