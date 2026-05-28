@@ -103,7 +103,6 @@ export type SerializedLayoutElementDto = {
 
   basicAccessoryAddress?: number;
   basicAccessoryClosedValue?: boolean;
-  barrierEnabled?: boolean;
   barrierType?: LevelCrossingBarrierTypeDto;
   barrierClosed?: boolean;
   lightsEnabled?: boolean;
@@ -191,7 +190,6 @@ export interface TrackLevelCrossingElementDto extends TrackElementDto {
   type: "tracklevelcrossing";
   basicAccessoryAddress: number;
   basicAccessoryClosedValue: boolean;
-  barrierEnabled: boolean;
   barrierType: LevelCrossingBarrierTypeDto;
   barrierClosed: boolean;
   lightsEnabled: boolean;
