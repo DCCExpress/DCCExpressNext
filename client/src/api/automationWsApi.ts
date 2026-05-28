@@ -14,7 +14,7 @@ export type AutomationCommandResult = {
 };
 
 async function requestAutomation(
-  action: "snapshot" | "start" | "stop" | "evaluateOnce",
+  action: "snapshot" | "start" | "stop",
   errorMessage: string
 ): Promise<AutomationCommandResult> {
   const response = await requestWsCommand(
@@ -56,12 +56,5 @@ export async function stopAutomationRuntimeWs(): Promise<AutomationCommandResult
   return requestAutomation(
     "stop",
     "Could not stop automation runtime."
-  );
-}
-
-export async function evaluateAutomationRuntimeOnceWs(): Promise<AutomationCommandResult> {
-  return requestAutomation(
-    "evaluateOnce",
-    "Could not evaluate automation runtime."
   );
 }
