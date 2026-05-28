@@ -40,7 +40,7 @@ class LevelCrossingLogicStore {
         console.error("[LevelCrossingLogicStore] Failed to read level crossing logic:", error);
       }
 
-      this.document = DEFAULT_LEVEL_CROSSING_LOGIC_DOCUMENT;
+      this.document = normalizeLevelCrossingLogicDocument(DEFAULT_LEVEL_CROSSING_LOGIC_DOCUMENT);
       this.createdOnInitialize = true;
       await this.persist();
     }
@@ -58,6 +58,20 @@ class LevelCrossingLogicStore {
     await this.initialize();
 
     this.document = normalizeLevelCrossingLogicDocument(input);
+    await this.persist();
+    this.createdOnInitialize = false;
+
+    return this.getDocument();
+  }
+
+  async setEnabled(enabled: boolean): Promise<LevelCrossingLogicDocumentDto> {
+    await this.initialize();
+
+    this.document = normalizeLevelCrossingLogicDocument({
+      ...this.document,
+      enabled,
+    });
+
     await this.persist();
     this.createdOnInitialize = false;
 
