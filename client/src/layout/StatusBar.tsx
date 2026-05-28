@@ -331,7 +331,7 @@ export default function StatusBar({
     }
 
     void refreshAutomationDashboard();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wsConnected]);
 
   useEffect(() => {
@@ -424,11 +424,11 @@ export default function StatusBar({
 
     const request = moduleId === "signalLogic"
       ? (enabled ? startSignalLogicWs() : stopSignalLogicWs()).then(result => {
-          setSignalLogicState(result.state);
-        })
+        setSignalLogicState(result.state);
+      })
       : (enabled ? startLevelCrossingRuntimeWs() : stopLevelCrossingRuntimeWs()).then(result => {
-          setLevelCrossingState(result);
-        });
+        setLevelCrossingState(result);
+      });
 
     void request
       .then(() => refreshAutomationDashboard())
@@ -452,24 +452,24 @@ export default function StatusBar({
 
     const request = moduleId === "signalLogic"
       ? loadSignalLogicRulesWs().then(result =>
-          saveSignalLogicRulesWs({
-            ...result.document,
-            autostart: enabled,
-          }).then(saved => {
-            setSignalLogicState(saved.state);
-          })
-        )
+        saveSignalLogicRulesWs({
+          ...result.document,
+          autostart: enabled,
+        }).then(saved => {
+          setSignalLogicState(saved.state);
+        })
+      )
       : loadLevelCrossingLogicWs().then(document =>
-          saveLevelCrossingLogicWs({
-            ...document,
-            autostart: enabled,
-          }).then(savedDocument => {
-            setLevelCrossingState(previous => ({
-              ...previous,
-              autostart: savedDocument.autostart,
-            }));
-          })
-        );
+        saveLevelCrossingLogicWs({
+          ...document,
+          autostart: enabled,
+        }).then(savedDocument => {
+          setLevelCrossingState(previous => ({
+            ...previous,
+            autostart: savedDocument.autostart,
+          }));
+        })
+      );
 
     void request
       .then(() => refreshAutomationDashboard())
@@ -586,6 +586,8 @@ export default function StatusBar({
             <IconEdit size={14} />
           </StatusActionIcon>
 
+          <Divider orientation="vertical" />
+
           <StatusBadge color={automationBadgeColor}>
             <Group gap={4} wrap="nowrap">
               <IconTrafficLights size={13} />
@@ -594,20 +596,20 @@ export default function StatusBar({
           </StatusBadge>
 
           <StatusActionIcon
+            tooltip="Open automation status"
+            color="blue"
+            onClick={handleOpenAutomation}
+          >
+            <IconListDetails size={14} />
+          </StatusActionIcon>
+
+          <StatusActionIcon
             tooltip={automationIsRunning ? "Stop automation runtime" : "Start automation runtime"}
             color={automationIsRunning ? "red" : "green"}
             disabled={!wsConnected || automationBusy}
             onClick={handleToggleAutomation}
           >
             {automationIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}
-          </StatusActionIcon>
-
-          <StatusActionIcon
-            tooltip="Open automation status"
-            color="blue"
-            onClick={handleOpenAutomation}
-          >
-            <IconListDetails size={14} />
           </StatusActionIcon>
 
           <Divider orientation="vertical" />
