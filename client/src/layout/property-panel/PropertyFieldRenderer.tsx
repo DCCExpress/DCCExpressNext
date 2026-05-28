@@ -57,6 +57,7 @@ export default function PropertyFieldRenderer({
     case "boolean":
     case "checkbox":
     case "colorpicker":
+    case "select":
       return (
         <BasicPropertyEditor
           prop={prop}
