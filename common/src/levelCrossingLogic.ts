@@ -91,8 +91,7 @@ export type LevelCrossingCommandAction =
   | "save"
   | "start"
   | "stop"
-  | "snapshot"
-  | "evaluateOnce";
+  | "snapshot";
 
 export type LevelCrossingCommandPayload = {
   requestId: string;
