@@ -42,13 +42,13 @@ export type SignalLogicRuleGroupDto = {
 
 export type SignalLogicDocumentDto = {
   version: 1;
-  autostart: boolean;
+  enabled: boolean;
   groups: SignalLogicRuleGroupDto[];
 };
 
 export type SignalLogicRuntimeStateDto = {
   running: boolean;
-  autostart: boolean;
+  enabled: boolean;
 };
 
 export type SignalLogicKnownSignal = {
@@ -89,7 +89,7 @@ export type SignalLogicValidationIssue = {
 
 export const DEFAULT_SIGNAL_LOGIC_DOCUMENT: SignalLogicDocumentDto = {
   version: 1,
-  autostart: false,
+  enabled: false,
   groups: [],
 };
 
@@ -186,12 +186,15 @@ export function normalizeSignalLogicDocument(input: unknown): SignalLogicDocumen
     return DEFAULT_SIGNAL_LOGIC_DOCUMENT;
   }
 
-  const raw = input as { autostart?: unknown; groups?: unknown };
+  const raw = input as { enabled?: unknown; autostart?: unknown; groups?: unknown };
   const groups = Array.isArray(raw.groups) ? raw.groups : [];
+  const enabled = typeof raw.enabled === "boolean"
+    ? raw.enabled
+    : Boolean(raw.autostart);
 
   return {
     version: 1,
-    autostart: Boolean(raw.autostart),
+    enabled,
     groups: groups.map((groupInput, groupIndex) => {
       const group: RawGroup = isRecord(groupInput) ? groupInput : {};
       const rules = Array.isArray(group.rules) ? group.rules : [];
