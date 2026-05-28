@@ -86,9 +86,12 @@ class SignalLogicRulesStore {
   }
 
   getDocument(): SignalLogicDocumentDto {
+    const enabled = this.document.enabled ?? this.document.autostart ?? false;
+
     return {
       version: 1,
-      enabled: this.document.enabled,
+      enabled,
+      autostart: enabled,
       groups: this.document.groups.map(group => ({
         ...group,
         rules: group.rules.map(rule => ({
@@ -115,6 +118,7 @@ class SignalLogicRulesStore {
     this.document = normalizeSignalLogicDocument({
       ...this.document,
       enabled,
+      autostart: enabled,
     });
 
     await this.persist();
