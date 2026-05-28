@@ -21,14 +21,6 @@ import {
 } from "../utility.js";
 
 import {
-  layoutRuntimeStore,
-} from "./layoutRuntimeStore.js";
-
-import {
-  railwayTopologyStore,
-} from "./railwayTopologyStore.js";
-
-import {
   setSignalAspectFromCommandCenter,
 } from "./railwayCommandHelpers.js";
 
@@ -61,7 +53,6 @@ class SignalLogicRuntimeService implements AutomationRuntimeModule {
 
   private running = false;
   private configured = false;
-  private autoStartAttempted = false;
   private getCommandCenter: () => CommandCenter | null = () => null;
   private getLogicalTurnoutState: (address: number) => boolean | null = () => null;
   private broadcast: BroadcastFn = () => undefined;
@@ -78,8 +69,9 @@ class SignalLogicRuntimeService implements AutomationRuntimeModule {
     this.configured = true;
   }
 
-  isEnabled(): boolean {
-    return this.running;
+  async isEnabled(): Promise<boolean> {
+    await signalLogicRulesStore.initialize();
+    return signalLogicRulesStore.getDocument().enabled;
   }
 
   async getState(): Promise<SignalLogicRuntimeStateDto> {
@@ -88,57 +80,12 @@ class SignalLogicRuntimeService implements AutomationRuntimeModule {
 
     return {
       running: this.running,
-      autostart: document.autostart,
+      enabled: document.enabled,
     };
   }
 
-  async autoStartIfEnabled(): Promise<SignalLogicRuntimeStateDto> {
-    await signalLogicRulesStore.initialize();
-
-    const document = signalLogicRulesStore.getDocument();
-
-    if (!document.autostart) {
-      log("[SignalLogicAutomation] autostart disabled");
-      return this.getState();
-    }
-
-    if (this.running) {
-      return this.getState();
-    }
-
-    if (this.autoStartAttempted) {
-      return this.getState();
-    }
-
-    if (!this.configured) {
-      log("[SignalLogicAutomation] autostart skipped: automation is not configured");
-      return this.getState();
-    }
-
-    if (!layoutRuntimeStore.hasLayout()) {
-      log("[SignalLogicAutomation] autostart skipped: no layout loaded");
-      return this.getState();
-    }
-
-    if (!railwayTopologyStore.hasTopology()) {
-      log("[SignalLogicAutomation] autostart skipped: no topology available");
-      return this.getState();
-    }
-
-    if (!this.getCommandCenter()) {
-      log("[SignalLogicAutomation] autostart skipped: no command center available");
-      return this.getState();
-    }
-
-    this.autoStartAttempted = true;
-
-    log("[SignalLogicAutomation] autostart enabled");
-
-    return this.start();
-  }
-
   async start(): Promise<SignalLogicRuntimeStateDto> {
-    await signalLogicRulesStore.initialize();
+    await signalLogicRulesStore.setEnabled(true);
 
     if (!this.configured) {
       throw new Error("Signal logic automation is not configured.");
@@ -159,7 +106,10 @@ class SignalLogicRuntimeService implements AutomationRuntimeModule {
   }
 
   async stop(): Promise<SignalLogicRuntimeStateDto> {
+    await signalLogicRulesStore.setEnabled(false);
+
     if (!this.running) {
+      await this.broadcastState();
       return this.getState();
     }
 
@@ -169,6 +119,27 @@ class SignalLogicRuntimeService implements AutomationRuntimeModule {
 
     await this.broadcastState();
 
+    return this.getState();
+  }
+
+  async restoreEnabledState(): Promise<SignalLogicRuntimeStateDto> {
+    await signalLogicRulesStore.initialize();
+
+    if (!signalLogicRulesStore.getDocument().enabled) {
+      this.running = false;
+      return this.getState();
+    }
+
+    if (!this.configured) {
+      log("[SignalLogicAutomation] enabled restore skipped: automation is not configured");
+      return this.getState();
+    }
+
+    this.running = true;
+    this.lastAppliedAspects.clear();
+    log("[SignalLogicAutomation] restored enabled state");
+
+    await this.broadcastState();
     return this.getState();
   }
 
