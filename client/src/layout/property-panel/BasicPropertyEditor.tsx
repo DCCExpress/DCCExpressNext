@@ -5,6 +5,7 @@ import {
   FileButton,
   Group,
   NumberInput,
+  Select,
   TextInput,
 } from "@mantine/core";
 import {
@@ -35,6 +36,12 @@ const DEFAULT_COLORS = [
   "#fd7e14",
 ];
 
+const BARRIER_TYPE_OPTIONS = [
+  { value: "none", label: "None" },
+  { value: "half", label: "Half" },
+  { value: "full", label: "Full" },
+];
+
 type BasicPropertyEditorProps = {
   prop: IEditableProperty;
   selectedElement: BaseElementView;
@@ -47,6 +54,22 @@ export default function BasicPropertyEditor({
   onChange,
 }: BasicPropertyEditorProps) {
   const value = (selectedElement as any)[prop.key];
+
+  if (prop.type === "select" || prop.key === "barrierType") {
+    return (
+      <Select
+        label={prop.label}
+        disabled={prop.readonly === true}
+        data={prop.options ?? BARRIER_TYPE_OPTIONS}
+        value={String(value ?? "")}
+        onChange={nextValue => {
+          if (nextValue !== null) {
+            onChange(prop, nextValue);
+          }
+        }}
+      />
+    );
+  }
 
   if (prop.type === "string") {
     return (
@@ -127,25 +150,11 @@ export default function BasicPropertyEditor({
     );
   }
 
-  if (prop.type === "boolean") {
-    return (
-      <>
-        <label>{prop.label}</label>
-        <input
-          aria-label="input Field"
-          disabled={prop.readonly}
-          type="checkbox"
-          checked={Boolean(value)}
-          onChange={event => onChange(prop, event.target.checked)}
-        />
-      </>
-    );
-  }
-
-  if (prop.type === "checkbox") {
+  if (prop.type === "boolean" || prop.type === "checkbox") {
     return (
       <Checkbox
         label={prop.label}
+        disabled={prop.readonly === true}
         checked={Boolean(value)}
         onChange={event => onChange(prop, event.target.checked)}
       />
