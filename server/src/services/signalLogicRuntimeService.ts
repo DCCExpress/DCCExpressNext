@@ -71,18 +71,16 @@ class SignalLogicRuntimeService implements AutomationRuntimeModule {
 
   async isEnabled(): Promise<boolean> {
     await signalLogicRulesStore.initialize();
-    return signalLogicRulesStore.getDocument().enabled ?? false;
+    return signalLogicRulesStore.getDocument().enabled;
   }
 
   async getState(): Promise<SignalLogicRuntimeStateDto> {
     await signalLogicRulesStore.initialize();
     const document = signalLogicRulesStore.getDocument();
-    const enabled = document.enabled ?? document.autostart ?? false;
 
     return {
       running: this.running,
-      enabled,
-      autostart: enabled,
+      enabled: document.enabled,
     };
   }
 
