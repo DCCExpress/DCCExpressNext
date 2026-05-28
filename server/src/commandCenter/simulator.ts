@@ -1,6 +1,7 @@
 // server/src/commandCenter/simulator.ts
 
 import type {
+  Direction,
   LocoState,
   SensorInfo,
   TurnoutInfo,
@@ -121,16 +122,17 @@ export class CommandCenterSimulator extends CommandCenter {
     );
   }
 
-  async setLoco(
+  protected override async setPhysicalLoco(
     address: number,
     speed: number,
-    direction: "forward" | "reverse"
+    _physicalDirection: Direction,
+    logicalDirection: Direction
   ): Promise<boolean> {
     const loco =
       await this.setLocoRuntimeState(
         address,
         speed,
-        direction
+        logicalDirection
       );
 
     broadcastAll({
