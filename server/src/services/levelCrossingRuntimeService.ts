@@ -88,7 +88,7 @@ export class LevelCrossingRuntimeService {
 
     return {
       running: this.running,
-      autostart: this.document.autostart,
+      enabled: this.document.enabled ?? false,
       crossings: [...this.entries.values()].map(entry => ({
         logicId: entry.logicId,
         levelCrossingElementId: entry.levelCrossingElementId,
