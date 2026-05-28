@@ -14,7 +14,6 @@ export class TrackLevelCrossingElement extends TrackElement {
 
   basicAccessoryAddress = 0;
   basicAccessoryClosedValue = true;
-  barrierEnabled = true;
   barrierType: TrackLevelCrossingElementDto["barrierType"] = "half";
   barrierClosed = false;
   lightsEnabled = true;
@@ -42,7 +41,6 @@ export class TrackLevelCrossingElement extends TrackElement {
     element.fg = data.fg;
     element.basicAccessoryAddress = data.basicAccessoryAddress ?? 0;
     element.basicAccessoryClosedValue = data.basicAccessoryClosedValue ?? true;
-    element.barrierEnabled = data.barrierEnabled ?? true;
     element.barrierType = data.barrierType ?? "half";
     element.barrierClosed = data.barrierClosed ?? false;
     element.lightsEnabled = data.lightsEnabled ?? true;
@@ -57,7 +55,6 @@ export class TrackLevelCrossingElement extends TrackElement {
       type: ELEMENT_TYPES.TRACK_LEVEL_CROSSING,
       basicAccessoryAddress: this.basicAccessoryAddress,
       basicAccessoryClosedValue: this.basicAccessoryClosedValue,
-      barrierEnabled: this.barrierEnabled,
       barrierType: this.barrierType,
       barrierClosed: this.barrierClosed,
       lightsEnabled: this.lightsEnabled,
