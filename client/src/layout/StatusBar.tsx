@@ -106,6 +106,7 @@ const DEFAULT_AUTOMATION_STATE: AutomationRuntimeStatePayload = {
 const DEFAULT_SIGNAL_LOGIC_STATE: SignalLogicRuntimeStateDto = {
   running: false,
   enabled: false,
+  autostart: false,
 };
 
 const DEFAULT_LEVEL_CROSSING_STATE: LevelCrossingRuntimeStateDto = {
@@ -235,7 +236,7 @@ export default function StatusBar({
       name: "Level crossing supervision",
       description: "Barrier / level crossing automation",
       module: levelCrossingModule,
-      enabled: levelCrossingState.enabled ?? levelCrossingState.autostart ?? false,
+      enabled: levelCrossingState.enabled ?? false,
       effectiveRunning: levelCrossingState.running && levelCrossingModule?.enabled === true,
     },
   ], [
@@ -245,7 +246,6 @@ export default function StatusBar({
     signalLogicState.running,
     levelCrossingModule,
     levelCrossingState.enabled,
-    levelCrossingState.autostart,
     levelCrossingState.running,
   ]);
 
@@ -446,319 +446,67 @@ export default function StatusBar({
       <Group h="100%" px="md" justify="space-between">
         <Group gap="md" wrap="nowrap">
           <StatusBadge color={getWsColor(wsStatus)}>WS</StatusBadge>
-
-          <StatusBadge color={commandCenterOnline ? "green" : "red"}>
-            {type ?? name ?? "CC"}
-          </StatusBadge>
-
+          <StatusBadge color={commandCenterOnline ? "green" : "red"}>{type ?? name ?? "CC"}</StatusBadge>
           <StatusBadge color={trackPowerOn ? "green" : "red"}>PWR</StatusBadge>
-
-          <StatusBadge
-            color={powerInfo?.emergencyStop ? "red" : "gray"}
-            blink={powerInfo?.emergencyStop === true}
-            onClick={() => {
-              if (!powerInfo) return;
-              if (powerInfo.emergencyStop) wsApi.powerOn();
-              else wsApi.emergencyStop();
-            }}
-          >
-            ESTOP
-          </StatusBadge>
-
-          <StatusBadge color={locked ? "orange" : "gray"} blink={locked}>
-            {locked ? "LOCK" : "FREE"}
-          </StatusBadge>
-
+          <StatusBadge color={powerInfo?.emergencyStop ? "red" : "gray"} blink={powerInfo?.emergencyStop === true} onClick={() => { if (!powerInfo) return; if (powerInfo.emergencyStop) wsApi.powerOn(); else wsApi.emergencyStop(); }}>ESTOP</StatusBadge>
+          <StatusBadge color={locked ? "orange" : "gray"} blink={locked}>{locked ? "LOCK" : "FREE"}</StatusBadge>
           <Divider orientation="vertical" />
-
-          <StatusActionIcon
-            tooltip={serverAudioEnabled ? "Server audio playback enabled" : "Server audio playback disabled"}
-            color={serverAudioEnabled ? "green" : "gray"}
-            onClick={handleToggleServerAudio}
-          >
-            {serverAudioEnabled ? <IconVolume size={16} /> : <IconVolumeOff size={16} />}
-          </StatusActionIcon>
-
-          <StatusActionIcon
-            tooltip={rightPanelMode === "loco" ? "Right panel: loco panel" : "Right panel: property panel"}
-            color={rightPanelMode === "loco" ? "green" : "gray"}
-            onClick={handleToggleRightPanelMode}
-          >
-            <IconTrain size={16} />
-          </StatusActionIcon>
-
+          <StatusActionIcon tooltip={serverAudioEnabled ? "Server audio playback enabled" : "Server audio playback disabled"} color={serverAudioEnabled ? "green" : "gray"} onClick={handleToggleServerAudio}>{serverAudioEnabled ? <IconVolume size={16} /> : <IconVolumeOff size={16} />}</StatusActionIcon>
+          <StatusActionIcon tooltip={rightPanelMode === "loco" ? "Right panel: loco panel" : "Right panel: property panel"} color={rightPanelMode === "loco" ? "green" : "gray"} onClick={handleToggleRightPanelMode}><IconTrain size={16} /></StatusActionIcon>
           <Divider orientation="vertical" />
-
-          <StatusBadge color={scriptBadgeColor}>
-            <Group gap={4} wrap="nowrap">
-              <IconCode size={13} />
-              <span>{scriptStatus.toUpperCase()}</span>
-            </Group>
-          </StatusBadge>
-
-          <StatusActionIcon
-            tooltip={scriptIsRunning ? "Stop running script" : "Start script"}
-            color={scriptIsRunning ? "red" : "green"}
-            disabled={scriptStatus === "stopping"}
-            onClick={handleToggleScript}
-          >
-            {scriptIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}
-          </StatusActionIcon>
-
-          <StatusActionIcon
-            tooltip="Edit script"
-            color="blue"
-            onClick={() => setScriptEditorOpened(true)}
-          >
-            <IconEdit size={14} />
-          </StatusActionIcon>
-
+          <StatusBadge color={scriptBadgeColor}><Group gap={4} wrap="nowrap"><IconCode size={13} /><span>{scriptStatus.toUpperCase()}</span></Group></StatusBadge>
+          <StatusActionIcon tooltip={scriptIsRunning ? "Stop running script" : "Start script"} color={scriptIsRunning ? "red" : "green"} disabled={scriptStatus === "stopping"} onClick={handleToggleScript}>{scriptIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}</StatusActionIcon>
+          <StatusActionIcon tooltip="Edit script" color="blue" onClick={() => setScriptEditorOpened(true)}><IconEdit size={14} /></StatusActionIcon>
           <Divider orientation="vertical" />
-
-          <StatusBadge color={automationBadgeColor}>
-            <Group gap={4} wrap="nowrap">
-              <IconTrafficLights size={13} />
-              <span>{automationIsRunning ? `${automationLabel} RUN` : `${automationLabel} STOP`}</span>
-            </Group>
-          </StatusBadge>
-
-          <StatusActionIcon
-            tooltip="Open automation status"
-            color="blue"
-            onClick={handleOpenAutomation}
-          >
-            <IconListDetails size={14} />
-          </StatusActionIcon>
-
-          <StatusActionIcon
-            tooltip={automationIsRunning ? "Stop automation runtime" : "Start automation runtime"}
-            color={automationIsRunning ? "red" : "green"}
-            disabled={!wsConnected || automationBusy}
-            onClick={handleToggleAutomation}
-          >
-            {automationIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}
-          </StatusActionIcon>
-
+          <StatusBadge color={automationBadgeColor}><Group gap={4} wrap="nowrap"><IconTrafficLights size={13} /><span>{automationIsRunning ? `${automationLabel} RUN` : `${automationLabel} STOP`}</span></Group></StatusBadge>
+          <StatusActionIcon tooltip="Open automation status" color="blue" onClick={handleOpenAutomation}><IconListDetails size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip={automationIsRunning ? "Stop automation runtime" : "Start automation runtime"} color={automationIsRunning ? "red" : "green"} disabled={!wsConnected || automationBusy} onClick={handleToggleAutomation}>{automationIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}</StatusActionIcon>
           <Divider orientation="vertical" />
-
           <StatusBadge color={taskBadgeColor}>TASKS {activeTaskCount}</StatusBadge>
-
-          <StatusActionIcon tooltip="Open tasks" color="blue" onClick={handleOpenTasks}>
-            <IconListDetails size={14} />
-          </StatusActionIcon>
-
-          <StatusActionIcon tooltip="Start all tasks" color="green" disabled={!wsConnected || !hasTasks} onClick={handleStartTasks}>
-            <IconPlayerPlayFilled size={14} />
-          </StatusActionIcon>
-
-          <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!wsConnected || !hasRunningTasks} onClick={handlePauseTasks}>
-            <IconPlayerPause size={14} />
-          </StatusActionIcon>
-
-          <StatusActionIcon
-            tooltip="Complete all tasks"
-            color="blue"
-            disabled={!wsConnected || !taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")}
-            onClick={handleCompleteTasks}
-          >
-            <IconPlayerSkipForward size={14} />
-          </StatusActionIcon>
-
-          <StatusActionIcon
-            tooltip="Stop all tasks"
-            color="red"
-            disabled={!wsConnected || !taskSnapshot?.tasks.some(task =>
-              task.status === "running" || task.status === "paused" || task.status === "finishing"
-            )}
-            onClick={handleStopTasks}
-          >
-            <IconPlayerStopFilled size={14} />
-          </StatusActionIcon>
-
+          <StatusActionIcon tooltip="Open tasks" color="blue" onClick={handleOpenTasks}><IconListDetails size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip="Start all tasks" color="green" disabled={!wsConnected || !hasTasks} onClick={handleStartTasks}><IconPlayerPlayFilled size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!wsConnected || !hasRunningTasks} onClick={handlePauseTasks}><IconPlayerPause size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip="Complete all tasks" color="blue" disabled={!wsConnected || !taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")} onClick={handleCompleteTasks}><IconPlayerSkipForward size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip="Stop all tasks" color="red" disabled={!wsConnected || !taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused" || task.status === "finishing")} onClick={handleStopTasks}><IconPlayerStopFilled size={14} /></StatusActionIcon>
           <Divider orientation="vertical" />
           <FastClockStatus />
           <Divider orientation="vertical" />
-
-          <StatusBadge color="blue">
-            NET ↓{serverStats?.wsRxKbps ?? "-"} ↑{serverStats?.wsTxKbps ?? "-"} kbit/s
-          </StatusBadge>
+          <StatusBadge color="blue">NET ↓{serverStats?.wsRxKbps ?? "-"} ↑{serverStats?.wsTxKbps ?? "-"} kbit/s</StatusBadge>
         </Group>
       </Group>
 
-      <ScriptEditorDialog
-        opened={scriptEditorOpened}
-        onClose={() => setScriptEditorOpened(false)}
-        title="Script editor"
-      />
+      <ScriptEditorDialog opened={scriptEditorOpened} onClose={() => setScriptEditorOpened(false)} title="Script editor" />
 
       <Modal opened={automationDialogOpened} onClose={() => setAutomationDialogOpened(false)} title="Automation" size="xl" centered>
         <Stack gap="sm">
           <Group gap="xs">
-            <StatusBadge color={automationBadgeColor}>
-              Automation task: {automationIsRunning ? "RUNNING" : "STOPPED"}
-            </StatusBadge>
-
-            <StatusBadge color="blue">
-              Tick: {automationState.tickMs} ms
-            </StatusBadge>
+            <StatusBadge color={automationBadgeColor}>Automation task: {automationIsRunning ? "RUNNING" : "STOPPED"}</StatusBadge>
+            <StatusBadge color="blue">Tick: {automationState.tickMs} ms</StatusBadge>
           </Group>
-
           <Group gap="xs">
-            <StatusActionIcon tooltip="Refresh automation state" color="blue" onClick={() => void refreshAutomationDashboard()}>
-              <IconListDetails size={14} />
-            </StatusActionIcon>
-
-            <StatusActionIcon tooltip="Start automation runtime" color="green" disabled={!wsConnected || automationBusy} onClick={() => {
-              if (!automationIsRunning) handleToggleAutomation();
-            }}>
-              <IconPlayerPlayFilled size={14} />
-            </StatusActionIcon>
-
-            <StatusActionIcon tooltip="Stop automation runtime" color="red" disabled={!wsConnected || automationBusy} onClick={() => {
-              if (automationIsRunning) handleToggleAutomation();
-            }}>
-              <IconPlayerStopFilled size={14} />
-            </StatusActionIcon>
+            <StatusActionIcon tooltip="Refresh automation state" color="blue" onClick={() => void refreshAutomationDashboard()}><IconListDetails size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Start automation runtime" color="green" disabled={!wsConnected || automationBusy} onClick={() => { if (!automationIsRunning) handleToggleAutomation(); }}><IconPlayerPlayFilled size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Stop automation runtime" color="red" disabled={!wsConnected || automationBusy} onClick={() => { if (automationIsRunning) handleToggleAutomation(); }}><IconPlayerStopFilled size={14} /></StatusActionIcon>
           </Group>
-
           <Table striped highlightOnHover withTableBorder withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Automation module</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Enabled</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {automationRows.map(row => (
-                <Table.Tr key={row.id}>
-                  <Table.Td>
-                    <Stack gap={0}>
-                      <Text size="sm" fw={600}>{row.name}</Text>
-                      <Text size="xs" c="dimmed">{row.description}</Text>
-                    </Stack>
-                  </Table.Td>
-                  <Table.Td>
-                    <StatusBadge color={row.effectiveRunning ? "green" : row.enabled ? "orange" : "gray"}>
-                      {row.effectiveRunning
-                        ? "RUNNING"
-                        : row.enabled
-                          ? "ENABLED"
-                          : "DISABLED"}
-                    </StatusBadge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Checkbox
-                      checked={row.enabled === true}
-                      disabled={!wsConnected || automationBusy}
-                      onChange={event => handleToggleAutomationModule(row.id, event.currentTarget.checked)}
-                    />
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
+            <Table.Thead><Table.Tr><Table.Th>Automation module</Table.Th><Table.Th>Status</Table.Th><Table.Th>Enabled</Table.Th></Table.Tr></Table.Thead>
+            <Table.Tbody>{automationRows.map(row => <Table.Tr key={row.id}><Table.Td><Stack gap={0}><Text size="sm" fw={600}>{row.name}</Text><Text size="xs" c="dimmed">{row.description}</Text></Stack></Table.Td><Table.Td><StatusBadge color={row.effectiveRunning ? "green" : row.enabled ? "orange" : "gray"}>{row.effectiveRunning ? "RUNNING" : row.enabled ? "ENABLED" : "DISABLED"}</StatusBadge></Table.Td><Table.Td><Checkbox checked={row.enabled === true} disabled={!wsConnected || automationBusy} onChange={event => handleToggleAutomationModule(row.id, event.currentTarget.checked)} /></Table.Td></Table.Tr>)}</Table.Tbody>
           </Table>
-
           <Text size="sm" fw={600}>Level crossing runtime</Text>
-          {levelCrossingState.crossings.length === 0 ? (
-            <Text size="sm" c="dimmed">No level crossing runtime entries.</Text>
-          ) : (
-            <ScrollArea h={220}>
-              <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Element</Table.Th>
-                    <Table.Th>State</Table.Th>
-                    <Table.Th>Last changed</Table.Th>
-                    <Table.Th>Last evaluation</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {levelCrossingState.crossings.map(entry => (
-                    <Table.Tr key={entry.logicId}>
-                      <Table.Td>{entry.levelCrossingElementId || entry.logicId}</Table.Td>
-                      <Table.Td>
-                        <StatusBadge color={getCrossingBadgeColor(entry)}>
-                          {entry.state.toUpperCase()}
-                        </StatusBadge>
-                      </Table.Td>
-                      <Table.Td>{formatTime(entry.lastChangedAtMs)}</Table.Td>
-                      <Table.Td>{describeEvaluation(entry)}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </ScrollArea>
-          )}
+          {levelCrossingState.crossings.length === 0 ? <Text size="sm" c="dimmed">No level crossing runtime entries.</Text> : <ScrollArea h={220}><Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader><Table.Thead><Table.Tr><Table.Th>Element</Table.Th><Table.Th>State</Table.Th><Table.Th>Last changed</Table.Th><Table.Th>Last evaluation</Table.Th></Table.Tr></Table.Thead><Table.Tbody>{levelCrossingState.crossings.map(entry => <Table.Tr key={entry.logicId}><Table.Td>{entry.levelCrossingElementId || entry.logicId}</Table.Td><Table.Td><StatusBadge color={getCrossingBadgeColor(entry)}>{entry.state.toUpperCase()}</StatusBadge></Table.Td><Table.Td>{formatTime(entry.lastChangedAtMs)}</Table.Td><Table.Td>{describeEvaluation(entry)}</Table.Td></Table.Tr>)}</Table.Tbody></Table></ScrollArea>}
         </Stack>
       </Modal>
 
       <Modal opened={taskDialogOpened} onClose={() => setTaskDialogOpened(false)} title="Tasks" size="xl" centered>
         <Stack gap="sm">
           <Group gap="xs">
-            <StatusActionIcon tooltip="Refresh tasks" color="blue" onClick={() => wsApi.getTaskRuntimeState()}>
-              <IconListDetails size={14} />
-            </StatusActionIcon>
-
-            <StatusActionIcon tooltip="Start all tasks" color="green" onClick={handleStartTasks}>
-              <IconPlayerPlayFilled size={14} />
-            </StatusActionIcon>
-
-            <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!hasRunningTasks} onClick={handlePauseTasks}>
-              <IconPlayerPause size={14} />
-            </StatusActionIcon>
-
-            <StatusActionIcon
-              tooltip="Complete all tasks"
-              color="blue"
-              disabled={!taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")}
-              onClick={handleCompleteTasks}
-            >
-              <IconPlayerSkipForward size={14} />
-            </StatusActionIcon>
-
-            <StatusActionIcon
-              tooltip="Stop all tasks"
-              color="red"
-              disabled={!taskSnapshot?.tasks.some(task =>
-                task.status === "running" || task.status === "paused" || task.status === "finishing"
-              )}
-              onClick={handleStopTasks}
-            >
-              <IconPlayerStopFilled size={14} />
-            </StatusActionIcon>
+            <StatusActionIcon tooltip="Refresh tasks" color="blue" onClick={() => wsApi.getTaskRuntimeState()}><IconListDetails size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Start all tasks" color="green" onClick={handleStartTasks}><IconPlayerPlayFilled size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!hasRunningTasks} onClick={handlePauseTasks}><IconPlayerPause size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Complete all tasks" color="blue" disabled={!taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")} onClick={handleCompleteTasks}><IconPlayerSkipForward size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Stop all tasks" color="red" disabled={!taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused" || task.status === "finishing")} onClick={handleStopTasks}><IconPlayerStopFilled size={14} /></StatusActionIcon>
           </Group>
-
-          {!taskSnapshot ? (
-            <Text size="sm" c="dimmed">No task snapshot yet.</Text>
-          ) : taskSnapshot.tasks.length === 0 ? (
-            <Text size="sm" c="dimmed">No tasks.</Text>
-          ) : (
-            <ScrollArea h={360}>
-              <Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Name</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>From</Table.Th>
-                    <Table.Th>To</Table.Th>
-                    <Table.Th>Loco</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {taskSnapshot.tasks.map(task => (
-                    <Table.Tr key={task.id}>
-                      <Table.Td>{task.name}</Table.Td>
-                      <Table.Td>{task.status}</Table.Td>
-                      <Table.Td>{task.transition.fromBlock.name}</Table.Td>
-                      <Table.Td>{task.transition.toBlock.name}</Table.Td>
-                      <Table.Td>{task.runtime.loco?.name ?? "-"}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </ScrollArea>
-          )}
+          {!taskSnapshot ? <Text size="sm" c="dimmed">No task snapshot yet.</Text> : taskSnapshot.tasks.length === 0 ? <Text size="sm" c="dimmed">No tasks.</Text> : <ScrollArea h={360}><Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader><Table.Thead><Table.Tr><Table.Th>Name</Table.Th><Table.Th>Status</Table.Th><Table.Th>From</Table.Th><Table.Th>To</Table.Th><Table.Th>Loco</Table.Th></Table.Tr></Table.Thead><Table.Tbody>{taskSnapshot.tasks.map(task => <Table.Tr key={task.id}><Table.Td>{task.name}</Table.Td><Table.Td>{task.status}</Table.Td><Table.Td>{task.transition.fromBlock.name}</Table.Td><Table.Td>{task.transition.toBlock.name}</Table.Td><Table.Td>{task.runtime.loco?.name ?? "-"}</Table.Td></Table.Tr>)}</Table.Tbody></Table></ScrollArea>}
         </Stack>
       </Modal>
     </>
