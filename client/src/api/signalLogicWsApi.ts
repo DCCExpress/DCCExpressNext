@@ -36,16 +36,13 @@ function toSignalLogicLoadResult(
     throw new Error("Missing signal logic document in response.");
   }
 
-  const enabled = response.document.enabled ?? response.document.autostart ?? false;
-
   return {
     document: response.document,
     issues: response.issues ?? [],
     created: response.created ?? false,
     state: response.state ?? {
       running: false,
-      enabled,
-      autostart: enabled,
+      enabled: response.document.enabled,
     },
     ...(response.message
       ? { message: response.message }
