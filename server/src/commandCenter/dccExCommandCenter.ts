@@ -1,6 +1,7 @@
 import type {
   CommandCenterType,
   CommandCenterInfoPayload,
+  Direction,
   LocoState,
   SensorInfo,
   TurnoutInfo,
@@ -161,10 +162,11 @@ export abstract class DccExCommandCenter extends CommandCenter {
     return Promise.resolve(true);
   }
 
-  setLoco(
+  protected override setPhysicalLoco(
     address: number,
     speed: number,
-    direction: "forward" | "reverse"
+    physicalDirection: Direction,
+    logicalDirection: Direction
   ): Promise<boolean> {
     if (!this.isTransportConnected()) {
       return Promise.resolve(false);
@@ -172,18 +174,21 @@ export abstract class DccExCommandCenter extends CommandCenter {
 
     const dccExSpeed =
       Math.max(0, Math.min(126, Math.round(speed)));
+
     const dccExDirection =
-      direction === "forward" ? 1 : 0;
+      physicalDirection === "forward" ? 1 : 0;
 
     this.enqueue(
       `<t ${address} ${dccExSpeed} ${dccExDirection}>`
     );
 
     const loco =
-      this.getOrCreateLoco(address);
+      this.setLocoRuntimeStateSync(
+        address,
+        dccExSpeed,
+        logicalDirection
+      );
 
-    loco.speed = dccExSpeed;
-    loco.direction = direction;
     this.powerInfo.emergencyStop = false;
     this.broadcastLoco(loco);
     this.broadcastPowerInfo();
@@ -454,22 +459,29 @@ export abstract class DccExCommandCenter extends CommandCenter {
       return;
     }
 
-    const loco =
-      this.getOrCreateLoco(address);
+    let speed = 0;
+    let physicalDirection: Direction = "forward";
 
     if (speedByte >= 2 && speedByte <= 127) {
-      loco.speed = speedByte - 1;
-      loco.direction = "reverse";
+      speed = speedByte - 1;
+      physicalDirection = "reverse";
     } else if (speedByte >= 130 && speedByte <= 255) {
-      loco.speed = speedByte - 129;
-      loco.direction = "forward";
+      speed = speedByte - 129;
+      physicalDirection = "forward";
     } else if (speedByte === 0) {
-      loco.speed = 0;
-      loco.direction = "reverse";
+      speed = 0;
+      physicalDirection = "reverse";
     } else if (speedByte === 128) {
-      loco.speed = 0;
-      loco.direction = "forward";
+      speed = 0;
+      physicalDirection = "forward";
     }
+
+    const loco =
+      this.setLocoRuntimeStateFromPhysical(
+        address,
+        speed,
+        physicalDirection
+      );
 
     if (Number.isFinite(functionMap)) {
       for (let fn = 0; fn < 32; fn += 1) {
