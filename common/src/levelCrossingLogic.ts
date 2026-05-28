@@ -58,28 +58,17 @@ export type LevelCrossingLogic = {
   id: string;
   levelCrossingElementId: string;
   enabled: boolean;
-
-  /**
-   * The crossing closes when ANY trigger is active.
-   */
   closeTriggers: LevelCrossingCondition[];
-
-  /**
-   * The crossing opens only when ALL configured clear conditions are true.
-   * If this list is empty, the evaluator falls back to "no close trigger is active".
-   */
   openConditions: LevelCrossingCondition[];
-
   closeDelayMs: number;
   openDelayMs: number;
   minClosedMs: number;
-
   actions: LevelCrossingAction[];
 };
 
 export type LevelCrossingLogicDocumentDto = {
   version: 1;
-  autostart: boolean;
+  enabled: boolean;
   crossings: LevelCrossingLogic[];
 };
 
@@ -93,7 +82,7 @@ export type LevelCrossingRuntimeEntryDto = {
 
 export type LevelCrossingRuntimeStateDto = {
   running: boolean;
-  autostart: boolean;
+  enabled: boolean;
   crossings: LevelCrossingRuntimeEntryDto[];
 };
 
@@ -139,7 +128,7 @@ export type LevelCrossingEvaluationResult = {
 
 export const DEFAULT_LEVEL_CROSSING_LOGIC_DOCUMENT: LevelCrossingLogicDocumentDto = {
   version: 1,
-  autostart: false,
+  enabled: false,
   crossings: [],
 };
 
@@ -166,10 +155,13 @@ export function normalizeLevelCrossingLogicDocument(input: unknown): LevelCrossi
   }
 
   const rawCrossings = Array.isArray(input.crossings) ? input.crossings : [];
+  const enabled = typeof input.enabled === "boolean"
+    ? input.enabled
+    : Boolean(input.autostart);
 
   return {
     version: 1,
-    autostart: Boolean(input.autostart),
+    enabled,
     crossings: rawCrossings.map((raw, index) => normalizeLevelCrossingLogic(raw, index)),
   };
 }
@@ -184,11 +176,9 @@ export function evaluateLevelCrossingCondition(
     case "sensor":
       value = context.getSensorActive(condition.sensorAddress);
       break;
-
     case "block":
       value = context.getBlockOccupied(condition.blockId);
       break;
-
     case "route":
       value = context.getRouteReserved(condition.fromBlockId, condition.toBlockId);
       break;
@@ -231,9 +221,6 @@ export function evaluateLevelCrossingLogic(
     : closeValues.map(value => value === "unknown" ? "unknown" : !value);
 
   const hasUnknownOpenCondition = openValues.some(value => value === "unknown");
-
-  // Fail-safe rule: unknown close conditions do not force closing by themselves,
-  // but unknown open conditions prevent opening.
   const mayOpen = !shouldClose
     && !hasUnknownOpenCondition
     && openValues.every(value => value === true);
@@ -270,11 +257,7 @@ function normalizeLevelCrossingLogic(input: unknown, index: number): LevelCrossi
   };
 }
 
-function normalizeConditionList(
-  input: unknown,
-  logicId: string,
-  scope: "close" | "open"
-): LevelCrossingCondition[] {
+function normalizeConditionList(input: unknown, logicId: string, scope: "close" | "open"): LevelCrossingCondition[] {
   if (!Array.isArray(input)) {
     return [];
   }
@@ -366,10 +349,8 @@ function getExpectedConditionValue(condition: LevelCrossingCondition): boolean {
   switch (condition.type) {
     case "sensor":
       return condition.active;
-
     case "block":
       return condition.occupied;
-
     case "route":
       return condition.reserved;
   }
