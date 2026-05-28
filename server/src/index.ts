@@ -30,15 +30,16 @@ import {
 } from "./paths.js";
 
 import {
-  layoutRuntimeStore,
-} from "./services/layoutRuntimeStore.js";
-
-import {
   log,
   logError,
 } from "./utility.js";
 
+import {
+  installLocoDirectionPatch,
+} from "./commandCenter/locoDirectionPatch.js";
 
+
+installLocoDirectionPatch();
 
 const DEFAULT_PORT = 3000;
 const SHUTDOWN_TIMEOUT_MS = 5000;
