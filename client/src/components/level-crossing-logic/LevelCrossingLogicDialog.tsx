@@ -133,10 +133,11 @@ export default function LevelCrossingLogicDialog({
     createEntry: t("levelCrossingLogic.createEntry", "Create entry"),
     entryAlreadyExists: t("levelCrossingLogic.entryAlreadyExists", "Entry already exists for this crossing."),
     selectOrAdd: t("levelCrossingLogic.selectOrAdd", "Select a level crossing and create an entry."),
+    configured: t("levelCrossingLogic.configured", "Configured"),
+    notConfigured: t("levelCrossingLogic.notConfigured", "Not configured"),
     editorTab: t("levelCrossingLogic.editorTab", "Editor"),
     previewTab: t("levelCrossingLogic.previewTab", "Preview"),
     enabledLogic: t("levelCrossingLogic.enabled", "Enabled"),
-    disabledLogic: t("levelCrossingLogic.disabled", "Disabled"),
     closeDelayMs: t("levelCrossingLogic.closeDelayMs", "Close delay"),
     openDelayMs: t("levelCrossingLogic.openDelayMs", "Open delay"),
     minClosedMs: t("levelCrossingLogic.minClosedMs", "Minimum closed time"),
@@ -236,7 +237,7 @@ export default function LevelCrossingLogicDialog({
       setDocument(loadedDocument);
       setRuntimeState(previous => ({
         ...previous,
-        enabled: loadedDocument.enabled ?? loadedDocument.autostart ?? false,
+        enabled: loadedDocument.enabled,
       }));
       setSelectedElementId(previous =>
         initialLevelCrossingElementId
@@ -272,7 +273,7 @@ export default function LevelCrossingLogicDialog({
       setDocument(savedDocument);
       setRuntimeState(previous => ({
         ...previous,
-        enabled: savedDocument.enabled ?? savedDocument.autostart ?? false,
+        enabled: savedDocument.enabled,
       }));
       setStatusText(labels.saved);
     } catch (error) {
@@ -408,7 +409,7 @@ export default function LevelCrossingLogicDialog({
           <Group gap="xs">
             <Switch
               label={labels.enabled}
-              checked={document.enabled ?? document.autostart ?? false}
+              checked={document.enabled}
               onChange={event => setDocumentEnabled(event.currentTarget.checked)}
             />
             <Text size="sm" c={runtimeState.running ? "green" : "dimmed"}>
