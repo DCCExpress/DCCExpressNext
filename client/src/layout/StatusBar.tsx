@@ -106,7 +106,6 @@ const DEFAULT_AUTOMATION_STATE: AutomationRuntimeStatePayload = {
 const DEFAULT_SIGNAL_LOGIC_STATE: SignalLogicRuntimeStateDto = {
   running: false,
   enabled: false,
-  autostart: false,
 };
 
 const DEFAULT_LEVEL_CROSSING_STATE: LevelCrossingRuntimeStateDto = {
@@ -164,14 +163,7 @@ export default function StatusBar({
 }: StatusBarProps) {
   const wsStatus = useWsStatus();
   const serverStats = useServerRuntimeStats();
-
-  const {
-    alive,
-    type,
-    name,
-    powerInfo,
-    locked,
-  } = useCommandCenter();
+  const { alive, type, name, powerInfo, locked } = useCommandCenter();
 
   const [scriptEditorOpened, setScriptEditorOpened] = useState(false);
   const [taskDialogOpened, setTaskDialogOpened] = useState(false);
@@ -205,9 +197,7 @@ export default function StatusBar({
   const automationIsRunning = automationState.running;
   const automationModuleCount = automationState.modules.length;
   const enabledAutomationModules = automationState.modules.filter(module => module.enabled);
-  const activeAutomationModuleCount = automationIsRunning
-    ? enabledAutomationModules.length
-    : 0;
+  const activeAutomationModuleCount = automationIsRunning ? enabledAutomationModules.length : 0;
   const automationLabel = `AUTO ${activeAutomationModuleCount}/${automationModuleCount}`;
 
   const automationBadgeColor =
@@ -228,7 +218,7 @@ export default function StatusBar({
       name: "Signal logic",
       description: "Signal control automation",
       module: signalLogicModule,
-      enabled: signalLogicState.enabled ?? signalLogicState.autostart ?? false,
+      enabled: signalLogicState.enabled,
       effectiveRunning: signalLogicState.running && signalLogicModule?.enabled === true,
     },
     {
@@ -236,13 +226,12 @@ export default function StatusBar({
       name: "Level crossing supervision",
       description: "Barrier / level crossing automation",
       module: levelCrossingModule,
-      enabled: levelCrossingState.enabled ?? false,
+      enabled: levelCrossingState.enabled,
       effectiveRunning: levelCrossingState.running && levelCrossingModule?.enabled === true,
     },
   ], [
     signalLogicModule,
     signalLogicState.enabled,
-    signalLogicState.autostart,
     signalLogicState.running,
     levelCrossingModule,
     levelCrossingState.enabled,
@@ -260,12 +249,11 @@ export default function StatusBar({
   const hasRunningTasks = taskSnapshot?.tasks.some(task => task.status === "running") === true;
   const hasTasks = (taskSnapshot?.tasks.length ?? 0) > 0;
 
-  const taskBadgeColor =
-    runningTaskCount > 0
-      ? "green"
-      : activeTaskCount > 0
-        ? "orange"
-        : "gray";
+  const taskBadgeColor = runningTaskCount > 0
+    ? "green"
+    : activeTaskCount > 0
+      ? "orange"
+      : "gray";
 
   const refreshAutomationDashboard = async (): Promise<void> => {
     if (!wsConnected) {
@@ -288,12 +276,9 @@ export default function StatusBar({
   };
 
   useEffect(() => {
-    const unsubscribe = wsClient.on(
-      "taskManagerSnapshotChanged",
-      data => {
-        setTaskSnapshot(data);
-      }
-    );
+    const unsubscribe = wsClient.on("taskManagerSnapshotChanged", data => {
+      setTaskSnapshot(data);
+    });
 
     wsApi.getTaskRuntimeState();
 
@@ -301,30 +286,18 @@ export default function StatusBar({
   }, []);
 
   useEffect(() => {
-    const unsubscribe = wsClient.on(
-      "automationRuntimeStateChanged",
-      data => {
-        setAutomationState(data);
-      }
-    );
+    const unsubscribe = wsClient.on("automationRuntimeStateChanged", data => {
+      setAutomationState(data);
+    });
 
     return unsubscribe;
   }, []);
 
   useEffect(() => {
     if (!wsConnected) {
-      setAutomationState(previous => ({
-        ...previous,
-        running: false,
-      }));
-      setSignalLogicState(previous => ({
-        ...previous,
-        running: false,
-      }));
-      setLevelCrossingState(previous => ({
-        ...previous,
-        running: false,
-      }));
+      setAutomationState(previous => ({ ...previous, running: false }));
+      setSignalLogicState(previous => ({ ...previous, running: false }));
+      setLevelCrossingState(previous => ({ ...previous, running: false }));
       return;
     }
 
@@ -332,15 +305,7 @@ export default function StatusBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wsConnected]);
 
-  useEffect(() => {
-    return subscribeServerAudioPlaybackChanged(setServerAudioEnabled);
-  }, []);
-
-  const handleStartScript = (): void => {
-    scriptEngine.runCurrent({
-      source: "control-panel",
-    });
-  };
+  useEffect(() => subscribeServerAudioPlaybackChanged(setServerAudioEnabled), []);
 
   const handleToggleScript = (): void => {
     if (scriptIsRunning) {
@@ -348,7 +313,7 @@ export default function StatusBar({
       return;
     }
 
-    handleStartScript();
+    scriptEngine.runCurrent({ source: "control-panel" });
   };
 
   const handleToggleAutomation = (): void => {
@@ -392,11 +357,11 @@ export default function StatusBar({
 
     const request = moduleId === "signalLogic"
       ? (enabled ? startSignalLogicWs() : stopSignalLogicWs()).then(result => {
-        setSignalLogicState(result.state);
-      })
+          setSignalLogicState(result.state);
+        })
       : (enabled ? startLevelCrossingRuntimeWs() : stopLevelCrossingRuntimeWs()).then(result => {
-        setLevelCrossingState(result);
-      });
+          setLevelCrossingState(result);
+        });
 
     void request
       .then(() => refreshAutomationDashboard())
@@ -409,32 +374,12 @@ export default function StatusBar({
   };
 
   const handleToggleRightPanelMode = (): void => {
-    setRightPanelMode(value =>
-      value === "property"
-        ? "loco"
-        : "property"
-    );
+    setRightPanelMode(value => value === "property" ? "loco" : "property");
   };
 
   const handleOpenTasks = (): void => {
     setTaskDialogOpened(true);
     wsApi.getTaskRuntimeState();
-  };
-
-  const handleStartTasks = (): void => {
-    void taskManager.startAllTasks();
-  };
-
-  const handlePauseTasks = (): void => {
-    void taskManager.pauseAllTasks();
-  };
-
-  const handleCompleteTasks = (): void => {
-    void taskManager.finishAllTasks();
-  };
-
-  const handleStopTasks = (): void => {
-    void taskManager.abortAllTasks();
   };
 
   const handleToggleServerAudio = (): void => {
@@ -448,7 +393,17 @@ export default function StatusBar({
           <StatusBadge color={getWsColor(wsStatus)}>WS</StatusBadge>
           <StatusBadge color={commandCenterOnline ? "green" : "red"}>{type ?? name ?? "CC"}</StatusBadge>
           <StatusBadge color={trackPowerOn ? "green" : "red"}>PWR</StatusBadge>
-          <StatusBadge color={powerInfo?.emergencyStop ? "red" : "gray"} blink={powerInfo?.emergencyStop === true} onClick={() => { if (!powerInfo) return; if (powerInfo.emergencyStop) wsApi.powerOn(); else wsApi.emergencyStop(); }}>ESTOP</StatusBadge>
+          <StatusBadge
+            color={powerInfo?.emergencyStop ? "red" : "gray"}
+            blink={powerInfo?.emergencyStop === true}
+            onClick={() => {
+              if (!powerInfo) return;
+              if (powerInfo.emergencyStop) wsApi.powerOn();
+              else wsApi.emergencyStop();
+            }}
+          >
+            ESTOP
+          </StatusBadge>
           <StatusBadge color={locked ? "orange" : "gray"} blink={locked}>{locked ? "LOCK" : "FREE"}</StatusBadge>
           <Divider orientation="vertical" />
           <StatusActionIcon tooltip={serverAudioEnabled ? "Server audio playback enabled" : "Server audio playback disabled"} color={serverAudioEnabled ? "green" : "gray"} onClick={handleToggleServerAudio}>{serverAudioEnabled ? <IconVolume size={16} /> : <IconVolumeOff size={16} />}</StatusActionIcon>
@@ -464,10 +419,10 @@ export default function StatusBar({
           <Divider orientation="vertical" />
           <StatusBadge color={taskBadgeColor}>TASKS {activeTaskCount}</StatusBadge>
           <StatusActionIcon tooltip="Open tasks" color="blue" onClick={handleOpenTasks}><IconListDetails size={14} /></StatusActionIcon>
-          <StatusActionIcon tooltip="Start all tasks" color="green" disabled={!wsConnected || !hasTasks} onClick={handleStartTasks}><IconPlayerPlayFilled size={14} /></StatusActionIcon>
-          <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!wsConnected || !hasRunningTasks} onClick={handlePauseTasks}><IconPlayerPause size={14} /></StatusActionIcon>
-          <StatusActionIcon tooltip="Complete all tasks" color="blue" disabled={!wsConnected || !taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")} onClick={handleCompleteTasks}><IconPlayerSkipForward size={14} /></StatusActionIcon>
-          <StatusActionIcon tooltip="Stop all tasks" color="red" disabled={!wsConnected || !taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused" || task.status === "finishing")} onClick={handleStopTasks}><IconPlayerStopFilled size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip="Start all tasks" color="green" disabled={!wsConnected || !hasTasks} onClick={() => void taskManager.startAllTasks()}><IconPlayerPlayFilled size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!wsConnected || !hasRunningTasks} onClick={() => void taskManager.pauseAllTasks()}><IconPlayerPause size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip="Complete all tasks" color="blue" disabled={!wsConnected || !taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")} onClick={() => void taskManager.finishAllTasks()}><IconPlayerSkipForward size={14} /></StatusActionIcon>
+          <StatusActionIcon tooltip="Stop all tasks" color="red" disabled={!wsConnected || !taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused" || task.status === "finishing")} onClick={() => void taskManager.abortAllTasks()}><IconPlayerStopFilled size={14} /></StatusActionIcon>
           <Divider orientation="vertical" />
           <FastClockStatus />
           <Divider orientation="vertical" />
@@ -501,10 +456,10 @@ export default function StatusBar({
         <Stack gap="sm">
           <Group gap="xs">
             <StatusActionIcon tooltip="Refresh tasks" color="blue" onClick={() => wsApi.getTaskRuntimeState()}><IconListDetails size={14} /></StatusActionIcon>
-            <StatusActionIcon tooltip="Start all tasks" color="green" onClick={handleStartTasks}><IconPlayerPlayFilled size={14} /></StatusActionIcon>
-            <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!hasRunningTasks} onClick={handlePauseTasks}><IconPlayerPause size={14} /></StatusActionIcon>
-            <StatusActionIcon tooltip="Complete all tasks" color="blue" disabled={!taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")} onClick={handleCompleteTasks}><IconPlayerSkipForward size={14} /></StatusActionIcon>
-            <StatusActionIcon tooltip="Stop all tasks" color="red" disabled={!taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused" || task.status === "finishing")} onClick={handleStopTasks}><IconPlayerStopFilled size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Start all tasks" color="green" onClick={() => void taskManager.startAllTasks()}><IconPlayerPlayFilled size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Pause all running tasks" color="yellow" disabled={!hasRunningTasks} onClick={() => void taskManager.pauseAllTasks()}><IconPlayerPause size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Complete all tasks" color="blue" disabled={!taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused")} onClick={() => void taskManager.finishAllTasks()}><IconPlayerSkipForward size={14} /></StatusActionIcon>
+            <StatusActionIcon tooltip="Stop all tasks" color="red" disabled={!taskSnapshot?.tasks.some(task => task.status === "running" || task.status === "paused" || task.status === "finishing")} onClick={() => void taskManager.abortAllTasks()}><IconPlayerStopFilled size={14} /></StatusActionIcon>
           </Group>
           {!taskSnapshot ? <Text size="sm" c="dimmed">No task snapshot yet.</Text> : taskSnapshot.tasks.length === 0 ? <Text size="sm" c="dimmed">No tasks.</Text> : <ScrollArea h={360}><Table striped highlightOnHover withTableBorder withColumnBorders stickyHeader><Table.Thead><Table.Tr><Table.Th>Name</Table.Th><Table.Th>Status</Table.Th><Table.Th>From</Table.Th><Table.Th>To</Table.Th><Table.Th>Loco</Table.Th></Table.Tr></Table.Thead><Table.Tbody>{taskSnapshot.tasks.map(task => <Table.Tr key={task.id}><Table.Td>{task.name}</Table.Td><Table.Td>{task.status}</Table.Td><Table.Td>{task.transition.fromBlock.name}</Table.Td><Table.Td>{task.transition.toBlock.name}</Table.Td><Table.Td>{task.runtime.loco?.name ?? "-"}</Table.Td></Table.Tr>)}</Table.Tbody></Table></ScrollArea>}
         </Stack>
