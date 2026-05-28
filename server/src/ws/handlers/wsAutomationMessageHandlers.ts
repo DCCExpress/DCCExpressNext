@@ -66,19 +66,6 @@ export const handleAutomationMessage: WsMessageHandler = async context => {
         return true;
       }
 
-      case "evaluateOnce": {
-        const state = await automationRuntimeService.evaluateOnce();
-
-        sendAutomationResponse(context, {
-          requestId,
-          action,
-          ok: true,
-          state,
-        });
-
-        return true;
-      }
-
       default: {
         sendAutomationResponse(context, {
           requestId,
