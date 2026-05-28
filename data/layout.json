@@ -2749,9 +2749,8 @@
           "length": 200,
           "basicAccessoryAddress": 501,
           "basicAccessoryClosedValue": true,
-          "barrierEnabled": "checked",
-          "barrierType": "half",
-          "barrierClosed": true,
+          "barrierType": "full",
+          "barrierClosed": false,
           "lightsEnabled": true,
           "blinkingEnabled": true,
           "roadColor": "#6c757d"

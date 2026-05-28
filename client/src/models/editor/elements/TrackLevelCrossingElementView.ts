@@ -339,6 +339,13 @@ export class TrackLevelCrossingElementView
   }
 
   private drawCrossingDetails(ctx: CanvasRenderingContext2D): void {
+
+    this.beginDraw(ctx);
+
+    ctx.translate(this.centerX, this.centerY);
+    ctx.rotate(this.rotation * Math.PI / 180);
+    ctx.translate(-this.centerX, -this.centerY);
+
     const closed = this.barrierClosed;
 
     if (this.barrierType !== "none") {
@@ -364,8 +371,11 @@ export class TrackLevelCrossingElementView
       }
     }
 
-    this.drawLight(ctx, this.centerX + 18, this.centerY - 18, this.blinkOn);
+    // this.drawLight(ctx, this.centerX + 18, this.centerY - 18, this.blinkOn);
+    // this.drawLight(ctx, this.centerX + 18, this.centerY + 18, !this.blinkOn);
+    this.drawLight(ctx, this.centerX - 18, this.centerY - 18, this.blinkOn);
     this.drawLight(ctx, this.centerX + 18, this.centerY + 18, !this.blinkOn);
+    this.endDraw(ctx);
   }
 
   draw(
