@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Graph } from "../../../common/src/railway/graph";
 import { routeGraphStore } from "../services/routeGraphStore";
 
@@ -11,23 +11,27 @@ export function useRouteGraph() {
     return routeGraphStore.subscribe(setGraphState);
   }, []);
 
+  const setGraph = useCallback((graph: Graph | null) => {
+    routeGraphStore.setGraph(graph);
+  }, []);
+
+  const clearGraph = useCallback(() => {
+    routeGraphStore.clear();
+  }, []);
+
+  const ensureLoaded = useCallback(() => {
+    return routeGraphStore.ensureLoaded();
+  }, []);
+
+  const reload = useCallback(() => {
+    return routeGraphStore.reload();
+  }, []);
+
   return {
     graph,
-
-    setGraph: (graph: Graph | null) => {
-      routeGraphStore.setGraph(graph);
-    },
-
-    clearGraph: () => {
-      routeGraphStore.clear();
-    },
-
-    ensureLoaded: () => {
-      return routeGraphStore.ensureLoaded();
-    },
-
-    reload: () => {
-      return routeGraphStore.reload();
-    },
+    setGraph,
+    clearGraph,
+    ensureLoaded,
+    reload,
   };
 }
