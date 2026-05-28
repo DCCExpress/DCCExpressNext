@@ -364,8 +364,8 @@ export class TrackLevelCrossingElementView
       }
     }
 
-    this.drawLight(ctx, this.centerX - 18, this.centerY + 18, this.blinkOn);
-    this.drawLight(ctx, this.centerX + 18, this.centerY - 18, !this.blinkOn);
+    this.drawLight(ctx, this.centerX + 18, this.centerY - 18, this.blinkOn);
+    this.drawLight(ctx, this.centerX + 18, this.centerY + 18, !this.blinkOn);
   }
 
   draw(
