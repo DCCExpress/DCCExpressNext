@@ -68,15 +68,11 @@ import {
 } from "../api/automationWsApi";
 import {
   getSignalLogicRuntimeStateWs,
-  loadSignalLogicRulesWs,
-  saveSignalLogicRulesWs,
   startSignalLogicWs,
   stopSignalLogicWs,
 } from "../api/signalLogicWsApi";
 import {
   getLevelCrossingRuntimeSnapshotWs,
-  loadLevelCrossingLogicWs,
-  saveLevelCrossingLogicWs,
   startLevelCrossingRuntimeWs,
   stopLevelCrossingRuntimeWs,
 } from "../api/levelCrossingWsApi";
@@ -109,12 +105,12 @@ const DEFAULT_AUTOMATION_STATE: AutomationRuntimeStatePayload = {
 
 const DEFAULT_SIGNAL_LOGIC_STATE: SignalLogicRuntimeStateDto = {
   running: false,
-  autostart: false,
+  enabled: false,
 };
 
 const DEFAULT_LEVEL_CROSSING_STATE: LevelCrossingRuntimeStateDto = {
   running: false,
-  autostart: false,
+  enabled: false,
   crossings: [],
 };
 
@@ -224,7 +220,6 @@ export default function StatusBar({
 
   const signalLogicModule = getModuleState(automationState, "signalLogic");
   const levelCrossingModule = getModuleState(automationState, "levelCrossing");
-  const automationAutostart = signalLogicState.autostart || levelCrossingState.autostart;
 
   const automationRows = useMemo(() => [
     {
@@ -232,24 +227,26 @@ export default function StatusBar({
       name: "Signal logic",
       description: "Signal control automation",
       module: signalLogicModule,
-      autostart: signalLogicState.autostart,
-      effectiveRunning: automationIsRunning && signalLogicModule?.enabled === true,
+      enabled: signalLogicState.enabled,
+      effectiveRunning: signalLogicState.running && signalLogicModule?.enabled === true,
     },
     {
       id: "levelCrossing" as const,
       name: "Level crossing supervision",
       description: "Barrier / level crossing automation",
       module: levelCrossingModule,
-      autostart: levelCrossingState.autostart,
-      effectiveRunning: automationIsRunning && levelCrossingModule?.enabled === true,
+      enabled: levelCrossingState.enabled,
+      effectiveRunning: levelCrossingState.running && levelCrossingModule?.enabled === true,
     },
   ], [
-    automationIsRunning,
-    levelCrossingModule,
-    levelCrossingState.autostart,
     signalLogicModule,
-    signalLogicState.autostart,
+    signalLogicState.enabled,
+    signalLogicState.running,
+    levelCrossingModule,
+    levelCrossingState.enabled,
+    levelCrossingState.running,
   ]);
+
 
   const runningTaskCount = taskSnapshot?.tasks.filter(task =>
     task.status === "running" || task.status === "finishing"
@@ -382,36 +379,6 @@ export default function StatusBar({
     void refreshAutomationDashboard();
   };
 
-  const handleToggleAutomationAutostart = (enabled: boolean): void => {
-    if (!wsConnected || automationBusy) {
-      return;
-    }
-
-    setAutomationBusy(true);
-
-    void Promise.all([
-      loadSignalLogicRulesWs().then(result =>
-        saveSignalLogicRulesWs({
-          ...result.document,
-          autostart: enabled,
-        })
-      ),
-      loadLevelCrossingLogicWs().then(document =>
-        saveLevelCrossingLogicWs({
-          ...document,
-          autostart: enabled,
-        })
-      ),
-    ])
-      .then(() => refreshAutomationDashboard())
-      .catch(error => {
-        console.error("Could not toggle automation autostart:", error);
-      })
-      .finally(() => {
-        setAutomationBusy(false);
-      });
-  };
-
   const handleToggleAutomationModule = (
     moduleId: AutomationModuleId,
     enabled: boolean
@@ -434,47 +401,6 @@ export default function StatusBar({
       .then(() => refreshAutomationDashboard())
       .catch(error => {
         console.error(`Could not toggle automation module ${moduleId}:`, error);
-      })
-      .finally(() => {
-        setAutomationBusy(false);
-      });
-  };
-
-  const handleToggleModuleAutostart = (
-    moduleId: AutomationModuleId,
-    enabled: boolean
-  ): void => {
-    if (!wsConnected || automationBusy) {
-      return;
-    }
-
-    setAutomationBusy(true);
-
-    const request = moduleId === "signalLogic"
-      ? loadSignalLogicRulesWs().then(result =>
-        saveSignalLogicRulesWs({
-          ...result.document,
-          autostart: enabled,
-        }).then(saved => {
-          setSignalLogicState(saved.state);
-        })
-      )
-      : loadLevelCrossingLogicWs().then(document =>
-        saveLevelCrossingLogicWs({
-          ...document,
-          autostart: enabled,
-        }).then(savedDocument => {
-          setLevelCrossingState(previous => ({
-            ...previous,
-            autostart: savedDocument.autostart,
-          }));
-        })
-      );
-
-    void request
-      .then(() => refreshAutomationDashboard())
-      .catch(error => {
-        console.error(`Could not toggle automation module autostart ${moduleId}:`, error);
       })
       .finally(() => {
         setAutomationBusy(false);
@@ -671,9 +597,15 @@ export default function StatusBar({
               Automation task: {automationIsRunning ? "RUNNING" : "STOPPED"}
             </StatusBadge>
 
-            <StatusBadge color={automationAutostart ? "green" : "gray"}>
-              Autostart: {automationAutostart ? "ON" : "OFF"}
-            </StatusBadge>
+            <Group gap="xs">
+              <StatusBadge color={automationBadgeColor}>
+                Automation task: {automationIsRunning ? "RUNNING" : "STOPPED"}
+              </StatusBadge>
+
+              <StatusBadge color="blue">
+                Tick: {automationState.tickMs} ms
+              </StatusBadge>
+            </Group>
 
             <StatusBadge color="blue">
               Tick: {automationState.tickMs} ms
@@ -697,12 +629,6 @@ export default function StatusBar({
               <IconPlayerStopFilled size={14} />
             </StatusActionIcon>
 
-            <Checkbox
-              label="Autostart all automation modules"
-              checked={automationAutostart}
-              disabled={!wsConnected || automationBusy}
-              onChange={event => handleToggleAutomationAutostart(event.currentTarget.checked)}
-            />
           </Group>
 
           <Table striped highlightOnHover withTableBorder withColumnBorders>
@@ -711,7 +637,7 @@ export default function StatusBar({
                 <Table.Th>Automation module</Table.Th>
                 <Table.Th>Status</Table.Th>
                 <Table.Th>Enabled</Table.Th>
-                <Table.Th>Autostart</Table.Th>
+                
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -737,13 +663,6 @@ export default function StatusBar({
                       checked={row.module?.enabled === true}
                       disabled={!wsConnected || automationBusy}
                       onChange={event => handleToggleAutomationModule(row.id, event.currentTarget.checked)}
-                    />
-                  </Table.Td>
-                  <Table.Td>
-                    <Checkbox
-                      checked={row.autostart}
-                      disabled={!wsConnected || automationBusy}
-                      onChange={event => handleToggleModuleAutostart(row.id, event.currentTarget.checked)}
                     />
                   </Table.Td>
                 </Table.Tr>

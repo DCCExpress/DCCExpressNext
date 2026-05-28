@@ -81,6 +81,7 @@ import {
   initializeCommandCenter,
   registerCommandCenterConfigLoadedCallback,
 } from "./wsCommandCenterLifecycle.js";
+import { levelCrossingRuntimeStore } from "../services/levelCrossingRuntimeStore.js";
 
 function getByteLength(value: RawData): number {
   if (typeof value === "string") {
@@ -188,7 +189,8 @@ async function initializeWebSocketRuntimeStores(): Promise<void> {
 
   await taskRuntimeStore.initialize();
 
-  await signalLogicRuntimeService.autoStartIfEnabled();
+  await signalLogicRuntimeService.restoreEnabledState();
+  await levelCrossingRuntimeStore.restoreEnabledState();
 
   if ((await automationRuntimeService.getState()).modules.some(module => module.enabled)) {
     await automationRuntimeService.start();
