@@ -154,10 +154,10 @@ class LevelCrossingRuntimeStore implements AutomationRuntimeModule {
     serverRuntimeActionSink
   );
   private initialized = false;
-  private enabled = false;
 
-  isEnabled(): boolean {
-    return this.enabled;
+  async isEnabled(): Promise<boolean> {
+    await this.initialize();
+    return levelCrossingLogicStore.getDocument().enabled;
   }
 
   async initialize(): Promise<void> {
@@ -186,28 +186,49 @@ class LevelCrossingRuntimeStore implements AutomationRuntimeModule {
 
   async start(): Promise<LevelCrossingRuntimeStateDto> {
     await this.initialize();
-    this.enabled = true;
+    const document = await levelCrossingLogicStore.setEnabled(true);
+    this.service.setDocument(document);
     this.service.start();
-    return this.service.snapshot();
+    return this.snapshot();
   }
 
   async stop(): Promise<LevelCrossingRuntimeStateDto> {
     await this.initialize();
-    this.enabled = false;
+    const document = await levelCrossingLogicStore.setEnabled(false);
+    this.service.setDocument(document);
     this.service.stop();
-    return this.service.snapshot();
+    return this.snapshot();
+  }
+
+  async restoreEnabledState(): Promise<LevelCrossingRuntimeStateDto> {
+    await this.initialize();
+    const document = levelCrossingLogicStore.getDocument();
+    this.service.setDocument(document);
+
+    if (document.enabled) {
+      this.service.start();
+    } else {
+      this.service.stop();
+    }
+
+    return this.snapshot();
   }
 
   async snapshot(): Promise<LevelCrossingRuntimeStateDto> {
     await this.initialize();
-    return this.service.snapshot();
+    const serviceSnapshot = this.service.snapshot() as LevelCrossingRuntimeStateDto & { autostart?: boolean };
+
+    return {
+      ...serviceSnapshot,
+      enabled: levelCrossingLogicStore.getDocument().enabled,
+    };
   }
 
   async evaluateOnce(nowMs = Date.now()): Promise<LevelCrossingRuntimeStateDto> {
     await this.initialize();
 
-    if (!this.enabled) {
-      return this.service.snapshot();
+    if (!(await this.isEnabled())) {
+      return this.snapshot();
     }
 
     return this.service.evaluateOnce(nowMs);
