@@ -88,7 +88,7 @@ class SignalLogicRulesStore {
   getDocument(): SignalLogicDocumentDto {
     return {
       version: 1,
-      autostart: this.document.autostart,
+      enabled: this.document.enabled,
       groups: this.document.groups.map(group => ({
         ...group,
         rules: group.rules.map(rule => ({
@@ -103,6 +103,20 @@ class SignalLogicRulesStore {
     await this.initialize();
 
     this.document = normalizeSignalLogicDocument(input);
+    await this.persist();
+    this.createdOnInitialize = false;
+
+    return this.getDocument();
+  }
+
+  async setEnabled(enabled: boolean): Promise<SignalLogicDocumentDto> {
+    await this.initialize();
+
+    this.document = normalizeSignalLogicDocument({
+      ...this.document,
+      enabled,
+    });
+
     await this.persist();
     this.createdOnInitialize = false;
 
