@@ -61,7 +61,7 @@ export const handleLevelCrossingMessage: WsMessageHandler = async context => {
       case "save": {
         const inputDocument = context.msg.data.document ?? {
           version: 1 as const,
-          autostart: false,
+          enabled: false,
           crossings: [],
         };
 
