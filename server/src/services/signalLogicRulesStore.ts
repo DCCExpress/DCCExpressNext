@@ -1,5 +1,3 @@
-// server/src/services/signalLogicRulesStore.ts
-
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -31,15 +29,9 @@ function getLayoutSignalAddresses(layout: SerializedLayoutDto | null): Set<numbe
     for (const element of layer.elements ?? []) {
       const item = element as SerializedLayoutElementDto;
 
-      if (item.type !== "tracksignal2") {
-        continue;
+      if (item.type === "tracksignal2" && typeof item.address === "number" && item.address > 0) {
+        result.add(item.address);
       }
-
-      if (typeof item.address !== "number" || item.address <= 0) {
-        continue;
-      }
-
-      result.add(item.address);
     }
   }
 
@@ -47,10 +39,7 @@ function getLayoutSignalAddresses(layout: SerializedLayoutDto | null): Set<numbe
 }
 
 function countConditions(group: SignalLogicDocumentDto["groups"][number]): number {
-  return group.rules.reduce(
-    (total, rule) => total + rule.conditions.length,
-    0
-  );
+  return group.rules.reduce((total, rule) => total + rule.conditions.length, 0);
 }
 
 class SignalLogicRulesStore {
@@ -81,17 +70,13 @@ class SignalLogicRulesStore {
     }
 
     this.initialized = true;
-
     return { created: this.createdOnInitialize };
   }
 
   getDocument(): SignalLogicDocumentDto {
-    const enabled = this.document.enabled ?? this.document.autostart ?? false;
-
     return {
       version: 1,
-      enabled,
-      autostart: enabled,
+      enabled: this.document.enabled,
       groups: this.document.groups.map(group => ({
         ...group,
         rules: group.rules.map(rule => ({
@@ -104,26 +89,20 @@ class SignalLogicRulesStore {
 
   async saveDocument(input: SignalLogicDocumentDto): Promise<SignalLogicDocumentDto> {
     await this.initialize();
-
     this.document = normalizeSignalLogicDocument(input);
     await this.persist();
     this.createdOnInitialize = false;
-
     return this.getDocument();
   }
 
   async setEnabled(enabled: boolean): Promise<SignalLogicDocumentDto> {
     await this.initialize();
-
     this.document = normalizeSignalLogicDocument({
       ...this.document,
       enabled,
-      autostart: enabled,
     });
-
     await this.persist();
     this.createdOnInitialize = false;
-
     return this.getDocument();
   }
 
@@ -164,15 +143,12 @@ class SignalLogicRulesStore {
 
     const addressSet = new Set(uniqueAddresses);
     const beforeCount = this.document.groups.length;
-
     this.document = {
       ...this.document,
       groups: this.document.groups.filter(group => !addressSet.has(group.signalAddress)),
     };
 
-    const deletedSignalAddresses = beforeCount === this.document.groups.length
-      ? []
-      : uniqueAddresses;
+    const deletedSignalAddresses = beforeCount === this.document.groups.length ? [] : uniqueAddresses;
 
     if (deletedSignalAddresses.length > 0) {
       await this.persist();
