@@ -13,7 +13,8 @@ export type PropertyEditorType =
   | "audiofile"
   | "audioList"
   | "routeBlockSelect"
-  | "blockTypeSelect";
+  | "blockTypeSelect"
+  | "select";
 
 export interface IEditableProperty {
   label: string;
@@ -24,4 +25,8 @@ export interface IEditableProperty {
   min?: number;
   max?: number;
   callback?: () => void;
+  options?: Array<{
+    value: string;
+    label: string;
+  }>;
 }
