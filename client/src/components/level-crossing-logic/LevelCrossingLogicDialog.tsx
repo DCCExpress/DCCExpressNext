@@ -85,16 +85,13 @@ function getBlockLabel(
   element: BlockElementView,
   index: number
 ): string {
-  return element.name?.trim() || element.label?.trim() || `Block ${index + 1}`;
+  return element.name?.trim() || `Block ${index + 1}`;
 }
 
 function createLogicForElement(
   element: TrackLevelCrossingElementView
 ): LevelCrossingLogic {
-  return createDefaultLevelCrossingLogic(
-    generateId(),
-    element.id
-  );
+  return createDefaultLevelCrossingLogic(generateId(), element.id);
 }
 
 export default function LevelCrossingLogicDialog({
@@ -187,41 +184,22 @@ export default function LevelCrossingLogicDialog({
     delete: t("common.delete", "Delete"),
   };
 
-  const crossings = useMemo<CrossingOption[]>(() => {
-    return layout
-      .getAllElements()
-      .filter((element): element is TrackLevelCrossingElementView =>
-        element instanceof TrackLevelCrossingElementView
-      )
-      .map((element, index) => ({
-        id: element.id,
-        label: getCrossingLabel(element, index),
-        element,
-      }));
-  }, [layout]);
+  const crossings = useMemo<CrossingOption[]>(() => layout
+    .getAllElements()
+    .filter((element): element is TrackLevelCrossingElementView => element instanceof TrackLevelCrossingElementView)
+    .map((element, index) => ({ id: element.id, label: getCrossingLabel(element, index), element })), [layout]);
 
-  const blockOptions = useMemo<SelectItem[]>(() => {
-    return layout
-      .getAllElements()
-      .filter((element): element is BlockElementView =>
-        element instanceof BlockElementView
-      )
-      .map((element, index) => ({
-        value: element.id,
-        label: getBlockLabel(element, index),
-      }));
-  }, [layout]);
+  const blockOptions = useMemo<SelectItem[]>(() => layout
+    .getAllElements()
+    .filter((element): element is BlockElementView => element instanceof BlockElementView)
+    .map((element, index) => ({ value: element.id, label: getBlockLabel(element, index) })), [layout]);
 
   const selectedCrossing = crossings.find(crossing => crossing.id === selectedElementId) ?? crossings[0] ?? null;
   const selectedLogic = selectedCrossing
     ? document.crossings.find(logic => logic.levelCrossingElementId === selectedCrossing.id) ?? null
     : null;
 
-  const selectedLogicCode = useMemo(() => {
-    return selectedLogic
-      ? JSON.stringify(selectedLogic, null, 2)
-      : "";
-  }, [selectedLogic]);
+  const selectedLogicCode = useMemo(() => selectedLogic ? JSON.stringify(selectedLogic, null, 2) : "", [selectedLogic]);
 
   const clearMessages = (): void => {
     setStatusText(null);
@@ -235,16 +213,8 @@ export default function LevelCrossingLogicDialog({
     try {
       const loadedDocument = await loadLevelCrossingLogicWs();
       setDocument(loadedDocument);
-      setRuntimeState(previous => ({
-        ...previous,
-        enabled: loadedDocument.enabled,
-      }));
-      setSelectedElementId(previous =>
-        initialLevelCrossingElementId
-          ?? previous
-          ?? crossings[0]?.id
-          ?? null
-      );
+      setRuntimeState(previous => ({ ...previous, enabled: loadedDocument.enabled }));
+      setSelectedElementId(previous => initialLevelCrossingElementId ?? previous ?? crossings[0]?.id ?? null);
       setStatusText(labels.loaded);
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
@@ -271,10 +241,7 @@ export default function LevelCrossingLogicDialog({
     try {
       const savedDocument = await saveLevelCrossingLogicWs(nextDocument);
       setDocument(savedDocument);
-      setRuntimeState(previous => ({
-        ...previous,
-        enabled: savedDocument.enabled,
-      }));
+      setRuntimeState(previous => ({ ...previous, enabled: savedDocument.enabled }));
       setStatusText(labels.saved);
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
@@ -286,20 +253,13 @@ export default function LevelCrossingLogicDialog({
   const ensureSelectedLogic = async (): Promise<void> => {
     if (!selectedCrossing) return;
 
-    const existingIndex = document.crossings.findIndex(
-      logic => logic.levelCrossingElementId === selectedCrossing.id
-    );
-
-    if (existingIndex >= 0) {
+    if (document.crossings.some(logic => logic.levelCrossingElementId === selectedCrossing.id)) {
       setStatusText(labels.entryAlreadyExists);
       return;
     }
 
     const logic = createLogicForElement(selectedCrossing.element);
-    const nextDocument = {
-      ...document,
-      crossings: [logic, ...document.crossings],
-    };
+    const nextDocument = { ...document, crossings: [logic, ...document.crossings] };
 
     setDocument(nextDocument);
     await saveDocument(nextDocument);
@@ -311,9 +271,7 @@ export default function LevelCrossingLogicDialog({
     clearMessages();
     setDocument(previous => ({
       ...previous,
-      crossings: previous.crossings.map(logic =>
-        logic.id === selectedLogic.id ? update(logic) : logic
-      ),
+      crossings: previous.crossings.map(logic => logic.id === selectedLogic.id ? update(logic) : logic),
     }));
   };
 
@@ -362,234 +320,54 @@ export default function LevelCrossingLogicDialog({
   };
 
   return (
-    <AppModal
-      opened={opened}
-      onClose={onClose}
-      title={labels.title}
-      size={1150}
-      centered
-      draggable
-      styles={{
-        content: {
-          height: "min(820px, calc(100vh - 48px))",
-          maxHeight: "min(820px, calc(100vh - 48px))",
-          display: "flex",
-          flexDirection: "column",
-        },
-        body: {
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        },
-      }}
-    >
+    <AppModal opened={opened} onClose={onClose} title={labels.title} size={1150} centered draggable styles={{ content: { height: "min(820px, calc(100vh - 48px))", maxHeight: "min(820px, calc(100vh - 48px))", display: "flex", flexDirection: "column" }, body: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" } }}>
       <Stack h="100%" gap="sm">
-        {loading && (
-          <Group gap="xs">
-            <Loader size="xs" />
-            <Text size="sm" c="dimmed">{labels.loading}</Text>
-          </Group>
-        )}
-
-        {errorText && (
-          <Alert color="red" icon={<IconAlertTriangle size={16} />} py="xs">
-            {errorText}
-          </Alert>
-        )}
-
-        {statusText && !errorText && (
-          <Alert color="green" py="xs">
-            {statusText}
-          </Alert>
-        )}
+        {loading && <Group gap="xs"><Loader size="xs" /><Text size="sm" c="dimmed">{labels.loading}</Text></Group>}
+        {errorText && <Alert color="red" icon={<IconAlertTriangle size={16} />} py="xs">{errorText}</Alert>}
+        {statusText && !errorText && <Alert color="green" py="xs">{statusText}</Alert>}
 
         <Group justify="space-between" align="center">
           <Group gap="xs">
-            <Switch
-              label={labels.enabled}
-              checked={document.enabled}
-              onChange={event => setDocumentEnabled(event.currentTarget.checked)}
-            />
-            <Text size="sm" c={runtimeState.running ? "green" : "dimmed"}>
-              {runtimeState.running ? labels.runtimeRunning : labels.runtimeStopped}
-            </Text>
+            <Switch label={labels.enabled} checked={document.enabled} onChange={event => setDocumentEnabled(event.currentTarget.checked)} />
+            <Text size="sm" c={runtimeState.running ? "green" : "dimmed"}>{runtimeState.running ? labels.runtimeRunning : labels.runtimeStopped}</Text>
           </Group>
 
           <Group gap="xs">
-            <Button
-              size="xs"
-              leftSection={<IconDeviceFloppy size={14} />}
-              loading={saving}
-              onClick={() => void saveDocument()}
-            >
-              {labels.save}
-            </Button>
-            <Button
-              size="xs"
-              color="green"
-              variant="light"
-              loading={runtimeBusy && !runtimeState.running}
-              disabled={runtimeState.running || runtimeBusy}
-              onClick={() => void startRuntime()}
-            >
-              {labels.start}
-            </Button>
-            <Button
-              size="xs"
-              color="red"
-              variant="light"
-              loading={runtimeBusy && runtimeState.running}
-              disabled={!runtimeState.running || runtimeBusy}
-              onClick={() => void stopRuntime()}
-            >
-              {labels.stop}
-            </Button>
+            <Button size="xs" leftSection={<IconDeviceFloppy size={14} />} loading={saving} onClick={() => void saveDocument()}>{labels.save}</Button>
+            <Button size="xs" color="green" variant="light" loading={runtimeBusy && !runtimeState.running} disabled={runtimeState.running || runtimeBusy} onClick={() => void startRuntime()}>{labels.start}</Button>
+            <Button size="xs" color="red" variant="light" loading={runtimeBusy && runtimeState.running} disabled={!runtimeState.running || runtimeBusy} onClick={() => void stopRuntime()}>{labels.stop}</Button>
           </Group>
         </Group>
 
         <Tabs defaultValue="editor" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <Tabs.List>
-            <Tabs.Tab value="editor">{labels.editorTab}</Tabs.Tab>
-            <Tabs.Tab value="preview">{labels.previewTab}</Tabs.Tab>
-          </Tabs.List>
-
+          <Tabs.List><Tabs.Tab value="editor">{labels.editorTab}</Tabs.Tab><Tabs.Tab value="preview">{labels.previewTab}</Tabs.Tab></Tabs.List>
           <Tabs.Panel value="editor" style={{ flex: 1, minHeight: 0 }}>
             <ScrollArea h="100%" pt="md" type="auto" offsetScrollbars>
               <Group align="stretch" wrap="nowrap">
                 <Card withBorder w={280} p="sm" style={{ flex: "0 0 280px" }}>
-                  <Group justify="space-between" mb="sm">
-                    <Title order={5}>{labels.crossings}</Title>
-                    <Button
-                      size="compact-xs"
-                      variant="light"
-                      leftSection={<IconPlus size={12} />}
-                      disabled={!selectedCrossing}
-                      onClick={() => void ensureSelectedLogic()}
-                    >
-                      {labels.createEntry}
-                    </Button>
-                  </Group>
-
+                  <Group justify="space-between" mb="sm"><Title order={5}>{labels.crossings}</Title><Button size="compact-xs" variant="light" leftSection={<IconPlus size={12} />} disabled={!selectedCrossing} onClick={() => void ensureSelectedLogic()}>{labels.createEntry}</Button></Group>
                   <Stack gap="xs">
-                    {crossings.length === 0 && (
-                      <Text size="sm" c="dimmed">{labels.noCrossings}</Text>
-                    )}
-
+                    {crossings.length === 0 && <Text size="sm" c="dimmed">{labels.noCrossings}</Text>}
                     {crossings.map(crossing => {
                       const hasEntry = document.crossings.some(logic => logic.levelCrossingElementId === crossing.id);
                       const selected = selectedCrossing?.id === crossing.id;
-
-                      return (
-                        <Button
-                          key={crossing.id}
-                          variant={selected ? "filled" : "light"}
-                          justify="space-between"
-                          onClick={() => setSelectedElementId(crossing.id)}
-                        >
-                          <span>{crossing.label}</span>
-                          <Text size="xs" c={selected ? "white" : hasEntry ? "green" : "dimmed"}>
-                            {hasEntry ? labels.configured : labels.notConfigured}
-                          </Text>
-                        </Button>
-                      );
+                      return <Button key={crossing.id} variant={selected ? "filled" : "light"} justify="space-between" onClick={() => setSelectedElementId(crossing.id)}><span>{crossing.label}</span><Text size="xs" c={selected ? "white" : hasEntry ? "green" : "dimmed"}>{hasEntry ? labels.configured : labels.notConfigured}</Text></Button>;
                     })}
                   </Stack>
                 </Card>
 
                 <Stack flex={1} gap="sm" style={{ minWidth: 0 }}>
-                  {!selectedLogic ? (
-                    <Card withBorder p="lg">
-                      <Text c="dimmed">{labels.selectOrAdd}</Text>
-                    </Card>
-                  ) : (
-                    <>
-                      <Card withBorder p="sm">
-                        <Group align="flex-end" grow>
-                          <Switch
-                            label={labels.enabledLogic}
-                            checked={selectedLogic.enabled}
-                            onChange={event => updateSelectedLogic(logic => ({
-                              ...logic,
-                              enabled: event.currentTarget.checked,
-                            }))}
-                          />
-                          <NumberInput
-                            label={labels.closeDelayMs}
-                            value={selectedLogic.closeDelayMs}
-                            min={0}
-                            step={100}
-                            suffix=" ms"
-                            onChange={value => updateSelectedLogic(logic => ({
-                              ...logic,
-                              closeDelayMs: Number(value ?? 0),
-                            }))}
-                          />
-                          <NumberInput
-                            label={labels.openDelayMs}
-                            value={selectedLogic.openDelayMs}
-                            min={0}
-                            step={100}
-                            suffix=" ms"
-                            onChange={value => updateSelectedLogic(logic => ({
-                              ...logic,
-                              openDelayMs: Number(value ?? 0),
-                            }))}
-                          />
-                          <NumberInput
-                            label={labels.minClosedMs}
-                            value={selectedLogic.minClosedMs}
-                            min={0}
-                            step={100}
-                            suffix=" ms"
-                            onChange={value => updateSelectedLogic(logic => ({
-                              ...logic,
-                              minClosedMs: Number(value ?? 0),
-                            }))}
-                          />
-                        </Group>
-                      </Card>
-
-                      <LevelCrossingConditionListEditor
-                        title={labels.closeTriggersTitle}
-                        description={labels.closeTriggersDescription}
-                        conditions={selectedLogic.closeTriggers}
-                        onChange={updateCloseTriggers}
-                        blockOptions={blockOptions}
-                        labels={conditionLabels}
-                      />
-
-                      <LevelCrossingConditionListEditor
-                        title={labels.openConditionsTitle}
-                        description={labels.openConditionsDescription}
-                        conditions={selectedLogic.openConditions}
-                        onChange={updateOpenConditions}
-                        blockOptions={blockOptions}
-                        labels={conditionLabels}
-                      />
-
-                      <LevelCrossingActionsEditor
-                        actions={selectedLogic.actions}
-                        onChange={actions => updateSelectedLogic(logic => ({ ...logic, actions }))}
-                        labels={actionLabels}
-                      />
-                    </>
-                  )}
+                  {!selectedLogic ? <Card withBorder p="lg"><Text c="dimmed">{labels.selectOrAdd}</Text></Card> : <>
+                    <Card withBorder p="sm"><Group align="flex-end" grow><Switch label={labels.enabledLogic} checked={selectedLogic.enabled} onChange={event => updateSelectedLogic(logic => ({ ...logic, enabled: event.currentTarget.checked }))} /><NumberInput label={labels.closeDelayMs} value={selectedLogic.closeDelayMs} min={0} step={100} suffix=" ms" onChange={value => updateSelectedLogic(logic => ({ ...logic, closeDelayMs: Number(value ?? 0) }))} /><NumberInput label={labels.openDelayMs} value={selectedLogic.openDelayMs} min={0} step={100} suffix=" ms" onChange={value => updateSelectedLogic(logic => ({ ...logic, openDelayMs: Number(value ?? 0) }))} /><NumberInput label={labels.minClosedMs} value={selectedLogic.minClosedMs} min={0} step={100} suffix=" ms" onChange={value => updateSelectedLogic(logic => ({ ...logic, minClosedMs: Number(value ?? 0) }))} /></Group></Card>
+                    <LevelCrossingConditionListEditor title={labels.closeTriggersTitle} description={labels.closeTriggersDescription} conditions={selectedLogic.closeTriggers} onChange={updateCloseTriggers} blockOptions={blockOptions} labels={conditionLabels} />
+                    <LevelCrossingConditionListEditor title={labels.openConditionsTitle} description={labels.openConditionsDescription} conditions={selectedLogic.openConditions} onChange={updateOpenConditions} blockOptions={blockOptions} labels={conditionLabels} />
+                    <LevelCrossingActionsEditor actions={selectedLogic.actions} onChange={actions => updateSelectedLogic(logic => ({ ...logic, actions }))} labels={actionLabels} />
+                  </>}
                 </Stack>
               </Group>
             </ScrollArea>
           </Tabs.Panel>
-
-          <Tabs.Panel value="preview" style={{ flex: 1, minHeight: 0 }}>
-            <ScrollArea h="100%" pt="md" type="auto" offsetScrollbars>
-              <Card withBorder p="sm">
-                <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-                  {selectedLogicCode || labels.selectOrAdd}
-                </pre>
-              </Card>
-            </ScrollArea>
-          </Tabs.Panel>
+          <Tabs.Panel value="preview" style={{ flex: 1, minHeight: 0 }}><ScrollArea h="100%" pt="md" type="auto" offsetScrollbars><Card withBorder p="sm"><pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{selectedLogicCode || labels.selectOrAdd}</pre></Card></ScrollArea></Tabs.Panel>
         </Tabs>
       </Stack>
     </AppModal>
