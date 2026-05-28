@@ -182,8 +182,7 @@ export type SignalLogicCommandPayload = {
 export type AutomationCommandAction =
   | "snapshot"
   | "start"
-  | "stop"
-  | "evaluateOnce";
+  | "stop";
 
 export type AutomationCommandPayload = {
   requestId: string;
