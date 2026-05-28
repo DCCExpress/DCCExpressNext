@@ -4,6 +4,7 @@ import {
 
 import type {
     AccessoryInfo,
+    Direction,
     LocoState,
     RBusInfo,
     RBusSensorInfo,
@@ -313,10 +314,11 @@ export class Z21CommandCenter extends CommandCenter {
         return [...this.turnouts.values()];
     }
 
-    async setLoco(
+    protected override async setPhysicalLoco(
         address: number,
         speed: number,
-        direction: "forward" | "reverse"
+        physicalDirection: Direction,
+        logicalDirection: Direction
     ): Promise<boolean> {
         try {
             const {
@@ -325,22 +327,25 @@ export class Z21CommandCenter extends CommandCenter {
             } = buildSetLocoDrivePacket(
                 address,
                 speed,
-                direction
+                physicalDirection
             );
 
             log("Z21 setLoco:", {
                 address,
                 speed,
                 normalizedSpeed,
-                direction,
+                logicalDirection,
+                physicalDirection,
                 packet: bufferToHex(packet),
             });
 
             await this.udpClient.send(packet);
 
-            const loco = this.getOrCreateLoco(address);
-            loco.speed = normalizedSpeed;
-            loco.direction = direction;
+            const loco = this.setLocoRuntimeStateSync(
+                address,
+                normalizedSpeed,
+                logicalDirection
+            );
 
             this.broadcastLocoState(loco);
             this.scheduleLocoRefresh(address, "setLoco");
@@ -350,7 +355,8 @@ export class Z21CommandCenter extends CommandCenter {
             logError("Z21 setLoco failed:", {
                 address,
                 speed,
-                direction,
+                logicalDirection,
+                physicalDirection,
                 error,
             });
 
@@ -723,11 +729,11 @@ export class Z21CommandCenter extends CommandCenter {
             return;
         }
 
-        const loco = this.getOrCreateLoco(parsed.address);
-
-        loco.address = parsed.address;
-        loco.speed = parsed.speed;
-        loco.direction = parsed.direction;
+        const loco = this.setLocoRuntimeStateFromPhysical(
+            parsed.address,
+            parsed.speed,
+            parsed.direction
+        );
 
         for (const [fn, active] of Object.entries(parsed.functions)) {
             loco.functions[Number(fn)] = active;
@@ -974,50 +980,6 @@ export class Z21CommandCenter extends CommandCenter {
         try {
             return splitZ21Packets(buffer).some(packet =>
                 this.isTurnoutInfoForAddress(packet, address)
-            );
-        } catch {
-            return false;
-        }
-    }
-
-    private isLocoInfoForAddress(
-        data: Buffer,
-        address: number
-    ): boolean {
-        const parsed = parseLocoInfoPacket(data);
-
-        return parsed?.address === address;
-    }
-
-    private containsLocoInfoForAddress(
-        buffer: Buffer,
-        address: number
-    ): boolean {
-        try {
-            return splitZ21Packets(buffer).some(packet =>
-                this.isLocoInfoForAddress(packet, address)
-            );
-        } catch {
-            return false;
-        }
-    }
-
-    private isRBusDataChangedForGroup(
-        data: Buffer,
-        group: number
-    ): boolean {
-        const rbus = parseRBusDataChangedPacket(data);
-
-        return rbus?.group === group;
-    }
-
-    private containsRBusDataChangedForGroup(
-        buffer: Buffer,
-        group: number
-    ): boolean {
-        try {
-            return splitZ21Packets(buffer).some(packet =>
-                this.isRBusDataChangedForGroup(packet, group)
             );
         } catch {
             return false;
