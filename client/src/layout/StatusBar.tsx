@@ -227,7 +227,7 @@ export default function StatusBar({
       name: "Signal logic",
       description: "Signal control automation",
       module: signalLogicModule,
-      enabled: signalLogicState.enabled,
+      enabled: signalLogicState.enabled ?? signalLogicState.autostart ?? false,
       effectiveRunning: signalLogicState.running && signalLogicModule?.enabled === true,
     },
     {
@@ -235,18 +235,19 @@ export default function StatusBar({
       name: "Level crossing supervision",
       description: "Barrier / level crossing automation",
       module: levelCrossingModule,
-      enabled: levelCrossingState.enabled,
+      enabled: levelCrossingState.enabled ?? levelCrossingState.autostart ?? false,
       effectiveRunning: levelCrossingState.running && levelCrossingModule?.enabled === true,
     },
   ], [
     signalLogicModule,
     signalLogicState.enabled,
+    signalLogicState.autostart,
     signalLogicState.running,
     levelCrossingModule,
     levelCrossingState.enabled,
+    levelCrossingState.autostart,
     levelCrossingState.running,
   ]);
-
 
   const runningTaskCount = taskSnapshot?.tasks.filter(task =>
     task.status === "running" || task.status === "finishing"
@@ -597,16 +598,6 @@ export default function StatusBar({
               Automation task: {automationIsRunning ? "RUNNING" : "STOPPED"}
             </StatusBadge>
 
-            <Group gap="xs">
-              <StatusBadge color={automationBadgeColor}>
-                Automation task: {automationIsRunning ? "RUNNING" : "STOPPED"}
-              </StatusBadge>
-
-              <StatusBadge color="blue">
-                Tick: {automationState.tickMs} ms
-              </StatusBadge>
-            </Group>
-
             <StatusBadge color="blue">
               Tick: {automationState.tickMs} ms
             </StatusBadge>
@@ -628,7 +619,6 @@ export default function StatusBar({
             }}>
               <IconPlayerStopFilled size={14} />
             </StatusActionIcon>
-
           </Group>
 
           <Table striped highlightOnHover withTableBorder withColumnBorders>
@@ -637,7 +627,6 @@ export default function StatusBar({
                 <Table.Th>Automation module</Table.Th>
                 <Table.Th>Status</Table.Th>
                 <Table.Th>Enabled</Table.Th>
-                
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -650,17 +639,17 @@ export default function StatusBar({
                     </Stack>
                   </Table.Td>
                   <Table.Td>
-                    <StatusBadge color={row.effectiveRunning ? "green" : row.module?.enabled ? "orange" : "gray"}>
+                    <StatusBadge color={row.effectiveRunning ? "green" : row.enabled ? "orange" : "gray"}>
                       {row.effectiveRunning
                         ? "RUNNING"
-                        : row.module?.enabled
-                          ? "ENABLED / TASK STOPPED"
+                        : row.enabled
+                          ? "ENABLED"
                           : "DISABLED"}
                     </StatusBadge>
                   </Table.Td>
                   <Table.Td>
                     <Checkbox
-                      checked={row.module?.enabled === true}
+                      checked={row.enabled === true}
                       disabled={!wsConnected || automationBusy}
                       onChange={event => handleToggleAutomationModule(row.id, event.currentTarget.checked)}
                     />
