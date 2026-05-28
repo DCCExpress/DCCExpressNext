@@ -79,7 +79,7 @@ function scoreAddress(name: string, address: string): number {
   return 10;
 }
 
-function getLanIpv4Addresses(): NetworkAddressInfo[] {
+export function getLanIpv4Addresses(): NetworkAddressInfo[] {
   const physical: NetworkAddressInfo[] = [];
   const fallback: NetworkAddressInfo[] = [];
   const interfaces = os.networkInterfaces();

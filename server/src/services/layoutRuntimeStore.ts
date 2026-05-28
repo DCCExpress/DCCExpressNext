@@ -6,6 +6,7 @@ import type {
 } from "../../../common/src/layout/layoutDto.js";
 import { railwayTopologyStore } from "./railwayTopologyStore.js";
 import { routeGraphRuntimeStore } from "./routeGraphRuntimeStore.js";
+import { log } from "../utility.js";
 
 /**
  * A szerveren memóriában tartott, mentett layout nyers DTO-ja.
@@ -37,7 +38,7 @@ class LayoutRuntimeStore {
       "initialize"
     );
 
-    console.log(
+    log(
       "[LayoutRuntimeStore] Initialized:",
       this.layout ? "layout loaded" : "no layout found"
     );

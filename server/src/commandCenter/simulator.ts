@@ -23,7 +23,7 @@ export class CommandCenterSimulator extends CommandCenter {
   alive = false;
   aliveTask: NodeJS.Timeout | null = null;
 
-  private power = false;
+  private power = true;
 
   async start(): Promise<boolean> {
     log("Starting command center simulator...");
@@ -56,7 +56,7 @@ export class CommandCenterSimulator extends CommandCenter {
     log("Stopping command center simulator...");
 
     this.alive = false;
-    this.power = false;
+    //this.power = false;
 
     if (this.aliveTask) {
       clearInterval(this.aliveTask);

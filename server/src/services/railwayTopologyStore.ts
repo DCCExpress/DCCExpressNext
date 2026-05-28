@@ -7,6 +7,7 @@ import {
 import type {
   SerializedLayoutDto,
 } from "../../../common/src/layout/layoutDto.js";
+import { log } from "../utility.js";
 
 class RailwayTopologyStore {
   private topology: RailwayTopologyLayout | null = null;
@@ -34,13 +35,13 @@ class RailwayTopologyStore {
     const directions =
       this.topology.getDirectionElements().length;
 
-    console.log("[RailwayTopologyStore] Topology rebuilt:");
-    console.log("  physical tracks:", physicalTracks);
-    console.log("  turnouts:", turnouts);
-    console.log("  blocks:", blocks);
-    console.log("  sensors:", sensors);
-    console.log("  signals:", signals);
-    console.log("  direction elements:", directions);
+    log("[RailwayTopologyStore] Topology rebuilt:");
+    log("  physical tracks:", physicalTracks);
+    log("  turnouts:", turnouts);
+    log("  blocks:", blocks);
+    log("  sensors:", sensors);
+    log("  signals:", signals);
+    log("  direction elements:", directions);
   }
 
   getTopology(): RailwayTopologyLayout | null {

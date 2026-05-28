@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "autostart": true,
+  "enabled": true,
   "groups": [
     {
       "id": "451c813-1a8b-4bae-b307-499e8978",

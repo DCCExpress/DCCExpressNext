@@ -6,6 +6,7 @@ import type {
 
 import {
   app,
+  getLanIpv4Addresses,
 } from "./app.js";
 
 import {
@@ -25,6 +26,18 @@ import {
   log,
   logError,
 } from "./utility.js";
+
+
+console.log("\x1b[2J");
+
+console.log('██████   ██████  ██████ ███████ ██   ██ ██████  ██████  ███████ ███████ ███████ ');
+console.log('██   ██ ██      ██      ██       ██ ██  ██   ██ ██   ██ ██      ██      ██      ');
+console.log('██   ██ ██      ██      █████     ███   ██████  ██████  █████   ███████ ███████ ');
+console.log('██   ██ ██      ██      ██       ██ ██  ██      ██   ██ ██           ██      ██ ');
+console.log('██████   ██████  ██████ ███████ ██   ██ ██      ██   ██ ███████ ███████ ███████ ');
+console.log('');
+//console.log('2025.02.03  v.1.0')
+//console.log('');
 
 const DEFAULT_PORT = 3000;
 const SHUTDOWN_TIMEOUT_MS = 5000;
@@ -134,6 +147,13 @@ async function bootstrap(): Promise<void> {
     log("Server address:", server.address());
     log("Dist:", distDir);
     log("DataDir:", dataDir);
+
+
+    const addr = getLanIpv4Addresses();
+    if(addr.length > 0) {
+      console.log("http://" + addr[0]?.address + ":" + PORT);
+    }
+    
   });
 }
 

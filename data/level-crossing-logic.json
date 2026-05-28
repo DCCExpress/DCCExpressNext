@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "autostart": true,
+  "enabled": true,
   "crossings": [
     {
       "id": "50f0dd1-6ba4-4643-a69d-fa81dd15",
