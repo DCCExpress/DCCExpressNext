@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   Alert,
@@ -134,6 +134,11 @@ export default function BlockActionsManagerDialog({
   const [saving, setSaving] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [draftActions, setDraftActions] = useState<BlockActionsDraft>({});
+  const onInitialBlockIdConsumedRef = useRef(onInitialBlockIdConsumed);
+
+  useEffect(() => {
+    onInitialBlockIdConsumedRef.current = onInitialBlockIdConsumed;
+  }, [onInitialBlockIdConsumed]);
 
   const graphBlocksById = useMemo(() => {
     const map = new Map<string, SectionBlock>();
@@ -165,6 +170,11 @@ export default function BlockActionsManagerDialog({
         );
       });
   }, [layout, graphBlocksById]);
+
+  const blockIdsKey = useMemo(
+    () => blocks.map(block => block.id).join("|"),
+    [blocks]
+  );
 
   const selectedBlock = blocks.find(block => block.id === selectedBlockId) ?? blocks[0] ?? null;
   const selectedGraphBlock = selectedBlock ? graphBlocksById.get(selectedBlock.id) : undefined;
@@ -207,7 +217,7 @@ export default function BlockActionsManagerDialog({
           return blocks[0]?.id ?? null;
         });
 
-        onInitialBlockIdConsumed?.();
+        onInitialBlockIdConsumedRef.current?.();
       } catch (error) {
         if (cancelled) return;
 
@@ -225,7 +235,7 @@ export default function BlockActionsManagerDialog({
     return () => {
       cancelled = true;
     };
-  }, [opened, blocks, initialBlockId, onInitialBlockIdConsumed]);
+  }, [opened, blockIdsKey, initialBlockId]);
 
   const updateSelectedBlockActions = (actions: BlockActions): void => {
     if (!selectedBlock) return;
