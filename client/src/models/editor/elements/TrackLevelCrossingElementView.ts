@@ -341,7 +341,7 @@ export class TrackLevelCrossingElementView
   private drawCrossingDetails(ctx: CanvasRenderingContext2D): void {
     const closed = this.barrierClosed;
 
-    if (this.barrierEnabled && this.barrierType !== "none") {
+    if (this.barrierType !== "none") {
       const leftAngle = closed ? 0 : -Math.PI / 3;
       const rightAngle = closed ? Math.PI : Math.PI + Math.PI / 3;
 
@@ -429,7 +429,6 @@ export class TrackLevelCrossingElementView
     element.fg = data.fg;
     element.roadColor = data.roadColor;
     element.barrierType = data.barrierType;
-    element.barrierEnabled = data.barrierEnabled;
     element.lightsEnabled = data.lightsEnabled;
     element.blinkingEnabled = data.blinkingEnabled;
     element.basicAccessoryAddress = data.basicAccessoryAddress;
@@ -443,7 +442,6 @@ export class TrackLevelCrossingElementView
       type: ELEMENT_TYPES.TRACK_LEVEL_CROSSING,
       roadColor: this.roadColor,
       barrierType: this.barrierType,
-      barrierEnabled: this.barrierEnabled,
       lightsEnabled: this.lightsEnabled,
       blinkingEnabled: this.blinkingEnabled,
       basicAccessoryAddress: this.basicAccessoryAddress,
@@ -460,7 +458,6 @@ export class TrackLevelCrossingElementView
     copy.length = this.length;
     copy.roadColor = this.roadColor;
     copy.barrierType = this.barrierType;
-    copy.barrierEnabled = this.barrierEnabled;
     copy.lightsEnabled = this.lightsEnabled;
     copy.blinkingEnabled = this.blinkingEnabled;
     copy.basicAccessoryAddress = this.basicAccessoryAddress;
@@ -482,16 +479,14 @@ export class TrackLevelCrossingElementView
       {
         label: "Barrier type",
         key: "barrierType",
-        type: "string",
+        type: "select",
         readonly: false,
         validate: () => true,
-      },
-      {
-        label: "Barrier enabled",
-        key: "barrierEnabled",
-        type: "boolean",
-        readonly: false,
-        validate: () => true,
+        options: [
+          { value: "none", label: "None" },
+          { value: "half", label: "Half" },
+          { value: "full", label: "Full" },
+        ],
       },
       {
         label: "Lights enabled",
