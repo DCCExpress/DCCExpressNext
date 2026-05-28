@@ -136,24 +136,6 @@ export const handleLevelCrossingMessage: WsMessageHandler = async context => {
         return true;
       }
 
-      case "evaluateOnce": {
-        const runtime = await levelCrossingRuntimeStore.evaluateOnce();
-        const payload: LevelCrossingResponsePayload = {
-          requestId,
-          action,
-          ok: true,
-          runtime,
-        };
-
-        sendLevelCrossingResponse(context, payload);
-        context.broadcast({
-          type: "levelCrossingStateChanged",
-          data: runtime,
-        }, context.ws);
-
-        return true;
-      }
-
       default: {
         sendLevelCrossingResponse(context, {
           requestId,
