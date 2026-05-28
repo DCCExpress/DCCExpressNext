@@ -43,12 +43,14 @@ export type SignalLogicRuleGroupDto = {
 export type SignalLogicDocumentDto = {
   version: 1;
   enabled: boolean;
+  autostart?: boolean;
   groups: SignalLogicRuleGroupDto[];
 };
 
 export type SignalLogicRuntimeStateDto = {
   running: boolean;
   enabled: boolean;
+  autostart?: boolean;
 };
 
 export type SignalLogicKnownSignal = {
