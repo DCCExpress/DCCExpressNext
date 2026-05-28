@@ -30,7 +30,7 @@ function toLevelCrossingCommandResult(
 }
 
 async function requestLevelCrossing(
-  action: "load" | "save" | "start" | "stop" | "snapshot" | "evaluateOnce",
+  action: "load" | "save" | "start" | "stop" | "snapshot",
   data: {
     document?: LevelCrossingLogicDocumentDto;
   } = {},
@@ -98,20 +98,6 @@ export async function stopLevelCrossingRuntimeWs(): Promise<LevelCrossingRuntime
     "stop",
     {},
     "Could not stop level crossing runtime."
-  );
-
-  if (!result.runtime) {
-    throw new Error("Missing level crossing runtime state in response.");
-  }
-
-  return result.runtime;
-}
-
-export async function evaluateLevelCrossingRuntimeOnceWs(): Promise<LevelCrossingRuntimeStateDto> {
-  const result = await requestLevelCrossing(
-    "evaluateOnce",
-    {},
-    "Could not evaluate level crossing runtime."
   );
 
   if (!result.runtime) {
