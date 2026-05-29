@@ -31,6 +31,25 @@ import {
   levelCrossingLogicStore,
 } from "./levelCrossingLogicStore.js";
 
+function normalizeRouteBlockKey(value?: string): string | undefined {
+  const normalized = value?.trim();
+  return normalized && normalized.length > 0
+    ? normalized
+    : undefined;
+}
+
+function routeBlockMatches(
+  requested: string | undefined,
+  reservationId: string | undefined,
+  reservationName: string | undefined
+): boolean {
+  if (requested === undefined) {
+    return true;
+  }
+
+  return requested === reservationId || requested === reservationName;
+}
+
 function getSensorActive(sensorAddress: number): LevelCrossingConditionValue {
   const commandCenter = CommandCenter.getActive();
 
@@ -66,16 +85,24 @@ function getRouteReserved(
   toBlockId?: string
 ): LevelCrossingConditionValue {
   const reservations = routeGraphRuntimeStore.getActiveReservations();
+  const requestedFrom = normalizeRouteBlockKey(fromBlockId);
+  const requestedTo = normalizeRouteBlockKey(toBlockId);
 
-  if (fromBlockId === undefined && toBlockId === undefined) {
+  if (requestedFrom === undefined && requestedTo === undefined) {
     return reservations.length > 0;
   }
 
   const matches = reservations.some(reservation => {
-    const fromMatches = fromBlockId === undefined
-      || reservation.fromBlockName === fromBlockId;
-    const toMatches = toBlockId === undefined
-      || reservation.toBlockName === toBlockId;
+    const fromMatches = routeBlockMatches(
+      requestedFrom,
+      reservation.fromBlockId,
+      reservation.fromBlockName
+    );
+    const toMatches = routeBlockMatches(
+      requestedTo,
+      reservation.toBlockId,
+      reservation.toBlockName
+    );
 
     return fromMatches && toMatches;
   });
