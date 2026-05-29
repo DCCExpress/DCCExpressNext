@@ -606,7 +606,18 @@ export abstract class CommandCenter {
     address: number,
     active: boolean
   ): AccessoryInfo {
-    return this.setBasicAccessoryRuntimeState(address, active);
+    const accessory = this.setBasicAccessoryRuntimeState(address, active);
+
+    broadcastAll({
+      type: "accessoryChanged",
+      data: {
+        address,
+        active,
+      },
+      uuid: null,
+    });
+
+    return accessory;
   }
 
   abstract setBasicAccessory(
