@@ -561,8 +561,7 @@ export abstract class CommandCenter {
   }
 
   getTurnoutInfo(
-    address: number
-  ): TurnoutInfo | undefined {
+    address: number): TurnoutInfo | undefined {
     return this.turnouts.get(address);
   }
 
@@ -570,11 +569,8 @@ export abstract class CommandCenter {
     return this.name;
   }
 
-  protected getOrCreateTurnout(
-    address: number
-  ): TurnoutInfo {
-    let turnout =
-      this.turnouts.get(address);
+  protected getOrCreateTurnout(address: number): TurnoutInfo {
+    let turnout = this.turnouts.get(address);
 
     if (!turnout) {
       turnout = {
@@ -588,11 +584,8 @@ export abstract class CommandCenter {
     return turnout;
   }
 
-  protected getOrCreateSensor(
-    address: number
-  ): SensorInfo {
-    let sensor =
-      this.sensors.get(address);
+  protected getOrCreateSensor(address: number): SensorInfo {
+    let sensor = this.sensors.get(address);
 
     if (!sensor) {
       sensor = {
@@ -606,11 +599,8 @@ export abstract class CommandCenter {
     return sensor;
   }
 
-  protected getOrCreateAccessory(
-    address: number
-  ): AccessoryInfo {
-    let accessory =
-      this.accessories.get(address);
+  protected getOrCreateAccessory(address: number): AccessoryInfo {
+    let accessory = this.accessories.get(address);
 
     if (!accessory) {
       accessory = {
@@ -624,33 +614,21 @@ export abstract class CommandCenter {
     return accessory;
   }
 
-  protected isBasicAccessoryStateAlreadySet(
-    address: number,
-    active: boolean
-  ): boolean {
+  protected isBasicAccessoryStateAlreadySet(address: number, active: boolean): boolean {
     return this.accessories.get(address)?.active === active;
   }
 
-  protected setBasicAccessoryRuntimeState(
-    address: number,
-    active: boolean
-  ): AccessoryInfo {
-    const accessory =
-      this.getOrCreateAccessory(address);
+  protected setBasicAccessoryRuntimeState(address: number, active: boolean): AccessoryInfo {
+    const accessory = this.getOrCreateAccessory(address);
 
     accessory.active = active;
-
     this.accessories.set(address, accessory);
 
     return accessory;
   }
 
-  protected setSensorRuntimeState(
-    address: number,
-    active: boolean
-  ): SensorInfo {
-    const sensor =
-      this.getOrCreateSensor(address);
+  protected setSensorRuntimeState(address: number, active: boolean): SensorInfo {
+    const sensor = this.getOrCreateSensor(address);
 
     sensor.active = active;
     this.sensors.set(address, sensor);
@@ -658,10 +636,7 @@ export abstract class CommandCenter {
     return sensor;
   }
 
-  public setKnownBasicAccessoryState(
-    address: number,
-    active: boolean
-  ): AccessoryInfo {
+  public setKnownBasicAccessoryState(address: number, active: boolean): AccessoryInfo {
     const accessory = this.setBasicAccessoryRuntimeState(address, active);
 
     broadcastAll({
@@ -678,16 +653,14 @@ export abstract class CommandCenter {
     return accessory;
   }
 
-  public setKnownSensorState(
-    address: number,
-    active: boolean): SensorInfo {
+  public setKnownSensorState(address: number, active: boolean): SensorInfo {
     const sensor = this.setSensorRuntimeState(address, active);
 
     broadcastAll({
       type: "sensorChanged",
       data: {
         address,
-        active,
+        on: active,
       },
       uuid: null,
     });
@@ -791,9 +764,7 @@ export abstract class CommandCenter {
     "command-center-runtime-state.json"
   );
 
-  public onRuntimeStateLoaded(
-    callback: RuntimeStateLoadedCallback
-  ): void {
+  public onRuntimeStateLoaded(callback: RuntimeStateLoadedCallback): void {
     this.runtimeStateLoadedCallback = callback;
   }
 
@@ -850,17 +821,10 @@ export abstract class CommandCenter {
         return;
       }
 
-      this.blocks =
-        new Map(Array.isArray(state.blocks) ? state.blocks : []);
-
-      this.turnouts =
-        new Map(Array.isArray(state.turnouts) ? state.turnouts : []);
-
-      this.sensors =
-        new Map(Array.isArray(state.sensors) ? state.sensors : []);
-
-      this.accessories =
-        new Map(Array.isArray(state.accessories) ? state.accessories : []);
+      this.blocks = new Map(Array.isArray(state.blocks) ? state.blocks : []);
+      this.turnouts = new Map(Array.isArray(state.turnouts) ? state.turnouts : []);
+      this.sensors = new Map(Array.isArray(state.sensors) ? state.sensors : []);
+      this.accessories = new Map(Array.isArray(state.accessories) ? state.accessories : []);
 
       log("Command center runtime state loaded:", {
         blocks: this.blocks.size,
