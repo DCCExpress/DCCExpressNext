@@ -23,7 +23,6 @@ import type {
 
 import type {
   LevelCrossingResponsePayload,
-  LevelCrossingRuntimeState,
   LevelCrossingRuntimeStateDto,
 } from "./levelCrossingLogic.js";
 
@@ -362,10 +361,6 @@ export type ServerWsPayloadMap = {
   blockAutomationResponse: BlockAutomationResponsePayload;
   levelCrossingResponse: LevelCrossingResponsePayload;
   levelCrossingStateChanged: LevelCrossingRuntimeStateDto;
-  levelCrossingElementStateChanged: {
-    levelCrossingElementId: string;
-    state: LevelCrossingRuntimeState;
-  };
   automationResponse: AutomationResponsePayload;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
