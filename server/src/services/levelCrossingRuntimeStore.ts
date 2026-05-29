@@ -20,6 +20,10 @@ import {
 } from "../utility.js";
 
 import {
+  broadcastAll,
+} from "../ws/wsServer.js";
+
+import {
   routeGraphRuntimeStore,
 } from "./routeGraphRuntimeStore.js";
 
@@ -258,10 +262,21 @@ class LevelCrossingRuntimeStore implements AutomationRuntimeModule {
     await this.initialize();
 
     if (!(await this.isEnabled())) {
-      return this.snapshot();
+      const snapshot = await this.snapshot();
+      this.broadcastState(snapshot);
+      return snapshot;
     }
 
-    return this.service.evaluateOnce(nowMs);
+    const snapshot = await this.service.evaluateOnce(nowMs);
+    this.broadcastState(snapshot);
+    return snapshot;
+  }
+
+  private broadcastState(snapshot: LevelCrossingRuntimeStateDto): void {
+    broadcastAll({
+      type: "levelCrossingStateChanged",
+      data: snapshot,
+    });
   }
 }
 
