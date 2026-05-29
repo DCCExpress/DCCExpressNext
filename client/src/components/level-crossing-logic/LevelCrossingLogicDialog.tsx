@@ -32,8 +32,6 @@ import {
 import {
   loadLevelCrossingLogicWs,
   saveLevelCrossingLogicWs,
-  startLevelCrossingRuntimeWs,
-  stopLevelCrossingRuntimeWs,
 } from "../../api/levelCrossingWsApi";
 import { generateId } from "../../helpers";
 import type { LayoutView } from "../../models/editor/core/LayoutView";
@@ -108,7 +106,6 @@ export default function LevelCrossingLogicDialog({
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [runtimeBusy, setRuntimeBusy] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
 
@@ -117,14 +114,12 @@ export default function LevelCrossingLogicDialog({
     loading: t("levelCrossingLogic.loading", "Loading level crossing logic..."),
     loaded: t("levelCrossingLogic.loaded", "Level crossing logic loaded."),
     saved: t("levelCrossingLogic.saved", "Level crossing logic saved."),
-    started: t("levelCrossingLogic.started", "Level crossing automation started."),
-    stopped: t("levelCrossingLogic.stopped", "Level crossing automation stopped."),
+    savedAndStarted: t("levelCrossingLogic.savedAndStarted", "Level crossing logic saved and started."),
+    savedAndStopped: t("levelCrossingLogic.savedAndStopped", "Level crossing logic saved and stopped."),
     enabled: t("common.enabled", "Enabled"),
     runtimeRunning: t("levelCrossingLogic.runtimeRunning", "Runtime running"),
     runtimeStopped: t("levelCrossingLogic.runtimeStopped", "Runtime stopped"),
     save: t("common.save", "Save"),
-    start: t("common.start", "Start"),
-    stop: t("common.stop", "Stop"),
     crossings: t("levelCrossingLogic.crossings", "Crossings"),
     noCrossings: t("levelCrossingLogic.noCrossings", "No level crossing element on the layout."),
     createEntry: t("levelCrossingLogic.createEntry", "Create entry"),
@@ -241,8 +236,12 @@ export default function LevelCrossingLogicDialog({
     try {
       const savedDocument = await saveLevelCrossingLogicWs(nextDocument);
       setDocument(savedDocument);
-      setRuntimeState(previous => ({ ...previous, enabled: savedDocument.enabled }));
-      setStatusText(labels.saved);
+      setRuntimeState(previous => ({
+        ...previous,
+        enabled: savedDocument.enabled,
+        running: savedDocument.enabled,
+      }));
+      setStatusText(savedDocument.enabled ? labels.savedAndStarted : labels.savedAndStopped);
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : String(error));
     } finally {
@@ -289,36 +288,6 @@ export default function LevelCrossingLogicDialog({
     setRuntimeState(previous => ({ ...previous, enabled }));
   };
 
-  const startRuntime = async (): Promise<void> => {
-    setRuntimeBusy(true);
-    clearMessages();
-
-    try {
-      const state = await startLevelCrossingRuntimeWs();
-      setRuntimeState(state);
-      setStatusText(labels.started);
-    } catch (error) {
-      setErrorText(error instanceof Error ? error.message : String(error));
-    } finally {
-      setRuntimeBusy(false);
-    }
-  };
-
-  const stopRuntime = async (): Promise<void> => {
-    setRuntimeBusy(true);
-    clearMessages();
-
-    try {
-      const state = await stopLevelCrossingRuntimeWs();
-      setRuntimeState(state);
-      setStatusText(labels.stopped);
-    } catch (error) {
-      setErrorText(error instanceof Error ? error.message : String(error));
-    } finally {
-      setRuntimeBusy(false);
-    }
-  };
-
   return (
     <AppModal opened={opened} onClose={onClose} title={labels.title} size={1150} centered draggable styles={{ content: { height: "min(820px, calc(100vh - 48px))", maxHeight: "min(820px, calc(100vh - 48px))", display: "flex", flexDirection: "column" }, body: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" } }}>
       <Stack h="100%" gap="sm">
@@ -334,8 +303,6 @@ export default function LevelCrossingLogicDialog({
 
           <Group gap="xs">
             <Button size="xs" leftSection={<IconDeviceFloppy size={14} />} loading={saving} onClick={() => void saveDocument()}>{labels.save}</Button>
-            <Button size="xs" color="green" variant="light" loading={runtimeBusy && !runtimeState.running} disabled={runtimeState.running || runtimeBusy} onClick={() => void startRuntime()}>{labels.start}</Button>
-            <Button size="xs" color="red" variant="light" loading={runtimeBusy && runtimeState.running} disabled={!runtimeState.running || runtimeBusy} onClick={() => void stopRuntime()}>{labels.stop}</Button>
           </Group>
         </Group>
 
