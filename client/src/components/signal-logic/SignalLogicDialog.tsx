@@ -21,8 +21,6 @@ import {
 import {
   IconAlertTriangle,
   IconDeviceFloppy,
-  IconPlayerPlay,
-  IconPlayerStop,
   IconPlus,
   IconRefresh,
   IconTrash,
@@ -39,8 +37,6 @@ import AppModal from "../common/AppModal";
 import {
   loadSignalLogicRulesWs,
   saveSignalLogicRulesWs,
-  startSignalLogicWs,
-  stopSignalLogicWs,
 } from "../../api/signalLogicWsApi";
 import type {
   SignalAspect,
@@ -248,7 +244,6 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   const [issues, setIssues] = useState<SignalLogicValidationIssue[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [runtimeBusy, setRuntimeBusy] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
 
@@ -372,36 +367,6 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
       setErrorText(error instanceof Error ? error.message : String(error));
     } finally {
       setSaving(false);
-    }
-  };
-
-  const startSignalLogic = async (): Promise<void> => {
-    setRuntimeBusy(true);
-    clearMessages();
-
-    try {
-      const result = await startSignalLogicWs();
-      applyResponse(result);
-      setStatusText(t("signalLogic.started", "Signal logic started."));
-    } catch (error) {
-      setErrorText(error instanceof Error ? error.message : String(error));
-    } finally {
-      setRuntimeBusy(false);
-    }
-  };
-
-  const stopSignalLogic = async (): Promise<void> => {
-    setRuntimeBusy(true);
-    clearMessages();
-
-    try {
-      const result = await stopSignalLogicWs();
-      applyResponse(result);
-      setStatusText(t("signalLogic.stopped", "Signal logic stopped."));
-    } catch (error) {
-      setErrorText(error instanceof Error ? error.message : String(error));
-    } finally {
-      setRuntimeBusy(false);
     }
   };
 
@@ -905,26 +870,6 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
               label={t("signalLogic.enabled", "Enabled")}
               onChange={event => setEnabled(event.currentTarget.checked)}
             />
-            <Button
-              color="green"
-              variant="light"
-              leftSection={<IconPlayerPlay size={16} />}
-              onClick={() => void startSignalLogic()}
-              loading={runtimeBusy && !runtimeState.running}
-              disabled={runtimeState.running || runtimeBusy}
-            >
-              {t("signalLogic.start", "Start")}
-            </Button>
-            <Button
-              color="red"
-              variant="light"
-              leftSection={<IconPlayerStop size={16} />}
-              onClick={() => void stopSignalLogic()}
-              loading={runtimeBusy && runtimeState.running}
-              disabled={!runtimeState.running || runtimeBusy}
-            >
-              {t("signalLogic.stop", "Stop")}
-            </Button>
             <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={() => void loadRules()} loading={loading}>
               {t("signalLogic.reload", "Reload")}
             </Button>
