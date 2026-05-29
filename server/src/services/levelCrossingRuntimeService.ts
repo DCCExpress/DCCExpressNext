@@ -114,10 +114,9 @@ export class LevelCrossingRuntimeService {
     entry.lastEvaluation = result;
 
     if (result.shouldClose) {
-      entry.pendingState = "closed";
-      entry.pendingSinceMs ??= nowMs;
+      this.setPendingState(entry, "closed", nowMs);
 
-      if (nowMs - entry.pendingSinceMs >= logic.closeDelayMs) {
+      if (nowMs - entry.pendingSinceMs! >= logic.closeDelayMs) {
         await this.applyState(logic, entry, "closed", nowMs);
       }
 
@@ -125,8 +124,7 @@ export class LevelCrossingRuntimeService {
     }
 
     if (!result.mayOpen) {
-      entry.pendingState = null;
-      entry.pendingSinceMs = null;
+      this.clearPendingState(entry);
       return;
     }
 
@@ -134,15 +132,34 @@ export class LevelCrossingRuntimeService {
       || nowMs - entry.closedSinceMs >= logic.minClosedMs;
 
     if (!minClosedElapsed) {
+      this.clearPendingState(entry);
       return;
     }
 
-    entry.pendingState = "open";
-    entry.pendingSinceMs ??= nowMs;
+    this.setPendingState(entry, "open", nowMs);
 
-    if (nowMs - entry.pendingSinceMs >= logic.openDelayMs) {
+    if (nowMs - entry.pendingSinceMs! >= logic.openDelayMs) {
       await this.applyState(logic, entry, "open", nowMs);
     }
+  }
+
+  private setPendingState(
+    entry: RuntimeEntryInternal,
+    state: LevelCrossingRuntimeState,
+    nowMs: number
+  ): void {
+    if (entry.pendingState !== state) {
+      entry.pendingState = state;
+      entry.pendingSinceMs = nowMs;
+      return;
+    }
+
+    entry.pendingSinceMs ??= nowMs;
+  }
+
+  private clearPendingState(entry: RuntimeEntryInternal): void {
+    entry.pendingState = null;
+    entry.pendingSinceMs = null;
   }
 
   private syncEntryFromAccessoryFeedback(
