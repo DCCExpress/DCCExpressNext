@@ -1,7 +1,7 @@
-import { ElementFactory } from "./ElementFactory";
-import { Layer } from "./Layer";
-import type { BaseElement } from "./BaseElement";
-import type { ElementId, ElementJSON, LayerId, LayoutJSON } from "./types";
+import { ElementFactory } from "./ElementFactory.js";
+import { Layer } from "./Layer.js";
+import type { BaseElement } from "./BaseElement.js";
+import type { ElementId, ElementJSON, LayerId, LayoutJSON } from "./types.js";
 
 export class Layout {
   version: number;
@@ -40,7 +40,6 @@ export class Layout {
   static fromJSON(json: LayoutJSON): Layout {
     const layers = json.layers.map((layerJson) => {
       const elements = layerJson.elements.map((elementJson) => ElementFactory.fromJSON(elementJson));
-
       return new Layer({
         id: layerJson.id,
         name: layerJson.name,
@@ -52,12 +51,7 @@ export class Layout {
       });
     });
 
-    return new Layout({
-      version: json.version,
-      name: json.name,
-      gridSize: json.gridSize,
-      layers,
-    });
+    return new Layout({ version: json.version, name: json.name, gridSize: json.gridSize, layers });
   }
 
   toJSON(): LayoutJSON {
@@ -86,11 +80,7 @@ export class Layout {
 
   requireLayer(id: LayerId): Layer {
     const layer = this.getLayer(id);
-
-    if (!layer) {
-      throw new Error(`Layer not found: ${id}`);
-    }
-
+    if (!layer) throw new Error("Layer not found");
     return layer;
   }
 
@@ -116,11 +106,7 @@ export class Layout {
 
   requireElement(id: ElementId): BaseElement {
     const element = this.findElement(id);
-
-    if (!element) {
-      throw new Error(`Element not found: ${id}`);
-    }
-
+    if (!element) throw new Error("Element not found");
     return element;
   }
 
@@ -130,17 +116,10 @@ export class Layout {
 
   removeElement(id: ElementId): BaseElement | undefined {
     const element = this.elementMap.get(id);
-
-    if (!element) {
-      return undefined;
-    }
+    if (!element) return undefined;
 
     const removed = this.requireLayer(element.layerId).removeElement(id);
-
-    if (removed) {
-      this.elementMap.delete(id);
-    }
-
+    if (removed) this.elementMap.delete(id);
     return removed;
   }
 }
