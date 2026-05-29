@@ -6,6 +6,8 @@
  */
 export type RouteReservation = {
   key: string;
+  fromBlockId?: string;
+  toBlockId?: string;
   fromBlockName: string;
   toBlockName: string;
   sectionNames: string[];
@@ -48,6 +50,8 @@ export type RouteReservationChangedPayload = {
   sectionNames: string[];
   elementIds: string[];
   turnoutAddresses: number[];
+  fromBlockId?: string;
+  toBlockId?: string;
   fromBlockName?: string;
   toBlockName?: string;
 };
@@ -61,6 +65,8 @@ export type RouteReservationReleaseRejectedPayload = {
 };
 
 export type RouteReservationReleasedPayload = {
+  fromBlockId?: string;
+  toBlockId?: string;
   fromBlockName: string;
   toBlockName: string;
   releasedSectionNames: string[];
