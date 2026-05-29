@@ -1,5 +1,5 @@
-import { BaseElement } from "./BaseElement";
-import type { ElementId, LayerId, LayerJSON, LayerKind } from "./types";
+import { BaseElement } from "./BaseElement.js";
+import type { ElementId, LayerId, LayerJSON, LayerKind } from "./types.js";
 
 export class Layer {
   readonly id: LayerId;
