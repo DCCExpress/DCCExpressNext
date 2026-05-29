@@ -1,5 +1,5 @@
-import { TrackElement, type TrackConnectionPoint, type TrackElementJSON } from "./TrackElement";
-import { createId } from "../utils/createId";
+import { TrackElement, type TrackConnectionPoint, type TrackElementJSON } from "./TrackElement.js";
+import { createId } from "../utils/createId.js";
 
 export type TrackStraightElementJSON = TrackElementJSON & {
   type: "track.straight";
