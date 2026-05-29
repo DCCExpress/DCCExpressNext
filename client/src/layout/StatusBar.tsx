@@ -121,6 +121,27 @@ function getModuleState(
   return automationState.modules.find(module => module.id === moduleId);
 }
 
+function updateAutomationModuleEnabled(
+  automationState: AutomationRuntimeStatePayload,
+  moduleId: AutomationModuleId,
+  enabled: boolean
+): AutomationRuntimeStatePayload {
+  const existingModule = automationState.modules.find(module => module.id === moduleId);
+
+  if (!existingModule) {
+    return automationState;
+  }
+
+  return {
+    ...automationState,
+    modules: automationState.modules.map(module =>
+      module.id === moduleId
+        ? { ...module, enabled }
+        : module
+    ),
+  };
+}
+
 function formatTime(ms: number | undefined): string {
   if (ms === undefined || !Number.isFinite(ms)) {
     return "-";
@@ -291,6 +312,23 @@ export default function StatusBar({
     });
 
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const unsubscribeSignalLogic = wsClient.on("signalLogicStateChanged", data => {
+      setSignalLogicState(data);
+      setAutomationState(previous => updateAutomationModuleEnabled(previous, "signalLogic", data.enabled));
+    });
+
+    const unsubscribeLevelCrossing = wsClient.on("levelCrossingStateChanged", data => {
+      setLevelCrossingState(data);
+      setAutomationState(previous => updateAutomationModuleEnabled(previous, "levelCrossing", data.enabled));
+    });
+
+    return () => {
+      unsubscribeSignalLogic();
+      unsubscribeLevelCrossing();
+    };
   }, []);
 
   useEffect(() => {
