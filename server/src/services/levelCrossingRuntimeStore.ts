@@ -10,6 +10,10 @@ import type {
   AutomationRuntimeModule,
 } from "./automationRuntimeService.js";
 
+import type {
+  TypedServerWsMessage,
+} from "../../../common/src/types.js";
+
 import {
   CommandCenter,
 } from "../commandCenter/CommandCenter.js";
@@ -18,6 +22,10 @@ import {
   log,
   logError,
 } from "../utility.js";
+
+import {
+  broadcastAll,
+} from "../ws/wsServer.js";
 
 import {
   routeGraphRuntimeStore,
@@ -135,6 +143,19 @@ async function setCrossingState(
   );
 }
 
+async function setElementState(
+  logic: LevelCrossingLogic,
+  state: LevelCrossingRuntimeState
+): Promise<void> {
+  broadcastAll({
+    type: "levelCrossingElementStateChanged",
+    data: {
+      levelCrossingElementId: logic.levelCrossingElementId,
+      state,
+    },
+  } as TypedServerWsMessage);
+}
+
 async function setAccessory(
   address: number,
   active: boolean,
@@ -172,6 +193,7 @@ const serverRuntimeDataProvider = {
 
 const serverRuntimeActionSink = {
   setCrossingState,
+  setElementState,
   setAccessory,
 };
 
@@ -258,10 +280,21 @@ class LevelCrossingRuntimeStore implements AutomationRuntimeModule {
     await this.initialize();
 
     if (!(await this.isEnabled())) {
-      return this.snapshot();
+      const snapshot = await this.snapshot();
+      this.broadcastState(snapshot);
+      return snapshot;
     }
 
-    return this.service.evaluateOnce(nowMs);
+    const snapshot = await this.service.evaluateOnce(nowMs);
+    this.broadcastState(snapshot);
+    return snapshot;
+  }
+
+  private broadcastState(snapshot: LevelCrossingRuntimeStateDto): void {
+    broadcastAll({
+      type: "levelCrossingStateChanged",
+      data: snapshot,
+    });
   }
 }
 
