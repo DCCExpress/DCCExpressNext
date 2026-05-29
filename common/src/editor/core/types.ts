@@ -31,9 +31,9 @@ export type ElementJSON = {
 
   visible?: boolean;
   locked?: boolean;
-  name?: string;
+  name: string;
 
-  [key: string]: unknown;
+  
 };
 
 export type LayerJSON = {

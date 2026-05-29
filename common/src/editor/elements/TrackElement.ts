@@ -3,7 +3,7 @@ import type { ElementJSON } from "../core/types.js";
 
 export type TrackElementJSON = ElementJSON & {
   layerId: "track";
-  sectionId?: string;
+  section: number;
 };
 
 export type TrackConnectionPoint = {
@@ -13,18 +13,18 @@ export type TrackConnectionPoint = {
 };
 
 export abstract class TrackElement<TJSON extends TrackElementJSON = TrackElementJSON> extends BaseElement<TJSON> {
-  sectionId?: string;
+  section: number;
 
   protected constructor(json: TJSON) {
     super(json);
-    this.sectionId = json.sectionId;
+    this.section = json.section ?? 0;
   }
 
   override updateFromJSON(patch: Partial<TJSON>): void {
     super.updateFromJSON(patch);
 
-    if (patch.sectionId !== undefined) {
-      this.sectionId = patch.sectionId;
+    if (patch.section !== undefined) {
+      this.section = patch.section;
     }
   }
 
@@ -33,7 +33,7 @@ export abstract class TrackElement<TJSON extends TrackElementJSON = TrackElement
     return {
       ...json,
       layerId: "track",
-      sectionId: this.sectionId,
+      section: this.section,
     };
   }
 

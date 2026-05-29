@@ -14,7 +14,7 @@ export abstract class BaseElement<TJSON extends ElementJSON = ElementJSON> {
 
   visible: boolean;
   locked: boolean;
-  name?: string;
+  name: string = "name";
 
   protected constructor(json: TJSON) {
     this.id = json.id;
@@ -28,7 +28,7 @@ export abstract class BaseElement<TJSON extends ElementJSON = ElementJSON> {
 
     this.visible = json.visible ?? true;
     this.locked = json.locked ?? false;
-    this.name = json.name;
+    this.name = json.name ?? "name";
   }
 
   getBounds(): Rect {
@@ -86,7 +86,7 @@ export abstract class BaseElement<TJSON extends ElementJSON = ElementJSON> {
       rotation: this.rotation,
       visible: this.visible,
       locked: this.locked,
-      name: this.name,
+      name: this.name
     };
   }
 

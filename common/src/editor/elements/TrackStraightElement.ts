@@ -22,8 +22,8 @@ export class TrackStraightElement extends TrackElement<TrackStraightElementJSON>
       rotation: json.rotation ?? 0,
       visible: json.visible ?? true,
       locked: json.locked ?? false,
-      name: json.name,
-      sectionId: json.sectionId,
+      name: json.name ?? "name",
+      section: json.section ?? 0,
     });
   }
 
