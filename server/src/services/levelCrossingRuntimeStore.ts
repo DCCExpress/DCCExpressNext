@@ -157,7 +157,10 @@ async function setAccessory(
       `[LevelCrossingAutomation] Failed to set accessory #${address} to ${active ? "active" : "inactive"}.`,
       logic.id
     );
+    return;
   }
+
+  commandCenter.setKnownBasicAccessoryState(address, active);
 }
 
 const serverRuntimeDataProvider = {
