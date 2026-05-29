@@ -76,6 +76,14 @@ export async function saveLevelCrossingLogicWs(
     throw new Error("Missing saved level crossing logic document in response.");
   }
 
+  await requestLevelCrossing(
+    result.document.enabled ? "start" : "stop",
+    {},
+    result.document.enabled
+      ? "Could not start level crossing runtime after saving."
+      : "Could not stop level crossing runtime after saving."
+  );
+
   return result.document;
 }
 
