@@ -11,6 +11,11 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@common": ["common/src/index.ts"],
+      "@common/*": ["common/src/*"]
+    }
   }
 }
