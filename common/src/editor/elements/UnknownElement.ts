@@ -1,5 +1,5 @@
-import { BaseElement } from "../core/BaseElement";
-import type { ElementJSON } from "../core/types";
+import { BaseElement } from "../core/BaseElement.js";
+import type { ElementJSON } from "../core/types.js";
 
 export class UnknownElement extends BaseElement<ElementJSON> {
   readonly type: string;
