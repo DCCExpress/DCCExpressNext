@@ -1,2 +1,2 @@
-export * from "./editor";
-export * from "./storage/Store";
+export * from "./editor/index.js";
+export * from "./storage/Store.js";
