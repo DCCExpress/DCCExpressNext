@@ -13,6 +13,7 @@ import {
   Switch,
   Tabs,
   Text,
+  Textarea,
   Title,
 } from "@mantine/core";
 import {
@@ -114,6 +115,10 @@ function getActionBadgeColor(action: LevelCrossingAction): string {
   }
 }
 
+function getSafeName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_ -]/g, "").trim() || "unnamed";
+}
+
 export default function LevelCrossingLogicDialog({
   opened,
   onClose,
@@ -153,6 +158,8 @@ export default function LevelCrossingLogicDialog({
     notConfigured: t("levelCrossingLogic.notConfigured", "Not configured"),
     editorTab: t("levelCrossingLogic.editorTab", "Editor"),
     previewTab: t("levelCrossingLogic.previewTab", "Preview"),
+    codeTab: t("levelCrossingLogic.codeTab", "Code"),
+    codeDescription: t("levelCrossingLogic.codeDescription", "This is generated from the visual rules and mirrors the server-side runtime logic."),
     enabledLogic: t("levelCrossingLogic.enabled", "Enabled"),
     disabledLogic: t("levelCrossingLogic.disabled", "Disabled"),
     closeDelayMs: t("levelCrossingLogic.closeDelayMs", "Close delay"),
@@ -249,6 +256,24 @@ export default function LevelCrossingLogicDialog({
     }
   };
 
+  const conditionToExpression = (condition: LevelCrossingCondition): string => {
+    let expression: string;
+
+    switch (condition.type) {
+      case "sensor":
+        expression = `getSensorActive(${condition.sensorAddress}) === ${condition.active}`;
+        break;
+      case "block":
+        expression = `getBlockOccupied(${JSON.stringify(condition.blockId)}) === ${condition.occupied}`;
+        break;
+      case "route":
+        expression = `getRouteReserved(${condition.fromBlockId ? JSON.stringify(condition.fromBlockId) : "undefined"}, ${condition.toBlockId ? JSON.stringify(condition.toBlockId) : "undefined"}) === ${condition.reserved}`;
+        break;
+    }
+
+    return condition.operator === "isNot" ? `!(${expression})` : expression;
+  };
+
   const formatAction = (action: LevelCrossingAction): string => {
     switch (action.type) {
       case "setAccessory":
@@ -257,6 +282,78 @@ export default function LevelCrossingLogicDialog({
         return `Element state: closed=${action.closedState}, open=${action.openState}`;
     }
   };
+
+  const buildGeneratedCode = (): string => {
+    const lines: string[] = [
+      "// Generated preview from the visual level crossing rules.",
+      "// The real runtime is evaluated by LevelCrossingRuntimeService on the server.",
+      "",
+      "while (automationRuntimeRunning) {",
+      "  const nowMs = Date.now();",
+      "",
+    ];
+
+    if (!document.enabled) {
+      lines.push("  // Level crossing automation is disabled.");
+      lines.push("  await sleep(500);");
+      lines.push("  continue;");
+      lines.push("}");
+      return lines.join("\n");
+    }
+
+    if (document.crossings.length === 0) {
+      lines.push("  // No level crossing rules are configured.");
+      lines.push("  await sleep(500);");
+      lines.push("}");
+      return lines.join("\n");
+    }
+
+    for (const logic of document.crossings) {
+      const crossingName = getSafeName(getCrossingName(logic.levelCrossingElementId));
+      const closeExpression = logic.closeTriggers.length === 0
+        ? "false"
+        : logic.closeTriggers.map(conditionToExpression).join(" || ");
+      const openExpression = logic.openConditions.length === 0
+        ? "!shouldClose"
+        : logic.openConditions.map(conditionToExpression).join(" && ");
+
+      lines.push(`  // ${crossingName}`);
+      lines.push(`  if (${logic.enabled ? "true" : "false"}) {`);
+      lines.push(`    const shouldClose = ${closeExpression};`);
+      lines.push(`    const mayOpen = !shouldClose && (${openExpression});`);
+      lines.push("");
+      lines.push("    if (shouldClose) {");
+      lines.push(`      await waitForStableState(${logic.closeDelayMs});`);
+      lines.push("      await setLevelCrossingState(" + JSON.stringify(logic.levelCrossingElementId) + ", \"closed\");");
+      for (const action of logic.actions) {
+        if (action.type === "setAccessory") {
+          lines.push(`      await setAccessory(${action.address}, ${action.activeWhenClosed});`);
+        } else if (action.type === "setElementState") {
+          lines.push(`      await setElementState(${JSON.stringify(logic.levelCrossingElementId)}, ${JSON.stringify(action.closedState)});`);
+        }
+      }
+      lines.push("    } else if (mayOpen) {");
+      lines.push(`      await waitMinimumClosedTime(${logic.minClosedMs});`);
+      lines.push(`      await waitForStableState(${logic.openDelayMs});`);
+      lines.push("      await setLevelCrossingState(" + JSON.stringify(logic.levelCrossingElementId) + ", \"open\");");
+      for (const action of logic.actions) {
+        if (action.type === "setAccessory") {
+          lines.push(`      await setAccessory(${action.address}, ${!action.activeWhenClosed});`);
+        } else if (action.type === "setElementState") {
+          lines.push(`      await setElementState(${JSON.stringify(logic.levelCrossingElementId)}, ${JSON.stringify(action.openState)});`);
+        }
+      }
+      lines.push("    }");
+      lines.push("  }");
+      lines.push("");
+    }
+
+    lines.push("  await sleep(500);");
+    lines.push("}");
+    return lines.join("\n");
+  };
+
+  const generatedCode = useMemo(buildGeneratedCode, [document, crossings, blockOptions]);
 
   const clearMessages = (): void => {
     setStatusText(null);
@@ -382,7 +479,11 @@ export default function LevelCrossingLogicDialog({
         {statusText && !errorText && <Alert color="green" py="xs">{statusText}</Alert>}
 
         <Tabs defaultValue="editor" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <Tabs.List style={{ flex: "0 0 auto" }}><Tabs.Tab value="editor">{labels.editorTab}</Tabs.Tab><Tabs.Tab value="preview">{labels.previewTab}</Tabs.Tab></Tabs.List>
+          <Tabs.List style={{ flex: "0 0 auto" }}>
+            <Tabs.Tab value="editor">{labels.editorTab}</Tabs.Tab>
+            <Tabs.Tab value="preview">{labels.previewTab}</Tabs.Tab>
+            <Tabs.Tab value="code">{labels.codeTab}</Tabs.Tab>
+          </Tabs.List>
           <Tabs.Panel value="editor" style={{ flex: 1, minHeight: 0 }}>
             <ScrollArea h="100%" pt="md" type="auto" offsetScrollbars>
               <Group align="stretch" wrap="nowrap">
@@ -465,6 +566,24 @@ export default function LevelCrossingLogicDialog({
                 ))}
               </Stack>
             </ScrollArea>
+          </Tabs.Panel>
+          <Tabs.Panel value="code" style={{ flex: 1, minHeight: 0 }}>
+            <Stack h="100%" pt="md">
+              <Text size="sm" c="dimmed">{labels.codeDescription}</Text>
+              <Textarea
+                value={generatedCode}
+                readOnly
+                style={{ flex: 1, minHeight: 0 }}
+                styles={{
+                  wrapper: { height: "100%" },
+                  input: { height: "100%", fontFamily: "monospace", resize: "none" },
+                }}
+              />
+              <Divider />
+              <Text size="sm" c="dimmed">
+                {`${document.crossings.length} crossing rule(s), ${blockOptions.length} block(s) available`}
+              </Text>
+            </Stack>
           </Tabs.Panel>
         </Tabs>
 
