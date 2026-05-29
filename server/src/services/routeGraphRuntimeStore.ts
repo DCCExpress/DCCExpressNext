@@ -152,6 +152,8 @@ class RouteGraphRuntimeStore {
 
     const reservation: RouteReservation = {
       key,
+      fromBlockId: solution.fromBlock.id,
+      toBlockId: solution.toBlock.id,
       fromBlockName,
       toBlockName,
       sectionNames,
@@ -272,6 +274,8 @@ class RouteGraphRuntimeStore {
 
   getActiveReservations(): ActiveRouteReservation[] {
     return [...this.reservations.values()].map(reservation => ({
+      ...(reservation.fromBlockId === undefined ? {} : { fromBlockId: reservation.fromBlockId }),
+      ...(reservation.toBlockId === undefined ? {} : { toBlockId: reservation.toBlockId }),
       fromBlockName: reservation.fromBlockName,
       toBlockName: reservation.toBlockName,
       sectionNames: [...reservation.sectionNames],
