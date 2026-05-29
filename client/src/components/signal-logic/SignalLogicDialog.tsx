@@ -2,18 +2,20 @@ import {
   ActionIcon,
   Alert,
   Badge,
+  Box,
   Button,
   Card,
   Checkbox,
   Divider,
   Group,
   Loader,
+  NumberInput,
   ScrollArea,
   Select,
   Stack,
-  Table,
   Tabs,
   Text,
+  Textarea,
   Title,
 } from "@mantine/core";
 import {
@@ -25,7 +27,7 @@ import {
   IconRefresh,
   IconTrash,
 } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { LayoutView } from "../../models/editor/core/LayoutView";
@@ -68,6 +70,8 @@ type AddressOption = {
 type SignalOption = AddressOption & {
   aspect: number;
 };
+
+type Translate = ReturnType<typeof useTranslation>["t"];
 
 const DEFAULT_RUNTIME_STATE: SignalLogicRuntimeStateDto = {
   running: false,
@@ -132,6 +136,99 @@ function getAspectColor(aspect: SignalAspect): string {
     case "white": return "gray";
     default: return "red";
   }
+}
+
+function aspectBadgeStyle(aspect: SignalAspect) {
+  if (aspect !== "white") return undefined;
+
+  return {
+    backgroundColor: "#ffffff",
+    border: "1px solid #ced4da",
+    color: "#000000",
+  };
+}
+
+function aspectToMethod(aspect: SignalAspect): string {
+  switch (aspect) {
+    case "green": return "setSignalGreen";
+    case "yellow": return "setSignalYellow";
+    case "white": return "setSignalWhite";
+    default: return "setSignalRed";
+  }
+}
+
+function getConditionExpression(condition: SignalLogicConditionDto): string | null {
+  if (condition.type === "sensor") {
+    if (condition.sensorAddress <= 0) return null;
+    const name = `s${condition.sensorAddress}Active`;
+    return condition.active ? name : `!${name}`;
+  }
+
+  if (condition.turnoutAddress <= 0) return null;
+  const name = `t${condition.turnoutAddress}Closed`;
+  return condition.closed ? name : `!${name}`;
+}
+
+function buildGeneratedScript(groups: SignalLogicRuleGroupDto[]): string {
+  const lines: string[] = ["while (true) {", ""];
+  const conditions = groups.flatMap(group => group.rules.flatMap(rule => rule.conditions));
+  const turnoutAddresses = Array.from(new Set(
+    conditions
+      .filter(condition => condition.type === "turnout")
+      .map(condition => condition.turnoutAddress)
+      .filter(address => address > 0)
+  )).sort((a, b) => a - b);
+  const sensorAddresses = Array.from(new Set(
+    conditions
+      .filter(condition => condition.type === "sensor")
+      .map(condition => condition.sensorAddress)
+      .filter(address => address > 0)
+  )).sort((a, b) => a - b);
+
+  for (const address of turnoutAddresses) lines.push(`  const t${address}Closed = getTurnoutState(${address});`);
+  for (const address of sensorAddresses) lines.push(`  const s${address}Active = getSensorState(${address});`);
+  if (turnoutAddresses.length > 0 || sensorAddresses.length > 0) lines.push("");
+
+  for (const group of groups) {
+    lines.push(`  // Signal #${group.signalAddress}`);
+    group.rules.forEach((rule, index) => {
+      const keyword = index === 0 ? "if" : "else if";
+      const expressions = rule.conditions
+        .map(getConditionExpression)
+        .filter((expression): expression is string => Boolean(expression));
+      lines.push(`  ${keyword} (${expressions.length === 0 ? "true" : expressions.join(" && ")}) {`);
+      lines.push(`    await ${aspectToMethod(rule.aspect)}(${group.signalAddress});`);
+      lines.push("  }");
+    });
+    lines.push("  else {");
+    lines.push(`    await ${aspectToMethod(group.defaultAspect)}(${group.signalAddress});`);
+    lines.push("  }");
+    lines.push("");
+  }
+
+  lines.push("  await sleep(500);");
+  lines.push("}");
+  return lines.join("\n");
+}
+
+function getAspectLabel(t: Translate, aspect: SignalAspect): string {
+  return t(`signalLogic.aspects.${aspect}`, aspect.toUpperCase());
+}
+
+function formatCondition(t: Translate, condition: SignalLogicConditionDto): string {
+  if (condition.type === "sensor") {
+    if (condition.sensorAddress <= 0) return t("signalLogic.sensorNotSelected", "Sensor not selected");
+    return t("signalLogic.sensorCondition", {
+      address: condition.sensorAddress,
+      state: t(condition.active ? "signalLogic.sensorStates.active" : "signalLogic.sensorStates.inactive"),
+    });
+  }
+
+  if (condition.turnoutAddress <= 0) return t("signalLogic.turnoutNotSelected", "Turnout not selected");
+  return t("signalLogic.turnoutCondition", {
+    address: condition.turnoutAddress,
+    state: t(condition.closed ? "signalLogic.turnoutStates.closed" : "signalLogic.turnoutStates.thrown"),
+  });
 }
 
 function conditionLabel(condition: SignalLogicConditionDto): string {
@@ -220,6 +317,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
   );
   const issueList = validationIssues.length > 0 ? validationIssues : issues;
   const hasValidationErrors = validationIssues.some(issue => issue.level === "error");
+  const generatedScript = useMemo(() => buildGeneratedScript(withFixedRedFallback(groups)), [groups]);
 
   const clearMessages = (): void => {
     setStatusText(null);
@@ -485,6 +583,7 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
           <Tabs.List style={{ flex: "0 0 auto" }}>
             <Tabs.Tab value="rules">{t("signalLogic.tabs.rules", "Rules")}</Tabs.Tab>
             <Tabs.Tab value="preview">{t("signalLogic.tabs.preview", "Preview")}</Tabs.Tab>
+            <Tabs.Tab value="script">{t("signalLogic.tabs.script", "Script")}</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="rules" style={{ flex: 1, minHeight: 0 }}>
@@ -692,25 +791,101 @@ export default function SignalLogicDialog({ opened, onClose, layout }: SignalLog
 
           <Tabs.Panel value="preview" style={{ flex: 1, minHeight: 0 }}>
             <ScrollArea h="100%" pt="md" type="auto" offsetScrollbars>
-              <Table striped withTableBorder withColumnBorders>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Signal</Table.Th>
-                    <Table.Th>Default</Table.Th>
-                    <Table.Th>Rules</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {groups.map(group => (
-                    <Table.Tr key={group.id}>
-                      <Table.Td>{group.signalAddress}</Table.Td>
-                      <Table.Td>RED</Table.Td>
-                      <Table.Td>{group.rules.length}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+              <Stack pb="md">
+                {groups.length === 0 && (
+                  <Card withBorder>
+                    <Text size="sm" c="dimmed">{t("signalLogic.emptySignals", "No signal rules.")}</Text>
+                  </Card>
+                )}
+                {sortedGroups.map(group => (
+                  <Card key={group.id} withBorder>
+                    <Group justify="space-between" mb="sm">
+                      <Title order={5}>{t("signalLogic.signalsListItem", { address: group.signalAddress })}</Title>
+                      <Badge color="red" variant="light">
+                        {t("signalLogic.default", { aspect: getAspectLabel(t, "red") })}
+                      </Badge>
+                    </Group>
+
+                    <Stack gap="xs">
+                      {group.rules.map((rule, index) => (
+                        <Card key={rule.id} withBorder p="xs" radius="md">
+                          <Group align="center" gap="xs" wrap="wrap">
+                            <Badge variant="outline">
+                              {t("signalLogic.rule", { index: index + 1 })}
+                            </Badge>
+
+                            {rule.conditions.length === 0 ? (
+                              <Badge variant="light" color="gray">
+                                {t("signalLogic.always", "Always")}
+                              </Badge>
+                            ) : (
+                              rule.conditions.map((condition, conditionIndex) => (
+                                <Fragment key={condition.id}>
+                                  {conditionIndex > 0 && (
+                                    <Text size="xs" c="dimmed" fw={700}>
+                                      {t("signalLogic.and", "AND")}
+                                    </Text>
+                                  )}
+                                  <Badge variant="light" color={condition.type === "sensor" ? "blue" : "grape"}>
+                                    {formatCondition(t, condition)}
+                                  </Badge>
+                                </Fragment>
+                              ))
+                            )}
+
+                            <Text size="sm" c="dimmed">→</Text>
+                            <Badge
+                              color={getAspectColor(rule.aspect)}
+                              variant="filled"
+                              style={aspectBadgeStyle(rule.aspect)}
+                            >
+                              {getAspectLabel(t, rule.aspect).toUpperCase()}
+                            </Badge>
+                          </Group>
+                        </Card>
+                      ))}
+                    </Stack>
+                  </Card>
+                ))}
+              </Stack>
             </ScrollArea>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="script" style={{ flex: 1, minHeight: 0 }}>
+            <Stack h="100%" pt="md">
+              <Text size="sm" c="dimmed">
+                {t("signalLogic.scriptDescription", "This is generated from the visual rules and is only a preview.")}
+              </Text>
+
+              <Textarea
+                value={generatedScript}
+                readOnly
+                style={{ flex: 1, minHeight: 0 }}
+                styles={{
+                  wrapper: { height: "100%" },
+                  input: { height: "100%", fontFamily: "monospace", resize: "none" },
+                }}
+              />
+
+              <Divider />
+
+              <Group justify="space-between" pb="xs">
+                <Text size="sm" c="dimmed">
+                  {t("signalLogic.foundSummary", {
+                    signals: signalOptions.length,
+                    turnouts: turnoutOptions.length,
+                    sensors: sensorOptions.length,
+                  })}
+                </Text>
+                <NumberInput
+                  label={t("signalLogic.pollingIntervalPreview", "Polling interval preview")}
+                  value={500}
+                  disabled
+                  suffix=" ms"
+                  w={180}
+                />
+              </Group>
+            </Stack>
           </Tabs.Panel>
         </Tabs>
 
