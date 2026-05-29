@@ -3,6 +3,15 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 
+import type {
+  SerializedLayoutDto,
+  SerializedLayoutElementDto,
+} from "../../../common/src/layout/layoutDto.js";
+
+import {
+  ELEMENT_TYPES,
+} from "../../../common/src/layout/elementTypes.js";
+
 import {
   AccessoryInfo,
   BlockState,
@@ -45,12 +54,26 @@ type PersistedCommandCenterState = {
   savedAt: string;
   blocks: [string, BlockState][];
   turnouts: [number, TurnoutInfo][];
+  sensors?: [number, SensorInfo][];
+  accessories?: [number, AccessoryInfo][];
 };
 
 type RuntimeStateLoadedCallback = (
   blocks: Map<string, BlockState>,
   turnouts: Map<number, TurnoutInfo>
 ) => void | Promise<void>;
+
+function isPositiveAddress(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function getAllLayoutElements(layout: SerializedLayoutDto | null): SerializedLayoutElementDto[] {
+  if (!layout?.layers) {
+    return [];
+  }
+
+  return layout.layers.flatMap(layer => Array.isArray(layer.elements) ? layer.elements : []);
+}
 
 export abstract class CommandCenter {
   private static activeInstance: CommandCenter | null = null;
@@ -114,6 +137,8 @@ export abstract class CommandCenter {
             err
           );
         });
+
+      await this.initializeRuntimeDevicesFromCurrentLayout();
     });
   }
 
@@ -563,6 +588,24 @@ export abstract class CommandCenter {
     return turnout;
   }
 
+  protected getOrCreateSensor(
+    address: number
+  ): SensorInfo {
+    let sensor =
+      this.sensors.get(address);
+
+    if (!sensor) {
+      sensor = {
+        address,
+        active: false,
+      };
+
+      this.sensors.set(address, sensor);
+    }
+
+    return sensor;
+  }
+
   protected getOrCreateAccessory(
     address: number
   ): AccessoryInfo {
@@ -602,6 +645,19 @@ export abstract class CommandCenter {
     return accessory;
   }
 
+  protected setSensorRuntimeState(
+    address: number,
+    active: boolean
+  ): SensorInfo {
+    const sensor =
+      this.getOrCreateSensor(address);
+
+    sensor.active = active;
+    this.sensors.set(address, sensor);
+
+    return sensor;
+  }
+
   public setKnownBasicAccessoryState(
     address: number,
     active: boolean
@@ -617,7 +673,69 @@ export abstract class CommandCenter {
       uuid: null,
     });
 
+    void this.saveRuntimeState();
+
     return accessory;
+  }
+
+  public setKnownSensorState(
+    address: number,
+    active: boolean): SensorInfo {
+    const sensor = this.setSensorRuntimeState(address, active);
+
+    broadcastAll({
+      type: "sensorChanged",
+      data: {
+        address,
+        active,
+      },
+      uuid: null,
+    });
+
+    void this.saveRuntimeState();
+
+    return sensor;
+  }
+
+  public initializeRuntimeDevicesFromLayout(layout: SerializedLayoutDto | null): void {
+    const elements = getAllLayoutElements(layout);
+    let addedSensors = 0;
+    let addedAccessories = 0;
+
+    for (const element of elements) {
+      if (element.type === ELEMENT_TYPES.TRACK_SENSOR && isPositiveAddress(element.address)) {
+        if (!this.sensors.has(element.address)) {
+          this.getOrCreateSensor(element.address);
+          addedSensors++;
+        }
+      }
+
+      if (element.type === ELEMENT_TYPES.TRACK_LEVEL_CROSSING && isPositiveAddress(element.basicAccessoryAddress)) {
+        if (!this.accessories.has(element.basicAccessoryAddress)) {
+          const active = Boolean(element.barrierClosed) === Boolean(element.basicAccessoryClosedValue);
+          this.setBasicAccessoryRuntimeState(element.basicAccessoryAddress, active);
+          addedAccessories++;
+        }
+      }
+    }
+
+    if (addedSensors > 0 || addedAccessories > 0) {
+      log("Command center runtime devices initialized from layout:", {
+        sensors: addedSensors,
+        accessories: addedAccessories,
+      });
+
+      void this.saveRuntimeState();
+    }
+  }
+
+  private async initializeRuntimeDevicesFromCurrentLayout(): Promise<void> {
+    try {
+      const { layoutRuntimeStore } = await import("../services/layoutRuntimeStore.js");
+      this.initializeRuntimeDevicesFromLayout(layoutRuntimeStore.getLayout());
+    } catch (error) {
+      logError("Failed to initialize command center runtime devices from layout:", error);
+    }
   }
 
   abstract setBasicAccessory(
@@ -645,6 +763,9 @@ export abstract class CommandCenter {
     const locos = await readLocos();
 
     this.setLocos(locos);
+
+    await this.loadRuntimeState();
+    await this.initializeRuntimeDevicesFromCurrentLayout();
 
     await Promise.all(
       locos.map(async loco => {
@@ -683,6 +804,8 @@ export abstract class CommandCenter {
         savedAt: new Date().toISOString(),
         blocks: Array.from(this.blocks.entries()),
         turnouts: Array.from(this.turnouts.entries()),
+        sensors: Array.from(this.sensors.entries()),
+        accessories: Array.from(this.accessories.entries()),
       };
 
       await fs.mkdir(
@@ -733,9 +856,17 @@ export abstract class CommandCenter {
       this.turnouts =
         new Map(Array.isArray(state.turnouts) ? state.turnouts : []);
 
+      this.sensors =
+        new Map(Array.isArray(state.sensors) ? state.sensors : []);
+
+      this.accessories =
+        new Map(Array.isArray(state.accessories) ? state.accessories : []);
+
       log("Command center runtime state loaded:", {
         blocks: this.blocks.size,
         turnouts: this.turnouts.size,
+        sensors: this.sensors.size,
+        accessories: this.accessories.size,
       });
 
       await this.runtimeStateLoadedCallback?.(
@@ -744,6 +875,7 @@ export abstract class CommandCenter {
       );
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        await this.initializeRuntimeDevicesFromCurrentLayout();
         return;
       }
 
