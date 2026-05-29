@@ -602,6 +602,13 @@ export abstract class CommandCenter {
     return accessory;
   }
 
+  public setKnownBasicAccessoryState(
+    address: number,
+    active: boolean
+  ): AccessoryInfo {
+    return this.setBasicAccessoryRuntimeState(address, active);
+  }
+
   abstract setBasicAccessory(
     address: number,
     active: boolean
@@ -724,9 +731,8 @@ export abstract class CommandCenter {
         this.blocks,
         this.turnouts
       );
-    } catch (error: any) {
-      if (error?.code === "ENOENT") {
-        log("No previous command center runtime state file found.");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return;
       }
 
