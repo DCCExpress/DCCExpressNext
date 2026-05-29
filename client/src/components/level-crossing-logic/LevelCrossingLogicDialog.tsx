@@ -2,6 +2,8 @@ import {
   Alert,
   Button,
   Card,
+  Checkbox,
+  Divider,
   Group,
   Loader,
   NumberInput,
@@ -16,6 +18,7 @@ import {
   IconAlertTriangle,
   IconDeviceFloppy,
   IconPlus,
+  IconRefresh,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -120,6 +123,8 @@ export default function LevelCrossingLogicDialog({
     runtimeRunning: t("levelCrossingLogic.runtimeRunning", "Runtime running"),
     runtimeStopped: t("levelCrossingLogic.runtimeStopped", "Runtime stopped"),
     save: t("common.save", "Save"),
+    reload: t("common.reload", "Reload"),
+    storedOnServer: t("levelCrossingLogic.savePath", "Stored on server"),
     crossings: t("levelCrossingLogic.crossings", "Crossings"),
     noCrossings: t("levelCrossingLogic.noCrossings", "No level crossing element on the layout."),
     createEntry: t("levelCrossingLogic.createEntry", "Create entry"),
@@ -295,19 +300,8 @@ export default function LevelCrossingLogicDialog({
         {errorText && <Alert color="red" icon={<IconAlertTriangle size={16} />} py="xs">{errorText}</Alert>}
         {statusText && !errorText && <Alert color="green" py="xs">{statusText}</Alert>}
 
-        <Group justify="space-between" align="center">
-          <Group gap="xs">
-            <Switch label={labels.enabled} checked={document.enabled} onChange={event => setDocumentEnabled(event.currentTarget.checked)} />
-            <Text size="sm" c={runtimeState.running ? "green" : "dimmed"}>{runtimeState.running ? labels.runtimeRunning : labels.runtimeStopped}</Text>
-          </Group>
-
-          <Group gap="xs">
-            <Button size="xs" leftSection={<IconDeviceFloppy size={14} />} loading={saving} onClick={() => void saveDocument()}>{labels.save}</Button>
-          </Group>
-        </Group>
-
         <Tabs defaultValue="editor" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <Tabs.List><Tabs.Tab value="editor">{labels.editorTab}</Tabs.Tab><Tabs.Tab value="preview">{labels.previewTab}</Tabs.Tab></Tabs.List>
+          <Tabs.List style={{ flex: "0 0 auto" }}><Tabs.Tab value="editor">{labels.editorTab}</Tabs.Tab><Tabs.Tab value="preview">{labels.previewTab}</Tabs.Tab></Tabs.List>
           <Tabs.Panel value="editor" style={{ flex: 1, minHeight: 0 }}>
             <ScrollArea h="100%" pt="md" type="auto" offsetScrollbars>
               <Group align="stretch" wrap="nowrap">
@@ -336,6 +330,29 @@ export default function LevelCrossingLogicDialog({
           </Tabs.Panel>
           <Tabs.Panel value="preview" style={{ flex: 1, minHeight: 0 }}><ScrollArea h="100%" pt="md" type="auto" offsetScrollbars><Card withBorder p="sm"><pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{selectedLogicCode || labels.selectOrAdd}</pre></Card></ScrollArea></Tabs.Panel>
         </Tabs>
+
+        <Divider />
+
+        <Group justify="space-between">
+          <Group gap="xs">
+            <Text size="sm" c="dimmed">{labels.storedOnServer}</Text>
+            <Text size="sm" c={runtimeState.running ? "green" : "dimmed"}>{runtimeState.running ? labels.runtimeRunning : labels.runtimeStopped}</Text>
+          </Group>
+
+          <Group>
+            <Checkbox
+              checked={document.enabled}
+              label={labels.enabled}
+              onChange={event => setDocumentEnabled(event.currentTarget.checked)}
+            />
+            <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={() => void loadDocument()} loading={loading}>
+              {labels.reload}
+            </Button>
+            <Button leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveDocument()} loading={saving}>
+              {labels.save}
+            </Button>
+          </Group>
+        </Group>
       </Stack>
     </AppModal>
   );
