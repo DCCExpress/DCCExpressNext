@@ -1,7 +1,7 @@
-import { TrackStraightElement, type TrackStraightElementJSON } from "../elements/TrackStraightElement";
-import { UnknownElement } from "../elements/UnknownElement";
-import { BaseElement } from "./BaseElement";
-import type { ElementJSON } from "./types";
+import { TrackStraightElement, type TrackStraightElementJSON } from "../elements/TrackStraightElement.js";
+import { UnknownElement } from "../elements/UnknownElement.js";
+import { BaseElement } from "./BaseElement.js";
+import type { ElementJSON } from "./types.js";
 
 export class ElementFactory {
   static fromJSON(json: ElementJSON): BaseElement {
