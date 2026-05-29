@@ -1,4 +1,4 @@
-import type { ElementId, ElementJSON, LayerId, Rect } from "./types";
+import type { ElementId, ElementJSON, LayerId, Rect } from "./types.js";
 
 export abstract class BaseElement<TJSON extends ElementJSON = ElementJSON> {
   readonly id: ElementId;
