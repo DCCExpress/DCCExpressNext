@@ -1,5 +1,6 @@
 import {
   Alert,
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -24,6 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type {
+  LevelCrossingAction,
   LevelCrossingCondition,
   LevelCrossingLogic,
   LevelCrossingLogicDocumentDto,
@@ -95,6 +97,23 @@ function createLogicForElement(
   return createDefaultLevelCrossingLogic(generateId(), element.id);
 }
 
+function getConditionBadgeColor(condition: LevelCrossingCondition): string {
+  switch (condition.type) {
+    case "sensor": return "blue";
+    case "block": return "grape";
+    case "route": return "cyan";
+    default: return "gray";
+  }
+}
+
+function getActionBadgeColor(action: LevelCrossingAction): string {
+  switch (action.type) {
+    case "setAccessory": return "orange";
+    case "setElementState": return "teal";
+    default: return "gray";
+  }
+}
+
 export default function LevelCrossingLogicDialog({
   opened,
   onClose,
@@ -135,6 +154,7 @@ export default function LevelCrossingLogicDialog({
     editorTab: t("levelCrossingLogic.editorTab", "Editor"),
     previewTab: t("levelCrossingLogic.previewTab", "Preview"),
     enabledLogic: t("levelCrossingLogic.enabled", "Enabled"),
+    disabledLogic: t("levelCrossingLogic.disabled", "Disabled"),
     closeDelayMs: t("levelCrossingLogic.closeDelayMs", "Close delay"),
     openDelayMs: t("levelCrossingLogic.openDelayMs", "Open delay"),
     minClosedMs: t("levelCrossingLogic.minClosedMs", "Minimum closed time"),
@@ -144,6 +164,15 @@ export default function LevelCrossingLogicDialog({
     openConditionsDescription: t("levelCrossingLogic.openConditionsDescription", "The crossing opens when all configured conditions are true."),
     actionsTitle: t("levelCrossingLogic.actionsTitle", "Actions"),
     actionsDescription: t("levelCrossingLogic.actionsDescription", "Commands to execute when the crossing state changes."),
+    emptyPreview: t("levelCrossingLogic.emptyPreview", "No level crossing logic entries."),
+    noConditions: t("levelCrossingLogic.emptyConditions", "No conditions."),
+    noActions: t("levelCrossingLogic.emptyActions", "No actions."),
+    delays: t("levelCrossingLogic.delays", "Delays"),
+    and: t("levelCrossingLogic.and", "AND"),
+    or: t("levelCrossingLogic.or", "OR"),
+    anyBlock: t("levelCrossingLogic.anyBlock", "Any block"),
+    unknownBlock: t("levelCrossingLogic.unknownBlock", "Unknown block"),
+    unknownCrossing: t("levelCrossingLogic.unknownCrossing", "Unknown crossing"),
   };
 
   const conditionLabels = {
@@ -199,7 +228,35 @@ export default function LevelCrossingLogicDialog({
     ? document.crossings.find(logic => logic.levelCrossingElementId === selectedCrossing.id) ?? null
     : null;
 
-  const selectedLogicCode = useMemo(() => selectedLogic ? JSON.stringify(selectedLogic, null, 2) : "", [selectedLogic]);
+  const getBlockName = (blockId?: string): string => {
+    if (!blockId) return labels.anyBlock;
+    return blockOptions.find(block => block.value === blockId)?.label ?? labels.unknownBlock;
+  };
+
+  const getCrossingName = (elementId: string): string =>
+    crossings.find(crossing => crossing.id === elementId)?.label ?? labels.unknownCrossing;
+
+  const formatCondition = (condition: LevelCrossingCondition): string => {
+    const negated = condition.operator === "isNot" ? "NOT " : "";
+
+    switch (condition.type) {
+      case "sensor":
+        return `${negated}Sensor #${condition.sensorAddress} ${condition.active ? conditionLabels.sensorActive : conditionLabels.sensorInactive}`;
+      case "block":
+        return `${negated}${getBlockName(condition.blockId)} ${condition.occupied ? conditionLabels.blockOccupied : conditionLabels.blockFree}`;
+      case "route":
+        return `${negated}${getBlockName(condition.fromBlockId)} → ${getBlockName(condition.toBlockId)} ${condition.reserved ? conditionLabels.routeReserved : conditionLabels.routeNotReserved}`;
+    }
+  };
+
+  const formatAction = (action: LevelCrossingAction): string => {
+    switch (action.type) {
+      case "setAccessory":
+        return `Accessory #${action.address}: ${action.activeWhenClosed ? actionLabels.activeWhenClosed : actionLabels.inactive}`;
+      case "setElementState":
+        return `Element state: closed=${action.closedState}, open=${action.openState}`;
+    }
+  };
 
   const clearMessages = (): void => {
     setStatusText(null);
@@ -293,6 +350,30 @@ export default function LevelCrossingLogicDialog({
     setRuntimeState(previous => ({ ...previous, enabled }));
   };
 
+  const renderConditionGroup = (
+    title: string,
+    conditions: LevelCrossingCondition[],
+    joinLabel: string
+  ) => (
+    <Stack gap={4}>
+      <Text size="xs" fw={700} c="dimmed">{title}</Text>
+      {conditions.length === 0 ? (
+        <Badge variant="light" color="gray">{labels.noConditions}</Badge>
+      ) : (
+        <Group gap="xs" wrap="wrap">
+          {conditions.map((condition, index) => (
+            <Group key={condition.id} gap={4} wrap="nowrap">
+              {index > 0 && <Text size="xs" c="dimmed" fw={700}>{joinLabel}</Text>}
+              <Badge variant="light" color={getConditionBadgeColor(condition)}>
+                {formatCondition(condition)}
+              </Badge>
+            </Group>
+          ))}
+        </Group>
+      )}
+    </Stack>
+  );
+
   return (
     <AppModal opened={opened} onClose={onClose} title={labels.title} size={1150} centered draggable styles={{ content: { height: "min(820px, calc(100vh - 48px))", maxHeight: "min(820px, calc(100vh - 48px))", display: "flex", flexDirection: "column" }, body: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" } }}>
       <Stack h="100%" gap="sm">
@@ -328,7 +409,63 @@ export default function LevelCrossingLogicDialog({
               </Group>
             </ScrollArea>
           </Tabs.Panel>
-          <Tabs.Panel value="preview" style={{ flex: 1, minHeight: 0 }}><ScrollArea h="100%" pt="md" type="auto" offsetScrollbars><Card withBorder p="sm"><pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{selectedLogicCode || labels.selectOrAdd}</pre></Card></ScrollArea></Tabs.Panel>
+          <Tabs.Panel value="preview" style={{ flex: 1, minHeight: 0 }}>
+            <ScrollArea h="100%" pt="md" type="auto" offsetScrollbars>
+              <Stack pb="md">
+                {document.crossings.length === 0 && (
+                  <Card withBorder>
+                    <Text size="sm" c="dimmed">{labels.emptyPreview}</Text>
+                  </Card>
+                )}
+                {document.crossings.map(logic => (
+                  <Card key={logic.id} withBorder>
+                    <Group justify="space-between" mb="sm" align="center">
+                      <Title order={5}>{getCrossingName(logic.levelCrossingElementId)}</Title>
+                      <Group gap="xs">
+                        <Badge color={logic.enabled ? "green" : "gray"} variant="light">
+                          {logic.enabled ? labels.enabledLogic : labels.disabledLogic}
+                        </Badge>
+                        <Badge color="blue" variant="light">
+                          {`${labels.closeDelayMs}: ${logic.closeDelayMs} ms`}
+                        </Badge>
+                        <Badge color="blue" variant="light">
+                          {`${labels.openDelayMs}: ${logic.openDelayMs} ms`}
+                        </Badge>
+                        <Badge color="blue" variant="light">
+                          {`${labels.minClosedMs}: ${logic.minClosedMs} ms`}
+                        </Badge>
+                      </Group>
+                    </Group>
+
+                    <Stack gap="sm">
+                      <Card withBorder p="xs" radius="md">
+                        {renderConditionGroup(labels.closeTriggersTitle, logic.closeTriggers, labels.or)}
+                      </Card>
+                      <Card withBorder p="xs" radius="md">
+                        {renderConditionGroup(labels.openConditionsTitle, logic.openConditions, labels.and)}
+                      </Card>
+                      <Card withBorder p="xs" radius="md">
+                        <Stack gap={4}>
+                          <Text size="xs" fw={700} c="dimmed">{labels.actionsTitle}</Text>
+                          {logic.actions.length === 0 ? (
+                            <Badge variant="light" color="gray">{labels.noActions}</Badge>
+                          ) : (
+                            <Group gap="xs" wrap="wrap">
+                              {logic.actions.map(action => (
+                                <Badge key={action.id} variant="light" color={getActionBadgeColor(action)}>
+                                  {formatAction(action)}
+                                </Badge>
+                              ))}
+                            </Group>
+                          )}
+                        </Stack>
+                      </Card>
+                    </Stack>
+                  </Card>
+                ))}
+              </Stack>
+            </ScrollArea>
+          </Tabs.Panel>
         </Tabs>
 
         <Divider />
