@@ -1,5 +1,5 @@
-import { BaseElement } from "../core/BaseElement";
-import type { ElementJSON } from "../core/types";
+import { BaseElement } from "../core/BaseElement.js";
+import type { ElementJSON } from "../core/types.js";
 
 export type TrackElementJSON = ElementJSON & {
   layerId: "track";
@@ -29,8 +29,9 @@ export abstract class TrackElement<TJSON extends TrackElementJSON = TrackElement
   }
 
   protected trackToJSON(): TrackElementJSON {
+    const json = this.baseToJSON();
     return {
-      ...this.baseToJSON(),
+      ...json,
       layerId: "track",
       sectionId: this.sectionId,
     };
