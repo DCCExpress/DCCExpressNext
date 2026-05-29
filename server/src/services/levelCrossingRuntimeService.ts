@@ -27,10 +27,6 @@ export type LevelCrossingRuntimeActionSink = {
     logic: LevelCrossingLogic,
     state: LevelCrossingRuntimeState
   ) => void | Promise<void>;
-  setElementState?: (
-    logic: LevelCrossingLogic,
-    state: LevelCrossingRuntimeState
-  ) => void | Promise<void>;
   setAccessory?: (
     address: number,
     active: boolean,
@@ -242,22 +238,15 @@ export class LevelCrossingRuntimeService {
     await this.actionSink.setCrossingState?.(logic, nextState);
 
     for (const action of logic.actions) {
-      if (action.type === "setAccessory") {
-        const active = nextState === "closed"
-          ? action.activeWhenClosed
-          : !action.activeWhenClosed;
-
-        await this.actionSink.setAccessory?.(action.address, active, logic);
+      if (action.type !== "setAccessory") {
         continue;
       }
 
-      if (action.type === "setElementState") {
-        const elementState = nextState === "closed"
-          ? action.closedState
-          : action.openState;
+      const active = nextState === "closed"
+        ? action.activeWhenClosed
+        : !action.activeWhenClosed;
 
-        await this.actionSink.setElementState?.(logic, elementState);
-      }
+      await this.actionSink.setAccessory?.(action.address, active, logic);
     }
   }
 
