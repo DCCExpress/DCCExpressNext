@@ -99,10 +99,22 @@ export async function loadSignalLogicRulesWs(): Promise<SignalLogicLoadResult> {
 export async function saveSignalLogicRulesWs(
   document: SignalLogicDocumentDto
 ): Promise<SignalLogicLoadResult> {
-  return requestSignalLogic(
+  const saveResult = await requestSignalLogic(
     "save",
     { document },
     "Could not save signal logic rules."
+  );
+
+  if (saveResult.issues.some(issue => issue.level === "error")) {
+    return saveResult;
+  }
+
+  return requestSignalLogic(
+    saveResult.document.enabled ? "start" : "stop",
+    {},
+    saveResult.document.enabled
+      ? "Could not start signal logic automation module after saving."
+      : "Could not stop signal logic automation module after saving."
   );
 }
 
