@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-05-28T05:13:50.274Z",
+  "savedAt": "2026-05-29T08:56:14.200Z",
   "blocks": [
     [
       "97aa3af-3ac9-4483-815a-d1ead989",
@@ -85,7 +85,7 @@
       15,
       {
         "address": 15,
-        "closed": true
+        "closed": false
       }
     ],
     [
@@ -93,6 +93,318 @@
       {
         "address": 14,
         "closed": true
+      }
+    ]
+  ],
+  "sensors": [
+    [
+      102,
+      {
+        "address": 102,
+        "active": false
+      }
+    ],
+    [
+      101,
+      {
+        "address": 101,
+        "active": false
+      }
+    ],
+    [
+      103,
+      {
+        "address": 103,
+        "active": false
+      }
+    ],
+    [
+      301,
+      {
+        "address": 301,
+        "active": false
+      }
+    ],
+    [
+      302,
+      {
+        "address": 302,
+        "active": false
+      }
+    ],
+    [
+      303,
+      {
+        "address": 303,
+        "active": false
+      }
+    ],
+    [
+      201,
+      {
+        "address": 201,
+        "active": false
+      }
+    ],
+    [
+      202,
+      {
+        "address": 202,
+        "active": false
+      }
+    ]
+  ],
+  "accessories": [
+    [
+      501,
+      {
+        "address": 501,
+        "active": false
+      }
+    ],
+    [
+      135,
+      {
+        "address": 135,
+        "active": false
+      }
+    ],
+    [
+      136,
+      {
+        "address": 136,
+        "active": true
+      }
+    ],
+    [
+      137,
+      {
+        "address": 137,
+        "active": false
+      }
+    ],
+    [
+      138,
+      {
+        "address": 138,
+        "active": false
+      }
+    ],
+    [
+      139,
+      {
+        "address": 139,
+        "active": false
+      }
+    ],
+    [
+      1,
+      {
+        "address": 1,
+        "active": false
+      }
+    ],
+    [
+      2,
+      {
+        "address": 2,
+        "active": false
+      }
+    ],
+    [
+      3,
+      {
+        "address": 3,
+        "active": false
+      }
+    ],
+    [
+      4,
+      {
+        "address": 4,
+        "active": false
+      }
+    ],
+    [
+      5,
+      {
+        "address": 5,
+        "active": false
+      }
+    ],
+    [
+      120,
+      {
+        "address": 120,
+        "active": true
+      }
+    ],
+    [
+      121,
+      {
+        "address": 121,
+        "active": false
+      }
+    ],
+    [
+      122,
+      {
+        "address": 122,
+        "active": false
+      }
+    ],
+    [
+      123,
+      {
+        "address": 123,
+        "active": false
+      }
+    ],
+    [
+      124,
+      {
+        "address": 124,
+        "active": false
+      }
+    ],
+    [
+      140,
+      {
+        "address": 140,
+        "active": false
+      }
+    ],
+    [
+      141,
+      {
+        "address": 141,
+        "active": true
+      }
+    ],
+    [
+      142,
+      {
+        "address": 142,
+        "active": false
+      }
+    ],
+    [
+      143,
+      {
+        "address": 143,
+        "active": false
+      }
+    ],
+    [
+      144,
+      {
+        "address": 144,
+        "active": false
+      }
+    ],
+    [
+      145,
+      {
+        "address": 145,
+        "active": false
+      }
+    ],
+    [
+      146,
+      {
+        "address": 146,
+        "active": false
+      }
+    ],
+    [
+      147,
+      {
+        "address": 147,
+        "active": true
+      }
+    ],
+    [
+      148,
+      {
+        "address": 148,
+        "active": false
+      }
+    ],
+    [
+      149,
+      {
+        "address": 149,
+        "active": false
+      }
+    ],
+    [
+      150,
+      {
+        "address": 150,
+        "active": false
+      }
+    ],
+    [
+      151,
+      {
+        "address": 151,
+        "active": true
+      }
+    ],
+    [
+      152,
+      {
+        "address": 152,
+        "active": false
+      }
+    ],
+    [
+      153,
+      {
+        "address": 153,
+        "active": false
+      }
+    ],
+    [
+      154,
+      {
+        "address": 154,
+        "active": false
+      }
+    ],
+    [
+      155,
+      {
+        "address": 155,
+        "active": false
+      }
+    ],
+    [
+      156,
+      {
+        "address": 156,
+        "active": true
+      }
+    ],
+    [
+      157,
+      {
+        "address": 157,
+        "active": false
+      }
+    ],
+    [
+      158,
+      {
+        "address": 158,
+        "active": false
+      }
+    ],
+    [
+      159,
+      {
+        "address": 159,
+        "active": false
       }
     ]
   ]

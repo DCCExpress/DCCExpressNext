@@ -24,8 +24,8 @@
         }
       ],
       "openConditions": [],
-      "closeDelayMs": 0,
-      "openDelayMs": 1000,
+      "closeDelayMs": 1000,
+      "openDelayMs": 3000,
       "minClosedMs": 3000,
       "actions": [
         {
