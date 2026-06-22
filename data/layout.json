@@ -1093,10 +1093,10 @@
           "aspect": 4,
           "addressLength": 5,
           "dispalyAsSingleLamp": false,
-          "valueGreen": 0,
-          "valueRed": 0,
-          "valueYellow": 0,
-          "valueWhite": 0
+          "valueGreen": 1,
+          "valueRed": 2,
+          "valueYellow": 4,
+          "valueWhite": 8
         }
       ]
     },
