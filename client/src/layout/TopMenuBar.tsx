@@ -76,6 +76,8 @@ export default function TopMenuBar({
   const [integrityCheckOpened, setIntegrityCheckOpened] = useState(false);
   const [automationFlowOpened, setAutomationFlowOpened] = useState(false);
 
+  const openAutomationFlow = () => setAutomationFlowOpened(true);
+
   return (
     <>
       <Group ml={32} h="100%" px="md" justify="space-between" wrap="nowrap">
@@ -86,7 +88,7 @@ export default function TopMenuBar({
             onGoHome={onGoHome}
             onOpenLocos={onOpenLocos}
             onOpenBlocks={onOpenBlocks}
-            onOpenAutomationFlow={() => setAutomationFlowOpened(true)}
+            onOpenAutomationFlow={openAutomationFlow}
             onOpenDiagnostics={() => setDiagnosticsOpened(true)}
             onOpenIntegrityCheck={() => setIntegrityCheckOpened(true)}
             onSaveLayout={onSaveLayout}
@@ -101,6 +103,7 @@ export default function TopMenuBar({
             tool={tool}
             onCursorToolClick={onCursorToolClick}
             onOpenElementPicker={onOpenElementPicker}
+            onOpenAutomationFlow={openAutomationFlow}
             onDeleteToolClick={onDeleteToolClick}
             onFitLayout={onFitLayout}
             canUndo={canUndo}
