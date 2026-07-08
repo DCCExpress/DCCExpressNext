@@ -13,6 +13,7 @@ export type AutomationFlowNodeKind =
   | "routeLock"
   | "signal"
   | "turnout"
+  | "turnoutCommand"
   | "output";
 
 export type AutomationFlowNodeData = Record<string, unknown> & {
