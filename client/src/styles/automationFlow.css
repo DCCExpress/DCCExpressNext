@@ -1,0 +1,42 @@
+/* client/src/styles/automationFlow.css */
+
+/*
+ * Automation Flow editor layout fix.
+ *
+ * A tulajdonság panel tartalma könnyen magasabb lesz, mint a dialog.
+ * Ilyenkor nem a teljes modal/dialog scrollozzon, hanem a jobb oldali panel kapjon
+ * saját scrollbar-t.
+ */
+.mantine-Group-root:has(.react-flow) {
+  min-height: 0 !important;
+  height: calc(100vh - 150px);
+  max-height: calc(100vh - 150px);
+  overflow: hidden;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child {
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child > .mantine-Stack-root {
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child > .mantine-Stack-root::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child > .mantine-Stack-root::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-dark-4);
+  border-radius: 999px;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child > .mantine-Stack-root::-webkit-scrollbar-thumb:hover {
+  background: var(--mantine-color-dark-3);
+}
