@@ -32,6 +32,10 @@ import type {
   BlockAutomationCommandPayload,
 } from "./blockAutomation.js";
 
+import type {
+  AutomationFlowCommandPayload,
+} from "./automationFlow.js";
+
 export type EmptyClientWsCommandPayload = {};
 
 export type SetTrackPowerCommandPayload = {
@@ -256,6 +260,7 @@ export type ClientWsPayloadMap = {
   commandCenterConfigCommand: CommandCenterConfigCommandPayload;
   appSettingsCommand: AppSettingsCommandPayload;
   blockAutomationCommand: BlockAutomationCommandPayload;
+  automationFlowCommand: AutomationFlowCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
   fileCommand: FileCommandPayload;
