@@ -1,12 +1,9 @@
 // src/services/wsApi.ts
 
 import type {
-  AutomationCommandAction,
   ClientWsMessageType,
   ClientWsPayloadMap,
   Direction,
-  LevelCrossingCommandAction,
-  LevelCrossingLogicDocumentDto,
   ReservationOwnerType,
   RuntimeVariableKey,
   RuntimeVariableValue,
@@ -273,28 +270,6 @@ class WebSocketApi {
     return this.send("getRouteReservations", {});
   }
 
-  levelCrossingCommand(
-    requestId: string,
-    action: LevelCrossingCommandAction,
-    document?: LevelCrossingLogicDocumentDto
-  ): boolean {
-    return this.send("levelCrossingCommand", {
-      requestId,
-      action,
-      ...(document === undefined ? {} : { document }),
-    });
-  }
-
-  automationCommand(
-    requestId: string,
-    action: AutomationCommandAction
-  ): boolean {
-    return this.send("automationCommand", {
-      requestId,
-      action,
-    });
-  }
-
   runScript(script: string | undefined, source: ScriptRunSource, elementId: string | null): boolean {
     return this.send("runScript", { ...(script !== undefined ? { script } : {}), source, elementId });
   }
@@ -343,7 +318,7 @@ class WebSocketApi {
     return this.send("abortAllTasks", {});
   }
 
-  setRuntimeVariable<TKey extends RuntimeVariableKey>(key: TKey, value: RuntimeVariableValue<TKey>): boolean {
+  setRuntimeVariable(key: RuntimeVariableKey, value: RuntimeVariableValue): boolean {
     return this.send("setRuntimeVariable", { key, value });
   }
 
