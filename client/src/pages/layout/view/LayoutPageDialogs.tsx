@@ -12,9 +12,7 @@ import AppSettingsDialog from "../../../components/app-settings/AppSettingsDialo
 import BlockActionsManagerDialog from "../../../components/block-actions/BlockActionsManagerDialog";
 import ElementPickerDialog from "../../../components/editor/ElementPickerDialog";
 import FullscreenLoader from "../../../components/FullscreenLoader";
-import LevelCrossingLogicDialog from "../../../components/level-crossing-logic/LevelCrossingLogicDialog";
 import LocoDialog from "../../../components/LocoDialog";
-import SignalLogicDialog from "../../../components/signal-logic/SignalLogicDialog";
 
 type BooleanSetter =
   Dispatch<SetStateAction<boolean>>;
@@ -34,16 +32,6 @@ type LayoutPageDialogsProps = {
   setBlockActionsDialogOpened: BooleanSetter;
   requestedBlockActionsBlockId: string | null;
   onRequestedBlockActionsBlockIdConsumed: () => void;
-
-  signalLogicDialogOpened: boolean;
-  setSignalLogicDialogOpened: BooleanSetter;
-  requestedSignalLogicAddress: number | null;
-  onRequestedSignalLogicAddressConsumed: () => void;
-
-  levelCrossingLogicDialogOpened: boolean;
-  setLevelCrossingLogicDialogOpened: BooleanSetter;
-  requestedLevelCrossingElementId: string | null;
-  onRequestedLevelCrossingElementIdConsumed: () => void;
 
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
@@ -67,16 +55,6 @@ export default function LayoutPageDialogs({
   setBlockActionsDialogOpened,
   requestedBlockActionsBlockId,
   onRequestedBlockActionsBlockIdConsumed,
-
-  signalLogicDialogOpened,
-  setSignalLogicDialogOpened,
-  requestedSignalLogicAddress,
-  onRequestedSignalLogicAddressConsumed,
-
-  levelCrossingLogicDialogOpened,
-  setLevelCrossingLogicDialogOpened,
-  requestedLevelCrossingElementId,
-  onRequestedLevelCrossingElementIdConsumed,
 
   pickerOpened,
   setPickerOpened,
@@ -110,28 +88,6 @@ export default function LayoutPageDialogs({
         layout={layout}
         initialBlockId={requestedBlockActionsBlockId}
         onInitialBlockIdConsumed={onRequestedBlockActionsBlockIdConsumed}
-      />
-
-      <SignalLogicDialog
-        key={requestedSignalLogicAddress ?? "all-signals"}
-        opened={signalLogicDialogOpened}
-        onClose={() => {
-          setSignalLogicDialogOpened(false);
-          onRequestedSignalLogicAddressConsumed();
-        }}
-        layout={layout}
-      />
-
-      <LevelCrossingLogicDialog
-        key={requestedLevelCrossingElementId ?? "all-level-crossings"}
-        opened={levelCrossingLogicDialogOpened}
-        onClose={() => {
-          setLevelCrossingLogicDialogOpened(false);
-          onRequestedLevelCrossingElementIdConsumed();
-        }}
-        layout={layout}
-        initialLevelCrossingElementId={requestedLevelCrossingElementId}
-        onInitialLevelCrossingElementIdConsumed={onRequestedLevelCrossingElementIdConsumed}
       />
 
       <ElementPickerDialog
