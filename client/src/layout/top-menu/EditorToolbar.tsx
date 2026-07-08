@@ -7,6 +7,7 @@ import {
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
+  IconBolt,
   IconEditFilled,
   IconMaximize,
   IconPointer,
@@ -23,6 +24,7 @@ type EditorToolbarProps = {
   tool: EditorTool;
   onCursorToolClick: () => void;
   onOpenElementPicker: () => void;
+  onOpenAutomationFlow: () => void;
   onDeleteToolClick: () => void;
   onFitLayout: () => void;
   canUndo: boolean;
@@ -37,6 +39,7 @@ export default function EditorToolbar({
   tool,
   onCursorToolClick,
   onOpenElementPicker,
+  onOpenAutomationFlow,
   onDeleteToolClick,
   onFitLayout,
   canUndo,
@@ -58,6 +61,18 @@ export default function EditorToolbar({
           onMouseDown={event => event.preventDefault()}
         >
           <IconEditFilled size={18} />
+        </ActionIcon>
+      </Tooltip>
+
+      <Tooltip label="Automatizálás">
+        <ActionIcon
+          variant="light"
+          color="violet"
+          onClick={onOpenAutomationFlow}
+          onMouseDown={event => event.preventDefault()}
+          aria-label="Automatizálás"
+        >
+          <IconBolt size={18} />
         </ActionIcon>
       </Tooltip>
 
