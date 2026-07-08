@@ -94,9 +94,23 @@ const INITIAL_NODES: AutomationNode[] = [
     },
   },
   {
-    id: "manual-route-request",
+    id: "turnout-t1-closed",
     type: "automationNode",
     position: { x: 60, y: 440 },
+    data: {
+      kind: "turnout",
+      label: "T1 closed",
+      description: "Váltóállapot bemenet. Akkor igaz, ha T1 closed állásban van.",
+      ioKey: "turnout:1:closed",
+      turnoutAddress: 1,
+      turnoutClosed: true,
+      active: false,
+    },
+  },
+  {
+    id: "manual-route-request",
+    type: "automationNode",
+    position: { x: 60, y: 600 },
     data: {
       kind: "button",
       label: "Bejárati út kérése",
@@ -117,17 +131,17 @@ const INITIAL_NODES: AutomationNode[] = [
   {
     id: "route-and",
     type: "automationNode",
-    position: { x: 640, y: 280 },
+    position: { x: 640, y: 300 },
     data: {
       kind: "and",
-      label: "Útvonal engedélyezhető",
-      description: "Kézi kérés ÉS szabad szakasz ÉS aktív szenzor.",
+      label: "S1 sárga feltétel",
+      description: "Kézi kérés ÉS szabad szakasz ÉS aktív szenzor ÉS T1 closed.",
     },
   },
   {
     id: "route-if-then-else",
     type: "automationNode",
-    position: { x: 800, y: 440 },
+    position: { x: 860, y: 520 },
     data: {
       kind: "ifThenElse",
       label: "IF szenzor THEN engedély ELSE tiltás",
@@ -137,7 +151,7 @@ const INITIAL_NODES: AutomationNode[] = [
   {
     id: "route-lock-r1",
     type: "automationNode",
-    position: { x: 930, y: 280 },
+    position: { x: 930, y: 300 },
     data: {
       kind: "routeLock",
       label: "R1 útvonal zár",
@@ -145,25 +159,14 @@ const INITIAL_NODES: AutomationNode[] = [
     },
   },
   {
-    id: "turnout-t1-straight",
+    id: "signal-s1-yellow",
     type: "automationNode",
-    position: { x: 1230, y: 120 },
-    data: {
-      kind: "turnout",
-      label: "T1 egyenes",
-      ioKey: "turnout:T1",
-      outputCommand: "straight",
-    },
-  },
-  {
-    id: "signal-s1-green",
-    type: "automationNode",
-    position: { x: 1230, y: 280 },
+    position: { x: 1230, y: 300 },
     data: {
       kind: "signal",
-      label: "S1 zöld",
+      label: "Signal1 yellow",
       ioKey: "signal:S1",
-      outputCommand: "green",
+      outputCommand: "yellow",
     },
   },
 ];
@@ -172,10 +175,10 @@ const INITIAL_EDGES: AutomationEdge[] = [
   createEdge("block-a1-occupied", "not-block-a1"),
   createEdge("not-block-a1", "route-and"),
   createEdge("sensor-1", "route-and"),
+  createEdge("turnout-t1-closed", "route-and"),
   createEdge("manual-route-request", "route-and"),
   createEdge("route-and", "route-lock-r1"),
-  createEdge("route-lock-r1", "turnout-t1-straight"),
-  createEdge("route-lock-r1", "signal-s1-green"),
+  createEdge("route-lock-r1", "signal-s1-yellow"),
 ];
 
 function createEdge(source: string, target: string): AutomationEdge {
@@ -186,6 +189,10 @@ function createEdge(source: string, target: string): AutomationEdge {
     type: "smoothstep",
     markerEnd: { type: MarkerType.ArrowClosed },
   };
+}
+
+function getTurnoutIoKey(address: number, closed: boolean): string {
+  return `turnout:${address}:${closed ? "closed" : "thrown"}`;
 }
 
 export default function AutomationFlowEditor() {
@@ -235,7 +242,7 @@ export default function AutomationFlowEditor() {
       nodes.filter(
         (node) =>
           simulatedState[node.id] === true &&
-          (node.data.kind === "signal" || node.data.kind === "turnout" || node.data.kind === "output")
+          (node.data.kind === "signal" || node.data.kind === "output")
       ),
     [nodes, simulatedState]
   );
@@ -294,6 +301,28 @@ export default function AutomationFlowEditor() {
       }));
     });
 
+    const unsubscribeTurnout = wsClient.on("turnoutChanged", data => {
+      setNodes(currentNodes => currentNodes.map(node => {
+        if (node.data.kind !== "turnout") {
+          return node;
+        }
+
+        if (node.data.turnoutAddress !== data.address) {
+          return node;
+        }
+
+        const expectedClosed = node.data.turnoutClosed ?? true;
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            active: data.closed === expectedClosed,
+          },
+        };
+      }));
+    });
+
     const unsubscribeFlowChanged = wsClient.on("automationFlowChanged", document => {
       applyDocument(document);
       setStatusText("Automatika frissítve egy másik kliens mentése alapján.");
@@ -304,6 +333,7 @@ export default function AutomationFlowEditor() {
 
     return () => {
       unsubscribeSensor();
+      unsubscribeTurnout();
       unsubscribeFlowChanged();
     };
   }, [applyDocument]);
@@ -589,7 +619,7 @@ function SimpleAutomationLayout({
 
               <TextInput
                 label="I/O kulcs"
-                description="Később ehhez kötjük a blokkot, szenzort, jelzőt, váltót vagy runtime parancsot."
+                description="Később ehhez kötjük a blokkot, szenzort, váltóállapotot, jelzőt vagy runtime parancsot."
                 value={selectedNode.data.ioKey ?? ""}
                 onChange={(event) => onSelectedNodeDataChange({ ioKey: event.currentTarget.value })}
               />
@@ -610,6 +640,42 @@ function SimpleAutomationLayout({
                     wsApi.getLayoutRuntimeSnapshot();
                   }}
                 />
+              )}
+
+              {selectedNode.data.kind === "turnout" && (
+                <Stack gap="xs">
+                  <NumberInput
+                    label="Váltó cím"
+                    description="A fizikai váltó címe. Például T1."
+                    min={0}
+                    step={1}
+                    value={selectedNode.data.turnoutAddress ?? 0}
+                    onChange={(value) => {
+                      const address = toNumber(value);
+                      const closed = selectedNode.data.turnoutClosed ?? true;
+                      onSelectedNodeDataChange({
+                        turnoutAddress: address,
+                        ioKey: getTurnoutIoKey(address, closed),
+                      });
+                      wsApi.getLayoutRuntimeSnapshot();
+                    }}
+                  />
+
+                  <Switch
+                    checked={selectedNode.data.turnoutClosed ?? true}
+                    label="Closed állás legyen az igaz feltétel"
+                    description="Ha kikapcsolod, akkor a node akkor lesz igaz, ha a váltó thrown/kitérő állásban van."
+                    onChange={(event) => {
+                      const closed = event.currentTarget.checked;
+                      const address = selectedNode.data.turnoutAddress ?? 0;
+                      onSelectedNodeDataChange({
+                        turnoutClosed: closed,
+                        ioKey: getTurnoutIoKey(address, closed),
+                      });
+                      wsApi.getLayoutRuntimeSnapshot();
+                    }}
+                  />
+                </Stack>
               )}
 
               {selectedNode.data.kind === "ifThenElse" && (
@@ -639,9 +705,7 @@ function SimpleAutomationLayout({
                 />
               )}
 
-              {(selectedNode.data.kind === "signal" ||
-                selectedNode.data.kind === "turnout" ||
-                selectedNode.data.kind === "output") && (
+              {(selectedNode.data.kind === "signal" || selectedNode.data.kind === "output") && (
                 <TextInput
                   label="Kimeneti parancs"
                   value={selectedNode.data.outputCommand ?? ""}
@@ -786,7 +850,6 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): R
         case "latch":
         case "routeLock":
         case "signal":
-        case "turnout":
         case "output":
           nextValue = inputValues.some(Boolean);
           break;
