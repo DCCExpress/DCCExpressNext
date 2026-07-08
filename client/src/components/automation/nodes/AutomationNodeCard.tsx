@@ -1,3 +1,7 @@
+import type {
+  ReactNode,
+} from "react";
+
 import {
   Badge,
   Box,
@@ -26,7 +30,7 @@ type AutomationNodeCardProps = {
   data: AutomationFlowNodeData;
   selected: boolean;
   kind: AutomationFlowNodeKind;
-  detail?: React.ReactNode;
+  detail?: ReactNode;
 };
 
 export function AutomationNodeCard({
