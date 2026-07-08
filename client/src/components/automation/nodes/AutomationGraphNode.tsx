@@ -36,7 +36,7 @@ function getSingleOutputBadge(data: AutomationFlowNodeData, label?: string) {
   return [
     {
       id: "out",
-      label,
+      ...(label !== undefined ? { label } : {}),
       active: getOutputActive(data),
       top: "50%",
     },
