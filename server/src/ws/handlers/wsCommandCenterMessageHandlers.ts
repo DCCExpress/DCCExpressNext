@@ -411,7 +411,10 @@ export const handleCommandCenterMessage: WsMessageHandler = context => {
                 message: "Failed to set sensor",
               },
             });
+            return;
           }
+
+          commandCenter.setKnownSensorState(address, on);
         })
         .catch(error => {
           logError("Failed to set sensor:", error);
