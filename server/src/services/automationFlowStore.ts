@@ -5,9 +5,12 @@ import type {
   AutomationFlowDocumentDto,
   AutomationFlowEdgeDto,
   AutomationFlowNodeDto,
+  AutomationFlowPageDto,
 } from "../../../common/src/automationFlow.js";
 import {
+  createDefaultAutomationFlowPage,
   createEmptyAutomationFlowDocument,
+  DEFAULT_AUTOMATION_FLOW_PAGE_ID,
 } from "../../../common/src/automationFlow.js";
 
 import {
@@ -28,7 +31,50 @@ function toNumber(value: unknown, fallback: number): number {
     : fallback;
 }
 
-function normalizeNode(input: unknown): AutomationFlowNodeDto | null {
+function normalizePage(input: unknown): AutomationFlowPageDto | null {
+  if (!isRecord(input)) {
+    return null;
+  }
+
+  const id = typeof input.id === "string" && input.id.trim().length > 0
+    ? input.id.trim()
+    : null;
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    name: typeof input.name === "string" && input.name.trim().length > 0
+      ? input.name.trim()
+      : id,
+  };
+}
+
+function normalizePages(input: unknown): AutomationFlowPageDto[] {
+  const pages = Array.isArray(input)
+    ? input
+        .map(normalizePage)
+        .filter((page): page is AutomationFlowPageDto => page !== null)
+    : [];
+
+  if (pages.length === 0) {
+    return [createDefaultAutomationFlowPage()];
+  }
+
+  const seen = new Set<string>();
+  return pages.filter(page => {
+    if (seen.has(page.id)) {
+      return false;
+    }
+
+    seen.add(page.id);
+    return true;
+  });
+}
+
+function normalizeNode(input: unknown, validPageIds: Set<string>): AutomationFlowNodeDto | null {
   if (!isRecord(input)) {
     return null;
   }
@@ -53,6 +99,10 @@ function normalizeNode(input: unknown): AutomationFlowNodeDto | null {
     return null;
   }
 
+  const pageId = typeof data.pageId === "string" && validPageIds.has(data.pageId)
+    ? data.pageId
+    : DEFAULT_AUTOMATION_FLOW_PAGE_ID;
+
   const position = isRecord(input.position)
     ? {
         x: toNumber(input.position.x, 0),
@@ -68,6 +118,7 @@ function normalizeNode(input: unknown): AutomationFlowNodeDto | null {
       ...data,
       kind: kind as AutomationFlowNodeDto["data"]["kind"],
       label,
+      pageId,
       ...(typeof data.description === "string" ? { description: data.description } : {}),
       ...(typeof data.ioKey === "string" ? { ioKey: data.ioKey } : {}),
       ...(typeof data.sensorAddress === "number" && Number.isFinite(data.sensorAddress)
@@ -149,9 +200,15 @@ function normalizeAutomationFlowDocument(input: unknown): AutomationFlowDocument
     return fallback;
   }
 
+  const pages = normalizePages(input.pages);
+  const validPageIds = new Set(pages.map(page => page.id));
+  const activePageId = typeof input.activePageId === "string" && validPageIds.has(input.activePageId)
+    ? input.activePageId
+    : pages[0]?.id ?? DEFAULT_AUTOMATION_FLOW_PAGE_ID;
+
   const nodes = Array.isArray(input.nodes)
     ? input.nodes
-        .map(normalizeNode)
+        .map(node => normalizeNode(node, validPageIds))
         .filter((node): node is AutomationFlowNodeDto => node !== null)
     : [];
 
@@ -172,6 +229,8 @@ function normalizeAutomationFlowDocument(input: unknown): AutomationFlowDocument
     name: typeof input.name === "string" && input.name.trim().length > 0
       ? input.name
       : fallback.name,
+    pages,
+    activePageId,
     nodes,
     edges,
     updatedAt: typeof input.updatedAt === "string"
