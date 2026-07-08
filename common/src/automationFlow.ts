@@ -41,7 +41,7 @@ export type AutomationFlowEdgeDto = Record<string, unknown> & {
   id: string;
   source: string;
   target: string;
-  type?: string;
+  type?: string | undefined;
 };
 
 export type AutomationFlowDocumentDto = {
