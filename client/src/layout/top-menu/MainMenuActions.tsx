@@ -16,6 +16,7 @@ type MainMenuActionsProps = {
   onOpenBlocks: () => void;
   onOpenSignalLogic: () => void;
   onOpenLevelCrossingLogic: () => void;
+  onOpenAutomationFlow: () => void;
   onOpenDiagnostics: () => void;
   onOpenIntegrityCheck: () => void;
   onSaveLayout: () => void;
@@ -27,12 +28,15 @@ type MainMenuActionsProps = {
 const MENU_LABELS = {
   en: {
     levelCrossingLogic: "Level crossing logic...",
+    automationFlow: "Automation flow...",
   },
   hu: {
     levelCrossingLogic: "Sorompólogika...",
+    automationFlow: "Automatizálás...",
   },
   de: {
     levelCrossingLogic: "Bahnübergang-Logik...",
+    automationFlow: "Automatisierung...",
   },
 } as const;
 
@@ -48,6 +52,7 @@ export default function MainMenuActions({
   onOpenBlocks,
   onOpenSignalLogic,
   onOpenLevelCrossingLogic,
+  onOpenAutomationFlow,
   onOpenDiagnostics,
   onOpenIntegrityCheck,
   onSaveLayout,
@@ -123,6 +128,10 @@ export default function MainMenuActions({
           </Menu.Item>
           <Menu.Item disabled>{t("Trains") + "..."}</Menu.Item>
           <Menu.Item disabled>{t("Routes") + "..."}</Menu.Item>
+          <Divider />
+          <Menu.Item onClick={onOpenAutomationFlow}>
+            {labels.automationFlow}
+          </Menu.Item>
           <Menu.Item onClick={onOpenSignalLogic}>
             {t("signalLogic.menu")}
           </Menu.Item>
