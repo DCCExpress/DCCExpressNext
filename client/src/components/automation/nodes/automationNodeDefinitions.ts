@@ -73,7 +73,7 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
   ifThenElse: {
     title: "IF / THEN / ELSE",
     group: "Logika",
-    description: "Első bemenet: IF feltétel, második: THEN ág, harmadik: ELSE ág.",
+    description: "Egy feltétel bemenet, THEN és ELSE kimenettel.",
     icon: "?",
   },
   timer: {
@@ -99,9 +99,19 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
   signal: {
     title: "Jelző parancs",
     group: "Kimenet",
-    description: "Jelzőkép vezérlése: vörös, sárga, zöld.",
+    description: "Jelzőkép vezérlése layoutból betöltött cím és aspect bitminta alapján.",
     icon: "🚥",
-    defaultData: { ioKey: "signal:S1", outputCommand: "yellow" },
+    defaultData: {
+      ioKey: "signal:1:yellow",
+      signalAddress: 1,
+      signalAspect: "yellow",
+      signalAddressLength: 2,
+      signalValueRed: 0,
+      signalValueYellow: 1,
+      signalValueGreen: 2,
+      signalValueWhite: 3,
+      outputCommand: "yellow",
+    },
   },
   turnoutCommand: {
     title: "Váltó parancs",
