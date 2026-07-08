@@ -7,6 +7,7 @@ import type {
   NodeProps,
   NodeTypes,
 } from "@xyflow/react";
+import { useTranslation } from "react-i18next";
 
 import type {
   AutomationFlowNodeData,
@@ -20,12 +21,12 @@ type AutomationNode = Node<AutomationFlowNodeData, "automationNode">;
 
 type AutomationTypedNodeProps = NodeProps<AutomationNode>;
 
-function getLogicalTurnoutLabel(closed: boolean | undefined): string {
+function getLogicalTurnoutLabel(closed: boolean | undefined): "closed" | "thrown" {
   return closed === false ? "thrown" : "closed";
 }
 
-function getPhysicalClosedLabel(closedValue: boolean | undefined): string {
-  return closedValue === false ? "physical false" : "physical true";
+function getPhysicalClosedKey(closedValue: boolean | undefined): "physicalFalse" | "physicalTrue" {
+  return closedValue === false ? "physicalFalse" : "physicalTrue";
 }
 
 function getOutputActive(data: AutomationFlowNodeData): boolean {
@@ -53,6 +54,8 @@ function BlockOccupiedNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function SensorNode({ data, selected }: AutomationTypedNodeProps) {
+  const { t } = useTranslation();
+
   return (
     <AutomationNodeCard
       data={data}
@@ -61,7 +64,7 @@ function SensorNode({ data, selected }: AutomationTypedNodeProps) {
       detail={typeof data.sensorAddress === "number"
         ? (
             <Text size="xs" c="dimmed">
-              cím: <b>{data.sensorAddress}</b>
+              {t("automation.graph.sensorAddress", { address: data.sensorAddress })}
             </Text>
           )
         : null}
@@ -70,8 +73,9 @@ function SensorNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
+  const { t } = useTranslation();
   const expectedState = getLogicalTurnoutLabel(data.turnoutClosed);
-  const closedValueLabel = getPhysicalClosedLabel(data.turnoutClosedValue);
+  const closedValueKey = getPhysicalClosedKey(data.turnoutClosedValue);
 
   return (
     <AutomationNodeCard
@@ -81,7 +85,11 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
       detail={typeof data.turnoutAddress === "number"
         ? (
             <Text size="xs" c="dimmed">
-              T{data.turnoutAddress}: <b>{expectedState}</b> · closed = {closedValueLabel}
+              {t("automation.graph.turnoutState", {
+                address: data.turnoutAddress,
+                state: t(`automation.graph.${expectedState}`),
+                closedValue: t(`automation.graph.${closedValueKey}`),
+              })}
             </Text>
           )
         : null}
@@ -127,6 +135,7 @@ function NotNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
+  const { t } = useTranslation();
   const conditionActive = data.active === true;
   const conditionValid = data.outputValid === true;
 
@@ -159,13 +168,13 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
       detail={(
         <Stack gap={2}>
           <Text size="xs" c="dimmed">
-            <b>IF</b> bemenet: feltétel
+            <b>IF</b> {t("automation.graph.ifInput")}
           </Text>
           <Text size="xs" c="dimmed">
-            <b>THEN</b> kimenet: ha igaz
+            <b>THEN</b> {t("automation.graph.thenOutput")}
           </Text>
           <Text size="xs" c="dimmed">
-            <b>ELSE</b> kimenet: ha hamis
+            <b>ELSE</b> {t("automation.graph.elseOutput")}
           </Text>
         </Stack>
       )}
@@ -174,6 +183,8 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function TimerNode({ data, selected }: AutomationTypedNodeProps) {
+  const { t } = useTranslation();
+
   return (
     <AutomationNodeCard
       data={data}
@@ -182,7 +193,7 @@ function TimerNode({ data, selected }: AutomationTypedNodeProps) {
       outputBadges={getSingleOutputBadge(data)}
       detail={(
         <Text size="xs" c="dimmed">
-          késleltetés: <b>{data.delayMs ?? 0} ms</b>
+          {t("automation.fields.delayMs")}: <b>{data.delayMs ?? 0}</b>
         </Text>
       )}
     />
@@ -212,6 +223,7 @@ function RouteLockNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function SignalNode({ data, selected }: AutomationTypedNodeProps) {
+  const { t } = useTranslation();
   const aspect = data.signalAspect ?? "yellow";
 
   return (
@@ -223,10 +235,16 @@ function SignalNode({ data, selected }: AutomationTypedNodeProps) {
         ? (
             <Stack gap={2}>
               <Text size="xs" c="dimmed">
-                S{data.signalAddress}: <b>{aspect}</b>
+                {t("automation.graph.signalMain", {
+                  address: data.signalAddress,
+                  aspect: t(`automation.aspects.${aspect}`),
+                })}
               </Text>
               <Text size="xs" c="dimmed">
-                hossz: {data.signalAddressLength ?? 1} · bit: {getSignalAspectValue(data)}
+                {t("automation.graph.signalBits", {
+                  length: data.signalAddressLength ?? 1,
+                  bits: getSignalAspectValue(data),
+                })}
               </Text>
             </Stack>
           )
@@ -250,8 +268,9 @@ function getSignalAspectValue(data: AutomationFlowNodeData): number {
 }
 
 function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
+  const { t } = useTranslation();
   const targetState = getLogicalTurnoutLabel(data.turnoutClosed);
-  const closedValueLabel = getPhysicalClosedLabel(data.turnoutClosedValue);
+  const closedValueKey = getPhysicalClosedKey(data.turnoutClosedValue);
 
   return (
     <AutomationNodeCard
@@ -261,7 +280,11 @@ function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
       detail={typeof data.turnoutAddress === "number"
         ? (
             <Text size="xs" c="dimmed">
-              állítás: <b>T{data.turnoutAddress} {targetState}</b> · closed = {closedValueLabel}
+              {t("automation.graph.turnoutCommand", {
+                address: data.turnoutAddress,
+                state: t(`automation.graph.${targetState}`),
+                closedValue: t(`automation.graph.${closedValueKey}`),
+              })}
             </Text>
           )
         : null}
@@ -270,6 +293,8 @@ function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function OutputNode({ data, selected }: AutomationTypedNodeProps) {
+  const { t } = useTranslation();
+
   return (
     <AutomationNodeCard
       data={data}
@@ -278,7 +303,7 @@ function OutputNode({ data, selected }: AutomationTypedNodeProps) {
       detail={data.outputCommand
         ? (
             <Text size="xs" c="dimmed">
-              parancs: <b>{data.outputCommand}</b>
+              {t("automation.graph.outputCommand", { command: data.outputCommand })}
             </Text>
           )
         : null}
