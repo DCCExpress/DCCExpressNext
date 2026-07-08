@@ -7,6 +7,7 @@ export type AutomationFlowNodeKind =
   | "and"
   | "or"
   | "not"
+  | "ifThenElse"
   | "timer"
   | "latch"
   | "routeLock"
