@@ -35,6 +35,7 @@ type AutomationNodeOutputBadge = {
   id?: string;
   label?: string;
   active: boolean;
+  valid?: boolean;
   top?: string | number;
 };
 
@@ -75,15 +76,19 @@ function renderHandles(
 
 function renderOutputBadges(badges: AutomationNodeOutputBadge[]) {
   return badges.map((badge, index) => {
-    const valueText = badge.active ? "TRUE" : "FALSE";
+    const valid = badge.valid ?? true;
+    const valueText = valid ? (badge.active ? "TRUE" : "FALSE") : "NO DATA";
     const label = badge.label?.trim();
+    const color = valid ? (badge.active ? "green" : "blue") : "gray";
+    const variant = valid && badge.active ? "filled" : "light";
 
     return (
       <Badge
         key={badge.id ?? label ?? index}
-        color={badge.active ? "green" : "gray"}
-        variant={badge.active ? "filled" : "light"}
+        color={color}
+        variant={variant}
         size="xs"
+        data-automation-output-badge="true"
         style={{
           position: "absolute",
           right: 12,
@@ -91,7 +96,7 @@ function renderOutputBadges(badges: AutomationNodeOutputBadge[]) {
           transform: "translateY(-50%)",
           pointerEvents: "none",
           zIndex: 3,
-          boxShadow: badge.active
+          boxShadow: valid && badge.active
             ? "0 0 0 2px rgba(64, 192, 87, 0.18), 0 8px 18px rgba(0, 0, 0, 0.2)"
             : undefined,
         }}
@@ -113,6 +118,7 @@ export function AutomationNodeCard({
 }: AutomationNodeCardProps) {
   const definition = NODE_DEFINITIONS[kind];
   const active = data.active === true;
+  const outputValid = data.outputValid === true;
   const resolvedTargetHandles = targetHandles ?? (hasTargetHandle(kind) ? [{}] : []);
   const resolvedSourceHandles = sourceHandles ?? (hasSourceHandle(kind) ? [{}] : []);
   const resolvedOutputBadges = outputBadges ?? [];
@@ -121,7 +127,9 @@ export function AutomationNodeCard({
     ? "var(--mantine-color-blue-6)"
     : active
       ? "var(--mantine-color-green-5)"
-      : "var(--mantine-color-gray-4)";
+      : outputValid
+        ? "var(--mantine-color-blue-5)"
+        : "var(--mantine-color-gray-4)";
 
   const boxShadow = selected
     ? active
@@ -129,7 +137,9 @@ export function AutomationNodeCard({
       : "0 0 0 3px rgba(34, 139, 230, 0.44), 0 14px 34px rgba(0, 0, 0, 0.2)"
     : active
       ? "0 0 0 2px rgba(64, 192, 87, 0.22), 0 14px 34px rgba(0, 0, 0, 0.18)"
-      : undefined;
+      : outputValid
+        ? "0 0 0 2px rgba(34, 139, 230, 0.16), 0 12px 28px rgba(0, 0, 0, 0.14)"
+        : undefined;
 
   return (
     <Paper
@@ -138,22 +148,25 @@ export function AutomationNodeCard({
       p="sm"
       shadow={selected ? "md" : "xs"}
       data-automation-node-kind={kind}
+      data-automation-output-valid={outputValid ? "true" : "false"}
       data-automation-output-value={active ? "true" : "false"}
       style={{
         minWidth: 190,
         borderColor,
-        borderWidth: selected ? 3 : active ? 2 : 1,
+        borderWidth: selected ? 3 : active ? 2 : outputValid ? 2 : 1,
         boxShadow,
         background: active
           ? "linear-gradient(180deg, rgba(47, 158, 68, 0.14), rgba(20, 120, 60, 0.06))"
-          : "var(--mantine-color-body)",
+          : outputValid
+            ? "linear-gradient(180deg, rgba(34, 139, 230, 0.1), rgba(34, 139, 230, 0.04))"
+            : "var(--mantine-color-body)",
         position: "relative",
         zIndex: selected ? 2 : undefined,
       }}
     >
       {renderHandles("target", Position.Left, resolvedTargetHandles)}
 
-      <Stack gap={6} pr={resolvedOutputBadges.length > 0 ? 72 : 0}>
+      <Stack gap={6} pr={resolvedOutputBadges.length > 0 ? 82 : 0}>
         <Group justify="space-between" gap="xs" wrap="nowrap">
           <Group gap="xs" wrap="nowrap">
             <Text fw={900} size="lg" lh={1}>
