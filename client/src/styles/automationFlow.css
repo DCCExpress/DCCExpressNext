@@ -78,6 +78,29 @@
   display: none !important;
 }
 
+/* Edge használhatóság: legyen könnyű kijelölni és egyértelmű, mi van kiválasztva. */
+.mantine-Group-root:has(.react-flow) .react-flow__edge {
+  cursor: pointer;
+}
+
+.mantine-Group-root:has(.react-flow) .react-flow__edge-interaction {
+  stroke-width: 28px !important;
+  cursor: pointer;
+}
+
+.mantine-Group-root:has(.react-flow) .react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--mantine-color-orange-5) !important;
+  stroke-width: 4px !important;
+}
+
+.mantine-Group-root:has(.react-flow) .react-flow__edge.selected .react-flow__edge-path,
+.mantine-Group-root:has(.react-flow) .react-flow__edge:focus .react-flow__edge-path,
+.mantine-Group-root:has(.react-flow) .react-flow__edge:focus-visible .react-flow__edge-path {
+  stroke: var(--mantine-color-red-5) !important;
+  stroke-width: 5px !important;
+  filter: drop-shadow(0 0 5px rgba(250, 82, 82, 0.7));
+}
+
 /* Jobb oldali tulajdonság panel */
 .mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child {
   flex: 0 1 clamp(260px, 20vw, 310px) !important;
