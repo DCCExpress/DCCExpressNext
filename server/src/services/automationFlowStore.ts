@@ -82,6 +82,27 @@ function normalizeNode(input: unknown): AutomationFlowNodeDto | null {
       ...(typeof data.turnoutClosedValue === "boolean"
         ? { turnoutClosedValue: data.turnoutClosedValue }
         : {}),
+      ...(typeof data.signalAddress === "number" && Number.isFinite(data.signalAddress)
+        ? { signalAddress: data.signalAddress }
+        : {}),
+      ...(data.signalAspect === "red" || data.signalAspect === "yellow" || data.signalAspect === "green" || data.signalAspect === "white"
+        ? { signalAspect: data.signalAspect }
+        : {}),
+      ...(typeof data.signalAddressLength === "number" && Number.isFinite(data.signalAddressLength)
+        ? { signalAddressLength: data.signalAddressLength }
+        : {}),
+      ...(typeof data.signalValueRed === "number" && Number.isFinite(data.signalValueRed)
+        ? { signalValueRed: data.signalValueRed }
+        : {}),
+      ...(typeof data.signalValueYellow === "number" && Number.isFinite(data.signalValueYellow)
+        ? { signalValueYellow: data.signalValueYellow }
+        : {}),
+      ...(typeof data.signalValueGreen === "number" && Number.isFinite(data.signalValueGreen)
+        ? { signalValueGreen: data.signalValueGreen }
+        : {}),
+      ...(typeof data.signalValueWhite === "number" && Number.isFinite(data.signalValueWhite)
+        ? { signalValueWhite: data.signalValueWhite }
+        : {}),
       ...(typeof data.delayMs === "number" && Number.isFinite(data.delayMs)
         ? { delayMs: data.delayMs }
         : {}),
