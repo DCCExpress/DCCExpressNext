@@ -41,6 +41,7 @@ import {
   type Node,
   type NodeChange,
 } from "@xyflow/react";
+import { useTranslation } from "react-i18next";
 
 import type {
   AutomationFlowDocumentDto,
@@ -100,11 +101,11 @@ type AutomationSignalState = {
 
 type AutomationEvaluationState = Record<string, AutomationSignalState>;
 
-const SIGNAL_ASPECT_OPTIONS: Array<{ value: AutomationSignalAspect; label: string }> = [
-  { value: "red", label: "Vörös" },
-  { value: "yellow", label: "Sárga" },
-  { value: "green", label: "Zöld" },
-  { value: "white", label: "Fehér" },
+const SIGNAL_ASPECT_OPTIONS: Array<{ value: AutomationSignalAspect; labelKey: string }> = [
+  { value: "red", labelKey: "automation.aspects.red" },
+  { value: "yellow", labelKey: "automation.aspects.yellow" },
+  { value: "green", labelKey: "automation.aspects.green" },
+  { value: "white", labelKey: "automation.aspects.white" },
 ];
 
 const DEFAULT_PAGE = createDefaultAutomationFlowPage();
@@ -267,6 +268,29 @@ function createEdge(source: string, target: string): AutomationEdge {
   };
 }
 
+function getNodeTitle(kind: AutomationFlowNodeKind, fallback: string, t: (key: string, options?: Record<string, unknown>) => string): string {
+  return t(`automation.nodes.${kind}.title`, { defaultValue: fallback });
+}
+
+function getNodeDescription(kind: AutomationFlowNodeKind, fallback: string, t: (key: string, options?: Record<string, unknown>) => string): string {
+  return t(`automation.nodes.${kind}.description`, { defaultValue: fallback });
+}
+
+function getNodeGroupKey(group: string): string {
+  switch (group) {
+    case "Bemenet":
+      return "automation.groups.input";
+    case "Logika":
+      return "automation.groups.logic";
+    case "Vasút":
+      return "automation.groups.railway";
+    case "Kimenet":
+      return "automation.groups.output";
+    default:
+      return group;
+  }
+}
+
 function emptySignal(): AutomationSignalState {
   return { valid: false, value: false };
 }
@@ -346,10 +370,6 @@ function getSignalIoKey(address: number, aspect: AutomationSignalAspect): string
 
 function isSignalAspect(value: string | null): value is AutomationSignalAspect {
   return value === "red" || value === "yellow" || value === "green" || value === "white";
-}
-
-function getSignalAspectLabel(aspect: AutomationSignalAspect): string {
-  return SIGNAL_ASPECT_OPTIONS.find(item => item.value === aspect)?.label ?? aspect;
 }
 
 function getLogicalTurnoutClosedFromPhysical(physicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
@@ -652,6 +672,7 @@ function toNumber(value: string | number | null | undefined): number {
 }
 
 export default function AutomationFlowEditor() {
+  const { t } = useTranslation();
   const [pages, setPages] = useState<AutomationFlowPageDto[]>([DEFAULT_PAGE]);
   const [activePageId, setActivePageId] = useState<string>(DEFAULT_AUTOMATION_FLOW_PAGE_ID);
   const [nodes, setNodes] = useState<AutomationNode[]>(INITIAL_NODES);
@@ -662,6 +683,14 @@ export default function AutomationFlowEditor() {
   const [saving, setSaving] = useState(false);
   const lastActiveTurnoutCommandsRef = useRef<Set<string>>(new Set());
   const lastActiveSignalCommandKeysRef = useRef<Set<string>>(new Set());
+
+  const signalAspectOptions = useMemo(
+    () => SIGNAL_ASPECT_OPTIONS.map(option => ({
+      value: option.value,
+      label: t(option.labelKey),
+    })),
+    [t]
+  );
 
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const evaluationState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
@@ -772,17 +801,18 @@ export default function AutomationFlowEditor() {
 
         const address = node.data.turnoutAddress;
         if (typeof address !== "number" || !Number.isFinite(address)) {
-          setStatusText(`Váltó parancs hiba: ${node.data.label} cím nélkül.`);
+          setStatusText(t("automation.status.turnoutCommandMissingAddress", { label: node.data.label }));
           continue;
         }
 
         const logicalClosed = node.data.turnoutClosed ?? true;
         const physicalClosed = getPhysicalTurnoutClosedFromLogical(logicalClosed, node.data.turnoutClosedValue);
+        const commandLabel = getTurnoutCommandLabel(address, logicalClosed);
         const sent = wsApi.setTurnout(address, physicalClosed);
         setStatusText(
           sent
-            ? `Váltó parancs elküldve: ${getTurnoutCommandLabel(address, logicalClosed)}. Fizikai closed=${String(physicalClosed)}.`
-            : `Váltó parancs küldése sikertelen: ${getTurnoutCommandLabel(address, logicalClosed)}.`
+            ? t("automation.status.turnoutCommandSent", { label: commandLabel, physicalClosed: String(physicalClosed) })
+            : t("automation.status.turnoutCommandFailed", { label: commandLabel })
         );
         continue;
       }
@@ -800,7 +830,7 @@ export default function AutomationFlowEditor() {
         }
 
         if (typeof address !== "number" || !Number.isFinite(address)) {
-          setStatusText(`Jelző parancs hiba: ${node.data.label} cím nélkül.`);
+          setStatusText(t("automation.status.signalCommandMissingAddress", { label: node.data.label }));
           continue;
         }
 
@@ -813,15 +843,15 @@ export default function AutomationFlowEditor() {
 
         setStatusText(
           allSent
-            ? `Jelző parancs elküldve: S${address} ${getSignalAspectLabel(aspect)}. Bitminta=${bits}.`
-            : `Jelző parancs küldése sikertelen: S${address} ${getSignalAspectLabel(aspect)}.`
+            ? t("automation.status.signalCommandSent", { address, aspect: t(`automation.aspects.${aspect}`), bits })
+            : t("automation.status.signalCommandFailed", { address, aspect: t(`automation.aspects.${aspect}`) })
         );
       }
     }
 
     lastActiveTurnoutCommandsRef.current = nextActiveTurnoutCommands;
     lastActiveSignalCommandKeysRef.current = nextActiveSignalCommandKeys;
-  }, [evaluationState, nodes]);
+  }, [evaluationState, nodes, t]);
 
   const applyDocument = useCallback((document: AutomationFlowDocumentDto): void => {
     if (document.nodes.length === 0) {
@@ -855,7 +885,7 @@ export default function AutomationFlowEditor() {
 
   const loadFlow = useCallback(async (): Promise<void> => {
     setLoading(true);
-    setStatusText("Automatika betöltése a szerverről...");
+    setStatusText(t("automation.status.loading"));
 
     try {
       const document = await loadAutomationFlowWs();
@@ -864,14 +894,20 @@ export default function AutomationFlowEditor() {
       applyDocument(mappedDocument);
       wsApi.getLayoutRuntimeSnapshot();
       setStatusText(
-        `Automatika betöltve: ${mappedDocument.nodes.length} node, ${mappedDocument.edges.length} él, ${normalizePages(mappedDocument.pages).length} lap, ${mappings.turnoutClosedValueByAddress.size} váltó mapping, ${mappings.signalByAddress.size} jelző mapping.`
+        t("automation.status.loaded", {
+          nodes: mappedDocument.nodes.length,
+          edges: mappedDocument.edges.length,
+          pages: normalizePages(mappedDocument.pages).length,
+          turnouts: mappings.turnoutClosedValueByAddress.size,
+          signals: mappings.signalByAddress.size,
+        })
       );
     } catch (error) {
-      setStatusText(`Betöltési hiba: ${error instanceof Error ? error.message : String(error)}`);
+      setStatusText(t("automation.status.loadError", { message: error instanceof Error ? error.message : String(error) }));
     } finally {
       setLoading(false);
     }
-  }, [applyDocument]);
+  }, [applyDocument, t]);
 
   useEffect(() => {
     void loadFlow();
@@ -920,7 +956,7 @@ export default function AutomationFlowEditor() {
       void (async () => {
         const mappings = await loadLayoutAutomationMappings();
         applyDocument(applyLayoutAutomationMappings(document, mappings));
-        setStatusText("Automatika frissítve egy másik kliens mentése alapján.");
+        setStatusText(t("automation.status.changedByOtherClient"));
         wsApi.getLayoutRuntimeSnapshot();
       })();
     });
@@ -932,7 +968,7 @@ export default function AutomationFlowEditor() {
       unsubscribeTurnout();
       unsubscribeFlowChanged();
     };
-  }, [applyDocument]);
+  }, [applyDocument, t]);
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     setNodes((currentNodes) => applyNodeChanges(changes, currentNodes) as AutomationNode[]);
@@ -982,9 +1018,9 @@ export default function AutomationFlowEditor() {
         position: { x: 120 + (index % 4) * 180, y: 120 + Math.floor(index / 4) * 120 },
         data: {
           kind,
-          label: definition.title,
+          label: getNodeTitle(kind, definition.title, t),
           pageId: activePageId,
-          description: definition.description,
+          description: getNodeDescription(kind, definition.description, t),
           ...definition.defaultData,
         },
       },
@@ -994,18 +1030,18 @@ export default function AutomationFlowEditor() {
   function addPage() {
     const page: AutomationFlowPageDto = {
       id: createPageId(),
-      name: `Lap ${pages.length + 1}`,
+      name: `${t("automation.panel.automationPage")} ${pages.length + 1}`,
     };
 
     setPages(currentPages => [...currentPages, page]);
     setActivePageId(page.id);
     setSelectedNodeId(null);
-    setStatusText(`Új automatika lap létrehozva: ${page.name}.`);
+    setStatusText(t("automation.status.pageCreated", { name: page.name }));
   }
 
   function deleteActivePage() {
     if (pages.length <= 1) {
-      setStatusText("Az utolsó automatika lap nem törölhető.");
+      setStatusText(t("automation.status.lastPageCannotDelete"));
       return;
     }
 
@@ -1021,7 +1057,7 @@ export default function AutomationFlowEditor() {
     setNodes(currentNodes => currentNodes.filter(node => getNodePageId(node) !== activePageId));
     setEdges(currentEdges => currentEdges.filter(edge => !removedNodeIds.has(edge.source) && !removedNodeIds.has(edge.target)));
     setSelectedNodeId(null);
-    setStatusText(`Automatika lap törölve: ${pageToDelete?.name ?? activePageId}.`);
+    setStatusText(t("automation.status.pageDeleted", { name: pageToDelete?.name ?? activePageId }));
   }
 
   function updateActivePageName(name: string) {
@@ -1070,19 +1106,23 @@ export default function AutomationFlowEditor() {
     setNodes(INITIAL_NODES);
     setEdges(INITIAL_EDGES);
     setSelectedNodeId(INITIAL_NODES[0]?.id ?? null);
-    setStatusText("Minta automatika visszaállítva. Mentéshez nyomd meg a floppy ikont.");
+    setStatusText(t("automation.status.resetSample"));
   }
 
   async function saveFlow() {
     setSaving(true);
-    setStatusText("Automatika mentése a szerverre...");
+    setStatusText(t("automation.status.saving"));
 
     try {
       const document = await saveAutomationFlowWs(snapshot);
       applyDocument(document);
-      setStatusText(`Automatika mentve: ${document.nodes.length} node, ${document.edges.length} él, ${normalizePages(document.pages).length} lap.`);
+      setStatusText(t("automation.status.saved", {
+        nodes: document.nodes.length,
+        edges: document.edges.length,
+        pages: normalizePages(document.pages).length,
+      }));
     } catch (error) {
-      setStatusText(`Mentési hiba: ${error instanceof Error ? error.message : String(error)}`);
+      setStatusText(t("automation.status.saveError", { message: error instanceof Error ? error.message : String(error) }));
     } finally {
       setSaving(false);
     }
@@ -1115,6 +1155,7 @@ export default function AutomationFlowEditor() {
       pages={pages}
       saving={saving}
       selectedNode={selectedNodeOnActivePage}
+      signalAspectOptions={signalAspectOptions}
       snapshot={snapshot}
       statusText={statusText}
       visibleNodeCount={visibleNodes.length}
@@ -1161,6 +1202,7 @@ type SimpleAutomationLayoutProps = {
   pages: AutomationFlowPageDto[];
   saving: boolean;
   selectedNode: AutomationNode | null;
+  signalAspectOptions: Array<{ value: AutomationSignalAspect; label: string }>;
   snapshot: AutomationFlowDocumentDto;
   statusText: string | null;
   visibleNodeCount: number;
@@ -1186,11 +1228,13 @@ function SimpleAutomationLayout({
   pages,
   saving,
   selectedNode,
+  signalAspectOptions,
   snapshot,
   statusText,
   visibleNodeCount,
 }: SimpleAutomationLayoutProps) {
-  const statusIsError = statusText?.toLocaleLowerCase().includes("hiba") === true;
+  const { t } = useTranslation();
+  const statusIsError = ["hiba", "error", "fehler"].some(token => statusText?.toLocaleLowerCase().includes(token));
   const activePage = pages.find(page => page.id === activePageId) ?? pages[0];
 
   return (
@@ -1198,7 +1242,7 @@ function SimpleAutomationLayout({
       <Card withBorder radius="md" p="sm" w={260}>
         <Stack gap="sm">
           <Group justify="space-between">
-            <Title order={5}>Node paletta</Title>
+            <Title order={5}>{t("automation.panel.nodePalette")}</Title>
             <Badge variant="light">{visibleNodeCount}/{nodes.length} node</Badge>
           </Group>
 
@@ -1206,7 +1250,7 @@ function SimpleAutomationLayout({
 
           <Stack gap="xs">
             <Select
-              label="Automatika lap"
+              label={t("automation.panel.automationPage")}
               data={pages.map(page => ({ value: page.id, label: page.name }))}
               value={activePageId}
               onChange={onPageChange}
@@ -1216,7 +1260,7 @@ function SimpleAutomationLayout({
 
             {activePage && (
               <TextInput
-                label="Lap neve"
+                label={t("automation.panel.pageName")}
                 value={activePage.name}
                 onChange={(event) => onUpdateActivePageName(event.currentTarget.value)}
               />
@@ -1224,10 +1268,10 @@ function SimpleAutomationLayout({
 
             <Group grow gap="xs">
               <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={onAddPage}>
-                Új lap
+                {t("automation.panel.addPage")}
               </Button>
               <Button size="xs" variant="light" color="red" leftSection={<IconTrash size={14} />} onClick={onDeleteActivePage} disabled={pages.length <= 1}>
-                Törlés
+                {t("automation.panel.deletePage")}
               </Button>
             </Group>
           </Stack>
@@ -1239,7 +1283,7 @@ function SimpleAutomationLayout({
               {NODE_GROUPS.map((group) => (
                 <Stack key={group} gap="xs">
                   <Text size="xs" fw={800} c="dimmed" tt="uppercase">
-                    {group}
+                    {t(getNodeGroupKey(group))}
                   </Text>
 
                   {Object.entries(NODE_DEFINITIONS)
@@ -1253,7 +1297,7 @@ function SimpleAutomationLayout({
                         rightSection={<IconPlus size={14} />}
                         onClick={() => onAddNode(kind as AutomationFlowNodeKind)}
                       >
-                        {definition.title}
+                        {getNodeTitle(kind as AutomationFlowNodeKind, definition.title, t)}
                       </Button>
                     ))}
                 </Stack>
@@ -1272,22 +1316,22 @@ function SimpleAutomationLayout({
       <Card withBorder radius="md" p="sm" w={360}>
         <Stack gap="sm" h="100%">
           <Group justify="space-between">
-            <Title order={5}>Tulajdonságok</Title>
+            <Title order={5}>{t("automation.panel.properties")}</Title>
 
             <Group gap={4}>
-              <Tooltip label="Mentés szerverre">
+              <Tooltip label={t("automation.panel.saveToServer")}>
                 <ActionIcon variant="light" onClick={onSaveFlow} loading={saving}>
                   <IconDeviceFloppy size={16} />
                 </ActionIcon>
               </Tooltip>
 
-              <Tooltip label="Betöltés szerverről">
+              <Tooltip label={t("automation.panel.loadFromServer")}>
                 <ActionIcon variant="light" onClick={onLoadFlow} loading={loading}>
                   <IconPlayerPlay size={16} />
                 </ActionIcon>
               </Tooltip>
 
-              <Tooltip label="Minta visszaállítása">
+              <Tooltip label={t("automation.panel.resetSample")}>
                 <ActionIcon variant="light" color="orange" onClick={onResetFlow}>
                   <IconRefresh size={16} />
                 </ActionIcon>
@@ -1308,7 +1352,7 @@ function SimpleAutomationLayout({
               <Group justify="space-between" align="flex-start">
                 <Box>
                   <Badge variant="light" color="blue">
-                    {NODE_DEFINITIONS[selectedNode.data.kind].title}
+                    {getNodeTitle(selectedNode.data.kind, NODE_DEFINITIONS[selectedNode.data.kind].title, t)}
                   </Badge>
                   <Text size="xs" c="dimmed" mt={4}>
                     {selectedNode.id}
@@ -1321,22 +1365,22 @@ function SimpleAutomationLayout({
               </Group>
 
               <TextInput
-                label="Felirat"
+                label={t("automation.panel.label")}
                 value={selectedNode.data.label}
                 onChange={(event) => onSelectedNodeDataChange({ label: event.currentTarget.value })}
               />
 
               <TextInput
-                label="I/O kulcs"
-                description="Később ehhez kötjük a blokkot, szenzort, váltóállapotot, jelzőt vagy runtime parancsot."
+                label={t("automation.panel.ioKey")}
+                description={t("automation.panel.ioKeyDescription")}
                 value={selectedNode.data.ioKey ?? ""}
                 onChange={(event) => onSelectedNodeDataChange({ ioKey: event.currentTarget.value })}
               />
 
               {selectedNode.data.kind === "sensor" && (
                 <NumberInput
-                  label="Szenzor cím"
-                  description="A fizikai szenzor címe. A runtime ezt fogja majd a valós állapothoz kötni."
+                  label={t("automation.fields.sensorAddress")}
+                  description={t("automation.fields.sensorAddressDescription")}
                   min={0}
                   step={1}
                   value={selectedNode.data.sensorAddress ?? 0}
@@ -1354,8 +1398,8 @@ function SimpleAutomationLayout({
               {selectedNode.data.kind === "turnout" && (
                 <Stack gap="xs">
                   <NumberInput
-                    label="Váltó cím"
-                    description="A fizikai váltó címe. Például T1."
+                    label={t("automation.fields.turnoutAddress")}
+                    description={t("automation.fields.turnoutAddressDescription")}
                     min={0}
                     step={1}
                     value={selectedNode.data.turnoutAddress ?? 0}
@@ -1372,8 +1416,8 @@ function SimpleAutomationLayout({
 
                   <Switch
                     checked={selectedNode.data.turnoutClosed ?? true}
-                    label="Logikai closed állás legyen az igaz feltétel"
-                    description="Ha kikapcsolod, akkor a node akkor lesz igaz, ha a váltó logikai thrown/kitérő állásban van."
+                    label={t("automation.fields.turnoutExpectedClosed")}
+                    description={t("automation.fields.turnoutExpectedClosedDescription")}
                     onChange={(event) => {
                       const logicalClosed = event.currentTarget.checked;
                       const address = selectedNode.data.turnoutAddress ?? 0;
@@ -1387,8 +1431,8 @@ function SimpleAutomationLayout({
 
                   <Switch
                     checked={selectedNode.data.turnoutClosedValue ?? true}
-                    label="Fizikai closed=true jelenti a logikai closed állást"
-                    description="Balos/jobbos váltóknál ezt a pályarajz mappingje alapján betöltjük. Ha kézzel kell, itt fordítható."
+                    label={t("automation.fields.physicalClosedMeansLogicalClosed")}
+                    description={t("automation.fields.physicalClosedMeansLogicalClosedDescription")}
                     onChange={(event) => {
                       onSelectedNodeDataChange({ turnoutClosedValue: event.currentTarget.checked });
                       wsApi.getLayoutRuntimeSnapshot();
@@ -1400,8 +1444,8 @@ function SimpleAutomationLayout({
               {selectedNode.data.kind === "signal" && (
                 <Stack gap="xs">
                   <NumberInput
-                    label="Jelző cím"
-                    description="A tracksignal2 layout elem address mezője. Betöltéskor ebből jön az addressLength és a bitminta."
+                    label={t("automation.fields.signalAddress")}
+                    description={t("automation.fields.signalAddressDescription")}
                     min={0}
                     step={1}
                     value={selectedNode.data.signalAddress ?? 0}
@@ -1416,9 +1460,9 @@ function SimpleAutomationLayout({
                   />
 
                   <Select
-                    label="Jelzőkép"
-                    description="Legördülőből választjuk, hogy ne legyen elgépelés."
-                    data={SIGNAL_ASPECT_OPTIONS}
+                    label={t("automation.fields.signalAspect")}
+                    description={t("automation.fields.signalAspectDescription")}
+                    data={signalAspectOptions}
                     value={selectedNode.data.signalAspect ?? "yellow"}
                     onChange={(value) => {
                       if (!isSignalAspect(value)) {
@@ -1435,8 +1479,10 @@ function SimpleAutomationLayout({
                   />
 
                   <Text size="xs" c="dimmed">
-                    Aktuális bitminta: <b>{getSignalAspectBits(selectedNode.data)}</b>, címhossz: <b>{selectedNode.data.signalAddressLength ?? 1}</b>.
-                    Ezeket a pályarajz jelző eleméből töltjük.
+                    {t("automation.fields.currentBitPattern", {
+                      bits: getSignalAspectBits(selectedNode.data),
+                      length: selectedNode.data.signalAddressLength ?? 1,
+                    })}
                   </Text>
                 </Stack>
               )}
@@ -1444,8 +1490,8 @@ function SimpleAutomationLayout({
               {selectedNode.data.kind === "turnoutCommand" && (
                 <Stack gap="xs">
                   <NumberInput
-                    label="Váltó cím"
-                    description="Ezt a fizikai váltót állítja. Például T2."
+                    label={t("automation.fields.turnoutAddress")}
+                    description={t("automation.fields.turnoutCommandAddressDescription")}
                     min={0}
                     step={1}
                     value={selectedNode.data.turnoutAddress ?? 0}
@@ -1462,8 +1508,8 @@ function SimpleAutomationLayout({
 
                   <Switch
                     checked={selectedNode.data.turnoutClosed ?? true}
-                    label="Logikai closed állásba állítsa"
-                    description="Ha kikapcsolod, akkor logikai thrown/kitérő állásba küld parancsot."
+                    label={t("automation.fields.turnoutCommandClosed")}
+                    description={t("automation.fields.turnoutCommandClosedDescription")}
                     onChange={(event) => {
                       const logicalClosed = event.currentTarget.checked;
                       const address = selectedNode.data.turnoutAddress ?? 0;
@@ -1477,8 +1523,8 @@ function SimpleAutomationLayout({
 
                   <Switch
                     checked={selectedNode.data.turnoutClosedValue ?? true}
-                    label="Fizikai closed=true jelenti a logikai closed állást"
-                    description="Ezt is a pályarajz mappingje alapján betöltjük, és ebből számoljuk a küldendő fizikai bitet."
+                    label={t("automation.fields.physicalClosedMeansLogicalClosed")}
+                    description={t("automation.fields.physicalClosedMeansLogicalClosedCommandDescription")}
                     onChange={(event) =>
                       onSelectedNodeDataChange({ turnoutClosedValue: event.currentTarget.checked })
                     }
@@ -1488,15 +1534,14 @@ function SimpleAutomationLayout({
 
               {selectedNode.data.kind === "ifThenElse" && (
                 <Text size="xs" c="dimmed">
-                  Egy IF bemenet van. Ha a bemenet érvényes és igaz, a THEN kimenet aktív; ha érvényes és hamis, az ELSE kimenet aktív.
-                  Érvénytelen vagy bekötetlen IF bemenetnél egyik kimenet sem aktív.
+                  {t("automation.fields.ifThenElseInfo")}
                 </Text>
               )}
 
               {isInputNode(selectedNode.data.kind) && (
                 <Switch
                   checked={selectedNode.data.active === true}
-                  label="Szimulált bemenet aktív"
+                  label={t("automation.fields.simulatedInputActive")}
                   onChange={(event) =>
                     onSelectedNodeDataChange({ active: event.currentTarget.checked })
                   }
@@ -1505,7 +1550,7 @@ function SimpleAutomationLayout({
 
               {selectedNode.data.kind === "timer" && (
                 <NumberInput
-                  label="Késleltetés ms"
+                  label={t("automation.fields.delayMs")}
                   min={0}
                   step={100}
                   value={selectedNode.data.delayMs ?? 0}
@@ -1515,7 +1560,7 @@ function SimpleAutomationLayout({
 
               {selectedNode.data.kind === "output" && (
                 <TextInput
-                  label="Kimeneti parancs"
+                  label={t("automation.fields.outputCommand")}
                   value={selectedNode.data.outputCommand ?? ""}
                   onChange={(event) =>
                     onSelectedNodeDataChange({ outputCommand: event.currentTarget.value })
@@ -1524,7 +1569,7 @@ function SimpleAutomationLayout({
               )}
 
               <Textarea
-                label="Megjegyzés"
+                label={t("automation.panel.comment")}
                 autosize
                 minRows={2}
                 value={selectedNode.data.description ?? ""}
@@ -1535,7 +1580,7 @@ function SimpleAutomationLayout({
             </Stack>
           ) : (
             <Text size="sm" c="dimmed">
-              Jelölj ki egy node-ot, és itt szerkesztheted a tulajdonságait.
+              {t("automation.panel.selectNodeHint")}
             </Text>
           )}
 
@@ -1544,7 +1589,7 @@ function SimpleAutomationLayout({
           <Stack gap="xs">
             <Group justify="space-between">
               <Text fw={800} size="sm">
-                Szimulált aktív kimenetek ezen a lapon
+                {t("automation.panel.simulatedActiveOutputs")}
               </Text>
               <Badge color={activeOutputs.length > 0 ? "green" : "gray"} variant="light">
                 {activeOutputs.length}
@@ -1553,7 +1598,7 @@ function SimpleAutomationLayout({
 
             {activeOutputs.length === 0 ? (
               <Text size="xs" c="dimmed">
-                Nincs aktív kimenet.
+                {t("automation.panel.noActiveOutput")}
               </Text>
             ) : (
               activeOutputs.map((node) => (
@@ -1569,10 +1614,10 @@ function SimpleAutomationLayout({
           <Stack gap="xs" style={{ flex: 1, minHeight: 0 }}>
             <Group justify="space-between">
               <Text fw={800} size="sm">
-                JSON előnézet
+                {t("automation.panel.jsonPreview")}
               </Text>
               <Badge variant="light" color="gray">
-                {edges.length} él
+                {t("automation.panel.edges", { count: edges.length })}
               </Badge>
             </Group>
 
