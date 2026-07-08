@@ -5,7 +5,6 @@ import { randomUUID } from "node:crypto";
 import { dataDir } from "../paths.js";
 import { layoutRuntimeStore } from "./layoutRuntimeStore.js";
 import { railwayTopologyStore } from "./railwayTopologyStore.js";
-import { setSignalAspectWithAccessorySetter } from "./railwayCommandHelpers.js";
 
 import type {
     SerializedLayoutDto,
@@ -141,11 +140,6 @@ const {
   getTurnoutState,
 
   setLocoFunction,
-
-  setSignalGreen,
-  setSignalYellow,
-  setSignalRed,
-  setSignalWhite,
 
   setTimeout,
   clearTimeout,
@@ -294,10 +288,6 @@ return (async () => {
             "emergencyStop",
             "setTurnout",
             "setLocoFunction",
-            "setSignalGreen",
-            "setSignalYellow",
-            "setSignalRed",
-            "setSignalWhite",
         ] as const;
 
         const mutableApi =
@@ -479,42 +469,6 @@ return (async () => {
                 await this.check();
             },
 
-            setSignalGreen: async (
-                address: number
-            ) => {
-                await this.setSignalAspect(
-                    address,
-                    "green"
-                );
-            },
-
-            setSignalYellow: async (
-                address: number
-            ) => {
-                await this.setSignalAspect(
-                    address,
-                    "yellow"
-                );
-            },
-
-            setSignalRed: async (
-                address: number
-            ) => {
-                await this.setSignalAspect(
-                    address,
-                    "red"
-                );
-            },
-
-            setSignalWhite: async (
-                address: number
-            ) => {
-                await this.setSignalAspect(
-                    address,
-                    "white"
-                );
-            },
-
             setInterval: (
                 callback: () => void | Promise<void>,
                 ms: number
@@ -612,28 +566,6 @@ return (async () => {
             layout:
                 layoutRuntimeStore.getLayout(),
         });
-    }
-
-    private async setSignalAspect(
-        address: number,
-        aspect:
-            | "green"
-            | "yellow"
-            | "red"
-            | "white"
-    ): Promise<void> {
-        await this.check();
-
-        await setSignalAspectWithAccessorySetter(
-            (accessoryAddress, active) => this.commands.setBasicAccessory(
-                accessoryAddress,
-                active
-            ),
-            address,
-            aspect
-        );
-
-        await this.check();
     }
 
     private findSerializedElementById(
