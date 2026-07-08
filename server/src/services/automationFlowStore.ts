@@ -79,6 +79,9 @@ function normalizeNode(input: unknown): AutomationFlowNodeDto | null {
       ...(typeof data.turnoutClosed === "boolean"
         ? { turnoutClosed: data.turnoutClosed }
         : {}),
+      ...(typeof data.turnoutClosedValue === "boolean"
+        ? { turnoutClosedValue: data.turnoutClosedValue }
+        : {}),
       ...(typeof data.delayMs === "number" && Number.isFinite(data.delayMs)
         ? { delayMs: data.delayMs }
         : {}),
