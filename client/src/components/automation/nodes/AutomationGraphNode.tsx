@@ -132,6 +132,27 @@ function SignalNode({ data, selected }: AutomationTypedNodeProps) {
   );
 }
 
+function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
+  const targetState = data.turnoutClosed === true
+    ? "closed"
+    : "thrown";
+
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="turnoutCommand"
+      detail={typeof data.turnoutAddress === "number"
+        ? (
+            <Text size="xs" c="dimmed">
+              állítás: <b>T{data.turnoutAddress} {targetState}</b>
+            </Text>
+          )
+        : null}
+    />
+  );
+}
+
 function OutputNode({ data, selected }: AutomationTypedNodeProps) {
   return (
     <AutomationNodeCard
@@ -175,6 +196,8 @@ export function AutomationGraphNode(props: AutomationTypedNodeProps) {
       return <RouteLockNode {...props} />;
     case "signal":
       return <SignalNode {...props} />;
+    case "turnoutCommand":
+      return <TurnoutCommandNode {...props} />;
     case "output":
       return <OutputNode {...props} />;
     default:
