@@ -4,6 +4,7 @@ import { MantineProvider, ColorSchemeScript } from "@mantine/core";
 import "@mantine/core/styles.css";
 import App from "./App";
 import "./i18n";
+import "./styles/automationFlow.css";
 import { EditorSettingsProvider } from "./context/EditorSettingsContext";
 import { CommandCenterProvider } from "./context/CommandCenterContext";
 import { LayoutContextProvider } from "./context/LayoutContextProvider";
