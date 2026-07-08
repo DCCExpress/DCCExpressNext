@@ -137,20 +137,41 @@ function RouteLockNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function SignalNode({ data, selected }: AutomationTypedNodeProps) {
+  const aspect = data.signalAspect ?? "yellow";
+
   return (
     <AutomationNodeCard
       data={data}
       selected={selected}
       kind="signal"
-      detail={data.outputCommand
+      detail={typeof data.signalAddress === "number"
         ? (
-            <Text size="xs" c="dimmed">
-              parancs: <b>{data.outputCommand}</b>
-            </Text>
+            <Stack gap={2}>
+              <Text size="xs" c="dimmed">
+                S{data.signalAddress}: <b>{aspect}</b>
+              </Text>
+              <Text size="xs" c="dimmed">
+                hossz: {data.signalAddressLength ?? 1} · bit: {getSignalAspectValue(data)}
+              </Text>
+            </Stack>
           )
         : null}
     />
   );
+}
+
+function getSignalAspectValue(data: AutomationFlowNodeData): number {
+  switch (data.signalAspect ?? "yellow") {
+    case "red":
+      return data.signalValueRed ?? 0;
+    case "green":
+      return data.signalValueGreen ?? 0;
+    case "white":
+      return data.signalValueWhite ?? 0;
+    case "yellow":
+    default:
+      return data.signalValueYellow ?? 0;
+  }
 }
 
 function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
