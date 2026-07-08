@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ActionIcon,
   Badge,
@@ -46,52 +46,34 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 
-const STORAGE_KEY = "dcc-express.automation.flow.v1";
+import type {
+  AutomationFlowDocumentDto,
+  AutomationFlowNodeData,
+  AutomationFlowNodeKind,
+} from "../../../../common/src/automationFlow";
+import {
+  loadAutomationFlowWs,
+  saveAutomationFlowWs,
+} from "../../api/automationFlowWsApi";
+import {
+  wsApi,
+} from "../../services/wsApi";
+import {
+  wsClient,
+} from "../../services/wsClient";
 
-type AutomationNodeKind =
-  | "blockOccupied"
-  | "sensor"
-  | "button"
-  | "and"
-  | "or"
-  | "not"
-  | "timer"
-  | "latch"
-  | "routeLock"
-  | "signal"
-  | "turnout"
-  | "output";
-
-type AutomationNodeData = Record<string, unknown> & {
-  kind: AutomationNodeKind;
-  label: string;
-  description?: string;
-  ioKey?: string;
-  sensorAddress?: number;
-  delayMs?: number;
-  outputCommand?: string;
-  active?: boolean;
-};
-
-type AutomationNode = Node<AutomationNodeData, "automationNode">;
+type AutomationNode = Node<AutomationFlowNodeData, "automationNode">;
 type AutomationEdge = Edge;
-
-type AutomationSnapshot = {
-  version: 1;
-  name: string;
-  nodes: AutomationNode[];
-  edges: AutomationEdge[];
-};
 
 type NodeDefinition = {
   title: string;
   group: "Bemenet" | "Logika" | "Vasút" | "Kimenet";
   description: string;
   icon: string;
-  defaultData?: Partial<AutomationNodeData>;
+  defaultData?: Partial<AutomationFlowNodeData>;
 };
 
-const NODE_DEFINITIONS: Record<AutomationNodeKind, NodeDefinition> = {
+const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, NodeDefinition> = {
   blockOccupied: {
     title: "Szakasz foglalt",
     group: "Bemenet",
@@ -279,15 +261,15 @@ function createEdge(source: string, target: string): AutomationEdge {
   };
 }
 
-function isInputNode(kind: AutomationNodeKind): boolean {
+function isInputNode(kind: AutomationFlowNodeKind): boolean {
   return kind === "blockOccupied" || kind === "sensor" || kind === "button";
 }
 
-function hasTargetHandle(kind: AutomationNodeKind): boolean {
+function hasTargetHandle(kind: AutomationFlowNodeKind): boolean {
   return !isInputNode(kind);
 }
 
-function hasSourceHandle(kind: AutomationNodeKind): boolean {
+function hasSourceHandle(kind: AutomationFlowNodeKind): boolean {
   return kind !== "signal" && kind !== "turnout" && kind !== "output";
 }
 
@@ -379,6 +361,9 @@ export default function AutomationFlowEditor() {
   const [nodes, setNodes] = useState<AutomationNode[]>(INITIAL_NODES);
   const [edges, setEdges] = useState<AutomationEdge[]>(INITIAL_EDGES);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(INITIAL_NODES[0]?.id ?? null);
+  const [statusText, setStatusText] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const simulatedState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
 
@@ -424,6 +409,74 @@ export default function AutomationFlowEditor() {
     [nodes, simulatedState]
   );
 
+  const applyDocument = useCallback((document: AutomationFlowDocumentDto): void => {
+    if (document.nodes.length === 0) {
+      setNodes(INITIAL_NODES);
+      setEdges(INITIAL_EDGES);
+      setSelectedNodeId(INITIAL_NODES[0]?.id ?? null);
+      return;
+    }
+
+    setNodes(document.nodes as AutomationNode[]);
+    setEdges(document.edges as AutomationEdge[]);
+    setSelectedNodeId(document.nodes[0]?.id ?? null);
+  }, []);
+
+  const loadFlow = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    setStatusText("Automatika betöltése a szerverről...");
+
+    try {
+      const document = await loadAutomationFlowWs();
+      applyDocument(document);
+      wsApi.getLayoutRuntimeSnapshot();
+      setStatusText(`Automatika betöltve: ${document.nodes.length} node, ${document.edges.length} él.`);
+    } catch (error) {
+      setStatusText(`Betöltési hiba: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [applyDocument]);
+
+  useEffect(() => {
+    void loadFlow();
+  }, [loadFlow]);
+
+  useEffect(() => {
+    const unsubscribeSensor = wsClient.on("sensorChanged", data => {
+      setNodes(currentNodes => currentNodes.map(node => {
+        if (node.data.kind !== "sensor") {
+          return node;
+        }
+
+        if (node.data.sensorAddress !== data.address) {
+          return node;
+        }
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            active: data.on,
+          },
+        };
+      }));
+    });
+
+    const unsubscribeFlowChanged = wsClient.on("automationFlowChanged", document => {
+      applyDocument(document);
+      setStatusText("Automatika frissítve egy másik kliens mentése alapján.");
+      wsApi.getLayoutRuntimeSnapshot();
+    });
+
+    wsApi.getLayoutRuntimeSnapshot();
+
+    return () => {
+      unsubscribeSensor();
+      unsubscribeFlowChanged();
+    };
+  }, [applyDocument]);
+
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     setNodes((currentNodes) => applyNodeChanges(changes, currentNodes) as AutomationNode[]);
   }, []);
@@ -450,7 +503,7 @@ export default function AutomationFlowEditor() {
     );
   }, []);
 
-  function addNode(kind: AutomationNodeKind) {
+  function addNode(kind: AutomationFlowNodeKind) {
     const definition = NODE_DEFINITIONS[kind];
     const index = nodes.length + 1;
 
@@ -470,7 +523,7 @@ export default function AutomationFlowEditor() {
     ]);
   }
 
-  function updateSelectedNodeData(patch: Partial<AutomationNodeData>) {
+  function updateSelectedNodeData(patch: Partial<AutomationFlowNodeData>) {
     if (!selectedNodeId) {
       return;
     }
@@ -506,32 +559,21 @@ export default function AutomationFlowEditor() {
     setNodes(INITIAL_NODES);
     setEdges(INITIAL_EDGES);
     setSelectedNodeId(INITIAL_NODES[0]?.id ?? null);
+    setStatusText("Minta automatika visszaállítva. Mentéshez nyomd meg a floppy ikont.");
   }
 
-  function saveFlow() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot, null, 2));
-  }
-
-  function loadFlow() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-
-    if (!raw) {
-      window.alert("Nincs mentett automatika a böngészőben.");
-      return;
-    }
+  async function saveFlow() {
+    setSaving(true);
+    setStatusText("Automatika mentése a szerverre...");
 
     try {
-      const parsed = JSON.parse(raw) as AutomationSnapshot;
-
-      if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
-        throw new Error("Invalid automation snapshot.");
-      }
-
-      setNodes(parsed.nodes);
-      setEdges(parsed.edges);
-      setSelectedNodeId(parsed.nodes[0]?.id ?? null);
+      const document = await saveAutomationFlowWs(snapshot);
+      applyDocument(document);
+      setStatusText(`Automatika mentve: ${document.nodes.length} node, ${document.edges.length} él.`);
     } catch (error) {
-      window.alert(`Nem sikerült betölteni az automatika JSON-t: ${String(error)}`);
+      setStatusText(`Mentési hiba: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -539,15 +581,18 @@ export default function AutomationFlowEditor() {
     <SimpleAutomationLayout
       activeOutputs={activeOutputs}
       edges={edges}
+      loading={loading}
       nodes={nodes}
       onAddNode={addNode}
       onDeleteSelectedNode={deleteSelectedNode}
-      onLoadFlow={loadFlow}
+      onLoadFlow={() => void loadFlow()}
       onResetFlow={resetFlow}
-      onSaveFlow={saveFlow}
+      onSaveFlow={() => void saveFlow()}
       onSelectedNodeDataChange={updateSelectedNodeData}
+      saving={saving}
       selectedNode={selectedNode}
       snapshot={snapshot}
+      statusText={statusText}
     >
       <ReactFlow
         nodes={simulatedNodes}
@@ -575,21 +620,25 @@ type SimpleAutomationLayoutProps = {
   activeOutputs: AutomationNode[];
   children: ReactNode;
   edges: AutomationEdge[];
+  loading: boolean;
   nodes: AutomationNode[];
-  onAddNode: (kind: AutomationNodeKind) => void;
+  onAddNode: (kind: AutomationFlowNodeKind) => void;
   onDeleteSelectedNode: () => void;
   onLoadFlow: () => void;
   onResetFlow: () => void;
   onSaveFlow: () => void;
-  onSelectedNodeDataChange: (patch: Partial<AutomationNodeData>) => void;
+  onSelectedNodeDataChange: (patch: Partial<AutomationFlowNodeData>) => void;
+  saving: boolean;
   selectedNode: AutomationNode | null;
-  snapshot: AutomationSnapshot;
+  snapshot: AutomationFlowDocumentDto;
+  statusText: string | null;
 };
 
 function SimpleAutomationLayout({
   activeOutputs,
   children,
   edges,
+  loading,
   nodes,
   onAddNode,
   onDeleteSelectedNode,
@@ -597,8 +646,10 @@ function SimpleAutomationLayout({
   onResetFlow,
   onSaveFlow,
   onSelectedNodeDataChange,
+  saving,
   selectedNode,
   snapshot,
+  statusText,
 }: SimpleAutomationLayoutProps) {
   return (
     <Group align="stretch" gap="md" wrap="nowrap" style={{ minHeight: "calc(100vh - 150px)" }}>
@@ -628,7 +679,7 @@ function SimpleAutomationLayout({
                         justify="flex-start"
                         leftSection={<Text span>{definition.icon}</Text>}
                         rightSection={<IconPlus size={14} />}
-                        onClick={() => onAddNode(kind as AutomationNodeKind)}
+                        onClick={() => onAddNode(kind as AutomationFlowNodeKind)}
                       >
                         {definition.title}
                       </Button>
@@ -652,14 +703,14 @@ function SimpleAutomationLayout({
             <Title order={5}>Tulajdonságok</Title>
 
             <Group gap={4}>
-              <Tooltip label="Mentés böngészőbe">
-                <ActionIcon variant="light" onClick={onSaveFlow}>
+              <Tooltip label="Mentés szerverre">
+                <ActionIcon variant="light" onClick={onSaveFlow} loading={saving}>
                   <IconDeviceFloppy size={16} />
                 </ActionIcon>
               </Tooltip>
 
-              <Tooltip label="Betöltés böngészőből">
-                <ActionIcon variant="light" onClick={onLoadFlow}>
+              <Tooltip label="Betöltés szerverről">
+                <ActionIcon variant="light" onClick={onLoadFlow} loading={loading}>
                   <IconPlayerPlay size={16} />
                 </ActionIcon>
               </Tooltip>
@@ -671,6 +722,12 @@ function SimpleAutomationLayout({
               </Tooltip>
             </Group>
           </Group>
+
+          {statusText && (
+            <Badge variant="light" color={statusText.includes("hiba") || statusText.includes("hiba") ? "red" : "blue"} w="fit-content">
+              {statusText}
+            </Badge>
+          )}
 
           <Divider />
 
@@ -711,12 +768,14 @@ function SimpleAutomationLayout({
                   min={0}
                   step={1}
                   value={selectedNode.data.sensorAddress ?? 0}
-                  onChange={(value) =>
+                  onChange={(value) => {
+                    const address = toNumber(value);
                     onSelectedNodeDataChange({
-                      sensorAddress: toNumber(value),
-                      ioKey: `sensor:${toNumber(value)}`,
-                    })
-                  }
+                      sensorAddress: address,
+                      ioKey: `sensor:${address}`,
+                    });
+                    wsApi.getLayoutRuntimeSnapshot();
+                  }}
                 />
               )}
 
@@ -825,12 +884,23 @@ function SimpleAutomationLayout({
   );
 }
 
-function createSnapshot(nodes: AutomationNode[], edges: AutomationEdge[]): AutomationSnapshot {
+function createSnapshot(nodes: AutomationNode[], edges: AutomationEdge[]): AutomationFlowDocumentDto {
   return {
     version: 1,
     name: "Vasútmodell automatika alap",
-    nodes,
-    edges,
+    nodes: nodes.map(node => ({
+      id: node.id,
+      type: "automationNode",
+      position: node.position,
+      data: node.data,
+    })),
+    edges: edges.map(edge => ({
+      ...edge,
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      ...(typeof edge.type === "string" ? { type: edge.type } : {}),
+    })),
   };
 }
 
