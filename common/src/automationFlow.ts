@@ -21,6 +21,8 @@ export type AutomationFlowNodeData = Record<string, unknown> & {
   description?: string;
   ioKey?: string;
   sensorAddress?: number;
+  turnoutAddress?: number;
+  turnoutClosed?: boolean;
   delayMs?: number;
   outputCommand?: string;
   active?: boolean;
