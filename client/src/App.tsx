@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AutomationPage from "./pages/AutomationPage";
 import HomePage from "./pages/HomePage";
 import LayoutPage from "./pages/LayoutPage";
 import ProgrammerPage from "./pages/ProgrammerPage";
@@ -8,6 +9,7 @@ import { Notifications } from "@mantine/notifications";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
+import "@xyflow/react/dist/style.css";
 import { getDefaultWsUrl } from "./services/defaultWsUrl";
 import { wsApi } from "./services/wsApi";
 import { wsClient } from "./services/wsClient";
@@ -15,7 +17,7 @@ import { playServerAudio } from "./services/serverAudioPlayback";
 import { LayoutContextProvider } from "./context/LayoutContextProvider";
 import { installAutomationDialogRuntimeControlGuard } from "./automationDialogRuntimeControlGuard";
 
-export type AppPage = "home" | "layout" | "programmer";
+export type AppPage = "home" | "layout" | "programmer" | "automation";
 
 type RuntimeWsMessage = {
   type: string;
@@ -65,6 +67,7 @@ export default function App() {
         <HomePage
           onOpenLayout={() => setPage("layout")}
           onOpenProgrammer={() => setPage("programmer")}
+          onOpenAutomation={() => setPage("automation")}
         />
       )}
 
@@ -76,6 +79,10 @@ export default function App() {
 
       {page === "programmer" && (
         <ProgrammerPage onGoHome={() => setPage("home")} />
+      )}
+
+      {page === "automation" && (
+        <AutomationPage onGoHome={() => setPage("home")} />
       )}
     </MantineProvider>
   );
