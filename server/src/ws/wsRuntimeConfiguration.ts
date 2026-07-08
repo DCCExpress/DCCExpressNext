@@ -28,18 +28,6 @@ import {
   serverRuntimeStatsStore,
 } from "../services/serverRuntimeStatsStore.js";
 
-import {
-  automationRuntimeService,
-} from "../services/automationRuntimeService.js";
-
-import {
-  signalLogicRuntimeService,
-} from "../services/signalLogicRuntimeService.js";
-
-import {
-  levelCrossingRuntimeStore,
-} from "../services/levelCrossingRuntimeStore.js";
-
 import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
@@ -69,23 +57,6 @@ export function configureWebSocketRuntimes({
   runtimeVariableService.setBroadcast(message => {
     broadcast(message);
   });
-
-  signalLogicRuntimeService.configure({
-    broadcast: message => {
-      broadcast(message);
-    },
-    getCommandCenter,
-    getLogicalTurnoutState,
-  });
-
-  automationRuntimeService.configure({
-    broadcast: message => {
-      broadcast(message);
-    },
-  });
-
-  automationRuntimeService.register(signalLogicRuntimeService);
-  automationRuntimeService.register(levelCrossingRuntimeStore);
 
   serverRuntimeStatsStore.configure({
     broadcast: message => {
