@@ -103,7 +103,6 @@ function normalizeEdge(input: unknown): AutomationFlowEdgeDto | null {
     : `${source}-${target}`;
 
   return {
-    ...input,
     id,
     source,
     target,
