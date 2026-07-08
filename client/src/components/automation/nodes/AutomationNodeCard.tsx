@@ -78,6 +78,20 @@ export function AutomationNodeCard({
   const resolvedTargetHandles = targetHandles ?? (hasTargetHandle(kind) ? [{}] : []);
   const resolvedSourceHandles = sourceHandles ?? (hasSourceHandle(kind) ? [{}] : []);
 
+  const borderColor = selected
+    ? "var(--mantine-color-blue-6)"
+    : active
+      ? "var(--mantine-color-green-5)"
+      : "var(--mantine-color-gray-4)";
+
+  const boxShadow = selected
+    ? active
+      ? "0 0 0 3px rgba(34, 139, 230, 0.48), 0 0 0 6px rgba(64, 192, 87, 0.22), 0 18px 42px rgba(0, 0, 0, 0.26)"
+      : "0 0 0 3px rgba(34, 139, 230, 0.44), 0 14px 34px rgba(0, 0, 0, 0.2)"
+    : active
+      ? "0 0 0 2px rgba(64, 192, 87, 0.22), 0 14px 34px rgba(0, 0, 0, 0.18)"
+      : undefined;
+
   return (
     <Paper
       withBorder
@@ -86,18 +100,14 @@ export function AutomationNodeCard({
       shadow={selected ? "md" : "xs"}
       style={{
         minWidth: 190,
-        borderColor: active
-          ? "var(--mantine-color-green-5)"
-          : selected
-            ? "var(--mantine-color-blue-5)"
-            : "var(--mantine-color-gray-4)",
-        boxShadow: active
-          ? "0 0 0 2px rgba(64, 192, 87, 0.22), 0 14px 34px rgba(0, 0, 0, 0.18)"
-          : undefined,
+        borderColor,
+        borderWidth: selected ? 3 : active ? 2 : 1,
+        boxShadow,
         background: active
           ? "linear-gradient(180deg, rgba(47, 158, 68, 0.14), rgba(20, 120, 60, 0.06))"
           : "var(--mantine-color-body)",
         position: "relative",
+        zIndex: selected ? 2 : undefined,
       }}
     >
       {renderHandles("target", Position.Left, resolvedTargetHandles)}
