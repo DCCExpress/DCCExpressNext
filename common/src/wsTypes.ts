@@ -316,7 +316,6 @@ export type ServerWsPayloadMap = {
   commandCenterConfigResponse: CommandCenterConfigResponsePayload;
   appSettingsResponse: AppSettingsResponsePayload;
   blockAutomationResponse: BlockAutomationResponsePayload;
-  taskManagerResponse: TaskManagerResponsePayload;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
 
