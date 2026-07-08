@@ -73,6 +73,12 @@ function normalizeNode(input: unknown): AutomationFlowNodeDto | null {
       ...(typeof data.sensorAddress === "number" && Number.isFinite(data.sensorAddress)
         ? { sensorAddress: data.sensorAddress }
         : {}),
+      ...(typeof data.turnoutAddress === "number" && Number.isFinite(data.turnoutAddress)
+        ? { turnoutAddress: data.turnoutAddress }
+        : {}),
+      ...(typeof data.turnoutClosed === "boolean"
+        ? { turnoutClosed: data.turnoutClosed }
+        : {}),
       ...(typeof data.delayMs === "number" && Number.isFinite(data.delayMs)
         ? { delayMs: data.delayMs }
         : {}),
