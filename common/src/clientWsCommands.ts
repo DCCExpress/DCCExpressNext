@@ -29,16 +29,8 @@ import type {
 } from "./appSettings.js";
 
 import type {
-  SignalLogicDocumentDto,
-} from "./signalLogic.js";
-
-import type {
   BlockAutomationCommandPayload,
 } from "./blockAutomation.js";
-
-import type {
-  LevelCrossingCommandPayload,
-} from "./levelCrossingLogic.js";
 
 export type EmptyClientWsCommandPayload = {};
 
@@ -163,32 +155,6 @@ export type AppSettingsCommandPayload = {
   settings?: Partial<AppSettings>;
 };
 
-export type SignalLogicCommandAction =
-  | "load"
-  | "save"
-  | "start"
-  | "stop"
-  | "state"
-  | "integrityCheck"
-  | "deleteOrphanSignals";
-
-export type SignalLogicCommandPayload = {
-  requestId: string;
-  action: SignalLogicCommandAction;
-  document?: SignalLogicDocumentDto;
-  signalAddresses?: number[];
-};
-
-export type AutomationCommandAction =
-  | "snapshot"
-  | "start"
-  | "stop";
-
-export type AutomationCommandPayload = {
-  requestId: string;
-  action: AutomationCommandAction;
-};
-
 export type TaskManagerCommandAction =
   | "snapshot"
   | "add"
@@ -289,10 +255,7 @@ export type ClientWsPayloadMap = {
   scriptDocumentCommand: ScriptDocumentCommandPayload;
   commandCenterConfigCommand: CommandCenterConfigCommandPayload;
   appSettingsCommand: AppSettingsCommandPayload;
-  signalLogicCommand: SignalLogicCommandPayload;
   blockAutomationCommand: BlockAutomationCommandPayload;
-  levelCrossingCommand: LevelCrossingCommandPayload;
-  automationCommand: AutomationCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
   fileCommand: FileCommandPayload;
