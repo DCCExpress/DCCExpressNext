@@ -72,6 +72,12 @@
   height: 100%;
 }
 
+/* Most nem kell MiniMap és React Flow attribution/link a flow canvasra. */
+.mantine-Group-root:has(.react-flow) .react-flow__minimap,
+.mantine-Group-root:has(.react-flow) .react-flow__attribution {
+  display: none !important;
+}
+
 /* Jobb oldali tulajdonság panel */
 .mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child {
   flex: 0 1 clamp(260px, 20vw, 310px) !important;
