@@ -46,8 +46,6 @@ type LayoutPageHeaderProps = {
 
   setLocoDialogOpened: BooleanSetter;
   setBlockActionsDialogOpened: BooleanSetter;
-  setSignalLogicDialogOpened: BooleanSetter;
-  setLevelCrossingLogicDialogOpened: BooleanSetter;
   setPickerOpened: BooleanSetter;
 
   saveLayoutToServer: () => Promise<void>;
@@ -82,8 +80,6 @@ export default function LayoutPageHeader({
 
   setLocoDialogOpened,
   setBlockActionsDialogOpened,
-  setSignalLogicDialogOpened,
-  setLevelCrossingLogicDialogOpened,
   setPickerOpened,
 
   saveLayoutToServer,
@@ -152,12 +148,6 @@ export default function LayoutPageHeader({
             }
             onOpenBlocks={() =>
               setBlockActionsDialogOpened(true)
-            }
-            onOpenSignalLogic={() =>
-              setSignalLogicDialogOpened(true)
-            }
-            onOpenLevelCrossingLogic={() =>
-              setLevelCrossingLogicDialogOpened(true)
             }
             locoPanelCollapsed={locoPanelCollapsed}
             onToggleLocoPanel={() =>
