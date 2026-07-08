@@ -15,7 +15,6 @@ import {
 } from "@mantine/core";
 import {
   IconArrowRight,
-  IconCpu,
   IconDeviceMobile,
   IconHeartHandshake,
   IconMap2,
@@ -50,7 +49,6 @@ const THANKS_TECH_ITEMS = [
 type HomePageProps = {
   onOpenLayout: () => void;
   onOpenProgrammer: () => void;
-  onOpenAutomation: () => void;
 };
 
 type HomeCardItem = {
@@ -145,7 +143,7 @@ function UrlPill({ label, url }: { label: string; url: string }) {
   );
 }
 
-export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePageProps) {
+export default function HomePage({ onOpenLayout }: HomePageProps) {
   const { t, i18n } = useTranslation();
   const [networkUrls, setNetworkUrls] = useState<NetworkUrlInfo[]>([]);
 
@@ -203,16 +201,6 @@ export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePagePro
       disabled: false,
     },
     {
-      key: "automation",
-      title: "Automatizálás",
-      description: "Node-RED jellegű vasútmodell automatika szerkesztő React Flow alapon, későbbi C# runtime bekötéssel.",
-      image: "/images/programmer-card.png",
-      buttonLabel: "Open automation",
-      icon: <IconCpu size={18} />,
-      onClick: onOpenAutomation,
-      disabled: false,
-    },
-    {
       key: "programmer",
       title: t("home.cards.programmer.title"),
       description: t("home.cards.programmer.description"),
@@ -244,26 +232,11 @@ export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePagePro
           "linear-gradient(135deg, #06101f 0%, #071827 42%, #020711 100%)",
       }}
     >
-      <Box
-        className="home-bg-glow home-bg-glow-light"
-        aria-hidden="true"
-      />
-      <Box
-        className="home-bg-glow home-bg-glow-cyan"
-        aria-hidden="true"
-      />
-      <Box
-        className="home-bg-glow home-bg-glow-dark"
-        aria-hidden="true"
-      />
-      <Box
-        className="home-bg-glow home-bg-glow-green"
-        aria-hidden="true"
-      />
-      <Box
-        className="home-bg-glow home-bg-glow-amber"
-        aria-hidden="true"
-      />
+      <Box className="home-bg-glow home-bg-glow-light" aria-hidden="true" />
+      <Box className="home-bg-glow home-bg-glow-cyan" aria-hidden="true" />
+      <Box className="home-bg-glow home-bg-glow-dark" aria-hidden="true" />
+      <Box className="home-bg-glow home-bg-glow-green" aria-hidden="true" />
+      <Box className="home-bg-glow home-bg-glow-amber" aria-hidden="true" />
 
       <Container size="xl" py="xl" style={{ position: "relative", zIndex: 1 }}>
         <Stack gap="xl">
@@ -338,8 +311,8 @@ export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePagePro
             </Stack>
           </Paper>
 
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg">
-            {cards.map((item) => {
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+            {cards.map(item => {
               const isActive = item.disabled !== true && item.onClick !== undefined;
 
               return (
@@ -368,7 +341,7 @@ export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePagePro
                     boxShadow: "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.045)",
                   }}
                   onClick={() => activateCard(item)}
-                  onKeyDown={(ev) => {
+                  onKeyDown={ev => {
                     if (!isActive) {
                       return;
                     }
@@ -378,7 +351,7 @@ export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePagePro
                       activateCard(item);
                     }
                   }}
-                  onMouseEnter={(ev) => {
+                  onMouseEnter={ev => {
                     if (item.disabled) return;
 
                     ev.currentTarget.style.transform = "translateY(-5px)";
@@ -386,7 +359,7 @@ export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePagePro
                     ev.currentTarget.style.borderColor = "rgba(120, 220, 255, 0.42)";
                     ev.currentTarget.style.background = "linear-gradient(180deg, rgba(16, 43, 72, 0.66) 0%, rgba(5, 15, 29, 0.42) 100%)";
                   }}
-                  onMouseLeave={(ev) => {
+                  onMouseLeave={ev => {
                     ev.currentTarget.style.transform = "translateY(0)";
                     ev.currentTarget.style.boxShadow = "0 12px 36px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.045)";
                     ev.currentTarget.style.borderColor = "rgba(120, 220, 255, 0.18)";
@@ -399,9 +372,7 @@ export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePagePro
                       alt={item.title}
                       h={180}
                       fit="cover"
-                      fallbackSrc={`https://placehold.co/800x450?text=${encodeURIComponent(
-                        item.title
-                      )}`}
+                      fallbackSrc={`https://placehold.co/800x450?text=${encodeURIComponent(item.title)}`}
                       style={{
                         display: "block",
                         WebkitMaskImage: CARD_IMAGE_FADE_MASK,
@@ -432,19 +403,15 @@ export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePagePro
                       {item.description}
                     </Text>
 
-                    {item.url && (
-                      <UrlPill label="Full URL" url={item.url} />
-                    )}
+                    {item.url && <UrlPill label="Full URL" url={item.url} />}
 
                     <Button
                       variant={item.disabled ? "default" : "light"}
                       fullWidth
                       mt="sm"
                       disabled={item.disabled === true}
-                      rightSection={
-                        item.disabled === true ? undefined : <IconArrowRight size={16} />
-                      }
-                      onClick={(ev) => {
+                      rightSection={item.disabled === true ? undefined : <IconArrowRight size={16} />}
+                      onClick={ev => {
                         ev.stopPropagation();
                         activateCard(item);
                       }}
