@@ -168,13 +168,13 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
       detail={(
         <Stack gap={2}>
           <Text size="xs" c="dimmed">
-            <b>IF</b> {t("automation.graph.ifInput")}
+            {t("automation.graph.ifInput")}
           </Text>
           <Text size="xs" c="dimmed">
-            <b>THEN</b> {t("automation.graph.thenOutput")}
+            {t("automation.graph.thenOutput")}
           </Text>
           <Text size="xs" c="dimmed">
-            <b>ELSE</b> {t("automation.graph.elseOutput")}
+            {t("automation.graph.elseOutput")}
           </Text>
         </Stack>
       )}
