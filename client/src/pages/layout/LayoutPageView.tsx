@@ -39,16 +39,6 @@ export type LayoutPageViewProps = {
   requestedBlockActionsBlockId: string | null;
   onRequestedBlockActionsBlockIdConsumed: () => void;
   onOpenBlockActionsForBlock: (blockId: string) => void;
-  signalLogicDialogOpened: boolean;
-  setSignalLogicDialogOpened: BooleanSetter;
-  requestedSignalLogicAddress: number | null;
-  onRequestedSignalLogicAddressConsumed: () => void;
-  onOpenSignalLogicForSignal: (signalAddress: number) => void;
-  levelCrossingLogicDialogOpened: boolean;
-  setLevelCrossingLogicDialogOpened: BooleanSetter;
-  requestedLevelCrossingElementId: string | null;
-  onRequestedLevelCrossingElementIdConsumed: () => void;
-  onOpenLevelCrossingLogicForElement: (elementId: string) => void;
   onLocosSaved: () => Promise<void>;
   pickerOpened: boolean;
   setPickerOpened: BooleanSetter;
@@ -93,20 +83,15 @@ export function LayoutPageView(props: LayoutPageViewProps) {
     setCanvasBusy, setCanvasBusyText, locoDialogOpened, setLocoDialogOpened,
     blockActionsDialogOpened, setBlockActionsDialogOpened,
     requestedBlockActionsBlockId, onRequestedBlockActionsBlockIdConsumed,
-    onOpenBlockActionsForBlock, signalLogicDialogOpened, setSignalLogicDialogOpened,
-    requestedSignalLogicAddress, onRequestedSignalLogicAddressConsumed,
-    onOpenSignalLogicForSignal, levelCrossingLogicDialogOpened,
-    setLevelCrossingLogicDialogOpened, requestedLevelCrossingElementId,
-    onRequestedLevelCrossingElementIdConsumed, onOpenLevelCrossingLogicForElement,
-    onLocosSaved, pickerOpened, setPickerOpened, appSettingsDialogOpened,
-    setAppSettingsDialogOpened, editMode, setEditMode, locoPanelCollapsed,
-    setLocoPanelCollapsed, propertyPanelCollapsed, setPropertyPanelCollapsed,
-    rightPanelMode, setRightPanelMode, tool, setTool, saveLayoutToServer,
-    loadLayoutFromServer, canUndo, canRedo, undo, redo, onOpenAppSettingsDialog,
-    onFitLayout, locos, layout, onLayoutChange, onBeforeLayoutChange,
-    selectedElement, onSelectedElementChange, invalidateCounter, setInvalidateCounter,
-    fitCounter, turnoutSelection, setTurnoutSelection, onUpdateSelectedElement,
-    routesString,
+    onOpenBlockActionsForBlock, onLocosSaved, pickerOpened, setPickerOpened,
+    appSettingsDialogOpened, setAppSettingsDialogOpened, editMode, setEditMode,
+    locoPanelCollapsed, setLocoPanelCollapsed, propertyPanelCollapsed,
+    setPropertyPanelCollapsed, rightPanelMode, setRightPanelMode, tool, setTool,
+    saveLayoutToServer, loadLayoutFromServer, canUndo, canRedo, undo, redo,
+    onOpenAppSettingsDialog, onFitLayout, locos, layout, onLayoutChange,
+    onBeforeLayoutChange, selectedElement, onSelectedElementChange,
+    invalidateCounter, setInvalidateCounter, fitCounter, turnoutSelection,
+    setTurnoutSelection, onUpdateSelectedElement, routesString,
   } = props;
 
   return (
@@ -121,14 +106,6 @@ export function LayoutPageView(props: LayoutPageViewProps) {
         setBlockActionsDialogOpened={setBlockActionsDialogOpened}
         requestedBlockActionsBlockId={requestedBlockActionsBlockId}
         onRequestedBlockActionsBlockIdConsumed={onRequestedBlockActionsBlockIdConsumed}
-        signalLogicDialogOpened={signalLogicDialogOpened}
-        setSignalLogicDialogOpened={setSignalLogicDialogOpened}
-        requestedSignalLogicAddress={requestedSignalLogicAddress}
-        onRequestedSignalLogicAddressConsumed={onRequestedSignalLogicAddressConsumed}
-        levelCrossingLogicDialogOpened={levelCrossingLogicDialogOpened}
-        setLevelCrossingLogicDialogOpened={setLevelCrossingLogicDialogOpened}
-        requestedLevelCrossingElementId={requestedLevelCrossingElementId}
-        onRequestedLevelCrossingElementIdConsumed={onRequestedLevelCrossingElementIdConsumed}
         pickerOpened={pickerOpened}
         setPickerOpened={setPickerOpened}
         appSettingsDialogOpened={appSettingsDialogOpened}
@@ -156,8 +133,6 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           setTool={setTool}
           setLocoDialogOpened={setLocoDialogOpened}
           setBlockActionsDialogOpened={setBlockActionsDialogOpened}
-          setSignalLogicDialogOpened={setSignalLogicDialogOpened}
-          setLevelCrossingLogicDialogOpened={setLevelCrossingLogicDialogOpened}
           setPickerOpened={setPickerOpened}
           saveLayoutToServer={saveLayoutToServer}
           loadLayoutFromServer={loadLayoutFromServer}
@@ -191,8 +166,6 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           setTurnoutSelection={setTurnoutSelection}
           onUpdateSelectedElement={onUpdateSelectedElement}
           onOpenBlockActionsForBlock={onOpenBlockActionsForBlock}
-          onOpenSignalLogicForSignal={onOpenSignalLogicForSignal}
-          onOpenLevelCrossingLogicForElement={onOpenLevelCrossingLogicForElement}
           routesString={routesString}
           setCanvasBusy={setCanvasBusy}
           setCanvasBusyText={setCanvasBusyText}
@@ -202,7 +175,6 @@ export function LayoutPageView(props: LayoutPageViewProps) {
           <StatusBar
             rightPanelMode={rightPanelMode}
             setRightPanelMode={setRightPanelMode}
-            onOpenSignalLogicDialog={() => setSignalLogicDialogOpened(true)}
           />
         </AppShell.Footer>
       </AppShell>
