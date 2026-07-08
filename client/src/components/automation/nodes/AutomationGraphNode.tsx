@@ -122,9 +122,7 @@ function NotNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
-  const ifInputConnected = data.ifInputConnected === true;
-  const conditionActive = ifInputConnected && data.active === true;
-  const elseActive = ifInputConnected && data.active !== true;
+  const conditionActive = data.active === true;
 
   return (
     <AutomationNodeCard
@@ -146,7 +144,7 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
         {
           id: "else",
           label: "ELSE",
-          active: elseActive,
+          active: !conditionActive,
           top: "65%",
         },
       ]}
