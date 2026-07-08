@@ -22,11 +22,6 @@ import type {
 } from "./layout/layoutDto.js";
 
 import type {
-  LevelCrossingResponsePayload,
-  LevelCrossingRuntimeStateDto,
-} from "./levelCrossingLogic.js";
-
-import type {
   RouteGraphResponseDto,
 } from "./railway/routeGraphDto.js";
 
@@ -34,13 +29,6 @@ import type {
   ScriptDocumentDto,
   ScriptStateDto,
 } from "./scriptTypes.js";
-
-import type {
-  SignalLogicDocumentDto,
-  SignalLogicIntegrityReportDto,
-  SignalLogicRuntimeStateDto,
-  SignalLogicValidationIssue,
-} from "./signalLogic.js";
 
 import type {
   AddTrainTaskResult,
@@ -143,10 +131,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "scriptDocumentCommand",
   "commandCenterConfigCommand",
   "appSettingsCommand",
-  "signalLogicCommand",
   "blockAutomationCommand",
-  "levelCrossingCommand",
-  "automationCommand",
   "taskManagerCommand",
   "fastClockCommand",
   "fileCommand",
@@ -257,15 +242,6 @@ export type AppSettingsResponsePayload = WsCommandResponseMeta & {
   settings?: AppSettings;
 };
 
-export type SignalLogicResponsePayload = WsCommandResponseMeta & {
-  document?: SignalLogicDocumentDto;
-  issues?: SignalLogicValidationIssue[];
-  created?: boolean;
-  state?: SignalLogicRuntimeStateDto;
-  integrity?: SignalLogicIntegrityReportDto;
-  deletedSignalAddresses?: number[];
-};
-
 export type FastClockResponsePayload = WsCommandResponseMeta & {
   snapshot?: FastClockSnapshot;
   speed?: number;
@@ -282,22 +258,6 @@ export type TaskManagerResponsePayload = WsCommandResponseMeta & {
   addResult?: AddTrainTaskResult;
   actionResult?: TaskManagerActionResult;
   loadResult?: LoadTrainTasksResult;
-};
-
-export type AutomationModuleStatePayload = {
-  id: string;
-  name: string;
-  enabled: boolean;
-};
-
-export type AutomationRuntimeStatePayload = {
-  running: boolean;
-  tickMs: number;
-  modules: AutomationModuleStatePayload[];
-};
-
-export type AutomationResponsePayload = WsCommandResponseMeta & {
-  state?: AutomationRuntimeStatePayload;
 };
 
 export type ServerWsPayloadMap = {
@@ -349,19 +309,14 @@ export type ServerWsPayloadMap = {
   runtimeVariablesSnapshot: RuntimeVariablesSnapshotPayload;
 
   serverRuntimeStatsChanged: ServerRuntimeStatsSnapshot;
-  automationRuntimeStateChanged: AutomationRuntimeStatePayload;
 
   layoutResponse: LayoutResponsePayload;
   locosResponse: LocosResponsePayload;
   scriptDocumentResponse: ScriptDocumentResponsePayload;
   commandCenterConfigResponse: CommandCenterConfigResponsePayload;
   appSettingsResponse: AppSettingsResponsePayload;
-  signalLogicResponse: SignalLogicResponsePayload;
-  signalLogicStateChanged: SignalLogicRuntimeStateDto;
   blockAutomationResponse: BlockAutomationResponsePayload;
-  levelCrossingResponse: LevelCrossingResponsePayload;
-  levelCrossingStateChanged: LevelCrossingRuntimeStateDto;
-  automationResponse: AutomationResponsePayload;
+  taskManagerResponse: TaskManagerResponsePayload;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
 
