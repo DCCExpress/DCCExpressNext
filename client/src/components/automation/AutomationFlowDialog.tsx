@@ -54,7 +54,7 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
       }}
     >
       <Box style={{ flex: 1, minHeight: 0 }}>
-        <AutomationFlowEditor height="100%" />
+        <AutomationFlowEditor />
       </Box>
     </Modal>
   );
