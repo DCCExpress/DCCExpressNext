@@ -10,6 +10,7 @@ import {
   NumberInput,
   Paper,
   ScrollArea,
+  Select,
   Stack,
   Switch,
   Text,
@@ -46,6 +47,7 @@ import type {
   AutomationFlowDocumentDto,
   AutomationFlowNodeData,
   AutomationFlowNodeKind,
+  AutomationSignalAspect,
 } from "../../../../common/src/automationFlow";
 import type {
   SerializedLayoutDto,
@@ -73,6 +75,26 @@ import {
 
 type AutomationNode = Node<AutomationFlowNodeData, "automationNode">;
 type AutomationEdge = Edge;
+
+type SignalMapping = {
+  addressLength: number;
+  valueRed: number;
+  valueYellow: number;
+  valueGreen: number;
+  valueWhite: number;
+};
+
+type LayoutAutomationMappings = {
+  turnoutClosedValueByAddress: Map<number, boolean>;
+  signalByAddress: Map<number, SignalMapping>;
+};
+
+const SIGNAL_ASPECT_OPTIONS: Array<{ value: AutomationSignalAspect; label: string }> = [
+  { value: "red", label: "Vörös" },
+  { value: "yellow", label: "Sárga" },
+  { value: "green", label: "Zöld" },
+  { value: "white", label: "Fehér" },
+];
 
 const INITIAL_NODES: AutomationNode[] = [
   {
@@ -173,7 +195,14 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "signal",
       label: "Signal1 yellow",
-      ioKey: "signal:S1",
+      ioKey: "signal:1:yellow",
+      signalAddress: 1,
+      signalAspect: "yellow",
+      signalAddressLength: 2,
+      signalValueRed: 0,
+      signalValueYellow: 1,
+      signalValueGreen: 2,
+      signalValueWhite: 3,
       outputCommand: "yellow",
     },
   },
@@ -231,6 +260,18 @@ function getTurnoutCommandLabel(address: number, logicalClosed: boolean): string
   return `T${address} ${getTurnoutStateLabel(logicalClosed)}`;
 }
 
+function getSignalIoKey(address: number, aspect: AutomationSignalAspect): string {
+  return `signal:${address}:${aspect}`;
+}
+
+function isSignalAspect(value: string | null): value is AutomationSignalAspect {
+  return value === "red" || value === "yellow" || value === "green" || value === "white";
+}
+
+function getSignalAspectLabel(aspect: AutomationSignalAspect): string {
+  return SIGNAL_ASPECT_OPTIONS.find(item => item.value === aspect)?.label ?? aspect;
+}
+
 function getLogicalTurnoutClosedFromPhysical(physicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
   return physicalClosed === (turnoutClosedValue ?? true);
 }
@@ -238,6 +279,20 @@ function getLogicalTurnoutClosedFromPhysical(physicalClosed: boolean, turnoutClo
 function getPhysicalTurnoutClosedFromLogical(logicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
   const physicalClosedForLogicalClosed = turnoutClosedValue ?? true;
   return logicalClosed ? physicalClosedForLogicalClosed : !physicalClosedForLogicalClosed;
+}
+
+function getSignalAspectBits(data: AutomationFlowNodeData): number {
+  switch (data.signalAspect ?? "yellow") {
+    case "red":
+      return data.signalValueRed ?? 0;
+    case "green":
+      return data.signalValueGreen ?? 0;
+    case "white":
+      return data.signalValueWhite ?? 0;
+    case "yellow":
+    default:
+      return data.signalValueYellow ?? 0;
+  }
 }
 
 function readTurnoutMapping(element: SerializedLayoutElementDto, result: Map<number, boolean>): void {
@@ -254,16 +309,42 @@ function readTurnoutMapping(element: SerializedLayoutElementDto, result: Map<num
   }
 }
 
-function buildTurnoutClosedValueMap(layout: SerializedLayoutDto): Map<number, boolean> {
-  const result = new Map<number, boolean>();
+function readSignalMapping(element: SerializedLayoutElementDto, result: Map<number, SignalMapping>): void {
+  if (
+    typeof element.address !== "number" ||
+    typeof element.addressLength !== "number" ||
+    typeof element.valueRed !== "number" ||
+    typeof element.valueYellow !== "number" ||
+    typeof element.valueGreen !== "number" ||
+    typeof element.valueWhite !== "number"
+  ) {
+    return;
+  }
+
+  result.set(element.address, {
+    addressLength: element.addressLength,
+    valueRed: element.valueRed,
+    valueYellow: element.valueYellow,
+    valueGreen: element.valueGreen,
+    valueWhite: element.valueWhite,
+  });
+}
+
+function buildLayoutAutomationMappings(layout: SerializedLayoutDto): LayoutAutomationMappings {
+  const turnoutClosedValueByAddress = new Map<number, boolean>();
+  const signalByAddress = new Map<number, SignalMapping>();
 
   for (const layer of layout.layers ?? []) {
     for (const element of layer.elements ?? []) {
-      readTurnoutMapping(element, result);
+      readTurnoutMapping(element, turnoutClosedValueByAddress);
+      readSignalMapping(element, signalByAddress);
     }
   }
 
-  return result;
+  return {
+    turnoutClosedValueByAddress,
+    signalByAddress,
+  };
 }
 
 function applyLayoutTurnoutMappings(
@@ -302,13 +383,66 @@ function applyLayoutTurnoutMappings(
   };
 }
 
-async function loadLayoutTurnoutMappings(): Promise<Map<number, boolean>> {
+function applyLayoutSignalMappings(
+  document: AutomationFlowDocumentDto,
+  signalByAddress: Map<number, SignalMapping>
+): AutomationFlowDocumentDto {
+  if (signalByAddress.size === 0) {
+    return document;
+  }
+
+  return {
+    ...document,
+    nodes: document.nodes.map(node => {
+      if (node.data.kind !== "signal") {
+        return node;
+      }
+
+      const address = node.data.signalAddress;
+      if (typeof address !== "number") {
+        return node;
+      }
+
+      const signal = signalByAddress.get(address);
+      if (!signal) {
+        return node;
+      }
+
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          signalAddressLength: signal.addressLength,
+          signalValueRed: signal.valueRed,
+          signalValueYellow: signal.valueYellow,
+          signalValueGreen: signal.valueGreen,
+          signalValueWhite: signal.valueWhite,
+        },
+      };
+    }),
+  };
+}
+
+function applyLayoutAutomationMappings(
+  document: AutomationFlowDocumentDto,
+  mappings: LayoutAutomationMappings
+): AutomationFlowDocumentDto {
+  return applyLayoutSignalMappings(
+    applyLayoutTurnoutMappings(document, mappings.turnoutClosedValueByAddress),
+    mappings.signalByAddress
+  );
+}
+
+async function loadLayoutAutomationMappings(): Promise<LayoutAutomationMappings> {
   try {
     const layout = await getLayoutWs();
-    return buildTurnoutClosedValueMap(layout);
+    return buildLayoutAutomationMappings(layout);
   } catch (error) {
-    console.warn("[AutomationFlowEditor] Layout turnout mapping load failed:", error);
-    return new Map<number, boolean>();
+    console.warn("[AutomationFlowEditor] Layout automation mapping load failed:", error);
+    return {
+      turnoutClosedValueByAddress: new Map<number, boolean>(),
+      signalByAddress: new Map<number, SignalMapping>(),
+    };
   }
 }
 
@@ -359,6 +493,7 @@ export default function AutomationFlowEditor() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const lastActiveTurnoutCommandsRef = useRef<Set<string>>(new Set());
+  const lastActiveSignalCommandKeysRef = useRef<Set<string>>(new Set());
 
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const incomingEdgesByTarget = useMemo(() => createIncomingEdgeMap(edges), [edges]);
@@ -410,39 +545,75 @@ export default function AutomationFlowEditor() {
 
   useEffect(() => {
     const nextActiveTurnoutCommands = new Set<string>();
+    const nextActiveSignalCommandKeys = new Set<string>();
 
     for (const node of nodes) {
-      if (node.data.kind !== "turnoutCommand") {
+      if (node.data.kind === "turnoutCommand") {
+        if (simulatedState[node.id] !== true) {
+          continue;
+        }
+
+        nextActiveTurnoutCommands.add(node.id);
+
+        if (lastActiveTurnoutCommandsRef.current.has(node.id)) {
+          continue;
+        }
+
+        const address = node.data.turnoutAddress;
+        if (typeof address !== "number" || !Number.isFinite(address)) {
+          setStatusText(`Váltó parancs hiba: ${node.data.label} cím nélkül.`);
+          continue;
+        }
+
+        const logicalClosed = node.data.turnoutClosed ?? true;
+        const physicalClosed = getPhysicalTurnoutClosedFromLogical(logicalClosed, node.data.turnoutClosedValue);
+        const sent = wsApi.setTurnout(address, physicalClosed);
+        setStatusText(
+          sent
+            ? `Váltó parancs elküldve: ${getTurnoutCommandLabel(address, logicalClosed)}. Fizikai closed=${String(physicalClosed)}.`
+            : `Váltó parancs küldése sikertelen: ${getTurnoutCommandLabel(address, logicalClosed)}.`
+        );
         continue;
       }
 
-      if (simulatedState[node.id] !== true) {
-        continue;
+      if (node.data.kind === "signal") {
+        if (simulatedState[node.id] !== true) {
+          continue;
+        }
+
+        const address = node.data.signalAddress;
+        const aspect = node.data.signalAspect ?? "yellow";
+        const addressLength = node.data.signalAddressLength ?? 1;
+        const bits = getSignalAspectBits(node.data);
+        const commandKey = `${node.id}:${address ?? "?"}:${aspect}:${addressLength}:${bits}`;
+        nextActiveSignalCommandKeys.add(commandKey);
+
+        if (lastActiveSignalCommandKeysRef.current.has(commandKey)) {
+          continue;
+        }
+
+        if (typeof address !== "number" || !Number.isFinite(address)) {
+          setStatusText(`Jelző parancs hiba: ${node.data.label} cím nélkül.`);
+          continue;
+        }
+
+        let allSent = true;
+        for (let i = 0; i < addressLength; i += 1) {
+          const accessoryAddress = address + i;
+          const active = ((bits >> i) & 1) === 1;
+          allSent = wsApi.setBasicAccessory(accessoryAddress, active) && allSent;
+        }
+
+        setStatusText(
+          allSent
+            ? `Jelző parancs elküldve: S${address} ${getSignalAspectLabel(aspect)}. Bitminta=${bits}.`
+            : `Jelző parancs küldése sikertelen: S${address} ${getSignalAspectLabel(aspect)}.`
+        );
       }
-
-      nextActiveTurnoutCommands.add(node.id);
-
-      if (lastActiveTurnoutCommandsRef.current.has(node.id)) {
-        continue;
-      }
-
-      const address = node.data.turnoutAddress;
-      if (typeof address !== "number" || !Number.isFinite(address)) {
-        setStatusText(`Váltó parancs hiba: ${node.data.label} cím nélkül.`);
-        continue;
-      }
-
-      const logicalClosed = node.data.turnoutClosed ?? true;
-      const physicalClosed = getPhysicalTurnoutClosedFromLogical(logicalClosed, node.data.turnoutClosedValue);
-      const sent = wsApi.setTurnout(address, physicalClosed);
-      setStatusText(
-        sent
-          ? `Váltó parancs elküldve: ${getTurnoutCommandLabel(address, logicalClosed)}. Fizikai closed=${String(physicalClosed)}.`
-          : `Váltó parancs küldése sikertelen: ${getTurnoutCommandLabel(address, logicalClosed)}.`
-      );
     }
 
     lastActiveTurnoutCommandsRef.current = nextActiveTurnoutCommands;
+    lastActiveSignalCommandKeysRef.current = nextActiveSignalCommandKeys;
   }, [nodes, simulatedState]);
 
   const applyDocument = useCallback((document: AutomationFlowDocumentDto): void => {
@@ -464,12 +635,12 @@ export default function AutomationFlowEditor() {
 
     try {
       const document = await loadAutomationFlowWs();
-      const turnoutClosedValueByAddress = await loadLayoutTurnoutMappings();
-      const mappedDocument = applyLayoutTurnoutMappings(document, turnoutClosedValueByAddress);
+      const mappings = await loadLayoutAutomationMappings();
+      const mappedDocument = applyLayoutAutomationMappings(document, mappings);
       applyDocument(mappedDocument);
       wsApi.getLayoutRuntimeSnapshot();
       setStatusText(
-        `Automatika betöltve: ${mappedDocument.nodes.length} node, ${mappedDocument.edges.length} él, ${turnoutClosedValueByAddress.size} váltó mapping.`
+        `Automatika betöltve: ${mappedDocument.nodes.length} node, ${mappedDocument.edges.length} él, ${mappings.turnoutClosedValueByAddress.size} váltó mapping, ${mappings.signalByAddress.size} jelző mapping.`
       );
     } catch (error) {
       setStatusText(`Betöltési hiba: ${error instanceof Error ? error.message : String(error)}`);
@@ -531,8 +702,8 @@ export default function AutomationFlowEditor() {
 
     const unsubscribeFlowChanged = wsClient.on("automationFlowChanged", document => {
       void (async () => {
-        const turnoutClosedValueByAddress = await loadLayoutTurnoutMappings();
-        applyDocument(applyLayoutTurnoutMappings(document, turnoutClosedValueByAddress));
+        const mappings = await loadLayoutAutomationMappings();
+        applyDocument(applyLayoutAutomationMappings(document, mappings));
         setStatusText("Automatika frissítve egy másik kliens mentése alapján.");
         wsApi.getLayoutRuntimeSnapshot();
       })();
@@ -903,6 +1074,50 @@ function SimpleAutomationLayout({
                 </Stack>
               )}
 
+              {selectedNode.data.kind === "signal" && (
+                <Stack gap="xs">
+                  <NumberInput
+                    label="Jelző cím"
+                    description="A tracksiganl2 layout elem address mezője. Betöltéskor ebből jön az addressLength és a bitminta."
+                    min={0}
+                    step={1}
+                    value={selectedNode.data.signalAddress ?? 0}
+                    onChange={(value) => {
+                      const address = toNumber(value);
+                      const aspect = selectedNode.data.signalAspect ?? "yellow";
+                      onSelectedNodeDataChange({
+                        signalAddress: address,
+                        ioKey: getSignalIoKey(address, aspect),
+                      });
+                    }}
+                  />
+
+                  <Select
+                    label="Jelzőkép"
+                    description="Legördülőből választjuk, hogy ne legyen elgépelés."
+                    data={SIGNAL_ASPECT_OPTIONS}
+                    value={selectedNode.data.signalAspect ?? "yellow"}
+                    onChange={(value) => {
+                      if (!isSignalAspect(value)) {
+                        return;
+                      }
+
+                      const address = selectedNode.data.signalAddress ?? 0;
+                      onSelectedNodeDataChange({
+                        signalAspect: value,
+                        ioKey: getSignalIoKey(address, value),
+                        outputCommand: value,
+                      });
+                    }}
+                  />
+
+                  <Text size="xs" c="dimmed">
+                    Aktuális bitminta: <b>{getSignalAspectBits(selectedNode.data)}</b>, címhossz: <b>{selectedNode.data.signalAddressLength ?? 1}</b>.
+                    Ezeket a pályarajz jelző eleméből töltjük.
+                  </Text>
+                </Stack>
+              )}
+
               {selectedNode.data.kind === "turnoutCommand" && (
                 <Stack gap="xs">
                   <NumberInput
@@ -975,7 +1190,7 @@ function SimpleAutomationLayout({
                 />
               )}
 
-              {(selectedNode.data.kind === "signal" || selectedNode.data.kind === "output") && (
+              {selectedNode.data.kind === "output" && (
                 <TextInput
                   label="Kimeneti parancs"
                   value={selectedNode.data.outputCommand ?? ""}
