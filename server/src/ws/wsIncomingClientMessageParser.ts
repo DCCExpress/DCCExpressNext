@@ -2,7 +2,6 @@
 
 import type {
   AppSettingsCommandAction,
-  AutomationCommandAction,
   BlockAutomationCommandAction,
   ClientWsMessageType,
   ClientWsMessageUnion,
@@ -12,12 +11,10 @@ import type {
   FastClockCommandAction,
   FileCommandAction,
   LayoutCommandAction,
-  LevelCrossingCommandAction,
   LocosCommandAction,
   ReservationOwnerType,
   ScriptDocumentCommandAction,
   ScriptRunSource,
-  SignalLogicCommandAction,
   TaskManagerCommandAction,
 } from "../../../common/src/types.js";
 
@@ -87,44 +84,12 @@ function isAppSettingsCommandAction(value: unknown): value is AppSettingsCommand
   return value === "load" || value === "save";
 }
 
-function isSignalLogicCommandAction(value: unknown): value is SignalLogicCommandAction {
-  return (
-    value === "load" ||
-    value === "save" ||
-    value === "start" ||
-    value === "stop" ||
-    value === "state" ||
-    value === "integrityCheck" ||
-    value === "deleteOrphanSignals"
-  );
-}
-
 function isBlockAutomationCommandAction(value: unknown): value is BlockAutomationCommandAction {
   return (
     value === "load" ||
     value === "save" ||
     value === "integrityCheck" ||
     value === "deleteOrphanBlocks"
-  );
-}
-
-function isLevelCrossingCommandAction(value: unknown): value is LevelCrossingCommandAction {
-  return (
-    value === "load" ||
-    value === "save" ||
-    value === "start" ||
-    value === "stop" ||
-    value === "snapshot" ||
-    value === "evaluateOnce"
-  );
-}
-
-function isAutomationCommandAction(value: unknown): value is AutomationCommandAction {
-  return (
-    value === "snapshot" ||
-    value === "start" ||
-    value === "stop" ||
-    value === "evaluateOnce"
   );
 }
 
@@ -488,30 +453,6 @@ function parsePayload<TType extends ClientWsMessageType>(
       });
     }
 
-    case "signalLogicCommand": {
-      const base = parseRequestCommandBase(type, data);
-      if (!base.ok) return base;
-      if (!isSignalLogicCommandAction(base.data.action)) return invalidPayload(type, "action is invalid.");
-      if (base.data.action === "save" && !isRecord(base.data.document)) {
-        return invalidPayload(type, "document must be an object for save.");
-      }
-      if (base.data.action === "deleteOrphanSignals" && !Array.isArray(base.data.signalAddresses)) {
-        return invalidPayload(type, "signalAddresses must be an array for deleteOrphanSignals.");
-      }
-      return ok<TType>({
-        requestId: base.data.requestId,
-        action: base.data.action,
-        ...(isRecord(base.data.document) ? { document: base.data.document } : {}),
-        ...(Array.isArray(base.data.signalAddresses)
-          ? {
-              signalAddresses: base.data.signalAddresses.filter(
-                (address): address is number => typeof address === "number"
-              ),
-            }
-          : {}),
-      });
-    }
-
     case "blockAutomationCommand": {
       const base = parseRequestCommandBase(type, data);
       if (!base.ok) return base;
@@ -533,30 +474,6 @@ function parsePayload<TType extends ClientWsMessageType>(
               ),
             }
           : {}),
-      });
-    }
-
-    case "levelCrossingCommand": {
-      const base = parseRequestCommandBase(type, data);
-      if (!base.ok) return base;
-      if (!isLevelCrossingCommandAction(base.data.action)) return invalidPayload(type, "action is invalid.");
-      if (base.data.action === "save" && !isRecord(base.data.document)) {
-        return invalidPayload(type, "document must be an object for save.");
-      }
-      return ok<TType>({
-        requestId: base.data.requestId,
-        action: base.data.action,
-        ...(isRecord(base.data.document) ? { document: base.data.document } : {}),
-      });
-    }
-
-    case "automationCommand": {
-      const base = parseRequestCommandBase(type, data);
-      if (!base.ok) return base;
-      if (!isAutomationCommandAction(base.data.action)) return invalidPayload(type, "action is invalid.");
-      return ok<TType>({
-        requestId: base.data.requestId,
-        action: base.data.action,
       });
     }
 
