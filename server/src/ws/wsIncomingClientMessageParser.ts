@@ -2,6 +2,7 @@
 
 import type {
   AppSettingsCommandAction,
+  AutomationFlowCommandAction,
   BlockAutomationCommandAction,
   ClientWsMessageType,
   ClientWsMessageUnion,
@@ -91,6 +92,10 @@ function isBlockAutomationCommandAction(value: unknown): value is BlockAutomatio
     value === "integrityCheck" ||
     value === "deleteOrphanBlocks"
   );
+}
+
+function isAutomationFlowCommandAction(value: unknown): value is AutomationFlowCommandAction {
+  return value === "load" || value === "save";
 }
 
 function isTaskManagerCommandAction(value: unknown): value is TaskManagerCommandAction {
@@ -474,6 +479,20 @@ function parsePayload<TType extends ClientWsMessageType>(
               ),
             }
           : {}),
+      });
+    }
+
+    case "automationFlowCommand": {
+      const base = parseRequestCommandBase(type, data);
+      if (!base.ok) return base;
+      if (!isAutomationFlowCommandAction(base.data.action)) return invalidPayload(type, "action is invalid.");
+      if (base.data.action === "save" && !isRecord(base.data.document)) {
+        return invalidPayload(type, "document must be an object for save.");
+      }
+      return ok<TType>({
+        requestId: base.data.requestId,
+        action: base.data.action,
+        ...(isRecord(base.data.document) ? { document: base.data.document } : {}),
       });
     }
 
