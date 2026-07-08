@@ -23,6 +23,13 @@ function findEdgeSourceNodeId(edgeId: string, nodeIds: string[]): string | null 
     .sort((left, right) => right.length - left.length)[0] ?? null;
 }
 
+function findEdgeTargetNodeId(edgeId: string, nodeIds: string[], sourceNodeId: string | null): string | null {
+  return nodeIds
+    .filter(nodeId => nodeId !== sourceNodeId)
+    .filter(nodeId => edgeId.includes(`-${nodeId}`) || edgeId.endsWith(nodeId))
+    .sort((left, right) => right.length - left.length)[0] ?? null;
+}
+
 function toggleClass(element: Element, className: string, enabled: boolean): void {
   if (element.classList.contains(className) !== enabled) {
     element.classList.toggle(className, enabled);
@@ -36,6 +43,8 @@ function syncAutomationEdgeDataFlow(root: Element): void {
     .filter((nodeId): nodeId is string => typeof nodeId === "string" && nodeId.length > 0);
 
   const nodeInfoById = new Map<string, { kind: string; value: string }>();
+  const edgeInfoByElement = new Map<SVGGElement, { sourceNodeId: string | null; targetNodeId: string | null }>();
+  const incomingCountByNodeId = new Map<string, number>();
 
   for (const nodeElement of nodeElements) {
     const nodeId = nodeElement.dataset.id;
@@ -51,11 +60,25 @@ function syncAutomationEdgeDataFlow(root: Element): void {
     });
   }
 
-  for (const edgeElement of Array.from(root.querySelectorAll<SVGGElement>(".react-flow__edge[data-id]"))) {
+  const edgeElements = Array.from(root.querySelectorAll<SVGGElement>(".react-flow__edge[data-id]"));
+
+  for (const edgeElement of edgeElements) {
     const edgeId = edgeElement.dataset.id;
     const sourceNodeId = edgeId ? findEdgeSourceNodeId(edgeId, nodeIds) : null;
+    const targetNodeId = edgeId ? findEdgeTargetNodeId(edgeId, nodeIds, sourceNodeId) : null;
+
+    edgeInfoByElement.set(edgeElement, { sourceNodeId, targetNodeId });
+
+    if (targetNodeId) {
+      incomingCountByNodeId.set(targetNodeId, (incomingCountByNodeId.get(targetNodeId) ?? 0) + 1);
+    }
+  }
+
+  for (const edgeElement of edgeElements) {
+    const { sourceNodeId } = edgeInfoByElement.get(edgeElement) ?? { sourceNodeId: null, targetNodeId: null };
     const source = sourceNodeId ? nodeInfoById.get(sourceNodeId) : undefined;
-    const hasDataFlow = !!source && LOGIC_DATA_FLOW_NODE_KINDS.has(source.kind);
+    const sourceHasInput = sourceNodeId ? (incomingCountByNodeId.get(sourceNodeId) ?? 0) > 0 : false;
+    const hasDataFlow = !!source && sourceHasInput && LOGIC_DATA_FLOW_NODE_KINDS.has(source.kind);
     const valueIsTrue = source?.value === "true";
 
     toggleClass(edgeElement, "automation-edge-data-flow", hasDataFlow);
