@@ -1,5 +1,6 @@
 import { Badge, Box, Group, Modal, Text, Title } from "@mantine/core";
 import { IconCpu } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import AutomationFlowEditor from "./AutomationFlowEditor";
 
 type AutomationFlowDialogProps = {
@@ -8,6 +9,8 @@ type AutomationFlowDialogProps = {
 };
 
 export default function AutomationFlowDialog({ opened, onClose }: AutomationFlowDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <Modal
       opened={opened}
@@ -21,14 +24,14 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
 
           <Box>
             <Group gap="xs" align="center">
-              <Title order={4}>Vasútmodell automatizálás</Title>
+              <Title order={4}>{t("automation.dialog.title")}</Title>
               <Badge color="orange" variant="light">
-                React Flow MVP
+                {t("automation.dialog.badge")}
               </Badge>
             </Group>
 
             <Text size="xs" c="dimmed">
-              Node-RED jellegű grafikus logikai szerkesztő vasútmodell automatizáláshoz.
+              {t("automation.dialog.description")}
             </Text>
           </Box>
         </Group>
