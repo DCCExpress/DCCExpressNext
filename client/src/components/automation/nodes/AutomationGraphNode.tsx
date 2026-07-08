@@ -91,22 +91,21 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
       data={data}
       selected={selected}
       kind="ifThenElse"
-      targetHandles={[
-        { id: "if", top: "24%" },
-        { id: "then", top: "50%" },
-        { id: "else", top: "76%" },
+      targetHandles={[{ id: "if", top: "50%" }]}
+      sourceHandles={[
+        { id: "then", top: "35%" },
+        { id: "else", top: "65%" },
       ]}
-      sourceHandles={[{ id: "out", top: "50%" }]}
       detail={(
         <Stack gap={2}>
           <Text size="xs" c="dimmed">
-            <b>IF</b> feltétel
+            <b>IF</b> bemenet: feltétel
           </Text>
           <Text size="xs" c="dimmed">
-            <b>THEN</b> ág, ha IF igaz
+            <b>THEN</b> kimenet: ha igaz
           </Text>
           <Text size="xs" c="dimmed">
-            <b>ELSE</b> ág, ha IF hamis
+            <b>ELSE</b> kimenet: ha hamis
           </Text>
         </Stack>
       )}
