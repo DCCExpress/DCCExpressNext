@@ -12,18 +12,14 @@ import { LayoutView } from "../models/editor/core/LayoutView";
 import { IEditableProperty } from "../models/editor/elements/PropertyDescriptor";
 import { ExtendedRouteButtonElementView } from "../models/editor/elements/ExtendedRouteButtonElementView";
 import { BlockElementView } from "../models/editor/elements/BlockElementView";
-import { TrackSignalElementView } from "../models/editor/elements/TrackSignalElementView";
-import { TrackLevelCrossingElementView } from "../models/editor/elements/TrackLevelCrossingElementView";
 import { showErrorMessage, showOkMessage, showWarningMessage } from "../helpers";
 import { useRouteGraph } from "../hooks/useRouteGraph";
 import { wsApi } from "../services/wsApi";
 import { getGraphBlockSelectData } from "../services/routeGraphUi";
 import BlockActionsPanel from "./property-panel/BlockActionsPanel";
 import ExtendedRouteActions from "./property-panel/ExtendedRouteActions";
-import LevelCrossingAutomationPanel from "./property-panel/LevelCrossingAutomationPanel";
 import PropertyFieldRenderer from "./property-panel/PropertyFieldRenderer";
 import PropertyPanelHelp from "./property-panel/PropertyPanelHelp";
-import SignalLogicPanel from "./property-panel/SignalLogicPanel";
 import "../styles/propertypanel.css";
 import { useTranslation } from "react-i18next";
 
@@ -40,8 +36,6 @@ type PropertyPanelProps = {
   routes?: string | undefined;
   setBusy?: (busy: boolean, text?: string) => void;
   onOpenBlockActionsForBlock: (blockId: string) => void;
-  onOpenSignalLogicForSignal: (signalAddress: number) => void;
-  onOpenLevelCrossingLogicForElement: (elementId: string) => void;
 };
 
 function updateElementProperty(
@@ -92,8 +86,6 @@ export default function RightPropertyPanel({
   routes,
   setBusy,
   onOpenBlockActionsForBlock,
-  onOpenSignalLogicForSignal,
-  onOpenLevelCrossingLogicForElement,
 }: PropertyPanelProps) {
   const { t } = useTranslation();
   const {
@@ -355,26 +347,12 @@ export default function RightPropertyPanel({
           />
         )}
 
-        {selectedElement instanceof TrackSignalElementView && (
-          <SignalLogicPanel
-            selectedElement={selectedElement}
-            onOpenSignalLogicForSignal={onOpenSignalLogicForSignal}
-          />
-        )}
-
         {selectedElement instanceof ExtendedRouteButtonElementView && (
           <ExtendedRouteActions
             selectedElement={selectedElement}
             onRefreshRouteGraph={refreshExtendedRouteGraph}
             onTestRoute={handleTestExtendedRoute}
             onReleaseRoute={handleReleaseExtendedRoute}
-          />
-        )}
-
-        {selectedElement instanceof TrackLevelCrossingElementView && (
-          <LevelCrossingAutomationPanel
-            selectedElement={selectedElement}
-            onOpenLevelCrossingLogicForElement={onOpenLevelCrossingLogicForElement}
           />
         )}
 
