@@ -14,8 +14,6 @@ type MainMenuActionsProps = {
   onGoHome: () => void;
   onOpenLocos: () => void;
   onOpenBlocks: () => void;
-  onOpenSignalLogic: () => void;
-  onOpenLevelCrossingLogic: () => void;
   onOpenAutomationFlow: () => void;
   onOpenDiagnostics: () => void;
   onOpenIntegrityCheck: () => void;
@@ -27,15 +25,12 @@ type MainMenuActionsProps = {
 
 const MENU_LABELS = {
   en: {
-    levelCrossingLogic: "Level crossing logic...",
     automationFlow: "Automation flow...",
   },
   hu: {
-    levelCrossingLogic: "Sorompólogika...",
     automationFlow: "Automatizálás...",
   },
   de: {
-    levelCrossingLogic: "Bahnübergang-Logik...",
     automationFlow: "Automatisierung...",
   },
 } as const;
@@ -50,8 +45,6 @@ export default function MainMenuActions({
   onGoHome,
   onOpenLocos,
   onOpenBlocks,
-  onOpenSignalLogic,
-  onOpenLevelCrossingLogic,
   onOpenAutomationFlow,
   onOpenDiagnostics,
   onOpenIntegrityCheck,
@@ -131,12 +124,6 @@ export default function MainMenuActions({
           <Divider />
           <Menu.Item onClick={onOpenAutomationFlow}>
             {labels.automationFlow}
-          </Menu.Item>
-          <Menu.Item onClick={onOpenSignalLogic}>
-            {t("signalLogic.menu")}
-          </Menu.Item>
-          <Menu.Item onClick={onOpenLevelCrossingLogic}>
-            {labels.levelCrossingLogic}
           </Menu.Item>
           <Divider />
           <Menu.Item onClick={onOpenIntegrityCheck}>
