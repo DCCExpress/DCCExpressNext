@@ -6,11 +6,14 @@
  * A bal oldali node paletta és a jobb oldali tulajdonság panel tartalma könnyen
  * magasabb lesz, mint a dialog. Ilyenkor nem a teljes modal/dialog scrollozzon,
  * hanem a két oldalsó panel kapjon saját scrollbar-t.
+ *
+ * Fontos: az editor alapmagassága szándékosan NEM majdnem teljes viewport.
+ * Dialogban a 100vh-150px túl magas volt, ezért már alapból kilógott.
  */
 .mantine-Group-root:has(.react-flow) {
   min-height: 0 !important;
-  height: calc(100vh - 150px);
-  max-height: calc(100vh - 150px);
+  height: min(620px, calc(100vh - 260px));
+  max-height: min(620px, calc(100vh - 260px));
   overflow: hidden;
 }
 
