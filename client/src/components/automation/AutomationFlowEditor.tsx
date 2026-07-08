@@ -34,7 +34,6 @@ import {
   BackgroundVariant,
   Controls,
   MarkerType,
-  MiniMap,
   ReactFlow,
   type Connection,
   type Edge,
@@ -93,6 +92,13 @@ type LayoutAutomationMappings = {
   turnoutClosedValueByAddress: Map<number, boolean>;
   signalByAddress: Map<number, SignalMapping>;
 };
+
+type AutomationSignalState = {
+  valid: boolean;
+  value: boolean;
+};
+
+type AutomationEvaluationState = Record<string, AutomationSignalState>;
 
 const SIGNAL_ASPECT_OPTIONS: Array<{ value: AutomationSignalAspect; label: string }> = [
   { value: "red", label: "Vörös" },
@@ -259,6 +265,22 @@ function createEdge(source: string, target: string): AutomationEdge {
     type: "smoothstep",
     markerEnd: { type: MarkerType.ArrowClosed },
   };
+}
+
+function emptySignal(): AutomationSignalState {
+  return { valid: false, value: false };
+}
+
+function signal(value: boolean): AutomationSignalState {
+  return { valid: true, value };
+}
+
+function getNodeSignal(evaluation: AutomationEvaluationState, nodeId: string): AutomationSignalState {
+  return evaluation[nodeId] ?? emptySignal();
+}
+
+function signalsEqual(left: AutomationSignalState, right: AutomationSignalState): boolean {
+  return left.valid === right.valid && left.value === right.value;
 }
 
 function getNodePageId(node: AutomationNode): string {
@@ -457,12 +479,8 @@ function applyLayoutSignalMappings(
       }
 
       const address = node.data.signalAddress;
-      if (typeof address !== "number") {
-        return node;
-      }
-
-      const signal = signalByAddress.get(address);
-      if (!signal) {
+      const signalMapping = typeof address === "number" ? signalByAddress.get(address) : undefined;
+      if (!signalMapping) {
         return node;
       }
 
@@ -470,11 +488,11 @@ function applyLayoutSignalMappings(
         ...node,
         data: {
           ...node.data,
-          signalAddressLength: signal.addressLength,
-          signalValueRed: signal.valueRed,
-          signalValueYellow: signal.valueYellow,
-          signalValueGreen: signal.valueGreen,
-          signalValueWhite: signal.valueWhite,
+          signalAddressLength: signalMapping.addressLength,
+          signalValueRed: signalMapping.valueRed,
+          signalValueYellow: signalMapping.valueYellow,
+          signalValueGreen: signalMapping.valueGreen,
+          signalValueWhite: signalMapping.valueWhite,
         },
       };
     }),
@@ -516,31 +534,119 @@ function createIncomingEdgeMap(edges: AutomationEdge[]): Map<string, AutomationE
   return incoming;
 }
 
-function getEdgeSignalValue(
+function getEdgeSignalState(
   edge: AutomationEdge,
   sourceNode: AutomationNode | undefined,
-  active: Record<string, boolean>,
-  sourceHasInput = true
-): boolean {
+  evaluation: AutomationEvaluationState
+): AutomationSignalState {
   if (!sourceNode) {
-    return false;
+    return emptySignal();
   }
 
-  const sourceActive = active[edge.source] === true;
+  const sourceSignal = getNodeSignal(evaluation, edge.source);
+  if (!sourceSignal.valid) {
+    return emptySignal();
+  }
 
   if (sourceNode.data.kind === "ifThenElse") {
-    if (!sourceHasInput) {
-      return false;
-    }
-
     if (edge.sourceHandle === "else") {
-      return !sourceActive;
+      return sourceSignal.value ? emptySignal() : signal(true);
     }
 
-    return sourceActive;
+    return sourceSignal.value ? signal(true) : emptySignal();
   }
 
-  return sourceActive;
+  return sourceSignal;
+}
+
+function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): AutomationEvaluationState {
+  const evaluation: AutomationEvaluationState = {};
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const incoming = createIncomingEdgeMap(edges);
+
+  for (const node of nodes) {
+    evaluation[node.id] = isInputNode(node.data.kind)
+      ? signal(node.data.active === true)
+      : emptySignal();
+  }
+
+  for (let pass = 0; pass < nodes.length + 2; pass += 1) {
+    let changed = false;
+
+    for (const node of nodes) {
+      if (isInputNode(node.data.kind)) {
+        continue;
+      }
+
+      const incomingEdges = incoming.get(node.id) ?? [];
+      const inputSignals = incomingEdges
+        .map((edge) => getEdgeSignalState(edge, nodeById.get(edge.source), evaluation))
+        .filter((currentSignal) => currentSignal.valid);
+
+      let nextSignal = emptySignal();
+
+      switch (node.data.kind) {
+        case "and":
+          nextSignal = inputSignals.length > 0
+            ? signal(inputSignals.every((currentSignal) => currentSignal.value))
+            : emptySignal();
+          break;
+        case "or":
+        case "timer":
+        case "latch":
+        case "routeLock":
+        case "signal":
+        case "turnoutCommand":
+        case "output":
+          nextSignal = inputSignals.length > 0
+            ? signal(inputSignals.some((currentSignal) => currentSignal.value))
+            : emptySignal();
+          break;
+        case "ifThenElse": {
+          const ifInputSignals = incomingEdges
+            .filter((edge) => (edge.targetHandle ?? "if") === "if")
+            .map((edge) => getEdgeSignalState(edge, nodeById.get(edge.source), evaluation))
+            .filter((currentSignal) => currentSignal.valid);
+
+          nextSignal = ifInputSignals.length > 0
+            ? signal(ifInputSignals.some((currentSignal) => currentSignal.value))
+            : emptySignal();
+          break;
+        }
+        case "not":
+          nextSignal = inputSignals.length > 0 ? signal(!inputSignals[0].value) : emptySignal();
+          break;
+        default:
+          nextSignal = emptySignal();
+          break;
+      }
+
+      const currentSignal = getNodeSignal(evaluation, node.id);
+      if (!signalsEqual(currentSignal, nextSignal)) {
+        evaluation[node.id] = nextSignal;
+        changed = true;
+      }
+    }
+
+    if (!changed) {
+      break;
+    }
+  }
+
+  return evaluation;
+}
+
+function toNumber(value: string | number | null | undefined): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
 }
 
 export default function AutomationFlowEditor() {
@@ -556,8 +662,16 @@ export default function AutomationFlowEditor() {
   const lastActiveSignalCommandKeysRef = useRef<Set<string>>(new Set());
 
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
-  const incomingEdgesByTarget = useMemo(() => createIncomingEdgeMap(edges), [edges]);
-  const simulatedState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
+  const evaluationState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
+  const simulatedState = useMemo(
+    () => Object.fromEntries(
+      Object.entries(evaluationState).map(([nodeId, currentSignal]) => [
+        nodeId,
+        currentSignal.valid && currentSignal.value,
+      ])
+    ) as Record<string, boolean>,
+    [evaluationState]
+  );
 
   const visibleNodes = useMemo(
     () => nodes.filter(node => getNodePageId(node) === activePageId),
@@ -576,22 +690,27 @@ export default function AutomationFlowEditor() {
 
   const simulatedNodes = useMemo(
     () =>
-      visibleNodes.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          active: simulatedState[node.id] === true,
-        },
-      })),
-    [visibleNodes, simulatedState]
+      visibleNodes.map((node) => {
+        const currentSignal = getNodeSignal(evaluationState, node.id);
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            active: currentSignal.valid && currentSignal.value,
+            outputValid: currentSignal.valid,
+          },
+        };
+      }),
+    [evaluationState, visibleNodes]
   );
 
   const simulatedEdges = useMemo(
     () =>
       visibleEdges.map((edge) => {
         const sourceNode = nodeById.get(edge.source);
-        const sourceHasInput = (incomingEdgesByTarget.get(edge.source)?.length ?? 0) > 0;
-        const active = getEdgeSignalValue(edge, sourceNode, simulatedState, sourceHasInput);
+        const currentSignal = getEdgeSignalState(edge, sourceNode, evaluationState);
+        const active = currentSignal.valid;
 
         return {
           ...edge,
@@ -599,11 +718,15 @@ export default function AutomationFlowEditor() {
           markerEnd: { type: MarkerType.ArrowClosed },
           style: {
             strokeWidth: active ? 3 : 1.5,
-            stroke: active ? "var(--mantine-color-green-5)" : "var(--mantine-color-gray-5)",
+            stroke: active
+              ? currentSignal.value
+                ? "var(--mantine-color-green-5)"
+                : "var(--mantine-color-blue-5)"
+              : "var(--mantine-color-gray-5)",
           },
         };
       }),
-    [incomingEdgesByTarget, nodeById, simulatedState, visibleEdges]
+    [evaluationState, nodeById, visibleEdges]
   );
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
@@ -633,11 +756,12 @@ export default function AutomationFlowEditor() {
     const nextActiveSignalCommandKeys = new Set<string>();
 
     for (const node of nodes) {
-      if (node.data.kind === "turnoutCommand") {
-        if (simulatedState[node.id] !== true) {
-          continue;
-        }
+      const currentSignal = getNodeSignal(evaluationState, node.id);
+      if (!currentSignal.valid || !currentSignal.value) {
+        continue;
+      }
 
+      if (node.data.kind === "turnoutCommand") {
         nextActiveTurnoutCommands.add(node.id);
 
         if (lastActiveTurnoutCommandsRef.current.has(node.id)) {
@@ -662,10 +786,6 @@ export default function AutomationFlowEditor() {
       }
 
       if (node.data.kind === "signal") {
-        if (simulatedState[node.id] !== true) {
-          continue;
-        }
-
         const address = node.data.signalAddress;
         const aspect = node.data.signalAspect ?? "yellow";
         const addressLength = node.data.signalAddressLength ?? 1;
@@ -699,7 +819,7 @@ export default function AutomationFlowEditor() {
 
     lastActiveTurnoutCommandsRef.current = nextActiveTurnoutCommands;
     lastActiveSignalCommandKeysRef.current = nextActiveSignalCommandKeys;
-  }, [nodes, simulatedState]);
+  }, [evaluationState, nodes]);
 
   const applyDocument = useCallback((document: AutomationFlowDocumentDto): void => {
     if (document.nodes.length === 0) {
@@ -758,11 +878,7 @@ export default function AutomationFlowEditor() {
   useEffect(() => {
     const unsubscribeSensor = wsClient.on("sensorChanged", data => {
       setNodes(currentNodes => currentNodes.map(node => {
-        if (node.data.kind !== "sensor") {
-          return node;
-        }
-
-        if (node.data.sensorAddress !== data.address) {
+        if (node.data.kind !== "sensor" || node.data.sensorAddress !== data.address) {
           return node;
         }
 
@@ -778,11 +894,7 @@ export default function AutomationFlowEditor() {
 
     const unsubscribeTurnout = wsClient.on("turnoutChanged", data => {
       setNodes(currentNodes => currentNodes.map(node => {
-        if (node.data.kind !== "turnout") {
-          return node;
-        }
-
-        if (node.data.turnoutAddress !== data.address) {
+        if (node.data.kind !== "turnout" || node.data.turnoutAddress !== data.address) {
           return node;
         }
 
@@ -1018,9 +1130,9 @@ export default function AutomationFlowEditor() {
         snapToGrid
         snapGrid={[16, 16]}
         deleteKeyCode={["Backspace", "Delete"]}
+        proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={18} size={1} />
-        <MiniMap pannable zoomable />
         <Controls />
       </ReactFlow>
     </SimpleAutomationLayout>
@@ -1374,8 +1486,8 @@ function SimpleAutomationLayout({
 
               {selectedNode.data.kind === "ifThenElse" && (
                 <Text size="xs" c="dimmed">
-                  Egy IF bemenet van. Ha a bemenet igaz, a THEN kimenet aktív; ha hamis, az ELSE kimenet aktív.
-                  Bekötetlen IF bemenetnél egyik kimenet sem aktív.
+                  Egy IF bemenet van. Ha a bemenet érvényes és igaz, a THEN kimenet aktív; ha érvényes és hamis, az ELSE kimenet aktív.
+                  Érvénytelen vagy bekötetlen IF bemenetnél egyik kimenet sem aktív.
                 </Text>
               )}
 
@@ -1511,92 +1623,4 @@ function createSnapshot(
       ...(typeof edge.targetHandle === "string" ? { targetHandle: edge.targetHandle } : {}),
     })),
   };
-}
-
-function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): Record<string, boolean> {
-  const active: Record<string, boolean> = {};
-  const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const incoming = createIncomingEdgeMap(edges);
-
-  for (const node of nodes) {
-    if (isInputNode(node.data.kind)) {
-      active[node.id] = node.data.active === true;
-    } else {
-      active[node.id] = false;
-    }
-  }
-
-  for (let pass = 0; pass < nodes.length + 2; pass += 1) {
-    let changed = false;
-
-    for (const node of nodes) {
-      if (isInputNode(node.data.kind)) {
-        continue;
-      }
-
-      const incomingEdges = incoming.get(node.id) ?? [];
-      const inputValues = incomingEdges
-        .map((edge) => getEdgeSignalValue(
-          edge,
-          nodeById.get(edge.source),
-          active,
-          (incoming.get(edge.source)?.length ?? 0) > 0
-        ))
-        .filter((value) => typeof value === "boolean");
-
-      let nextValue = false;
-
-      switch (node.data.kind) {
-        case "and":
-          nextValue = inputValues.length > 0 && inputValues.every(Boolean);
-          break;
-        case "or":
-        case "timer":
-        case "latch":
-        case "routeLock":
-        case "signal":
-        case "turnoutCommand":
-        case "output":
-          nextValue = inputValues.some(Boolean);
-          break;
-        case "ifThenElse":
-          nextValue = incomingEdges.some((edge) => (
-            (edge.targetHandle ?? "if") === "if" &&
-            getEdgeSignalValue(
-              edge,
-              nodeById.get(edge.source),
-              active,
-              (incoming.get(edge.source)?.length ?? 0) > 0
-            )
-          ));
-          break;
-        case "not":
-          nextValue = inputValues.length > 0 ? !inputValues[0] : false;
-          break;
-        default:
-          nextValue = false;
-          break;
-      }
-
-      if (active[node.id] !== nextValue) {
-        active[node.id] = nextValue;
-        changed = true;
-      }
-    }
-
-    if (!changed) {
-      break;
-    }
-  }
-
-  return active;
-}
-
-function toNumber(value: string | number): number {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
 }
