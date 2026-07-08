@@ -153,7 +153,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "ifThenElse",
       label: "IF szenzor THEN engedély ELSE tiltás",
-      description: "Első bemenet a feltétel, második a THEN ág, harmadik az ELSE ág.",
+      description: "Egy IF bemenet. Igaz esetben a THEN, hamis esetben az ELSE kimenet aktív.",
     },
   },
   {
@@ -312,6 +312,45 @@ async function loadLayoutTurnoutMappings(): Promise<Map<number, boolean>> {
   }
 }
 
+function createIncomingEdgeMap(edges: AutomationEdge[]): Map<string, AutomationEdge[]> {
+  const incoming = new Map<string, AutomationEdge[]>();
+
+  for (const edge of edges) {
+    const list = incoming.get(edge.target) ?? [];
+    list.push(edge);
+    incoming.set(edge.target, list);
+  }
+
+  return incoming;
+}
+
+function getEdgeSignalValue(
+  edge: AutomationEdge,
+  sourceNode: AutomationNode | undefined,
+  active: Record<string, boolean>,
+  sourceHasInput = true
+): boolean {
+  if (!sourceNode) {
+    return false;
+  }
+
+  const sourceActive = active[edge.source] === true;
+
+  if (sourceNode.data.kind === "ifThenElse") {
+    if (!sourceHasInput) {
+      return false;
+    }
+
+    if (edge.sourceHandle === "else") {
+      return !sourceActive;
+    }
+
+    return sourceActive;
+  }
+
+  return sourceActive;
+}
+
 export default function AutomationFlowEditor() {
   const [nodes, setNodes] = useState<AutomationNode[]>(INITIAL_NODES);
   const [edges, setEdges] = useState<AutomationEdge[]>(INITIAL_EDGES);
@@ -321,6 +360,8 @@ export default function AutomationFlowEditor() {
   const [saving, setSaving] = useState(false);
   const lastActiveTurnoutCommandsRef = useRef<Set<string>>(new Set());
 
+  const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const incomingEdgesByTarget = useMemo(() => createIncomingEdgeMap(edges), [edges]);
   const simulatedState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
 
   const simulatedNodes = useMemo(
@@ -338,7 +379,9 @@ export default function AutomationFlowEditor() {
   const simulatedEdges = useMemo(
     () =>
       edges.map((edge) => {
-        const active = simulatedState[edge.source] === true;
+        const sourceNode = nodeById.get(edge.source);
+        const sourceHasInput = (incomingEdgesByTarget.get(edge.source)?.length ?? 0) > 0;
+        const active = getEdgeSignalValue(edge, sourceNode, simulatedState, sourceHasInput);
 
         return {
           ...edge,
@@ -350,7 +393,7 @@ export default function AutomationFlowEditor() {
           },
         };
       }),
-    [edges, simulatedState]
+    [edges, incomingEdgesByTarget, nodeById, simulatedState]
   );
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
@@ -521,7 +564,13 @@ export default function AutomationFlowEditor() {
       addEdge(
         {
           ...connection,
-          id: `${connection.source}-${connection.target}-${Date.now()}`,
+          id: [
+            connection.source,
+            connection.sourceHandle ?? "out",
+            connection.target,
+            connection.targetHandle ?? "in",
+            Date.now(),
+          ].join("-"),
           type: "smoothstep",
           markerEnd: { type: MarkerType.ArrowClosed },
         },
@@ -901,8 +950,8 @@ function SimpleAutomationLayout({
 
               {selectedNode.data.kind === "ifThenElse" && (
                 <Text size="xs" c="dimmed">
-                  IF / THEN / ELSE sorrend: az első bekötött bemenet a feltétel, a második a THEN ág,
-                  a harmadik az ELSE ág. Később ezt külön named handle-ökkel szétválasztjuk.
+                  Egy IF bemenet van. Ha a bemenet igaz, a THEN kimenet aktív; ha hamis, az ELSE kimenet aktív.
+                  Bekötetlen IF bemenetnél egyik kimenet sem aktív.
                 </Text>
               )}
 
@@ -1024,6 +1073,8 @@ function createSnapshot(nodes: AutomationNode[], edges: AutomationEdge[]): Autom
       source: edge.source,
       target: edge.target,
       ...(typeof edge.type === "string" ? { type: edge.type } : {}),
+      ...(typeof edge.sourceHandle === "string" ? { sourceHandle: edge.sourceHandle } : {}),
+      ...(typeof edge.targetHandle === "string" ? { targetHandle: edge.targetHandle } : {}),
     })),
   };
 }
@@ -1031,13 +1082,7 @@ function createSnapshot(nodes: AutomationNode[], edges: AutomationEdge[]): Autom
 function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): Record<string, boolean> {
   const active: Record<string, boolean> = {};
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const incoming = new Map<string, AutomationEdge[]>();
-
-  for (const edge of edges) {
-    const list = incoming.get(edge.target) ?? [];
-    list.push(edge);
-    incoming.set(edge.target, list);
-  }
+  const incoming = createIncomingEdgeMap(edges);
 
   for (const node of nodes) {
     if (isInputNode(node.data.kind)) {
@@ -1057,7 +1102,12 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): R
 
       const incomingEdges = incoming.get(node.id) ?? [];
       const inputValues = incomingEdges
-        .map((edge) => nodeById.has(edge.source) && active[edge.source] === true)
+        .map((edge) => getEdgeSignalValue(
+          edge,
+          nodeById.get(edge.source),
+          active,
+          (incoming.get(edge.source)?.length ?? 0) > 0
+        ))
         .filter((value) => typeof value === "boolean");
 
       let nextValue = false;
@@ -1075,13 +1125,17 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): R
         case "output":
           nextValue = inputValues.some(Boolean);
           break;
-        case "ifThenElse": {
-          const condition = inputValues[0] === true;
-          const thenValue = inputValues[1] === true;
-          const elseValue = inputValues[2] === true;
-          nextValue = condition ? thenValue : elseValue;
+        case "ifThenElse":
+          nextValue = incomingEdges.some((edge) => (
+            (edge.targetHandle ?? "if") === "if" &&
+            getEdgeSignalValue(
+              edge,
+              nodeById.get(edge.source),
+              active,
+              (incoming.get(edge.source)?.length ?? 0) > 0
+            )
+          ));
           break;
-        }
         case "not":
           nextValue = inputValues.length > 0 ? !inputValues[0] : false;
           break;
