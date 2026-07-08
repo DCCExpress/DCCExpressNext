@@ -26,21 +26,58 @@ import {
   NODE_DEFINITIONS,
 } from "./automationNodeDefinitions";
 
+type AutomationNodeHandle = {
+  id?: string;
+  label?: string;
+  top?: string | number;
+};
+
 type AutomationNodeCardProps = {
   data: AutomationFlowNodeData;
   selected: boolean;
   kind: AutomationFlowNodeKind;
   detail?: ReactNode;
+  targetHandles?: AutomationNodeHandle[];
+  sourceHandles?: AutomationNodeHandle[];
 };
+
+function renderHandles(
+  type: "source" | "target",
+  position: Position,
+  handles: AutomationNodeHandle[]
+) {
+  return handles.map((handle, index) => (
+    <Handle
+      key={handle.id ?? `${type}-${index}`}
+      id={handle.id}
+      type={type}
+      position={position}
+      style={{
+        width: 10,
+        height: 10,
+        ...(handle.top !== undefined
+          ? {
+              top: handle.top,
+              transform: "translateY(-50%)",
+            }
+          : {}),
+      }}
+    />
+  ));
+}
 
 export function AutomationNodeCard({
   data,
   selected,
   kind,
   detail,
+  targetHandles,
+  sourceHandles,
 }: AutomationNodeCardProps) {
   const definition = NODE_DEFINITIONS[kind];
   const active = data.active === true;
+  const resolvedTargetHandles = targetHandles ?? (hasTargetHandle(kind) ? [{}] : []);
+  const resolvedSourceHandles = sourceHandles ?? (hasSourceHandle(kind) ? [{}] : []);
 
   return (
     <Paper
@@ -61,11 +98,10 @@ export function AutomationNodeCard({
         background: active
           ? "linear-gradient(180deg, rgba(47, 158, 68, 0.14), rgba(20, 120, 60, 0.06))"
           : "var(--mantine-color-body)",
+        position: "relative",
       }}
     >
-      {hasTargetHandle(kind) && (
-        <Handle type="target" position={Position.Left} style={{ width: 10, height: 10 }} />
-      )}
+      {renderHandles("target", Position.Left, resolvedTargetHandles)}
 
       <Stack gap={6}>
         <Group justify="space-between" gap="xs" wrap="nowrap">
@@ -99,9 +135,7 @@ export function AutomationNodeCard({
         {detail}
       </Stack>
 
-      {hasSourceHandle(kind) && (
-        <Handle type="source" position={Position.Right} style={{ width: 10, height: 10 }} />
-      )}
+      {renderHandles("source", Position.Right, resolvedSourceHandles)}
     </Paper>
   );
 }
