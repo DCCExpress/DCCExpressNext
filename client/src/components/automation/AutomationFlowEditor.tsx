@@ -32,18 +32,14 @@ import {
   Background,
   BackgroundVariant,
   Controls,
-  Handle,
   MarkerType,
   MiniMap,
-  Position,
   ReactFlow,
   type Connection,
   type Edge,
   type EdgeChange,
   type Node,
   type NodeChange,
-  type NodeProps,
-  type NodeTypes,
 } from "@xyflow/react";
 
 import type {
@@ -61,100 +57,15 @@ import {
 import {
   wsClient,
 } from "../../services/wsClient";
+import {
+  automationNodeTypes,
+  isInputNode,
+  NODE_DEFINITIONS,
+  NODE_GROUPS,
+} from "./nodes";
 
 type AutomationNode = Node<AutomationFlowNodeData, "automationNode">;
 type AutomationEdge = Edge;
-
-type NodeDefinition = {
-  title: string;
-  group: "Bemenet" | "Logika" | "Vasút" | "Kimenet";
-  description: string;
-  icon: string;
-  defaultData?: Partial<AutomationFlowNodeData>;
-};
-
-const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, NodeDefinition> = {
-  blockOccupied: {
-    title: "Szakasz foglalt",
-    group: "Bemenet",
-    description: "Foglaltságérzékelő vagy blokkállapot.",
-    icon: "🚦",
-    defaultData: { ioKey: "block:A1", active: false },
-  },
-  sensor: {
-    title: "Szenzor",
-    group: "Bemenet",
-    description: "DCC-EX, S88, Arduino vagy egyéb fizikai szenzor bemenet.",
-    icon: "📡",
-    defaultData: { ioKey: "sensor:1", sensorAddress: 1, active: false },
-  },
-  button: {
-    title: "Kézi parancs",
-    group: "Bemenet",
-    description: "UI gomb vagy külső kézi kapcsoló.",
-    icon: "🔘",
-    defaultData: { ioKey: "button:start", active: false },
-  },
-  and: {
-    title: "AND",
-    group: "Logika",
-    description: "Akkor igaz, ha minden bemenete igaz.",
-    icon: "&",
-  },
-  or: {
-    title: "OR",
-    group: "Logika",
-    description: "Akkor igaz, ha legalább egy bemenete igaz.",
-    icon: "≥1",
-  },
-  not: {
-    title: "NOT",
-    group: "Logika",
-    description: "Invertálja az első bemenetet.",
-    icon: "!",
-  },
-  timer: {
-    title: "Timer",
-    group: "Logika",
-    description: "PLC-szerű késleltetés előkészítve.",
-    icon: "⏱",
-    defaultData: { delayMs: 1000 },
-  },
-  latch: {
-    title: "Latch",
-    group: "Logika",
-    description: "Öntartó logika későbbi reset bemenettel.",
-    icon: "🔒",
-  },
-  routeLock: {
-    title: "Útvonal zár",
-    group: "Vasút",
-    description: "Váltók, szakaszok és jelzők logikai útvonal-zárolása.",
-    icon: "🛤",
-    defaultData: { ioKey: "route:R1" },
-  },
-  signal: {
-    title: "Jelző parancs",
-    group: "Kimenet",
-    description: "Jelzőkép vezérlése: vörös, sárga, zöld.",
-    icon: "🚥",
-    defaultData: { ioKey: "signal:S1", outputCommand: "green" },
-  },
-  turnout: {
-    title: "Váltó parancs",
-    group: "Kimenet",
-    description: "Váltó állítás egyenes/kitérő állásba.",
-    icon: "↔",
-    defaultData: { ioKey: "turnout:T1", outputCommand: "straight" },
-  },
-  output: {
-    title: "Kimenet",
-    group: "Kimenet",
-    description: "Általános runtime kimeneti parancs.",
-    icon: "⚡",
-    defaultData: { ioKey: "output:1", outputCommand: "on" },
-  },
-};
 
 const INITIAL_NODES: AutomationNode[] = [
   {
@@ -214,6 +125,16 @@ const INITIAL_NODES: AutomationNode[] = [
     },
   },
   {
+    id: "route-if-then-else",
+    type: "automationNode",
+    position: { x: 800, y: 440 },
+    data: {
+      kind: "ifThenElse",
+      label: "IF szenzor THEN engedély ELSE tiltás",
+      description: "Első bemenet a feltétel, második a THEN ág, harmadik az ELSE ág.",
+    },
+  },
+  {
     id: "route-lock-r1",
     type: "automationNode",
     position: { x: 930, y: 280 },
@@ -221,6 +142,17 @@ const INITIAL_NODES: AutomationNode[] = [
       kind: "routeLock",
       label: "R1 útvonal zár",
       ioKey: "route:R1",
+    },
+  },
+  {
+    id: "turnout-t1-straight",
+    type: "automationNode",
+    position: { x: 1230, y: 120 },
+    data: {
+      kind: "turnout",
+      label: "T1 egyenes",
+      ioKey: "turnout:T1",
+      outputCommand: "straight",
     },
   },
   {
@@ -242,14 +174,9 @@ const INITIAL_EDGES: AutomationEdge[] = [
   createEdge("sensor-1", "route-and"),
   createEdge("manual-route-request", "route-and"),
   createEdge("route-and", "route-lock-r1"),
+  createEdge("route-lock-r1", "turnout-t1-straight"),
   createEdge("route-lock-r1", "signal-s1-green"),
 ];
-
-const NODE_GROUPS: NodeDefinition["group"][] = ["Bemenet", "Logika", "Vasút", "Kimenet"];
-
-const nodeTypes: NodeTypes = {
-  automationNode: AutomationGraphNode as never,
-};
 
 function createEdge(source: string, target: string): AutomationEdge {
   return {
@@ -259,102 +186,6 @@ function createEdge(source: string, target: string): AutomationEdge {
     type: "smoothstep",
     markerEnd: { type: MarkerType.ArrowClosed },
   };
-}
-
-function isInputNode(kind: AutomationFlowNodeKind): boolean {
-  return kind === "blockOccupied" || kind === "sensor" || kind === "button";
-}
-
-function hasTargetHandle(kind: AutomationFlowNodeKind): boolean {
-  return !isInputNode(kind);
-}
-
-function hasSourceHandle(kind: AutomationFlowNodeKind): boolean {
-  return kind !== "signal" && kind !== "turnout" && kind !== "output";
-}
-
-function AutomationGraphNode({ data, selected }: NodeProps<AutomationNode>) {
-  const definition = NODE_DEFINITIONS[data.kind];
-  const active = data.active === true;
-
-  return (
-    <Paper
-      withBorder
-      radius="md"
-      p="sm"
-      shadow={selected ? "md" : "xs"}
-      style={{
-        minWidth: 190,
-        borderColor: active
-          ? "var(--mantine-color-green-5)"
-          : selected
-            ? "var(--mantine-color-blue-5)"
-            : "var(--mantine-color-gray-4)",
-        boxShadow: active
-          ? "0 0 0 2px rgba(64, 192, 87, 0.22), 0 14px 34px rgba(0, 0, 0, 0.18)"
-          : undefined,
-        background: active
-          ? "linear-gradient(180deg, rgba(47, 158, 68, 0.14), rgba(20, 120, 60, 0.06))"
-          : "var(--mantine-color-body)",
-      }}
-    >
-      {hasTargetHandle(data.kind) && (
-        <Handle type="target" position={Position.Left} style={{ width: 10, height: 10 }} />
-      )}
-
-      <Stack gap={6}>
-        <Group justify="space-between" gap="xs" wrap="nowrap">
-          <Group gap="xs" wrap="nowrap">
-            <Text fw={900} size="lg" lh={1}>
-              {definition.icon}
-            </Text>
-            <Box>
-              <Text fw={800} size="sm" lh={1.15}>
-                {data.label}
-              </Text>
-              <Text size="xs" c="dimmed" lh={1.15}>
-                {definition.title}
-              </Text>
-            </Box>
-          </Group>
-
-          {active && (
-            <Badge color="green" variant="filled" size="xs">
-              ON
-            </Badge>
-          )}
-        </Group>
-
-        {data.ioKey && (
-          <Badge variant="light" color="gray" size="xs" w="fit-content">
-            {data.ioKey}
-          </Badge>
-        )}
-
-        {data.kind === "sensor" && typeof data.sensorAddress === "number" && (
-          <Text size="xs" c="dimmed">
-            cím: <b>{data.sensorAddress}</b>
-          </Text>
-        )}
-
-        {data.outputCommand && (
-          <Text size="xs" c="dimmed">
-            parancs: <b>{data.outputCommand}</b>
-          </Text>
-        )}
-
-        {data.kind === "timer" && (
-          <Text size="xs" c="dimmed">
-            késleltetés: <b>{data.delayMs ?? 0} ms</b>
-          </Text>
-        )}
-      </Stack>
-
-      {hasSourceHandle(data.kind) && (
-        <Handle type="source" position={Position.Right} style={{ width: 10, height: 10 }} />
-      )}
-    </Paper>
-  );
 }
 
 export default function AutomationFlowEditor() {
@@ -597,7 +428,7 @@ export default function AutomationFlowEditor() {
       <ReactFlow
         nodes={simulatedNodes}
         edges={simulatedEdges}
-        nodeTypes={nodeTypes}
+        nodeTypes={automationNodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -651,6 +482,8 @@ function SimpleAutomationLayout({
   snapshot,
   statusText,
 }: SimpleAutomationLayoutProps) {
+  const statusIsError = statusText?.toLocaleLowerCase().includes("hiba") === true;
+
   return (
     <Group align="stretch" gap="md" wrap="nowrap" style={{ minHeight: "calc(100vh - 150px)" }}>
       <Card withBorder radius="md" p="sm" w={260}>
@@ -724,7 +557,7 @@ function SimpleAutomationLayout({
           </Group>
 
           {statusText && (
-            <Badge variant="light" color={statusText.includes("hiba") || statusText.includes("hiba") ? "red" : "blue"} w="fit-content">
+            <Badge variant="light" color={statusIsError ? "red" : "blue"} w="fit-content">
               {statusText}
             </Badge>
           )}
@@ -777,6 +610,13 @@ function SimpleAutomationLayout({
                     wsApi.getLayoutRuntimeSnapshot();
                   }}
                 />
+              )}
+
+              {selectedNode.data.kind === "ifThenElse" && (
+                <Text size="xs" c="dimmed">
+                  IF / THEN / ELSE sorrend: az első bekötött bemenet a feltétel, a második a THEN ág,
+                  a harmadik az ELSE ág. Később ezt külön named handle-ökkel szétválasztjuk.
+                </Text>
               )}
 
               {isInputNode(selectedNode.data.kind) && (
@@ -895,7 +735,6 @@ function createSnapshot(nodes: AutomationNode[], edges: AutomationEdge[]): Autom
       data: node.data,
     })),
     edges: edges.map(edge => ({
-      ...edge,
       id: edge.id,
       source: edge.source,
       target: edge.target,
@@ -951,6 +790,13 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): R
         case "output":
           nextValue = inputValues.some(Boolean);
           break;
+        case "ifThenElse": {
+          const condition = inputValues[0] === true;
+          const thenValue = inputValues[1] === true;
+          const elseValue = inputValues[2] === true;
+          nextValue = condition ? thenValue : elseValue;
+          break;
+        }
         case "not":
           nextValue = inputValues.length > 0 ? !inputValues[0] : false;
           break;
