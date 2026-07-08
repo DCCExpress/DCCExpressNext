@@ -32,7 +32,7 @@ function getOutputActive(data: AutomationFlowNodeData): boolean {
   return data.active === true;
 }
 
-function getSingleOutputBadge(data: AutomationFlowNodeData, label = "OUT") {
+function getSingleOutputBadge(data: AutomationFlowNodeData, label?: string) {
   return [
     {
       id: "out",
