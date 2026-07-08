@@ -137,6 +137,8 @@ export function AutomationNodeCard({
       radius="md"
       p="sm"
       shadow={selected ? "md" : "xs"}
+      data-automation-node-kind={kind}
+      data-automation-output-value={active ? "true" : "false"}
       style={{
         minWidth: 190,
         borderColor,
