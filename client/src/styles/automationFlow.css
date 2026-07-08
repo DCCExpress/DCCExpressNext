@@ -16,11 +16,15 @@
   height: 100% !important;
   max-height: 100% !important;
   overflow: hidden;
+  gap: 8px !important;
 }
 
 /* Bal oldali node paletta panel */
 .mantine-Group-root:has(.react-flow) > .mantine-Card-root:first-child {
-  flex: 0 0 260px;
+  flex: 0 1 clamp(190px, 14vw, 220px) !important;
+  width: clamp(190px, 14vw, 220px) !important;
+  min-width: 180px;
+  max-width: 220px;
   min-height: 0;
   height: 100%;
   max-height: 100%;
@@ -47,7 +51,7 @@
 /* Középső React Flow canvas: dinamikusan töltse ki a rendelkezésre álló magasságot. */
 .mantine-Group-root:has(.react-flow) > .mantine-Paper-root {
   flex: 1 1 auto !important;
-  min-width: 0;
+  min-width: 420px;
   min-height: 0;
   width: auto;
   height: 100%;
@@ -70,7 +74,10 @@
 
 /* Jobb oldali tulajdonság panel */
 .mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child {
-  flex: 0 0 360px;
+  flex: 0 1 clamp(260px, 20vw, 310px) !important;
+  width: clamp(260px, 20vw, 310px) !important;
+  min-width: 250px;
+  max-width: 310px;
   min-height: 0;
   height: 100%;
   max-height: 100%;
