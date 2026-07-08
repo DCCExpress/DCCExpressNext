@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import {
   ActionIcon,
   Badge,
@@ -50,6 +50,7 @@ const STORAGE_KEY = "dcc-express.automation.flow.v1";
 
 type AutomationNodeKind =
   | "blockOccupied"
+  | "sensor"
   | "button"
   | "and"
   | "or"
@@ -66,6 +67,7 @@ type AutomationNodeData = Record<string, unknown> & {
   label: string;
   description?: string;
   ioKey?: string;
+  sensorAddress?: number;
   delayMs?: number;
   outputCommand?: string;
   active?: boolean;
@@ -96,6 +98,13 @@ const NODE_DEFINITIONS: Record<AutomationNodeKind, NodeDefinition> = {
     description: "Foglaltságérzékelő vagy blokkállapot.",
     icon: "🚦",
     defaultData: { ioKey: "block:A1", active: false },
+  },
+  sensor: {
+    title: "Szenzor",
+    group: "Bemenet",
+    description: "DCC-EX, S88, Arduino vagy egyéb fizikai szenzor bemenet.",
+    icon: "📡",
+    defaultData: { ioKey: "sensor:1", sensorAddress: 1, active: false },
   },
   button: {
     title: "Kézi parancs",
@@ -179,9 +188,22 @@ const INITIAL_NODES: AutomationNode[] = [
     },
   },
   {
-    id: "manual-route-request",
+    id: "sensor-1",
     type: "automationNode",
     position: { x: 60, y: 280 },
+    data: {
+      kind: "sensor",
+      label: "Szenzor #1",
+      description: "Fizikai szenzor bemenet szimulációja.",
+      ioKey: "sensor:1",
+      sensorAddress: 1,
+      active: false,
+    },
+  },
+  {
+    id: "manual-route-request",
+    type: "automationNode",
+    position: { x: 60, y: 440 },
     data: {
       kind: "button",
       label: "Bejárati út kérése",
@@ -202,17 +224,17 @@ const INITIAL_NODES: AutomationNode[] = [
   {
     id: "route-and",
     type: "automationNode",
-    position: { x: 640, y: 210 },
+    position: { x: 640, y: 280 },
     data: {
       kind: "and",
       label: "Útvonal engedélyezhető",
-      description: "Kézi kérés ÉS szabad szakasz.",
+      description: "Kézi kérés ÉS szabad szakasz ÉS aktív szenzor.",
     },
   },
   {
     id: "route-lock-r1",
     type: "automationNode",
-    position: { x: 930, y: 210 },
+    position: { x: 930, y: 280 },
     data: {
       kind: "routeLock",
       label: "R1 útvonal zár",
@@ -222,7 +244,7 @@ const INITIAL_NODES: AutomationNode[] = [
   {
     id: "signal-s1-green",
     type: "automationNode",
-    position: { x: 1230, y: 210 },
+    position: { x: 1230, y: 280 },
     data: {
       kind: "signal",
       label: "S1 zöld",
@@ -235,6 +257,7 @@ const INITIAL_NODES: AutomationNode[] = [
 const INITIAL_EDGES: AutomationEdge[] = [
   createEdge("block-a1-occupied", "not-block-a1"),
   createEdge("not-block-a1", "route-and"),
+  createEdge("sensor-1", "route-and"),
   createEdge("manual-route-request", "route-and"),
   createEdge("route-and", "route-lock-r1"),
   createEdge("route-lock-r1", "signal-s1-green"),
@@ -256,8 +279,12 @@ function createEdge(source: string, target: string): AutomationEdge {
   };
 }
 
+function isInputNode(kind: AutomationNodeKind): boolean {
+  return kind === "blockOccupied" || kind === "sensor" || kind === "button";
+}
+
 function hasTargetHandle(kind: AutomationNodeKind): boolean {
-  return kind !== "blockOccupied" && kind !== "button";
+  return !isInputNode(kind);
 }
 
 function hasSourceHandle(kind: AutomationNodeKind): boolean {
@@ -320,6 +347,12 @@ function AutomationGraphNode({ data, selected }: NodeProps<AutomationNode>) {
           <Badge variant="light" color="gray" size="xs" w="fit-content">
             {data.ioKey}
           </Badge>
+        )}
+
+        {data.kind === "sensor" && typeof data.sensorAddress === "number" && (
+          <Text size="xs" c="dimmed">
+            cím: <b>{data.sensorAddress}</b>
+          </Text>
         )}
 
         {data.outputCommand && (
@@ -540,7 +573,7 @@ export default function AutomationFlowEditor() {
 
 type SimpleAutomationLayoutProps = {
   activeOutputs: AutomationNode[];
-  children: React.ReactNode;
+  children: ReactNode;
   edges: AutomationEdge[];
   nodes: AutomationNode[];
   onAddNode: (kind: AutomationNodeKind) => void;
@@ -666,12 +699,28 @@ function SimpleAutomationLayout({
 
               <TextInput
                 label="I/O kulcs"
-                description="Később ehhez kötjük a blokkot, jelzőt, váltót vagy runtime parancsot."
+                description="Később ehhez kötjük a blokkot, szenzort, jelzőt, váltót vagy runtime parancsot."
                 value={selectedNode.data.ioKey ?? ""}
                 onChange={(event) => onSelectedNodeDataChange({ ioKey: event.currentTarget.value })}
               />
 
-              {(selectedNode.data.kind === "blockOccupied" || selectedNode.data.kind === "button") && (
+              {selectedNode.data.kind === "sensor" && (
+                <NumberInput
+                  label="Szenzor cím"
+                  description="A fizikai szenzor címe. A runtime ezt fogja majd a valós állapothoz kötni."
+                  min={0}
+                  step={1}
+                  value={selectedNode.data.sensorAddress ?? 0}
+                  onChange={(value) =>
+                    onSelectedNodeDataChange({
+                      sensorAddress: toNumber(value),
+                      ioKey: `sensor:${toNumber(value)}`,
+                    })
+                  }
+                />
+              )}
+
+              {isInputNode(selectedNode.data.kind) && (
                 <Switch
                   checked={selectedNode.data.active === true}
                   label="Szimulált bemenet aktív"
@@ -797,7 +846,7 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): R
   }
 
   for (const node of nodes) {
-    if (node.data.kind === "blockOccupied" || node.data.kind === "button") {
+    if (isInputNode(node.data.kind)) {
       active[node.id] = node.data.active === true;
     } else {
       active[node.id] = false;
@@ -808,7 +857,7 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): R
     let changed = false;
 
     for (const node of nodes) {
-      if (node.data.kind === "blockOccupied" || node.data.kind === "button") {
+      if (isInputNode(node.data.kind)) {
         continue;
       }
 
