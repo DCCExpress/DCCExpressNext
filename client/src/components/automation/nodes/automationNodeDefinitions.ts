@@ -102,6 +102,18 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     icon: "🚥",
     defaultData: { ioKey: "signal:S1", outputCommand: "yellow" },
   },
+  turnoutCommand: {
+    title: "Váltó parancs",
+    group: "Kimenet",
+    description: "Váltóállító kimenet. Aktív állapotban setTurnout parancsot küld.",
+    icon: "↪",
+    defaultData: {
+      ioKey: "turnout-command:1:closed",
+      turnoutAddress: 1,
+      turnoutClosed: true,
+      outputCommand: "closed",
+    },
+  },
   output: {
     title: "Kimenet",
     group: "Kimenet",
@@ -122,5 +134,5 @@ export function hasTargetHandle(kind: AutomationFlowNodeKind): boolean {
 }
 
 export function hasSourceHandle(kind: AutomationFlowNodeKind): boolean {
-  return kind !== "signal" && kind !== "output";
+  return kind !== "signal" && kind !== "turnoutCommand" && kind !== "output";
 }
