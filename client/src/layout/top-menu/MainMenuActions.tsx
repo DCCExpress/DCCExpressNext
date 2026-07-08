@@ -23,24 +23,6 @@ type MainMenuActionsProps = {
   onOpenHelp: () => void;
 };
 
-const MENU_LABELS = {
-  en: {
-    automationFlow: "Automation flow...",
-  },
-  hu: {
-    automationFlow: "Automatizálás...",
-  },
-  de: {
-    automationFlow: "Automatisierung...",
-  },
-} as const;
-
-function getMenuLabels(language: string) {
-  if (language.startsWith("hu")) return MENU_LABELS.hu;
-  if (language.startsWith("de")) return MENU_LABELS.de;
-  return MENU_LABELS.en;
-}
-
 export default function MainMenuActions({
   onGoHome,
   onOpenLocos,
@@ -53,8 +35,7 @@ export default function MainMenuActions({
   onOpenAppSettingsDialog,
   onOpenHelp,
 }: MainMenuActionsProps) {
-  const { t, i18n } = useTranslation();
-  const labels = getMenuLabels(i18n.language);
+  const { t } = useTranslation();
 
   const handleSaveLayout = async () => {
     try {
@@ -123,7 +104,7 @@ export default function MainMenuActions({
           <Menu.Item disabled>{t("Routes") + "..."}</Menu.Item>
           <Divider />
           <Menu.Item onClick={onOpenAutomationFlow}>
-            {labels.automationFlow}
+            {t("automation.dialog.title") + "..."}
           </Menu.Item>
           <Divider />
           <Menu.Item onClick={onOpenIntegrityCheck}>
