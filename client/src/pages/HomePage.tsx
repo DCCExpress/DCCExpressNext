@@ -15,6 +15,7 @@ import {
 } from "@mantine/core";
 import {
   IconArrowRight,
+  IconCpu,
   IconDeviceMobile,
   IconHeartHandshake,
   IconMap2,
@@ -49,6 +50,7 @@ const THANKS_TECH_ITEMS = [
 type HomePageProps = {
   onOpenLayout: () => void;
   onOpenProgrammer: () => void;
+  onOpenAutomation: () => void;
 };
 
 type HomeCardItem = {
@@ -143,7 +145,7 @@ function UrlPill({ label, url }: { label: string; url: string }) {
   );
 }
 
-export default function HomePage({ onOpenLayout }: HomePageProps) {
+export default function HomePage({ onOpenLayout, onOpenAutomation }: HomePageProps) {
   const { t, i18n } = useTranslation();
   const [networkUrls, setNetworkUrls] = useState<NetworkUrlInfo[]>([]);
 
@@ -198,6 +200,16 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
       icon: <IconMap2 size={18} />,
       url: primaryUrls.desktop,
       onClick: onOpenLayout,
+      disabled: false,
+    },
+    {
+      key: "automation",
+      title: "Automatizálás",
+      description: "Node-RED jellegű vasútmodell automatika szerkesztő React Flow alapon, későbbi C# runtime bekötéssel.",
+      image: "/images/programmer-card.png",
+      buttonLabel: "Open automation",
+      icon: <IconCpu size={18} />,
+      onClick: onOpenAutomation,
       disabled: false,
     },
     {
@@ -326,7 +338,7 @@ export default function HomePage({ onOpenLayout }: HomePageProps) {
             </Stack>
           </Paper>
 
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg">
             {cards.map((item) => {
               const isActive = item.disabled !== true && item.onClick !== undefined;
 
