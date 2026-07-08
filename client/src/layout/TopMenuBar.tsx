@@ -1,6 +1,7 @@
 import { Group } from "@mantine/core";
 import { useState } from "react";
 import type { EditorTool } from "../models/editor/types/EditorTypes";
+import AutomationFlowDialog from "../components/automation/AutomationFlowDialog";
 import DiagnosticsDialog from "../components/diagnostics/DiagnosticsDialog";
 import IntegrityCheckDialog from "../components/diagnostics/IntegrityCheckDialog";
 import EditorToolbar from "./top-menu/EditorToolbar";
@@ -77,6 +78,7 @@ export default function TopMenuBar({
   const [helpOpened, setHelpOpened] = useState(false);
   const [diagnosticsOpened, setDiagnosticsOpened] = useState(false);
   const [integrityCheckOpened, setIntegrityCheckOpened] = useState(false);
+  const [automationFlowOpened, setAutomationFlowOpened] = useState(false);
 
   return (
     <>
@@ -90,6 +92,7 @@ export default function TopMenuBar({
             onOpenBlocks={onOpenBlocks}
             onOpenSignalLogic={onOpenSignalLogic}
             onOpenLevelCrossingLogic={onOpenLevelCrossingLogic}
+            onOpenAutomationFlow={() => setAutomationFlowOpened(true)}
             onOpenDiagnostics={() => setDiagnosticsOpened(true)}
             onOpenIntegrityCheck={() => setIntegrityCheckOpened(true)}
             onSaveLayout={onSaveLayout}
@@ -124,6 +127,11 @@ export default function TopMenuBar({
       <QuickHelpDialog
         opened={helpOpened}
         onClose={() => setHelpOpened(false)}
+      />
+
+      <AutomationFlowDialog
+        opened={automationFlowOpened}
+        onClose={() => setAutomationFlowOpened(false)}
       />
 
       <DiagnosticsDialog
