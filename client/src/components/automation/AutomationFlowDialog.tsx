@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Badge, Box, Group, Modal, Text, Title } from "@mantine/core";
 import { IconCpu } from "@tabler/icons-react";
 import AutomationFlowEditor from "./AutomationFlowEditor";
@@ -7,7 +8,119 @@ type AutomationFlowDialogProps = {
   onClose: () => void;
 };
 
+const LOGIC_DATA_FLOW_NODE_KINDS = new Set([
+  "and",
+  "or",
+  "not",
+  "timer",
+  "latch",
+  "routeLock",
+]);
+
+function findEdgeSourceNodeId(edgeId: string, nodeIds: string[]): string | null {
+  return nodeIds
+    .filter(nodeId => edgeId.startsWith(`${nodeId}-`))
+    .sort((left, right) => right.length - left.length)[0] ?? null;
+}
+
+function syncAutomationEdgeDataFlow(root: Element): void {
+  const nodeElements = Array.from(root.querySelectorAll<HTMLElement>(".react-flow__node[data-id]"));
+  const nodeIds = nodeElements
+    .map(node => node.dataset.id)
+    .filter((nodeId): nodeId is string => typeof nodeId === "string" && nodeId.length > 0);
+
+  const nodeInfoById = new Map<string, { kind: string; value: string }>();
+
+  for (const nodeElement of nodeElements) {
+    const nodeId = nodeElement.dataset.id;
+    const card = nodeElement.querySelector<HTMLElement>("[data-automation-node-kind]");
+
+    if (!nodeId || !card) {
+      continue;
+    }
+
+    nodeInfoById.set(nodeId, {
+      kind: card.dataset.automationNodeKind ?? "",
+      value: card.dataset.automationOutputValue ?? "false",
+    });
+  }
+
+  for (const edgeElement of Array.from(root.querySelectorAll<SVGGElement>(".react-flow__edge[data-id]"))) {
+    edgeElement.classList.remove(
+      "automation-edge-data-flow",
+      "automation-edge-data-flow-true",
+      "automation-edge-data-flow-false"
+    );
+
+    const edgeId = edgeElement.dataset.id;
+    if (!edgeId) {
+      continue;
+    }
+
+    const sourceNodeId = findEdgeSourceNodeId(edgeId, nodeIds);
+    if (!sourceNodeId) {
+      continue;
+    }
+
+    const source = nodeInfoById.get(sourceNodeId);
+    if (!source || !LOGIC_DATA_FLOW_NODE_KINDS.has(source.kind)) {
+      continue;
+    }
+
+    edgeElement.classList.add("automation-edge-data-flow");
+    edgeElement.classList.add(
+      source.value === "true" ? "automation-edge-data-flow-true" : "automation-edge-data-flow-false"
+    );
+  }
+}
+
+function useAutomationEdgeDataFlow(opened: boolean): void {
+  useEffect(() => {
+    if (!opened) {
+      return undefined;
+    }
+
+    let timeoutId: number | undefined;
+    let observer: MutationObserver | undefined;
+
+    const scheduleSync = () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+
+      timeoutId = window.setTimeout(() => {
+        const root = document.querySelector(".react-flow");
+        if (!root) {
+          return;
+        }
+
+        syncAutomationEdgeDataFlow(root);
+
+        observer?.disconnect();
+        observer = new MutationObserver(() => scheduleSync());
+        observer.observe(root, {
+          attributes: true,
+          childList: true,
+          subtree: true,
+        });
+      }, 40);
+    };
+
+    scheduleSync();
+
+    return () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+
+      observer?.disconnect();
+    };
+  }, [opened]);
+}
+
 export default function AutomationFlowDialog({ opened, onClose }: AutomationFlowDialogProps) {
+  useAutomationEdgeDataFlow(opened);
+
   return (
     <Modal
       opened={opened}
