@@ -33,7 +33,7 @@ type AutomationNodeHandle = {
 
 type AutomationNodeOutputBadge = {
   id?: string;
-  label: string;
+  label?: string;
   active: boolean;
   top?: string | number;
 };
@@ -74,27 +74,32 @@ function renderHandles(
 }
 
 function renderOutputBadges(badges: AutomationNodeOutputBadge[]) {
-  return badges.map((badge, index) => (
-    <Badge
-      key={badge.id ?? badge.label ?? index}
-      color={badge.active ? "green" : "gray"}
-      variant={badge.active ? "filled" : "light"}
-      size="xs"
-      style={{
-        position: "absolute",
-        right: 12,
-        top: badge.top ?? "50%",
-        transform: "translateY(-50%)",
-        pointerEvents: "none",
-        zIndex: 3,
-        boxShadow: badge.active
-          ? "0 0 0 2px rgba(64, 192, 87, 0.18), 0 8px 18px rgba(0, 0, 0, 0.2)"
-          : undefined,
-      }}
-    >
-      {badge.label} {badge.active ? "ON" : "OFF"}
-    </Badge>
-  ));
+  return badges.map((badge, index) => {
+    const valueText = badge.active ? "TRUE" : "FALSE";
+    const label = badge.label?.trim();
+
+    return (
+      <Badge
+        key={badge.id ?? label ?? index}
+        color={badge.active ? "green" : "gray"}
+        variant={badge.active ? "filled" : "light"}
+        size="xs"
+        style={{
+          position: "absolute",
+          right: 12,
+          top: badge.top ?? "50%",
+          transform: "translateY(-50%)",
+          pointerEvents: "none",
+          zIndex: 3,
+          boxShadow: badge.active
+            ? "0 0 0 2px rgba(64, 192, 87, 0.18), 0 8px 18px rgba(0, 0, 0, 0.2)"
+            : undefined,
+        }}
+      >
+        {label ? `${label} ${valueText}` : valueText}
+      </Badge>
+    );
+  });
 }
 
 export function AutomationNodeCard({
