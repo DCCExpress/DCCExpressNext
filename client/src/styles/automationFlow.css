@@ -93,6 +93,35 @@
   stroke-width: 4px !important;
 }
 
+@keyframes automation-edge-data-flow {
+  from {
+    stroke-dashoffset: 18;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/*
+ * Logikai adatfolyam: TRUE/FALSE érték is adat.
+ * TRUE zöld, FALSE kék, mindkettő animált, mert van továbbított érték.
+ * Az IF node saját áglogikája marad a React Flow state-ben.
+ */
+.mantine-Group-root:has(.react-flow) .react-flow__edge.automation-edge-data-flow .react-flow__edge-path {
+  stroke-width: 3px !important;
+  stroke-dasharray: 10 8;
+  animation: automation-edge-data-flow 0.85s linear infinite;
+}
+
+.mantine-Group-root:has(.react-flow) .react-flow__edge.automation-edge-data-flow-true .react-flow__edge-path {
+  stroke: var(--mantine-color-green-5) !important;
+}
+
+.mantine-Group-root:has(.react-flow) .react-flow__edge.automation-edge-data-flow-false .react-flow__edge-path {
+  stroke: var(--mantine-color-blue-5) !important;
+}
+
 .mantine-Group-root:has(.react-flow) .react-flow__edge.selected .react-flow__edge-path,
 .mantine-Group-root:has(.react-flow) .react-flow__edge:focus .react-flow__edge-path,
 .mantine-Group-root:has(.react-flow) .react-flow__edge:focus-visible .react-flow__edge-path {
