@@ -35,12 +35,13 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
   turnout: {
     title: "Váltó állapot",
     group: "Bemenet",
-    description: "Váltóállás bemenet. Például: T1 closed → Signal1 yellow.",
+    description: "Logikai váltóállás bemenet. A fizikai closed bitet a turnoutClosedValue fordítja logikai állásra.",
     icon: "↔",
     defaultData: {
       ioKey: "turnout:1:closed",
       turnoutAddress: 1,
       turnoutClosed: true,
+      turnoutClosedValue: true,
       active: false,
     },
   },
@@ -105,12 +106,13 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
   turnoutCommand: {
     title: "Váltó parancs",
     group: "Kimenet",
-    description: "Váltóállító kimenet. Aktív állapotban setTurnout parancsot küld.",
+    description: "Logikai váltóállító kimenet. A parancs küldésnél turnoutClosedValue fordít fizikai closed bitre.",
     icon: "↪",
     defaultData: {
       ioKey: "turnout-command:1:closed",
       turnoutAddress: 1,
       turnoutClosed: true,
+      turnoutClosedValue: true,
       outputCommand: "closed",
     },
   },
