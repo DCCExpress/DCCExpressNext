@@ -318,7 +318,10 @@ class WebSocketApi {
     return this.send("abortAllTasks", {});
   }
 
-  setRuntimeVariable(key: RuntimeVariableKey, value: RuntimeVariableValue): boolean {
+  setRuntimeVariable<TKey extends RuntimeVariableKey>(
+    key: TKey,
+    value: RuntimeVariableValue<TKey>
+  ): boolean {
     return this.send("setRuntimeVariable", { key, value });
   }
 
