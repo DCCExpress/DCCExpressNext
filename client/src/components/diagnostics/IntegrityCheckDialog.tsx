@@ -231,7 +231,12 @@ export default function IntegrityCheckDialog({
                       const selected = pendingBlockDeleteSet.has(block.blockId);
 
                       return (
-                        <Card key={block.blockId} withBorder p="sm" bg={selected ? "red.0" : undefined}>
+                        <Card
+                          key={block.blockId}
+                          withBorder
+                          p="sm"
+                          {...(selected ? { bg: "red.0" } : {})}
+                        >
                           <Group justify="space-between" align="center">
                             <Stack gap={2}>
                               <Text fw={700}>{block.blockId === ALL_BLOCKS ? "All orphan blocks" : block.blockId}</Text>
