@@ -28,7 +28,6 @@ import {
 
 type AutomationNodeHandle = {
   id?: string;
-  label?: string;
   top?: string | number;
 };
 
@@ -49,7 +48,7 @@ function renderHandles(
   return handles.map((handle, index) => (
     <Handle
       key={handle.id ?? `${type}-${index}`}
-      id={handle.id}
+      {...(handle.id ? { id: handle.id } : {})}
       type={type}
       position={position}
       style={{
