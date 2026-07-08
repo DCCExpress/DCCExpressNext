@@ -40,6 +40,27 @@ function SensorNode({ data, selected }: AutomationTypedNodeProps) {
   );
 }
 
+function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
+  const expectedState = data.turnoutClosed === true
+    ? "closed"
+    : "thrown";
+
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="turnout"
+      detail={typeof data.turnoutAddress === "number"
+        ? (
+            <Text size="xs" c="dimmed">
+              T{data.turnoutAddress}: <b>{expectedState}</b>
+            </Text>
+          )
+        : null}
+    />
+  );
+}
+
 function ButtonNode({ data, selected }: AutomationTypedNodeProps) {
   return <AutomationNodeCard data={data} selected={selected} kind="button" />;
 }
@@ -111,23 +132,6 @@ function SignalNode({ data, selected }: AutomationTypedNodeProps) {
   );
 }
 
-function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
-  return (
-    <AutomationNodeCard
-      data={data}
-      selected={selected}
-      kind="turnout"
-      detail={data.outputCommand
-        ? (
-            <Text size="xs" c="dimmed">
-              állás: <b>{data.outputCommand}</b>
-            </Text>
-          )
-        : null}
-    />
-  );
-}
-
 function OutputNode({ data, selected }: AutomationTypedNodeProps) {
   return (
     <AutomationNodeCard
@@ -151,6 +155,8 @@ export function AutomationGraphNode(props: AutomationTypedNodeProps) {
       return <BlockOccupiedNode {...props} />;
     case "sensor":
       return <SensorNode {...props} />;
+    case "turnout":
+      return <TurnoutNode {...props} />;
     case "button":
       return <ButtonNode {...props} />;
     case "and":
@@ -169,8 +175,6 @@ export function AutomationGraphNode(props: AutomationTypedNodeProps) {
       return <RouteLockNode {...props} />;
     case "signal":
       return <SignalNode {...props} />;
-    case "turnout":
-      return <TurnoutNode {...props} />;
     case "output":
       return <OutputNode {...props} />;
     default:
