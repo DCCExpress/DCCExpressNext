@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ActionIcon,
   Badge,
@@ -161,12 +161,26 @@ const INITIAL_NODES: AutomationNode[] = [
   {
     id: "signal-s1-yellow",
     type: "automationNode",
-    position: { x: 1230, y: 300 },
+    position: { x: 1230, y: 220 },
     data: {
       kind: "signal",
       label: "Signal1 yellow",
       ioKey: "signal:S1",
       outputCommand: "yellow",
+    },
+  },
+  {
+    id: "turnout-t2-closed-command",
+    type: "automationNode",
+    position: { x: 1230, y: 380 },
+    data: {
+      kind: "turnoutCommand",
+      label: "T2 állítás closed",
+      description: "Aktív feltételnél setTurnout(2, closed) parancsot küld.",
+      ioKey: "turnout-command:2:closed",
+      turnoutAddress: 2,
+      turnoutClosed: true,
+      outputCommand: "closed",
     },
   },
 ];
@@ -179,6 +193,7 @@ const INITIAL_EDGES: AutomationEdge[] = [
   createEdge("manual-route-request", "route-and"),
   createEdge("route-and", "route-lock-r1"),
   createEdge("route-lock-r1", "signal-s1-yellow"),
+  createEdge("route-lock-r1", "turnout-t2-closed-command"),
 ];
 
 function createEdge(source: string, target: string): AutomationEdge {
@@ -195,6 +210,14 @@ function getTurnoutIoKey(address: number, closed: boolean): string {
   return `turnout:${address}:${closed ? "closed" : "thrown"}`;
 }
 
+function getTurnoutCommandIoKey(address: number, closed: boolean): string {
+  return `turnout-command:${address}:${closed ? "closed" : "thrown"}`;
+}
+
+function getTurnoutCommandLabel(address: number, closed: boolean): string {
+  return `T${address} ${closed ? "closed" : "thrown"}`;
+}
+
 export default function AutomationFlowEditor() {
   const [nodes, setNodes] = useState<AutomationNode[]>(INITIAL_NODES);
   const [edges, setEdges] = useState<AutomationEdge[]>(INITIAL_EDGES);
@@ -202,6 +225,7 @@ export default function AutomationFlowEditor() {
   const [statusText, setStatusText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const lastActiveTurnoutCommandsRef = useRef<Set<string>>(new Set());
 
   const simulatedState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
 
@@ -242,10 +266,46 @@ export default function AutomationFlowEditor() {
       nodes.filter(
         (node) =>
           simulatedState[node.id] === true &&
-          (node.data.kind === "signal" || node.data.kind === "output")
+          (node.data.kind === "signal" || node.data.kind === "turnoutCommand" || node.data.kind === "output")
       ),
     [nodes, simulatedState]
   );
+
+  useEffect(() => {
+    const nextActiveTurnoutCommands = new Set<string>();
+
+    for (const node of nodes) {
+      if (node.data.kind !== "turnoutCommand") {
+        continue;
+      }
+
+      if (simulatedState[node.id] !== true) {
+        continue;
+      }
+
+      nextActiveTurnoutCommands.add(node.id);
+
+      if (lastActiveTurnoutCommandsRef.current.has(node.id)) {
+        continue;
+      }
+
+      const address = node.data.turnoutAddress;
+      if (typeof address !== "number" || !Number.isFinite(address)) {
+        setStatusText(`Váltó parancs hiba: ${node.data.label} cím nélkül.`);
+        continue;
+      }
+
+      const closed = node.data.turnoutClosed ?? true;
+      const sent = wsApi.setTurnout(address, closed);
+      setStatusText(
+        sent
+          ? `Váltó parancs elküldve: ${getTurnoutCommandLabel(address, closed)}.`
+          : `Váltó parancs küldése sikertelen: ${getTurnoutCommandLabel(address, closed)}.`
+      );
+    }
+
+    lastActiveTurnoutCommandsRef.current = nextActiveTurnoutCommands;
+  }, [nodes, simulatedState]);
 
   const applyDocument = useCallback((document: AutomationFlowDocumentDto): void => {
     if (document.nodes.length === 0) {
@@ -678,6 +738,42 @@ function SimpleAutomationLayout({
                 </Stack>
               )}
 
+              {selectedNode.data.kind === "turnoutCommand" && (
+                <Stack gap="xs">
+                  <NumberInput
+                    label="Váltó cím"
+                    description="Ezt a fizikai váltót állítja. Például T2."
+                    min={0}
+                    step={1}
+                    value={selectedNode.data.turnoutAddress ?? 0}
+                    onChange={(value) => {
+                      const address = toNumber(value);
+                      const closed = selectedNode.data.turnoutClosed ?? true;
+                      onSelectedNodeDataChange({
+                        turnoutAddress: address,
+                        ioKey: getTurnoutCommandIoKey(address, closed),
+                        outputCommand: closed ? "closed" : "thrown",
+                      });
+                    }}
+                  />
+
+                  <Switch
+                    checked={selectedNode.data.turnoutClosed ?? true}
+                    label="Closed állásba állítsa"
+                    description="Ha kikapcsolod, akkor thrown/kitérő állásba küld parancsot."
+                    onChange={(event) => {
+                      const closed = event.currentTarget.checked;
+                      const address = selectedNode.data.turnoutAddress ?? 0;
+                      onSelectedNodeDataChange({
+                        turnoutClosed: closed,
+                        ioKey: getTurnoutCommandIoKey(address, closed),
+                        outputCommand: closed ? "closed" : "thrown",
+                      });
+                    }}
+                  />
+                </Stack>
+              )}
+
               {selectedNode.data.kind === "ifThenElse" && (
                 <Text size="xs" c="dimmed">
                   IF / THEN / ELSE sorrend: az első bekötött bemenet a feltétel, a második a THEN ág,
@@ -850,6 +946,7 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): R
         case "latch":
         case "routeLock":
         case "signal":
+        case "turnoutCommand":
         case "output":
           nextValue = inputValues.some(Boolean);
           break;
