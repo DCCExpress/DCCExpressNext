@@ -23,7 +23,16 @@ export type AutomationFlowNodeData = Record<string, unknown> & {
   ioKey?: string;
   sensorAddress?: number;
   turnoutAddress?: number;
+  /**
+   * Logikai váltóállás.
+   * true = logikai closed/egyenes, false = logikai thrown/kitérő.
+   */
   turnoutClosed?: boolean;
+  /**
+   * Fizikai command-center bit, amely a logikai closed/egyenes állást jelenti.
+   * Balos/jobbos váltóknál ez eltérhet.
+   */
+  turnoutClosedValue?: boolean;
   delayMs?: number;
   outputCommand?: string;
   active?: boolean;
