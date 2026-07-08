@@ -38,6 +38,7 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
           height: "calc(100vh - 32px)",
           display: "flex",
           flexDirection: "column",
+          overflow: "hidden",
         },
         header: {
           flex: "0 0 auto",
@@ -50,10 +51,11 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
           minHeight: 0,
           display: "flex",
           paddingTop: 0,
+          overflow: "hidden",
         },
       }}
     >
-      <Box style={{ flex: 1, minHeight: 0 }}>
+      <Box style={{ flex: 1, minHeight: 0, height: "100%", display: "flex" }}>
         <AutomationFlowEditor />
       </Box>
     </Modal>
