@@ -16,6 +16,12 @@ export type AutomationFlowNodeKind =
   | "turnoutCommand"
   | "output";
 
+export type AutomationSignalAspect =
+  | "red"
+  | "yellow"
+  | "green"
+  | "white";
+
 export type AutomationFlowNodeData = Record<string, unknown> & {
   kind: AutomationFlowNodeKind;
   label: string;
@@ -33,6 +39,13 @@ export type AutomationFlowNodeData = Record<string, unknown> & {
    * Balos/jobbos váltóknál ez eltérhet.
    */
   turnoutClosedValue?: boolean;
+  signalAddress?: number;
+  signalAspect?: AutomationSignalAspect;
+  signalAddressLength?: number;
+  signalValueRed?: number;
+  signalValueYellow?: number;
+  signalValueGreen?: number;
+  signalValueWhite?: number;
   delayMs?: number;
   outputCommand?: string;
   active?: boolean;
