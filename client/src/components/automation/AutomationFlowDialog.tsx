@@ -23,6 +23,12 @@ function findEdgeSourceNodeId(edgeId: string, nodeIds: string[]): string | null 
     .sort((left, right) => right.length - left.length)[0] ?? null;
 }
 
+function toggleClass(element: Element, className: string, enabled: boolean): void {
+  if (element.classList.contains(className) !== enabled) {
+    element.classList.toggle(className, enabled);
+  }
+}
+
 function syncAutomationEdgeDataFlow(root: Element): void {
   const nodeElements = Array.from(root.querySelectorAll<HTMLElement>(".react-flow__node[data-id]"));
   const nodeIds = nodeElements
@@ -46,31 +52,15 @@ function syncAutomationEdgeDataFlow(root: Element): void {
   }
 
   for (const edgeElement of Array.from(root.querySelectorAll<SVGGElement>(".react-flow__edge[data-id]"))) {
-    edgeElement.classList.remove(
-      "automation-edge-data-flow",
-      "automation-edge-data-flow-true",
-      "automation-edge-data-flow-false"
-    );
-
     const edgeId = edgeElement.dataset.id;
-    if (!edgeId) {
-      continue;
-    }
+    const sourceNodeId = edgeId ? findEdgeSourceNodeId(edgeId, nodeIds) : null;
+    const source = sourceNodeId ? nodeInfoById.get(sourceNodeId) : undefined;
+    const hasDataFlow = !!source && LOGIC_DATA_FLOW_NODE_KINDS.has(source.kind);
+    const valueIsTrue = source?.value === "true";
 
-    const sourceNodeId = findEdgeSourceNodeId(edgeId, nodeIds);
-    if (!sourceNodeId) {
-      continue;
-    }
-
-    const source = nodeInfoById.get(sourceNodeId);
-    if (!source || !LOGIC_DATA_FLOW_NODE_KINDS.has(source.kind)) {
-      continue;
-    }
-
-    edgeElement.classList.add("automation-edge-data-flow");
-    edgeElement.classList.add(
-      source.value === "true" ? "automation-edge-data-flow-true" : "automation-edge-data-flow-false"
-    );
+    toggleClass(edgeElement, "automation-edge-data-flow", hasDataFlow);
+    toggleClass(edgeElement, "automation-edge-data-flow-true", hasDataFlow && valueIsTrue);
+    toggleClass(edgeElement, "automation-edge-data-flow-false", hasDataFlow && !valueIsTrue);
   }
 }
 
