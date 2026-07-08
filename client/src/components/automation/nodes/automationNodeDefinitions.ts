@@ -32,6 +32,18 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     icon: "📡",
     defaultData: { ioKey: "sensor:1", sensorAddress: 1, active: false },
   },
+  turnout: {
+    title: "Váltó állapot",
+    group: "Bemenet",
+    description: "Váltóállás bemenet. Például: T1 closed → Signal1 yellow.",
+    icon: "↔",
+    defaultData: {
+      ioKey: "turnout:1:closed",
+      turnoutAddress: 1,
+      turnoutClosed: true,
+      active: false,
+    },
+  },
   button: {
     title: "Kézi parancs",
     group: "Bemenet",
@@ -88,14 +100,7 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     group: "Kimenet",
     description: "Jelzőkép vezérlése: vörös, sárga, zöld.",
     icon: "🚥",
-    defaultData: { ioKey: "signal:S1", outputCommand: "green" },
-  },
-  turnout: {
-    title: "Váltó parancs",
-    group: "Kimenet",
-    description: "Váltó állítás egyenes/kitérő állásba.",
-    icon: "↔",
-    defaultData: { ioKey: "turnout:T1", outputCommand: "straight" },
+    defaultData: { ioKey: "signal:S1", outputCommand: "yellow" },
   },
   output: {
     title: "Kimenet",
@@ -109,7 +114,7 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
 export const NODE_GROUPS: AutomationNodeGroup[] = ["Bemenet", "Logika", "Vasút", "Kimenet"];
 
 export function isInputNode(kind: AutomationFlowNodeKind): boolean {
-  return kind === "blockOccupied" || kind === "sensor" || kind === "button";
+  return kind === "blockOccupied" || kind === "sensor" || kind === "turnout" || kind === "button";
 }
 
 export function hasTargetHandle(kind: AutomationFlowNodeKind): boolean {
@@ -117,5 +122,5 @@ export function hasTargetHandle(kind: AutomationFlowNodeKind): boolean {
 }
 
 export function hasSourceHandle(kind: AutomationFlowNodeKind): boolean {
-  return kind !== "signal" && kind !== "turnout" && kind !== "output";
+  return kind !== "signal" && kind !== "output";
 }
