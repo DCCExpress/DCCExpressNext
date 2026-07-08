@@ -64,13 +64,13 @@ export default function EditorToolbar({
         </ActionIcon>
       </Tooltip>
 
-      <Tooltip label="Automatizálás">
+      <Tooltip label={t("automation.dialog.title")}>
         <ActionIcon
           variant="light"
           color="violet"
           onClick={onOpenAutomationFlow}
           onMouseDown={event => event.preventDefault()}
-          aria-label="Automatizálás"
+          aria-label={t("automation.dialog.title")}
         >
           <IconBolt size={18} />
         </ActionIcon>
