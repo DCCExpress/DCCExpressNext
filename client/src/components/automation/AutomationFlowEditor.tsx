@@ -100,10 +100,11 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "turnout",
       label: "T1 closed",
-      description: "Váltóállapot bemenet. Akkor igaz, ha T1 closed állásban van.",
+      description: "Váltóállapot bemenet. Akkor igaz, ha T1 logikai closed állásban van.",
       ioKey: "turnout:1:closed",
       turnoutAddress: 1,
       turnoutClosed: true,
+      turnoutClosedValue: true,
       active: false,
     },
   },
@@ -135,7 +136,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "and",
       label: "S1 sárga feltétel",
-      description: "Kézi kérés ÉS szabad szakasz ÉS aktív szenzor ÉS T1 closed.",
+      description: "Kézi kérés ÉS szabad szakasz ÉS aktív szenzor ÉS T1 logikai closed.",
     },
   },
   {
@@ -176,10 +177,11 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "turnoutCommand",
       label: "T2 állítás closed",
-      description: "Aktív feltételnél setTurnout(2, closed) parancsot küld.",
+      description: "Aktív feltételnél T2 logikai closed állásba kerül.",
       ioKey: "turnout-command:2:closed",
       turnoutAddress: 2,
       turnoutClosed: true,
+      turnoutClosedValue: true,
       outputCommand: "closed",
     },
   },
@@ -206,16 +208,29 @@ function createEdge(source: string, target: string): AutomationEdge {
   };
 }
 
-function getTurnoutIoKey(address: number, closed: boolean): string {
-  return `turnout:${address}:${closed ? "closed" : "thrown"}`;
+function getTurnoutStateLabel(logicalClosed: boolean): string {
+  return logicalClosed ? "closed" : "thrown";
 }
 
-function getTurnoutCommandIoKey(address: number, closed: boolean): string {
-  return `turnout-command:${address}:${closed ? "closed" : "thrown"}`;
+function getTurnoutIoKey(address: number, logicalClosed: boolean): string {
+  return `turnout:${address}:${getTurnoutStateLabel(logicalClosed)}`;
 }
 
-function getTurnoutCommandLabel(address: number, closed: boolean): string {
-  return `T${address} ${closed ? "closed" : "thrown"}`;
+function getTurnoutCommandIoKey(address: number, logicalClosed: boolean): string {
+  return `turnout-command:${address}:${getTurnoutStateLabel(logicalClosed)}`;
+}
+
+function getTurnoutCommandLabel(address: number, logicalClosed: boolean): string {
+  return `T${address} ${getTurnoutStateLabel(logicalClosed)}`;
+}
+
+function getLogicalTurnoutClosedFromPhysical(physicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
+  return physicalClosed === (turnoutClosedValue ?? true);
+}
+
+function getPhysicalTurnoutClosedFromLogical(logicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
+  const physicalClosedForLogicalClosed = turnoutClosedValue ?? true;
+  return logicalClosed ? physicalClosedForLogicalClosed : !physicalClosedForLogicalClosed;
 }
 
 export default function AutomationFlowEditor() {
@@ -295,12 +310,13 @@ export default function AutomationFlowEditor() {
         continue;
       }
 
-      const closed = node.data.turnoutClosed ?? true;
-      const sent = wsApi.setTurnout(address, closed);
+      const logicalClosed = node.data.turnoutClosed ?? true;
+      const physicalClosed = getPhysicalTurnoutClosedFromLogical(logicalClosed, node.data.turnoutClosedValue);
+      const sent = wsApi.setTurnout(address, physicalClosed);
       setStatusText(
         sent
-          ? `Váltó parancs elküldve: ${getTurnoutCommandLabel(address, closed)}.`
-          : `Váltó parancs küldése sikertelen: ${getTurnoutCommandLabel(address, closed)}.`
+          ? `Váltó parancs elküldve: ${getTurnoutCommandLabel(address, logicalClosed)}. Fizikai closed=${String(physicalClosed)}.`
+          : `Váltó parancs küldése sikertelen: ${getTurnoutCommandLabel(address, logicalClosed)}.`
       );
     }
 
@@ -371,13 +387,17 @@ export default function AutomationFlowEditor() {
           return node;
         }
 
-        const expectedClosed = node.data.turnoutClosed ?? true;
+        const actualLogicalClosed = getLogicalTurnoutClosedFromPhysical(
+          data.closed,
+          node.data.turnoutClosedValue
+        );
+        const expectedLogicalClosed = node.data.turnoutClosed ?? true;
 
         return {
           ...node,
           data: {
             ...node.data,
-            active: data.closed === expectedClosed,
+            active: actualLogicalClosed === expectedLogicalClosed,
           },
         };
       }));
@@ -712,10 +732,10 @@ function SimpleAutomationLayout({
                     value={selectedNode.data.turnoutAddress ?? 0}
                     onChange={(value) => {
                       const address = toNumber(value);
-                      const closed = selectedNode.data.turnoutClosed ?? true;
+                      const logicalClosed = selectedNode.data.turnoutClosed ?? true;
                       onSelectedNodeDataChange({
                         turnoutAddress: address,
-                        ioKey: getTurnoutIoKey(address, closed),
+                        ioKey: getTurnoutIoKey(address, logicalClosed),
                       });
                       wsApi.getLayoutRuntimeSnapshot();
                     }}
@@ -723,15 +743,25 @@ function SimpleAutomationLayout({
 
                   <Switch
                     checked={selectedNode.data.turnoutClosed ?? true}
-                    label="Closed állás legyen az igaz feltétel"
-                    description="Ha kikapcsolod, akkor a node akkor lesz igaz, ha a váltó thrown/kitérő állásban van."
+                    label="Logikai closed állás legyen az igaz feltétel"
+                    description="Ha kikapcsolod, akkor a node akkor lesz igaz, ha a váltó logikai thrown/kitérő állásban van."
                     onChange={(event) => {
-                      const closed = event.currentTarget.checked;
+                      const logicalClosed = event.currentTarget.checked;
                       const address = selectedNode.data.turnoutAddress ?? 0;
                       onSelectedNodeDataChange({
-                        turnoutClosed: closed,
-                        ioKey: getTurnoutIoKey(address, closed),
+                        turnoutClosed: logicalClosed,
+                        ioKey: getTurnoutIoKey(address, logicalClosed),
                       });
+                      wsApi.getLayoutRuntimeSnapshot();
+                    }}
+                  />
+
+                  <Switch
+                    checked={selectedNode.data.turnoutClosedValue ?? true}
+                    label="Fizikai closed=true jelenti a logikai closed állást"
+                    description="Balos/jobbos váltóknál ez fordulhat. Ha a váltó closed-nak látszik, de a node nem ON, ezt kell átbillenteni."
+                    onChange={(event) => {
+                      onSelectedNodeDataChange({ turnoutClosedValue: event.currentTarget.checked });
                       wsApi.getLayoutRuntimeSnapshot();
                     }}
                   />
@@ -748,28 +778,37 @@ function SimpleAutomationLayout({
                     value={selectedNode.data.turnoutAddress ?? 0}
                     onChange={(value) => {
                       const address = toNumber(value);
-                      const closed = selectedNode.data.turnoutClosed ?? true;
+                      const logicalClosed = selectedNode.data.turnoutClosed ?? true;
                       onSelectedNodeDataChange({
                         turnoutAddress: address,
-                        ioKey: getTurnoutCommandIoKey(address, closed),
-                        outputCommand: closed ? "closed" : "thrown",
+                        ioKey: getTurnoutCommandIoKey(address, logicalClosed),
+                        outputCommand: getTurnoutStateLabel(logicalClosed),
                       });
                     }}
                   />
 
                   <Switch
                     checked={selectedNode.data.turnoutClosed ?? true}
-                    label="Closed állásba állítsa"
-                    description="Ha kikapcsolod, akkor thrown/kitérő állásba küld parancsot."
+                    label="Logikai closed állásba állítsa"
+                    description="Ha kikapcsolod, akkor logikai thrown/kitérő állásba küld parancsot."
                     onChange={(event) => {
-                      const closed = event.currentTarget.checked;
+                      const logicalClosed = event.currentTarget.checked;
                       const address = selectedNode.data.turnoutAddress ?? 0;
                       onSelectedNodeDataChange({
-                        turnoutClosed: closed,
-                        ioKey: getTurnoutCommandIoKey(address, closed),
-                        outputCommand: closed ? "closed" : "thrown",
+                        turnoutClosed: logicalClosed,
+                        ioKey: getTurnoutCommandIoKey(address, logicalClosed),
+                        outputCommand: getTurnoutStateLabel(logicalClosed),
                       });
                     }}
+                  />
+
+                  <Switch
+                    checked={selectedNode.data.turnoutClosedValue ?? true}
+                    label="Fizikai closed=true jelenti a logikai closed állást"
+                    description="Ezzel számolja ki a kimenet, hogy logikai closed/thrown parancsból milyen fizikai closed bitet küldjön."
+                    onChange={(event) =>
+                      onSelectedNodeDataChange({ turnoutClosedValue: event.currentTarget.checked })
+                    }
                   />
                 </Stack>
               )}
