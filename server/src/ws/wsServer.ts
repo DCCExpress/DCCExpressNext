@@ -43,14 +43,6 @@ import {
 } from "../services/scriptRuntimeStore.js";
 
 import {
-  automationRuntimeService,
-} from "../services/automationRuntimeService.js";
-
-import {
-  signalLogicRuntimeService,
-} from "../services/signalLogicRuntimeService.js";
-
-import {
   taskRuntimeStore,
 } from "../services/taskRuntimeStore.js";
 
@@ -81,7 +73,6 @@ import {
   initializeCommandCenter,
   registerCommandCenterConfigLoadedCallback,
 } from "./wsCommandCenterLifecycle.js";
-import { levelCrossingRuntimeStore } from "../services/levelCrossingRuntimeStore.js";
 
 function getByteLength(value: RawData): number {
   if (typeof value === "string") {
@@ -153,10 +144,7 @@ function canHandleWithoutCommandCenter(type: string): boolean {
     type === "locosCommand" ||
     type === "scriptDocumentCommand" ||
     type === "appSettingsCommand" ||
-    type === "signalLogicCommand" ||
     type === "blockAutomationCommand" ||
-    type === "levelCrossingCommand" ||
-    type === "automationCommand" ||
     type === "taskManagerCommand" ||
     type === "fastClockCommand" ||
     type === "fileCommand"
@@ -188,13 +176,6 @@ async function initializeWebSocketRuntimeStores(): Promise<void> {
   await initializeCommandCenter(conf);
 
   await taskRuntimeStore.initialize();
-
-  await signalLogicRuntimeService.restoreEnabledState();
-  await levelCrossingRuntimeStore.restoreEnabledState();
-
-  if ((await automationRuntimeService.getState()).modules.some(module => module.enabled)) {
-    await automationRuntimeService.start();
-  }
 
   await scriptRuntimeStore.initialize();
   await scriptRuntimeStore.autoStartIfEnabled();
