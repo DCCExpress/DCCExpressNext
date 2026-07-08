@@ -55,6 +55,8 @@ export type AutomationFlowEdgeDto = Record<string, unknown> & {
   source: string;
   target: string;
   type?: string | undefined;
+  sourceHandle?: string | undefined;
+  targetHandle?: string | undefined;
 };
 
 export type AutomationFlowDocumentDto = {
