@@ -3,9 +3,9 @@
 /*
  * Automation Flow editor layout fix.
  *
- * A tulajdonság panel tartalma könnyen magasabb lesz, mint a dialog.
- * Ilyenkor nem a teljes modal/dialog scrollozzon, hanem a jobb oldali panel kapjon
- * saját scrollbar-t.
+ * A bal oldali node paletta és a jobb oldali tulajdonság panel tartalma könnyen
+ * magasabb lesz, mint a dialog. Ilyenkor nem a teljes modal/dialog scrollozzon,
+ * hanem a két oldalsó panel kapjon saját scrollbar-t.
  */
 .mantine-Group-root:has(.react-flow) {
   min-height: 0 !important;
@@ -14,8 +14,49 @@
   overflow: hidden;
 }
 
+/* Bal oldali node paletta panel */
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:first-child {
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:first-child > .mantine-Stack-root {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:first-child .mantine-ScrollArea-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto !important;
+  max-height: 100%;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:first-child .mantine-ScrollArea-viewport {
+  height: 100% !important;
+}
+
+/* Középső React Flow canvas: ne tolja túl a dialogot kisebb ablaknál sem. */
+.mantine-Group-root:has(.react-flow) > .mantine-Paper-root {
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.mantine-Group-root:has(.react-flow) > .mantine-Paper-root > .mantine-Box-root {
+  min-height: 0 !important;
+  height: 100%;
+  max-height: 100%;
+}
+
+/* Jobb oldali tulajdonság panel */
 .mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child {
   min-height: 0;
+  height: 100%;
   max-height: 100%;
   overflow: hidden;
 }
@@ -28,6 +69,7 @@
   padding-right: 4px;
 }
 
+.mantine-Group-root:has(.react-flow) > .mantine-Card-root:first-child .mantine-ScrollArea-scrollbar,
 .mantine-Group-root:has(.react-flow) > .mantine-Card-root:last-child > .mantine-Stack-root::-webkit-scrollbar {
   width: 8px;
 }
