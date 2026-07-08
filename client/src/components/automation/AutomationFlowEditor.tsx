@@ -47,6 +47,13 @@ import type {
   AutomationFlowNodeData,
   AutomationFlowNodeKind,
 } from "../../../../common/src/automationFlow";
+import type {
+  SerializedLayoutDto,
+  SerializedLayoutElementDto,
+} from "../../../../common/src/layout/layoutDto";
+import {
+  getLayoutWs,
+} from "../../api/layoutWsApi";
 import {
   loadAutomationFlowWs,
   saveAutomationFlowWs,
@@ -233,6 +240,78 @@ function getPhysicalTurnoutClosedFromLogical(logicalClosed: boolean, turnoutClos
   return logicalClosed ? physicalClosedForLogicalClosed : !physicalClosedForLogicalClosed;
 }
 
+function readTurnoutMapping(element: SerializedLayoutElementDto, result: Map<number, boolean>): void {
+  if (typeof element.turnoutAddress === "number" && typeof element.turnoutClosedValue === "boolean") {
+    result.set(element.turnoutAddress, element.turnoutClosedValue);
+  }
+
+  if (typeof element.turnout1Address === "number" && typeof element.turnout1ClosedValue === "boolean") {
+    result.set(element.turnout1Address, element.turnout1ClosedValue);
+  }
+
+  if (typeof element.turnout2Address === "number" && typeof element.turnout2ClosedValue === "boolean") {
+    result.set(element.turnout2Address, element.turnout2ClosedValue);
+  }
+}
+
+function buildTurnoutClosedValueMap(layout: SerializedLayoutDto): Map<number, boolean> {
+  const result = new Map<number, boolean>();
+
+  for (const layer of layout.layers ?? []) {
+    for (const element of layer.elements ?? []) {
+      readTurnoutMapping(element, result);
+    }
+  }
+
+  return result;
+}
+
+function applyLayoutTurnoutMappings(
+  document: AutomationFlowDocumentDto,
+  turnoutClosedValueByAddress: Map<number, boolean>
+): AutomationFlowDocumentDto {
+  if (turnoutClosedValueByAddress.size === 0) {
+    return document;
+  }
+
+  return {
+    ...document,
+    nodes: document.nodes.map(node => {
+      if (node.data.kind !== "turnout" && node.data.kind !== "turnoutCommand") {
+        return node;
+      }
+
+      const address = node.data.turnoutAddress;
+      if (typeof address !== "number") {
+        return node;
+      }
+
+      const turnoutClosedValue = turnoutClosedValueByAddress.get(address);
+      if (turnoutClosedValue === undefined) {
+        return node;
+      }
+
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          turnoutClosedValue,
+        },
+      };
+    }),
+  };
+}
+
+async function loadLayoutTurnoutMappings(): Promise<Map<number, boolean>> {
+  try {
+    const layout = await getLayoutWs();
+    return buildTurnoutClosedValueMap(layout);
+  } catch (error) {
+    console.warn("[AutomationFlowEditor] Layout turnout mapping load failed:", error);
+    return new Map<number, boolean>();
+  }
+}
+
 export default function AutomationFlowEditor() {
   const [nodes, setNodes] = useState<AutomationNode[]>(INITIAL_NODES);
   const [edges, setEdges] = useState<AutomationEdge[]>(INITIAL_EDGES);
@@ -342,9 +421,13 @@ export default function AutomationFlowEditor() {
 
     try {
       const document = await loadAutomationFlowWs();
-      applyDocument(document);
+      const turnoutClosedValueByAddress = await loadLayoutTurnoutMappings();
+      const mappedDocument = applyLayoutTurnoutMappings(document, turnoutClosedValueByAddress);
+      applyDocument(mappedDocument);
       wsApi.getLayoutRuntimeSnapshot();
-      setStatusText(`Automatika betöltve: ${document.nodes.length} node, ${document.edges.length} él.`);
+      setStatusText(
+        `Automatika betöltve: ${mappedDocument.nodes.length} node, ${mappedDocument.edges.length} él, ${turnoutClosedValueByAddress.size} váltó mapping.`
+      );
     } catch (error) {
       setStatusText(`Betöltési hiba: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -404,9 +487,12 @@ export default function AutomationFlowEditor() {
     });
 
     const unsubscribeFlowChanged = wsClient.on("automationFlowChanged", document => {
-      applyDocument(document);
-      setStatusText("Automatika frissítve egy másik kliens mentése alapján.");
-      wsApi.getLayoutRuntimeSnapshot();
+      void (async () => {
+        const turnoutClosedValueByAddress = await loadLayoutTurnoutMappings();
+        applyDocument(applyLayoutTurnoutMappings(document, turnoutClosedValueByAddress));
+        setStatusText("Automatika frissítve egy másik kliens mentése alapján.");
+        wsApi.getLayoutRuntimeSnapshot();
+      })();
     });
 
     wsApi.getLayoutRuntimeSnapshot();
@@ -759,7 +845,7 @@ function SimpleAutomationLayout({
                   <Switch
                     checked={selectedNode.data.turnoutClosedValue ?? true}
                     label="Fizikai closed=true jelenti a logikai closed állást"
-                    description="Balos/jobbos váltóknál ez fordulhat. Ha a váltó closed-nak látszik, de a node nem ON, ezt kell átbillenteni."
+                    description="Balos/jobbos váltóknál ezt a pályarajz mappingje alapján betöltjük. Ha kézzel kell, itt fordítható."
                     onChange={(event) => {
                       onSelectedNodeDataChange({ turnoutClosedValue: event.currentTarget.checked });
                       wsApi.getLayoutRuntimeSnapshot();
@@ -805,7 +891,7 @@ function SimpleAutomationLayout({
                   <Switch
                     checked={selectedNode.data.turnoutClosedValue ?? true}
                     label="Fizikai closed=true jelenti a logikai closed állást"
-                    description="Ezzel számolja ki a kimenet, hogy logikai closed/thrown parancsból milyen fizikai closed bitet küldjön."
+                    description="Ezt is a pályarajz mappingje alapján betöltjük, és ebből számoljuk a küldendő fizikai bitet."
                     onChange={(event) =>
                       onSelectedNodeDataChange({ turnoutClosedValue: event.currentTarget.checked })
                     }
