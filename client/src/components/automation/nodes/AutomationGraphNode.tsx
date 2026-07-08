@@ -28,6 +28,21 @@ function getPhysicalClosedLabel(closedValue: boolean | undefined): string {
   return closedValue === false ? "physical false" : "physical true";
 }
 
+function getOutputActive(data: AutomationFlowNodeData): boolean {
+  return data.active === true;
+}
+
+function getSingleOutputBadge(data: AutomationFlowNodeData, label = "OUT") {
+  return [
+    {
+      id: "out",
+      label,
+      active: getOutputActive(data),
+      top: "50%",
+    },
+  ];
+}
+
 function BlockOccupiedNode({ data, selected }: AutomationTypedNodeProps) {
   return <AutomationNodeCard data={data} selected={selected} kind="blockOccupied" />;
 }
@@ -74,18 +89,43 @@ function ButtonNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function AndNode({ data, selected }: AutomationTypedNodeProps) {
-  return <AutomationNodeCard data={data} selected={selected} kind="and" />;
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="and"
+      outputBadges={getSingleOutputBadge(data)}
+    />
+  );
 }
 
 function OrNode({ data, selected }: AutomationTypedNodeProps) {
-  return <AutomationNodeCard data={data} selected={selected} kind="or" />;
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="or"
+      outputBadges={getSingleOutputBadge(data)}
+    />
+  );
 }
 
 function NotNode({ data, selected }: AutomationTypedNodeProps) {
-  return <AutomationNodeCard data={data} selected={selected} kind="not" />;
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="not"
+      outputBadges={getSingleOutputBadge(data)}
+    />
+  );
 }
 
 function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
+  const ifInputConnected = data.ifInputConnected === true;
+  const conditionActive = ifInputConnected && data.active === true;
+  const elseActive = ifInputConnected && data.active !== true;
+
   return (
     <AutomationNodeCard
       data={data}
@@ -95,6 +135,20 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
       sourceHandles={[
         { id: "then", top: "35%" },
         { id: "else", top: "65%" },
+      ]}
+      outputBadges={[
+        {
+          id: "then",
+          label: "THEN",
+          active: conditionActive,
+          top: "35%",
+        },
+        {
+          id: "else",
+          label: "ELSE",
+          active: elseActive,
+          top: "65%",
+        },
       ]}
       detail={(
         <Stack gap={2}>
@@ -119,6 +173,7 @@ function TimerNode({ data, selected }: AutomationTypedNodeProps) {
       data={data}
       selected={selected}
       kind="timer"
+      outputBadges={getSingleOutputBadge(data)}
       detail={(
         <Text size="xs" c="dimmed">
           késleltetés: <b>{data.delayMs ?? 0} ms</b>
@@ -129,11 +184,25 @@ function TimerNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function LatchNode({ data, selected }: AutomationTypedNodeProps) {
-  return <AutomationNodeCard data={data} selected={selected} kind="latch" />;
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="latch"
+      outputBadges={getSingleOutputBadge(data)}
+    />
+  );
 }
 
 function RouteLockNode({ data, selected }: AutomationTypedNodeProps) {
-  return <AutomationNodeCard data={data} selected={selected} kind="routeLock" />;
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="routeLock"
+      outputBadges={getSingleOutputBadge(data)}
+    />
+  );
 }
 
 function SignalNode({ data, selected }: AutomationTypedNodeProps) {
