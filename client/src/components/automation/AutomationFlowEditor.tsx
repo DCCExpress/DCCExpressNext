@@ -613,9 +613,11 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): A
             : emptySignal();
           break;
         }
-        case "not":
-          nextSignal = inputSignals.length > 0 ? signal(!inputSignals[0].value) : emptySignal();
+        case "not": {
+          const firstSignal = inputSignals[0];
+          nextSignal = firstSignal ? signal(!firstSignal.value) : emptySignal();
           break;
+        }
         default:
           nextSignal = emptySignal();
           break;
