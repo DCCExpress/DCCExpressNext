@@ -47,7 +47,12 @@ import type {
   AutomationFlowDocumentDto,
   AutomationFlowNodeData,
   AutomationFlowNodeKind,
+  AutomationFlowPageDto,
   AutomationSignalAspect,
+} from "../../../../common/src/automationFlow";
+import {
+  DEFAULT_AUTOMATION_FLOW_PAGE_ID,
+  createDefaultAutomationFlowPage,
 } from "../../../../common/src/automationFlow";
 import type {
   SerializedLayoutDto,
@@ -96,6 +101,8 @@ const SIGNAL_ASPECT_OPTIONS: Array<{ value: AutomationSignalAspect; label: strin
   { value: "white", label: "Fehér" },
 ];
 
+const DEFAULT_PAGE = createDefaultAutomationFlowPage();
+
 const INITIAL_NODES: AutomationNode[] = [
   {
     id: "block-a1-occupied",
@@ -104,6 +111,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "blockOccupied",
       label: "A1 szakasz foglalt",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       description: "Próba bemenet. Kapcsold be a jobb oldali panelen.",
       ioKey: "block:A1",
       active: false,
@@ -116,6 +124,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "sensor",
       label: "Szenzor #1",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       description: "Fizikai szenzor bemenet szimulációja.",
       ioKey: "sensor:1",
       sensorAddress: 1,
@@ -129,6 +138,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "turnout",
       label: "T1 closed",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       description: "Váltóállapot bemenet. Akkor igaz, ha T1 logikai closed állásban van.",
       ioKey: "turnout:1:closed",
       turnoutAddress: 1,
@@ -144,6 +154,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "button",
       label: "Bejárati út kérése",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       ioKey: "button:route-request",
       active: true,
     },
@@ -155,6 +166,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "not",
       label: "A1 szabad",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       description: "A foglaltság invertálása.",
     },
   },
@@ -165,6 +177,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "and",
       label: "S1 sárga feltétel",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       description: "Kézi kérés ÉS szabad szakasz ÉS aktív szenzor ÉS T1 logikai closed.",
     },
   },
@@ -175,6 +188,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "ifThenElse",
       label: "IF szenzor THEN engedély ELSE tiltás",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       description: "Egy IF bemenet. Igaz esetben a THEN, hamis esetben az ELSE kimenet aktív.",
     },
   },
@@ -185,6 +199,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "routeLock",
       label: "R1 útvonal zár",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       ioKey: "route:R1",
     },
   },
@@ -195,6 +210,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "signal",
       label: "Signal1 yellow",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       ioKey: "signal:1:yellow",
       signalAddress: 1,
       signalAspect: "yellow",
@@ -213,6 +229,7 @@ const INITIAL_NODES: AutomationNode[] = [
     data: {
       kind: "turnoutCommand",
       label: "T2 állítás closed",
+      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
       description: "Aktív feltételnél T2 logikai closed állásba kerül.",
       ioKey: "turnout-command:2:closed",
       turnoutAddress: 2,
@@ -242,6 +259,47 @@ function createEdge(source: string, target: string): AutomationEdge {
     type: "smoothstep",
     markerEnd: { type: MarkerType.ArrowClosed },
   };
+}
+
+function getNodePageId(node: AutomationNode): string {
+  return typeof node.data.pageId === "string" && node.data.pageId.trim().length > 0
+    ? node.data.pageId
+    : DEFAULT_AUTOMATION_FLOW_PAGE_ID;
+}
+
+function createPageId(): string {
+  return `page-${Date.now().toString(36)}`;
+}
+
+function normalizePages(pages: AutomationFlowPageDto[] | undefined): AutomationFlowPageDto[] {
+  if (!pages || pages.length === 0) {
+    return [DEFAULT_PAGE];
+  }
+
+  const seen = new Set<string>();
+  const result: AutomationFlowPageDto[] = [];
+
+  for (const page of pages) {
+    if (!page.id || seen.has(page.id)) {
+      continue;
+    }
+
+    seen.add(page.id);
+    result.push({
+      id: page.id,
+      name: page.name?.trim() || page.id,
+    });
+  }
+
+  return result.length > 0 ? result : [DEFAULT_PAGE];
+}
+
+function getValidActivePageId(pages: AutomationFlowPageDto[], preferredPageId: string | undefined): string {
+  if (preferredPageId && pages.some(page => page.id === preferredPageId)) {
+    return preferredPageId;
+  }
+
+  return pages[0]?.id ?? DEFAULT_AUTOMATION_FLOW_PAGE_ID;
 }
 
 function getTurnoutStateLabel(logicalClosed: boolean): string {
@@ -486,6 +544,8 @@ function getEdgeSignalValue(
 }
 
 export default function AutomationFlowEditor() {
+  const [pages, setPages] = useState<AutomationFlowPageDto[]>([DEFAULT_PAGE]);
+  const [activePageId, setActivePageId] = useState<string>(DEFAULT_AUTOMATION_FLOW_PAGE_ID);
   const [nodes, setNodes] = useState<AutomationNode[]>(INITIAL_NODES);
   const [edges, setEdges] = useState<AutomationEdge[]>(INITIAL_EDGES);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(INITIAL_NODES[0]?.id ?? null);
@@ -499,21 +559,36 @@ export default function AutomationFlowEditor() {
   const incomingEdgesByTarget = useMemo(() => createIncomingEdgeMap(edges), [edges]);
   const simulatedState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
 
+  const visibleNodes = useMemo(
+    () => nodes.filter(node => getNodePageId(node) === activePageId),
+    [activePageId, nodes]
+  );
+
+  const visibleNodeIds = useMemo(
+    () => new Set(visibleNodes.map(node => node.id)),
+    [visibleNodes]
+  );
+
+  const visibleEdges = useMemo(
+    () => edges.filter(edge => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
+    [edges, visibleNodeIds]
+  );
+
   const simulatedNodes = useMemo(
     () =>
-      nodes.map((node) => ({
+      visibleNodes.map((node) => ({
         ...node,
         data: {
           ...node.data,
           active: simulatedState[node.id] === true,
         },
       })),
-    [nodes, simulatedState]
+    [visibleNodes, simulatedState]
   );
 
   const simulatedEdges = useMemo(
     () =>
-      edges.map((edge) => {
+      visibleEdges.map((edge) => {
         const sourceNode = nodeById.get(edge.source);
         const sourceHasInput = (incomingEdgesByTarget.get(edge.source)?.length ?? 0) > 0;
         const active = getEdgeSignalValue(edge, sourceNode, simulatedState, sourceHasInput);
@@ -528,20 +603,30 @@ export default function AutomationFlowEditor() {
           },
         };
       }),
-    [edges, incomingEdgesByTarget, nodeById, simulatedState]
+    [incomingEdgesByTarget, nodeById, simulatedState, visibleEdges]
   );
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
-  const snapshot = useMemo(() => createSnapshot(nodes, edges), [nodes, edges]);
+  const selectedNodeOnActivePage = selectedNode && getNodePageId(selectedNode) === activePageId
+    ? selectedNode
+    : null;
+  const snapshot = useMemo(() => createSnapshot(pages, activePageId, nodes, edges), [activePageId, edges, nodes, pages]);
   const activeOutputs = useMemo(
     () =>
       nodes.filter(
         (node) =>
+          getNodePageId(node) === activePageId &&
           simulatedState[node.id] === true &&
           (node.data.kind === "signal" || node.data.kind === "turnoutCommand" || node.data.kind === "output")
       ),
-    [nodes, simulatedState]
+    [activePageId, nodes, simulatedState]
   );
+
+  useEffect(() => {
+    if (selectedNode && !selectedNodeOnActivePage) {
+      setSelectedNodeId(null);
+    }
+  }, [selectedNode, selectedNodeOnActivePage]);
 
   useEffect(() => {
     const nextActiveTurnoutCommands = new Set<string>();
@@ -618,15 +703,32 @@ export default function AutomationFlowEditor() {
 
   const applyDocument = useCallback((document: AutomationFlowDocumentDto): void => {
     if (document.nodes.length === 0) {
+      setPages([DEFAULT_PAGE]);
+      setActivePageId(DEFAULT_AUTOMATION_FLOW_PAGE_ID);
       setNodes(INITIAL_NODES);
       setEdges(INITIAL_EDGES);
       setSelectedNodeId(INITIAL_NODES[0]?.id ?? null);
       return;
     }
 
-    setNodes(document.nodes as AutomationNode[]);
+    const normalizedPages = normalizePages(document.pages);
+    const normalizedActivePageId = getValidActivePageId(normalizedPages, document.activePageId);
+    const validPageIds = new Set(normalizedPages.map(page => page.id));
+    const normalizedNodes = (document.nodes as AutomationNode[]).map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        pageId: typeof node.data.pageId === "string" && validPageIds.has(node.data.pageId)
+          ? node.data.pageId
+          : normalizedActivePageId,
+      },
+    }));
+
+    setPages(normalizedPages);
+    setActivePageId(normalizedActivePageId);
+    setNodes(normalizedNodes);
     setEdges(document.edges as AutomationEdge[]);
-    setSelectedNodeId(document.nodes[0]?.id ?? null);
+    setSelectedNodeId(normalizedNodes.find(node => getNodePageId(node) === normalizedActivePageId)?.id ?? null);
   }, []);
 
   const loadFlow = useCallback(async (): Promise<void> => {
@@ -640,7 +742,7 @@ export default function AutomationFlowEditor() {
       applyDocument(mappedDocument);
       wsApi.getLayoutRuntimeSnapshot();
       setStatusText(
-        `Automatika betöltve: ${mappedDocument.nodes.length} node, ${mappedDocument.edges.length} él, ${mappings.turnoutClosedValueByAddress.size} váltó mapping, ${mappings.signalByAddress.size} jelző mapping.`
+        `Automatika betöltve: ${mappedDocument.nodes.length} node, ${mappedDocument.edges.length} él, ${normalizePages(mappedDocument.pages).length} lap, ${mappings.turnoutClosedValueByAddress.size} váltó mapping, ${mappings.signalByAddress.size} jelző mapping.`
       );
     } catch (error) {
       setStatusText(`Betöltési hiba: ${error instanceof Error ? error.message : String(error)}`);
@@ -731,6 +833,10 @@ export default function AutomationFlowEditor() {
       return;
     }
 
+    if (!visibleNodeIds.has(connection.source) || !visibleNodeIds.has(connection.target)) {
+      return;
+    }
+
     setEdges((currentEdges) =>
       addEdge(
         {
@@ -748,11 +854,11 @@ export default function AutomationFlowEditor() {
         currentEdges
       ) as AutomationEdge[]
     );
-  }, []);
+  }, [visibleNodeIds]);
 
   function addNode(kind: AutomationFlowNodeKind) {
     const definition = NODE_DEFINITIONS[kind];
-    const index = nodes.length + 1;
+    const index = visibleNodes.length + 1;
 
     setNodes((currentNodes) => [
       ...currentNodes,
@@ -763,11 +869,53 @@ export default function AutomationFlowEditor() {
         data: {
           kind,
           label: definition.title,
+          pageId: activePageId,
           description: definition.description,
           ...definition.defaultData,
         },
       },
     ]);
+  }
+
+  function addPage() {
+    const page: AutomationFlowPageDto = {
+      id: createPageId(),
+      name: `Lap ${pages.length + 1}`,
+    };
+
+    setPages(currentPages => [...currentPages, page]);
+    setActivePageId(page.id);
+    setSelectedNodeId(null);
+    setStatusText(`Új automatika lap létrehozva: ${page.name}.`);
+  }
+
+  function deleteActivePage() {
+    if (pages.length <= 1) {
+      setStatusText("Az utolsó automatika lap nem törölhető.");
+      return;
+    }
+
+    const pageToDelete = pages.find(page => page.id === activePageId);
+    const nextPages = pages.filter(page => page.id !== activePageId);
+    const nextActivePageId = nextPages[0]?.id ?? DEFAULT_AUTOMATION_FLOW_PAGE_ID;
+    const removedNodeIds = new Set(nodes
+      .filter(node => getNodePageId(node) === activePageId)
+      .map(node => node.id));
+
+    setPages(nextPages);
+    setActivePageId(nextActivePageId);
+    setNodes(currentNodes => currentNodes.filter(node => getNodePageId(node) !== activePageId));
+    setEdges(currentEdges => currentEdges.filter(edge => !removedNodeIds.has(edge.source) && !removedNodeIds.has(edge.target)));
+    setSelectedNodeId(null);
+    setStatusText(`Automatika lap törölve: ${pageToDelete?.name ?? activePageId}.`);
+  }
+
+  function updateActivePageName(name: string) {
+    setPages(currentPages => currentPages.map(page => (
+      page.id === activePageId
+        ? { ...page, name: name.trim().length > 0 ? name : page.name }
+        : page
+    )));
   }
 
   function updateSelectedNodeData(patch: Partial<AutomationFlowNodeData>) {
@@ -803,6 +951,8 @@ export default function AutomationFlowEditor() {
   }
 
   function resetFlow() {
+    setPages([DEFAULT_PAGE]);
+    setActivePageId(DEFAULT_AUTOMATION_FLOW_PAGE_ID);
     setNodes(INITIAL_NODES);
     setEdges(INITIAL_EDGES);
     setSelectedNodeId(INITIAL_NODES[0]?.id ?? null);
@@ -816,7 +966,7 @@ export default function AutomationFlowEditor() {
     try {
       const document = await saveAutomationFlowWs(snapshot);
       applyDocument(document);
-      setStatusText(`Automatika mentve: ${document.nodes.length} node, ${document.edges.length} él.`);
+      setStatusText(`Automatika mentve: ${document.nodes.length} node, ${document.edges.length} él, ${normalizePages(document.pages).length} lap.`);
     } catch (error) {
       setStatusText(`Mentési hiba: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -827,19 +977,33 @@ export default function AutomationFlowEditor() {
   return (
     <SimpleAutomationLayout
       activeOutputs={activeOutputs}
+      activePageId={activePageId}
       edges={edges}
       loading={loading}
       nodes={nodes}
       onAddNode={addNode}
+      onAddPage={addPage}
+      onDeleteActivePage={deleteActivePage}
       onDeleteSelectedNode={deleteSelectedNode}
       onLoadFlow={() => void loadFlow()}
+      onPageChange={(pageId) => {
+        if (!pageId || !pages.some(page => page.id === pageId)) {
+          return;
+        }
+
+        setActivePageId(pageId);
+        setSelectedNodeId(null);
+      }}
       onResetFlow={resetFlow}
       onSaveFlow={() => void saveFlow()}
       onSelectedNodeDataChange={updateSelectedNodeData}
+      onUpdateActivePageName={updateActivePageName}
+      pages={pages}
       saving={saving}
-      selectedNode={selectedNode}
+      selectedNode={selectedNodeOnActivePage}
       snapshot={snapshot}
       statusText={statusText}
+      visibleNodeCount={visibleNodes.length}
     >
       <ReactFlow
         nodes={simulatedNodes}
@@ -865,40 +1029,55 @@ export default function AutomationFlowEditor() {
 
 type SimpleAutomationLayoutProps = {
   activeOutputs: AutomationNode[];
+  activePageId: string;
   children: ReactNode;
   edges: AutomationEdge[];
   loading: boolean;
   nodes: AutomationNode[];
   onAddNode: (kind: AutomationFlowNodeKind) => void;
+  onAddPage: () => void;
+  onDeleteActivePage: () => void;
   onDeleteSelectedNode: () => void;
   onLoadFlow: () => void;
+  onPageChange: (pageId: string | null) => void;
   onResetFlow: () => void;
   onSaveFlow: () => void;
   onSelectedNodeDataChange: (patch: Partial<AutomationFlowNodeData>) => void;
+  onUpdateActivePageName: (name: string) => void;
+  pages: AutomationFlowPageDto[];
   saving: boolean;
   selectedNode: AutomationNode | null;
   snapshot: AutomationFlowDocumentDto;
   statusText: string | null;
+  visibleNodeCount: number;
 };
 
 function SimpleAutomationLayout({
   activeOutputs,
+  activePageId,
   children,
   edges,
   loading,
   nodes,
   onAddNode,
+  onAddPage,
+  onDeleteActivePage,
   onDeleteSelectedNode,
   onLoadFlow,
+  onPageChange,
   onResetFlow,
   onSaveFlow,
   onSelectedNodeDataChange,
+  onUpdateActivePageName,
+  pages,
   saving,
   selectedNode,
   snapshot,
   statusText,
+  visibleNodeCount,
 }: SimpleAutomationLayoutProps) {
   const statusIsError = statusText?.toLocaleLowerCase().includes("hiba") === true;
+  const activePage = pages.find(page => page.id === activePageId) ?? pages[0];
 
   return (
     <Group align="stretch" gap="md" wrap="nowrap" style={{ minHeight: "calc(100vh - 150px)" }}>
@@ -906,12 +1085,42 @@ function SimpleAutomationLayout({
         <Stack gap="sm">
           <Group justify="space-between">
             <Title order={5}>Node paletta</Title>
-            <Badge variant="light">{nodes.length} node</Badge>
+            <Badge variant="light">{visibleNodeCount}/{nodes.length} node</Badge>
           </Group>
 
           <Divider />
 
-          <ScrollArea h="calc(100vh - 260px)">
+          <Stack gap="xs">
+            <Select
+              label="Automatika lap"
+              data={pages.map(page => ({ value: page.id, label: page.name }))}
+              value={activePageId}
+              onChange={onPageChange}
+              searchable
+              allowDeselect={false}
+            />
+
+            {activePage && (
+              <TextInput
+                label="Lap neve"
+                value={activePage.name}
+                onChange={(event) => onUpdateActivePageName(event.currentTarget.value)}
+              />
+            )}
+
+            <Group grow gap="xs">
+              <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={onAddPage}>
+                Új lap
+              </Button>
+              <Button size="xs" variant="light" color="red" leftSection={<IconTrash size={14} />} onClick={onDeleteActivePage} disabled={pages.length <= 1}>
+                Törlés
+              </Button>
+            </Group>
+          </Stack>
+
+          <Divider />
+
+          <ScrollArea h="calc(100vh - 390px)">
             <Stack gap="md" pr="xs">
               {NODE_GROUPS.map((group) => (
                 <Stack key={group} gap="xs">
@@ -1078,7 +1287,7 @@ function SimpleAutomationLayout({
                 <Stack gap="xs">
                   <NumberInput
                     label="Jelző cím"
-                    description="A tracksiganl2 layout elem address mezője. Betöltéskor ebből jön az addressLength és a bitminta."
+                    description="A tracksignal2 layout elem address mezője. Betöltéskor ebből jön az addressLength és a bitminta."
                     min={0}
                     step={1}
                     value={selectedNode.data.signalAddress ?? 0}
@@ -1221,7 +1430,7 @@ function SimpleAutomationLayout({
           <Stack gap="xs">
             <Group justify="space-between">
               <Text fw={800} size="sm">
-                Szimulált aktív kimenetek
+                Szimulált aktív kimenetek ezen a lapon
               </Text>
               <Badge color={activeOutputs.length > 0 ? "green" : "gray"} variant="light">
                 {activeOutputs.length}
@@ -1273,15 +1482,25 @@ function SimpleAutomationLayout({
   );
 }
 
-function createSnapshot(nodes: AutomationNode[], edges: AutomationEdge[]): AutomationFlowDocumentDto {
+function createSnapshot(
+  pages: AutomationFlowPageDto[],
+  activePageId: string,
+  nodes: AutomationNode[],
+  edges: AutomationEdge[]
+): AutomationFlowDocumentDto {
   return {
     version: 1,
     name: "Vasútmodell automatika alap",
+    pages: normalizePages(pages),
+    activePageId,
     nodes: nodes.map(node => ({
       id: node.id,
       type: "automationNode",
       position: node.position,
-      data: node.data,
+      data: {
+        ...node.data,
+        pageId: getNodePageId(node),
+      },
     })),
     edges: edges.map(edge => ({
       id: edge.id,
