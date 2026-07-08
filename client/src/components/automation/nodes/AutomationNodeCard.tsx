@@ -14,6 +14,7 @@ import {
   Handle,
   Position,
 } from "@xyflow/react";
+import { useTranslation } from "react-i18next";
 
 import type {
   AutomationFlowNodeData,
@@ -74,10 +75,17 @@ function renderHandles(
   ));
 }
 
-function renderOutputBadges(badges: AutomationNodeOutputBadge[]) {
+function renderOutputBadges(
+  badges: AutomationNodeOutputBadge[],
+  t: (key: string) => string
+) {
   return badges.map((badge, index) => {
     const valid = badge.valid ?? true;
-    const valueText = valid ? (badge.active ? "TRUE" : "FALSE") : "NO DATA";
+    const valueText = valid
+      ? badge.active
+        ? t("automation.badge.true")
+        : t("automation.badge.false")
+      : t("automation.badge.noData");
     const label = badge.label?.trim();
     const color = valid ? (badge.active ? "green" : "blue") : "gray";
     const variant = valid && badge.active ? "filled" : "light";
@@ -116,6 +124,7 @@ export function AutomationNodeCard({
   sourceHandles,
   outputBadges,
 }: AutomationNodeCardProps) {
+  const { t } = useTranslation();
   const definition = NODE_DEFINITIONS[kind];
   const active = data.active === true;
   const outputValid = data.outputValid === true;
@@ -177,14 +186,14 @@ export function AutomationNodeCard({
                 {data.label}
               </Text>
               <Text size="xs" c="dimmed" lh={1.15}>
-                {definition.title}
+                {t(`automation.nodes.${kind}.title`, { defaultValue: definition.title })}
               </Text>
             </Box>
           </Group>
 
           {active && resolvedOutputBadges.length === 0 && (
             <Badge color="green" variant="filled" size="xs">
-              ON
+              {t("automation.badge.on")}
             </Badge>
           )}
         </Group>
@@ -198,7 +207,7 @@ export function AutomationNodeCard({
         {detail}
       </Stack>
 
-      {renderOutputBadges(resolvedOutputBadges)}
+      {renderOutputBadges(resolvedOutputBadges, t)}
       {renderHandles("source", Position.Right, resolvedSourceHandles)}
     </Paper>
   );
