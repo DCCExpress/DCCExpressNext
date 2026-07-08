@@ -116,6 +116,8 @@ function normalizeEdge(input: unknown): AutomationFlowEdgeDto | null {
     source,
     target,
     ...(typeof input.type === "string" ? { type: input.type } : {}),
+    ...(typeof input.sourceHandle === "string" ? { sourceHandle: input.sourceHandle } : {}),
+    ...(typeof input.targetHandle === "string" ? { targetHandle: input.targetHandle } : {}),
   };
 }
 
