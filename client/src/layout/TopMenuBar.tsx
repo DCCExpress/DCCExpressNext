@@ -30,8 +30,6 @@ type TopMenuBarProps = {
   onGoHome: () => void;
   onOpenLocos: () => void;
   onOpenBlocks: () => void;
-  onOpenSignalLogic: () => void;
-  onOpenLevelCrossingLogic: () => void;
   locoPanelCollapsed: boolean;
   onToggleLocoPanel: () => void;
   propertyPanelCollapsed: boolean;
@@ -56,8 +54,6 @@ export default function TopMenuBar({
   onGoHome,
   onOpenLocos,
   onOpenBlocks,
-  onOpenSignalLogic,
-  onOpenLevelCrossingLogic,
   locoPanelCollapsed,
   onToggleLocoPanel,
   propertyPanelCollapsed,
@@ -90,8 +86,6 @@ export default function TopMenuBar({
             onGoHome={onGoHome}
             onOpenLocos={onOpenLocos}
             onOpenBlocks={onOpenBlocks}
-            onOpenSignalLogic={onOpenSignalLogic}
-            onOpenLevelCrossingLogic={onOpenLevelCrossingLogic}
             onOpenAutomationFlow={() => setAutomationFlowOpened(true)}
             onOpenDiagnostics={() => setDiagnosticsOpened(true)}
             onOpenIntegrityCheck={() => setIntegrityCheckOpened(true)}
