@@ -19,6 +19,14 @@ type AutomationNode = Node<AutomationFlowNodeData, "automationNode">;
 
 type AutomationTypedNodeProps = NodeProps<AutomationNode>;
 
+function getLogicalTurnoutLabel(closed: boolean | undefined): string {
+  return closed === false ? "thrown" : "closed";
+}
+
+function getPhysicalClosedLabel(closedValue: boolean | undefined): string {
+  return closedValue === false ? "physical false" : "physical true";
+}
+
 function BlockOccupiedNode({ data, selected }: AutomationTypedNodeProps) {
   return <AutomationNodeCard data={data} selected={selected} kind="blockOccupied" />;
 }
@@ -41,9 +49,8 @@ function SensorNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
-  const expectedState = data.turnoutClosed === true
-    ? "closed"
-    : "thrown";
+  const expectedState = getLogicalTurnoutLabel(data.turnoutClosed);
+  const closedValueLabel = getPhysicalClosedLabel(data.turnoutClosedValue);
 
   return (
     <AutomationNodeCard
@@ -53,7 +60,7 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
       detail={typeof data.turnoutAddress === "number"
         ? (
             <Text size="xs" c="dimmed">
-              T{data.turnoutAddress}: <b>{expectedState}</b>
+              T{data.turnoutAddress}: <b>{expectedState}</b> · closed = {closedValueLabel}
             </Text>
           )
         : null}
@@ -133,9 +140,8 @@ function SignalNode({ data, selected }: AutomationTypedNodeProps) {
 }
 
 function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
-  const targetState = data.turnoutClosed === true
-    ? "closed"
-    : "thrown";
+  const targetState = getLogicalTurnoutLabel(data.turnoutClosed);
+  const closedValueLabel = getPhysicalClosedLabel(data.turnoutClosedValue);
 
   return (
     <AutomationNodeCard
@@ -145,7 +151,7 @@ function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
       detail={typeof data.turnoutAddress === "number"
         ? (
             <Text size="xs" c="dimmed">
-              állítás: <b>T{data.turnoutAddress} {targetState}</b>
+              állítás: <b>T{data.turnoutAddress} {targetState}</b> · closed = {closedValueLabel}
             </Text>
           )
         : null}
