@@ -1,4 +1,5 @@
 import {
+  Stack,
   Text,
 } from "@mantine/core";
 import type {
@@ -90,10 +91,24 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
       data={data}
       selected={selected}
       kind="ifThenElse"
+      targetHandles={[
+        { id: "if", top: "24%" },
+        { id: "then", top: "50%" },
+        { id: "else", top: "76%" },
+      ]}
+      sourceHandles={[{ id: "out", top: "50%" }]}
       detail={(
-        <Text size="xs" c="dimmed">
-          1: IF · 2: THEN · 3: ELSE
-        </Text>
+        <Stack gap={2}>
+          <Text size="xs" c="dimmed">
+            <b>IF</b> feltétel
+          </Text>
+          <Text size="xs" c="dimmed">
+            <b>THEN</b> ág, ha IF igaz
+          </Text>
+          <Text size="xs" c="dimmed">
+            <b>ELSE</b> ág, ha IF hamis
+          </Text>
+        </Stack>
       )}
     />
   );
