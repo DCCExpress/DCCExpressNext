@@ -3,17 +3,15 @@
 /*
  * Automation Flow editor layout fix.
  *
- * A bal oldali node paletta és a jobb oldali tulajdonság panel tartalma könnyen
- * magasabb lesz, mint a dialog. Ilyenkor nem a teljes modal/dialog scrollozzon,
- * hanem a két oldalsó panel kapjon saját scrollbar-t.
- *
- * Fontos: az editor alapmagassága szándékosan NEM majdnem teljes viewport.
- * Dialogban a 100vh-150px túl magas volt, ezért már alapból kilógott.
+ * A Modal body már flex layoutban adja a rendelkezésre álló helyet.
+ * Az editor ne viewportból számoljon magasságot, hanem töltse ki a szülő Boxot.
+ * Így a canvas és a két oldalsó panel dinamikusan nő/zsugorodik a dialoggal együtt,
+ * miközben a bal/jobb panel saját scrollbar-t kap.
  */
 .mantine-Group-root:has(.react-flow) {
   min-height: 0 !important;
-  height: min(620px, calc(100vh - 260px));
-  max-height: min(620px, calc(100vh - 260px));
+  height: 100% !important;
+  max-height: 100% !important;
   overflow: hidden;
 }
 
@@ -42,7 +40,7 @@
   height: 100% !important;
 }
 
-/* Középső React Flow canvas: ne tolja túl a dialogot kisebb ablaknál sem. */
+/* Középső React Flow canvas: dinamikusan töltse ki a rendelkezésre álló magasságot. */
 .mantine-Group-root:has(.react-flow) > .mantine-Paper-root {
   min-height: 0;
   height: 100%;
