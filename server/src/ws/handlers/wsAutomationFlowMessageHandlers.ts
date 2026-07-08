@@ -1,6 +1,9 @@
 import type {
   AutomationFlowResponsePayload,
 } from "../../../../common/src/automationFlow.js";
+import {
+  createEmptyAutomationFlowDocument,
+} from "../../../../common/src/automationFlow.js";
 
 import {
   automationFlowStore,
@@ -51,12 +54,7 @@ export const handleAutomationFlowMessage: WsMessageHandler = async context => {
 
       case "save": {
         const inputDocument =
-          context.msg.data.document ?? {
-            version: 1 as const,
-            name: "Vasútmodell automatika",
-            nodes: [],
-            edges: [],
-          };
+          context.msg.data.document ?? createEmptyAutomationFlowDocument();
 
         const document = await automationFlowStore.saveDocument(inputDocument);
 
