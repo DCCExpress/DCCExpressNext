@@ -32,12 +32,17 @@ function getOutputActive(data: AutomationFlowNodeData): boolean {
   return data.active === true;
 }
 
+function getOutputValid(data: AutomationFlowNodeData): boolean {
+  return data.outputValid === true;
+}
+
 function getSingleOutputBadge(data: AutomationFlowNodeData, label?: string) {
   return [
     {
       id: "out",
       ...(label !== undefined ? { label } : {}),
       active: getOutputActive(data),
+      valid: getOutputValid(data),
       top: "50%",
     },
   ];
@@ -123,6 +128,7 @@ function NotNode({ data, selected }: AutomationTypedNodeProps) {
 
 function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
   const conditionActive = data.active === true;
+  const conditionValid = data.outputValid === true;
 
   return (
     <AutomationNodeCard
@@ -139,12 +145,14 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
           id: "then",
           label: "THEN",
           active: conditionActive,
+          valid: conditionValid && conditionActive,
           top: "35%",
         },
         {
           id: "else",
           label: "ELSE",
-          active: !conditionActive,
+          active: conditionValid && !conditionActive,
+          valid: conditionValid && !conditionActive,
           top: "65%",
         },
       ]}
