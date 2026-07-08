@@ -1,5 +1,7 @@
 // common/src/automationFlow.ts
 
+export const DEFAULT_AUTOMATION_FLOW_PAGE_ID = "main";
+
 export type AutomationFlowNodeKind =
   | "blockOccupied"
   | "sensor"
@@ -22,9 +24,15 @@ export type AutomationSignalAspect =
   | "green"
   | "white";
 
+export type AutomationFlowPageDto = {
+  id: string;
+  name: string;
+};
+
 export type AutomationFlowNodeData = Record<string, unknown> & {
   kind: AutomationFlowNodeKind;
   label: string;
+  pageId?: string;
   description?: string;
   ioKey?: string;
   sensorAddress?: number;
@@ -75,6 +83,8 @@ export type AutomationFlowEdgeDto = Record<string, unknown> & {
 export type AutomationFlowDocumentDto = {
   version: 1;
   name: string;
+  pages: AutomationFlowPageDto[];
+  activePageId?: string;
   nodes: AutomationFlowNodeDto[];
   edges: AutomationFlowEdgeDto[];
   updatedAt?: string;
@@ -99,9 +109,16 @@ export type AutomationFlowResponsePayload = {
   created?: boolean;
 };
 
+export const createDefaultAutomationFlowPage = (): AutomationFlowPageDto => ({
+  id: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
+  name: "Fő lap",
+});
+
 export const createEmptyAutomationFlowDocument = (): AutomationFlowDocumentDto => ({
   version: 1,
   name: "Vasútmodell automatika",
+  pages: [createDefaultAutomationFlowPage()],
+  activePageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
   nodes: [],
   edges: [],
 });
