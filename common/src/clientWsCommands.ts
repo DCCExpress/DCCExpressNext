@@ -34,6 +34,7 @@ import type {
 
 import type {
   AutomationFlowCommandPayload,
+  AutomationFlowRuntimeCommandPayload,
 } from "./automationFlow.js";
 
 export type EmptyClientWsCommandPayload = {};
@@ -261,6 +262,7 @@ export type ClientWsPayloadMap = {
   appSettingsCommand: AppSettingsCommandPayload;
   blockAutomationCommand: BlockAutomationCommandPayload;
   automationFlowCommand: AutomationFlowCommandPayload;
+  automationFlowRuntimeCommand: AutomationFlowRuntimeCommandPayload;
   taskManagerCommand: TaskManagerCommandPayload;
   fastClockCommand: FastClockCommandPayload;
   fileCommand: FileCommandPayload;
