@@ -80,6 +80,7 @@ import {
 
 type AutomationNode = Node<AutomationFlowNodeData, "automationNode">;
 type AutomationEdge = Edge;
+type SignalInputAspect = Exclude<AutomationSignalAspect, "red">;
 
 type SignalMapping = {
   addressLength: number;
@@ -97,17 +98,12 @@ type LayoutAutomationMappings = {
 type AutomationSignalState = {
   valid: boolean;
   value: boolean;
+  signalAspect?: AutomationSignalAspect;
 };
 
 type AutomationEvaluationState = Record<string, AutomationSignalState>;
 
-const SIGNAL_ASPECT_OPTIONS: Array<{ value: AutomationSignalAspect; labelKey: string }> = [
-  { value: "red", labelKey: "automation.aspects.red" },
-  { value: "yellow", labelKey: "automation.aspects.yellow" },
-  { value: "green", labelKey: "automation.aspects.green" },
-  { value: "white", labelKey: "automation.aspects.white" },
-];
-
+const SIGNAL_INPUT_ASPECTS: SignalInputAspect[] = ["green", "yellow", "white"];
 const DEFAULT_PAGE = createDefaultAutomationFlowPage();
 
 const INITIAL_NODES: AutomationNode[] = [
@@ -189,17 +185,6 @@ const INITIAL_NODES: AutomationNode[] = [
     },
   },
   {
-    id: "route-if-then-else",
-    type: "automationNode",
-    position: { x: 860, y: 520 },
-    data: {
-      kind: "ifThenElse",
-      label: "IF szenzor THEN engedély ELSE tiltás",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      description: "Egy IF bemenet. Igaz esetben a THEN, hamis esetben az ELSE kimenet aktív.",
-    },
-  },
-  {
     id: "route-lock-r1",
     type: "automationNode",
     position: { x: 930, y: 300 },
@@ -211,22 +196,22 @@ const INITIAL_NODES: AutomationNode[] = [
     },
   },
   {
-    id: "signal-s1-yellow",
+    id: "signal-s1",
     type: "automationNode",
     position: { x: 1230, y: 220 },
     data: {
       kind: "signal",
-      label: "Signal1 yellow",
+      label: "Signal1",
       pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      ioKey: "signal:1:yellow",
+      ioKey: "signal:1:auto",
       signalAddress: 1,
-      signalAspect: "yellow",
+      signalAspect: "red",
       signalAddressLength: 2,
       signalValueRed: 0,
       signalValueYellow: 1,
       signalValueGreen: 2,
       signalValueWhite: 3,
-      outputCommand: "yellow",
+      outputCommand: "red",
     },
   },
   {
@@ -254,15 +239,16 @@ const INITIAL_EDGES: AutomationEdge[] = [
   createEdge("turnout-t1-closed", "route-and"),
   createEdge("manual-route-request", "route-and"),
   createEdge("route-and", "route-lock-r1"),
-  createEdge("route-lock-r1", "signal-s1-yellow"),
+  createEdge("route-lock-r1", "signal-s1", "yellow"),
   createEdge("route-lock-r1", "turnout-t2-closed-command"),
 ];
 
-function createEdge(source: string, target: string): AutomationEdge {
+function createEdge(source: string, target: string, targetHandle?: string): AutomationEdge {
   return {
-    id: `${source}-${target}`,
+    id: [source, targetHandle ?? "in", target].join("-"),
     source,
     target,
+    ...(targetHandle ? { targetHandle } : {}),
     type: "smoothstep",
     markerEnd: { type: MarkerType.ArrowClosed },
   };
@@ -295,8 +281,8 @@ function emptySignal(): AutomationSignalState {
   return { valid: false, value: false };
 }
 
-function signal(value: boolean): AutomationSignalState {
-  return { valid: true, value };
+function signal(value: boolean, signalAspect?: AutomationSignalAspect): AutomationSignalState {
+  return { valid: true, value, ...(signalAspect ? { signalAspect } : {}) };
 }
 
 function getNodeSignal(evaluation: AutomationEvaluationState, nodeId: string): AutomationSignalState {
@@ -304,7 +290,7 @@ function getNodeSignal(evaluation: AutomationEvaluationState, nodeId: string): A
 }
 
 function signalsEqual(left: AutomationSignalState, right: AutomationSignalState): boolean {
-  return left.valid === right.valid && left.value === right.value;
+  return left.valid === right.valid && left.value === right.value && left.signalAspect === right.signalAspect;
 }
 
 function getNodePageId(node: AutomationNode): string {
@@ -364,12 +350,8 @@ function getTurnoutCommandLabel(address: number, logicalClosed: boolean): string
   return `T${address} ${getTurnoutStateLabel(logicalClosed)}`;
 }
 
-function getSignalIoKey(address: number, aspect: AutomationSignalAspect): string {
-  return `signal:${address}:${aspect}`;
-}
-
-function isSignalAspect(value: string | null): value is AutomationSignalAspect {
-  return value === "red" || value === "yellow" || value === "green" || value === "white";
+function getSignalIoKey(address: number): string {
+  return `signal:${address}:auto`;
 }
 
 function getLogicalTurnoutClosedFromPhysical(physicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
@@ -381,17 +363,17 @@ function getPhysicalTurnoutClosedFromLogical(logicalClosed: boolean, turnoutClos
   return logicalClosed ? physicalClosedForLogicalClosed : !physicalClosedForLogicalClosed;
 }
 
-function getSignalAspectBits(data: AutomationFlowNodeData): number {
-  switch (data.signalAspect ?? "yellow") {
-    case "red":
-      return data.signalValueRed ?? 0;
+function getSignalAspectBits(data: AutomationFlowNodeData, aspect: AutomationSignalAspect = "red"): number {
+  switch (aspect) {
     case "green":
       return data.signalValueGreen ?? 0;
     case "white":
       return data.signalValueWhite ?? 0;
     case "yellow":
-    default:
       return data.signalValueYellow ?? 0;
+    case "red":
+    default:
+      return data.signalValueRed ?? 0;
   }
 }
 
@@ -463,11 +445,10 @@ function applyLayoutTurnoutMappings(
       }
 
       const address = node.data.turnoutAddress;
-      if (typeof address !== "number") {
-        return node;
-      }
+      const turnoutClosedValue = typeof address === "number"
+        ? turnoutClosedValueByAddress.get(address)
+        : undefined;
 
-      const turnoutClosedValue = turnoutClosedValueByAddress.get(address);
       if (turnoutClosedValue === undefined) {
         return node;
       }
@@ -579,6 +560,25 @@ function getEdgeSignalState(
   return sourceSignal;
 }
 
+function resolveSignalAspectFromInputs(
+  incomingEdges: AutomationEdge[],
+  nodeById: Map<string, AutomationNode>,
+  evaluation: AutomationEvaluationState
+): AutomationSignalAspect {
+  const trueAspects = SIGNAL_INPUT_ASPECTS.filter(aspect => (
+    incomingEdges.some(edge => {
+      if (edge.targetHandle !== aspect) {
+        return false;
+      }
+
+      const currentSignal = getEdgeSignalState(edge, nodeById.get(edge.source), evaluation);
+      return currentSignal.valid && currentSignal.value;
+    })
+  ));
+
+  return trueAspects.length === 1 ? trueAspects[0] : "red";
+}
+
 function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): AutomationEvaluationState {
   const evaluation: AutomationEvaluationState = {};
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
@@ -615,13 +615,17 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): A
         case "timer":
         case "latch":
         case "routeLock":
-        case "signal":
         case "turnoutCommand":
         case "output":
           nextSignal = inputSignals.length > 0
             ? signal(inputSignals.some((currentSignal) => currentSignal.value))
             : emptySignal();
           break;
+        case "signal": {
+          const aspect = resolveSignalAspectFromInputs(incomingEdges, nodeById, evaluation);
+          nextSignal = signal(aspect !== "red", aspect);
+          break;
+        }
         case "ifThenElse": {
           const ifInputSignals = incomingEdges
             .filter((edge) => (edge.targetHandle ?? "if") === "if")
@@ -684,25 +688,8 @@ export default function AutomationFlowEditor() {
   const lastActiveTurnoutCommandsRef = useRef<Set<string>>(new Set());
   const lastActiveSignalCommandKeysRef = useRef<Set<string>>(new Set());
 
-  const signalAspectOptions = useMemo(
-    () => SIGNAL_ASPECT_OPTIONS.map(option => ({
-      value: option.value,
-      label: t(option.labelKey),
-    })),
-    [t]
-  );
-
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const evaluationState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
-  const simulatedState = useMemo(
-    () => Object.fromEntries(
-      Object.entries(evaluationState).map(([nodeId, currentSignal]) => [
-        nodeId,
-        currentSignal.valid && currentSignal.value,
-      ])
-    ) as Record<string, boolean>,
-    [evaluationState]
-  );
 
   const visibleNodes = useMemo(
     () => nodes.filter(node => getNodePageId(node) === activePageId),
@@ -723,6 +710,9 @@ export default function AutomationFlowEditor() {
     () =>
       visibleNodes.map((node) => {
         const currentSignal = getNodeSignal(evaluationState, node.id);
+        const resolvedSignalAspect = node.data.kind === "signal"
+          ? currentSignal.signalAspect ?? "red"
+          : undefined;
 
         return {
           ...node,
@@ -730,6 +720,12 @@ export default function AutomationFlowEditor() {
             ...node.data,
             active: currentSignal.valid && currentSignal.value,
             outputValid: currentSignal.valid,
+            ...(resolvedSignalAspect
+              ? {
+                  resolvedSignalAspect,
+                  outputCommand: resolvedSignalAspect,
+                }
+              : {}),
           },
         };
       }),
@@ -765,15 +761,44 @@ export default function AutomationFlowEditor() {
     ? selectedNode
     : null;
   const snapshot = useMemo(() => createSnapshot(pages, activePageId, nodes, edges), [activePageId, edges, nodes, pages]);
+
   const activeOutputs = useMemo(
-    () =>
-      nodes.filter(
-        (node) =>
-          getNodePageId(node) === activePageId &&
-          simulatedState[node.id] === true &&
-          (node.data.kind === "signal" || node.data.kind === "turnoutCommand" || node.data.kind === "output")
-      ),
-    [activePageId, nodes, simulatedState]
+    () => nodes.flatMap(node => {
+      if (getNodePageId(node) !== activePageId) {
+        return [];
+      }
+
+      const currentSignal = getNodeSignal(evaluationState, node.id);
+      if (node.data.kind === "signal") {
+        if (!currentSignal.valid) {
+          return [];
+        }
+
+        const aspect = currentSignal.signalAspect ?? "red";
+        return [{
+          ...node,
+          data: {
+            ...node.data,
+            outputCommand: aspect,
+            resolvedSignalAspect: aspect,
+            ioKey: typeof node.data.signalAddress === "number"
+              ? `signal:${node.data.signalAddress}:${aspect}`
+              : node.data.ioKey,
+          },
+        }];
+      }
+
+      if (
+        currentSignal.valid &&
+        currentSignal.value &&
+        (node.data.kind === "turnoutCommand" || node.data.kind === "output")
+      ) {
+        return [node];
+      }
+
+      return [];
+    }),
+    [activePageId, evaluationState, nodes]
   );
 
   useEffect(() => {
@@ -788,7 +813,43 @@ export default function AutomationFlowEditor() {
 
     for (const node of nodes) {
       const currentSignal = getNodeSignal(evaluationState, node.id);
-      if (!currentSignal.valid || !currentSignal.value) {
+      if (!currentSignal.valid) {
+        continue;
+      }
+
+      if (node.data.kind === "signal") {
+        const address = node.data.signalAddress;
+        const aspect = currentSignal.signalAspect ?? "red";
+        const addressLength = node.data.signalAddressLength ?? 1;
+        const bits = getSignalAspectBits(node.data, aspect);
+        const commandKey = `${node.id}:${address ?? "?"}:${aspect}:${addressLength}:${bits}`;
+        nextActiveSignalCommandKeys.add(commandKey);
+
+        if (lastActiveSignalCommandKeysRef.current.has(commandKey)) {
+          continue;
+        }
+
+        if (typeof address !== "number" || !Number.isFinite(address)) {
+          setStatusText(t("automation.status.signalCommandMissingAddress", { label: node.data.label }));
+          continue;
+        }
+
+        let allSent = true;
+        for (let i = 0; i < addressLength; i += 1) {
+          const accessoryAddress = address + i;
+          const active = ((bits >> i) & 1) === 1;
+          allSent = wsApi.setBasicAccessory(accessoryAddress, active) && allSent;
+        }
+
+        setStatusText(
+          allSent
+            ? t("automation.status.signalCommandSent", { address, aspect: t(`automation.aspects.${aspect}`), bits })
+            : t("automation.status.signalCommandFailed", { address, aspect: t(`automation.aspects.${aspect}`) })
+        );
+        continue;
+      }
+
+      if (!currentSignal.value) {
         continue;
       }
 
@@ -813,38 +874,6 @@ export default function AutomationFlowEditor() {
           sent
             ? t("automation.status.turnoutCommandSent", { label: commandLabel, physicalClosed: String(physicalClosed) })
             : t("automation.status.turnoutCommandFailed", { label: commandLabel })
-        );
-        continue;
-      }
-
-      if (node.data.kind === "signal") {
-        const address = node.data.signalAddress;
-        const aspect = node.data.signalAspect ?? "yellow";
-        const addressLength = node.data.signalAddressLength ?? 1;
-        const bits = getSignalAspectBits(node.data);
-        const commandKey = `${node.id}:${address ?? "?"}:${aspect}:${addressLength}:${bits}`;
-        nextActiveSignalCommandKeys.add(commandKey);
-
-        if (lastActiveSignalCommandKeysRef.current.has(commandKey)) {
-          continue;
-        }
-
-        if (typeof address !== "number" || !Number.isFinite(address)) {
-          setStatusText(t("automation.status.signalCommandMissingAddress", { label: node.data.label }));
-          continue;
-        }
-
-        let allSent = true;
-        for (let i = 0; i < addressLength; i += 1) {
-          const accessoryAddress = address + i;
-          const active = ((bits >> i) & 1) === 1;
-          allSent = wsApi.setBasicAccessory(accessoryAddress, active) && allSent;
-        }
-
-        setStatusText(
-          allSent
-            ? t("automation.status.signalCommandSent", { address, aspect: t(`automation.aspects.${aspect}`), bits })
-            : t("automation.status.signalCommandFailed", { address, aspect: t(`automation.aspects.${aspect}`) })
         );
       }
     }
@@ -873,6 +902,9 @@ export default function AutomationFlowEditor() {
         pageId: typeof node.data.pageId === "string" && validPageIds.has(node.data.pageId)
           ? node.data.pageId
           : normalizedActivePageId,
+        ...(node.data.kind === "signal" && typeof node.data.signalAddress === "number"
+          ? { ioKey: getSignalIoKey(node.data.signalAddress) }
+          : {}),
       },
     }));
 
@@ -1129,7 +1161,7 @@ export default function AutomationFlowEditor() {
   }
 
   return (
-    <SimpleAutomationLayout
+    <AutomationFlowLayout
       activeOutputs={activeOutputs}
       activePageId={activePageId}
       edges={edges}
@@ -1155,7 +1187,6 @@ export default function AutomationFlowEditor() {
       pages={pages}
       saving={saving}
       selectedNode={selectedNodeOnActivePage}
-      signalAspectOptions={signalAspectOptions}
       snapshot={snapshot}
       statusText={statusText}
       visibleNodeCount={visibleNodes.length}
@@ -1178,11 +1209,11 @@ export default function AutomationFlowEditor() {
         <Background variant={BackgroundVariant.Dots} gap={18} size={1} />
         <Controls />
       </ReactFlow>
-    </SimpleAutomationLayout>
+    </AutomationFlowLayout>
   );
 }
 
-type SimpleAutomationLayoutProps = {
+type AutomationFlowLayoutProps = {
   activeOutputs: AutomationNode[];
   activePageId: string;
   children: ReactNode;
@@ -1202,13 +1233,12 @@ type SimpleAutomationLayoutProps = {
   pages: AutomationFlowPageDto[];
   saving: boolean;
   selectedNode: AutomationNode | null;
-  signalAspectOptions: Array<{ value: AutomationSignalAspect; label: string }>;
   snapshot: AutomationFlowDocumentDto;
   statusText: string | null;
   visibleNodeCount: number;
 };
 
-function SimpleAutomationLayout({
+function AutomationFlowLayout({
   activeOutputs,
   activePageId,
   children,
@@ -1228,11 +1258,10 @@ function SimpleAutomationLayout({
   pages,
   saving,
   selectedNode,
-  signalAspectOptions,
   snapshot,
   statusText,
   visibleNodeCount,
-}: SimpleAutomationLayoutProps) {
+}: AutomationFlowLayoutProps) {
   const { t } = useTranslation();
   const statusIsError = ["hiba", "error", "fehler"].some(token => statusText?.toLocaleLowerCase().includes(token));
   const activePage = pages.find(page => page.id === activePageId) ?? pages[0];
@@ -1313,7 +1342,7 @@ function SimpleAutomationLayout({
         </Box>
       </Paper>
 
-      <Card withBorder radius="md" p="sm" w={360}>
+      <Card withBorder radius="md" p="sm" w={380}>
         <Stack gap="sm" h="100%">
           <Group justify="space-between">
             <Title order={5}>{t("automation.panel.properties")}</Title>
@@ -1347,297 +1376,341 @@ function SimpleAutomationLayout({
 
           <Divider />
 
-          {selectedNode ? (
-            <Stack gap="sm">
-              <Group justify="space-between" align="flex-start">
-                <Box>
-                  <Badge variant="light" color="blue">
-                    {getNodeTitle(selectedNode.data.kind, NODE_DEFINITIONS[selectedNode.data.kind].title, t)}
-                  </Badge>
-                  <Text size="xs" c="dimmed" mt={4}>
-                    {selectedNode.id}
-                  </Text>
-                </Box>
-
-                <ActionIcon color="red" variant="light" onClick={onDeleteSelectedNode}>
-                  <IconTrash size={16} />
-                </ActionIcon>
-              </Group>
-
-              <TextInput
-                label={t("automation.panel.label")}
-                value={selectedNode.data.label}
-                onChange={(event) => onSelectedNodeDataChange({ label: event.currentTarget.value })}
-              />
-
-              <TextInput
-                label={t("automation.panel.ioKey")}
-                description={t("automation.panel.ioKeyDescription")}
-                value={selectedNode.data.ioKey ?? ""}
-                onChange={(event) => onSelectedNodeDataChange({ ioKey: event.currentTarget.value })}
-              />
-
-              {selectedNode.data.kind === "sensor" && (
-                <NumberInput
-                  label={t("automation.fields.sensorAddress")}
-                  description={t("automation.fields.sensorAddressDescription")}
-                  min={0}
-                  step={1}
-                  value={selectedNode.data.sensorAddress ?? 0}
-                  onChange={(value) => {
-                    const address = toNumber(value);
-                    onSelectedNodeDataChange({
-                      sensorAddress: address,
-                      ioKey: `sensor:${address}`,
-                    });
-                    wsApi.getLayoutRuntimeSnapshot();
-                  }}
+          <ScrollArea style={{ flex: 1 }}>
+            {selectedNode ? (
+              <Stack gap="sm" pr="xs">
+                <SelectedNodeEditor
+                  node={selectedNode}
+                  onChange={onSelectedNodeDataChange}
+                  onDelete={onDeleteSelectedNode}
                 />
-              )}
 
-              {selectedNode.data.kind === "turnout" && (
-                <Stack gap="xs">
-                  <NumberInput
-                    label={t("automation.fields.turnoutAddress")}
-                    description={t("automation.fields.turnoutAddressDescription")}
-                    min={0}
-                    step={1}
-                    value={selectedNode.data.turnoutAddress ?? 0}
-                    onChange={(value) => {
-                      const address = toNumber(value);
-                      const logicalClosed = selectedNode.data.turnoutClosed ?? true;
-                      onSelectedNodeDataChange({
-                        turnoutAddress: address,
-                        ioKey: getTurnoutIoKey(address, logicalClosed),
-                      });
-                      wsApi.getLayoutRuntimeSnapshot();
-                    }}
-                  />
+                <Divider />
 
-                  <Switch
-                    checked={selectedNode.data.turnoutClosed ?? true}
-                    label={t("automation.fields.turnoutExpectedClosed")}
-                    description={t("automation.fields.turnoutExpectedClosedDescription")}
-                    onChange={(event) => {
-                      const logicalClosed = event.currentTarget.checked;
-                      const address = selectedNode.data.turnoutAddress ?? 0;
-                      onSelectedNodeDataChange({
-                        turnoutClosed: logicalClosed,
-                        ioKey: getTurnoutIoKey(address, logicalClosed),
-                      });
-                      wsApi.getLayoutRuntimeSnapshot();
-                    }}
-                  />
+                <ActiveOutputsPanel activeOutputs={activeOutputs} />
 
-                  <Switch
-                    checked={selectedNode.data.turnoutClosedValue ?? true}
-                    label={t("automation.fields.physicalClosedMeansLogicalClosed")}
-                    description={t("automation.fields.physicalClosedMeansLogicalClosedDescription")}
-                    onChange={(event) => {
-                      onSelectedNodeDataChange({ turnoutClosedValue: event.currentTarget.checked });
-                      wsApi.getLayoutRuntimeSnapshot();
-                    }}
-                  />
-                </Stack>
-              )}
+                <Divider />
 
-              {selectedNode.data.kind === "signal" && (
-                <Stack gap="xs">
-                  <NumberInput
-                    label={t("automation.fields.signalAddress")}
-                    description={t("automation.fields.signalAddressDescription")}
-                    min={0}
-                    step={1}
-                    value={selectedNode.data.signalAddress ?? 0}
-                    onChange={(value) => {
-                      const address = toNumber(value);
-                      const aspect = selectedNode.data.signalAspect ?? "yellow";
-                      onSelectedNodeDataChange({
-                        signalAddress: address,
-                        ioKey: getSignalIoKey(address, aspect),
-                      });
-                    }}
-                  />
-
-                  <Select
-                    label={t("automation.fields.signalAspect")}
-                    description={t("automation.fields.signalAspectDescription")}
-                    data={signalAspectOptions}
-                    value={selectedNode.data.signalAspect ?? "yellow"}
-                    onChange={(value) => {
-                      if (!isSignalAspect(value)) {
-                        return;
-                      }
-
-                      const address = selectedNode.data.signalAddress ?? 0;
-                      onSelectedNodeDataChange({
-                        signalAspect: value,
-                        ioKey: getSignalIoKey(address, value),
-                        outputCommand: value,
-                      });
-                    }}
-                  />
-
-                  <Text size="xs" c="dimmed">
-                    {t("automation.fields.currentBitPattern", {
-                      bits: getSignalAspectBits(selectedNode.data),
-                      length: selectedNode.data.signalAddressLength ?? 1,
-                    })}
-                  </Text>
-                </Stack>
-              )}
-
-              {selectedNode.data.kind === "turnoutCommand" && (
-                <Stack gap="xs">
-                  <NumberInput
-                    label={t("automation.fields.turnoutAddress")}
-                    description={t("automation.fields.turnoutCommandAddressDescription")}
-                    min={0}
-                    step={1}
-                    value={selectedNode.data.turnoutAddress ?? 0}
-                    onChange={(value) => {
-                      const address = toNumber(value);
-                      const logicalClosed = selectedNode.data.turnoutClosed ?? true;
-                      onSelectedNodeDataChange({
-                        turnoutAddress: address,
-                        ioKey: getTurnoutCommandIoKey(address, logicalClosed),
-                        outputCommand: getTurnoutStateLabel(logicalClosed),
-                      });
-                    }}
-                  />
-
-                  <Switch
-                    checked={selectedNode.data.turnoutClosed ?? true}
-                    label={t("automation.fields.turnoutCommandClosed")}
-                    description={t("automation.fields.turnoutCommandClosedDescription")}
-                    onChange={(event) => {
-                      const logicalClosed = event.currentTarget.checked;
-                      const address = selectedNode.data.turnoutAddress ?? 0;
-                      onSelectedNodeDataChange({
-                        turnoutClosed: logicalClosed,
-                        ioKey: getTurnoutCommandIoKey(address, logicalClosed),
-                        outputCommand: getTurnoutStateLabel(logicalClosed),
-                      });
-                    }}
-                  />
-
-                  <Switch
-                    checked={selectedNode.data.turnoutClosedValue ?? true}
-                    label={t("automation.fields.physicalClosedMeansLogicalClosed")}
-                    description={t("automation.fields.physicalClosedMeansLogicalClosedCommandDescription")}
-                    onChange={(event) =>
-                      onSelectedNodeDataChange({ turnoutClosedValue: event.currentTarget.checked })
-                    }
-                  />
-                </Stack>
-              )}
-
-              {selectedNode.data.kind === "ifThenElse" && (
-                <Text size="xs" c="dimmed">
-                  {t("automation.fields.ifThenElseInfo")}
-                </Text>
-              )}
-
-              {isInputNode(selectedNode.data.kind) && (
-                <Switch
-                  checked={selectedNode.data.active === true}
-                  label={t("automation.fields.simulatedInputActive")}
-                  onChange={(event) =>
-                    onSelectedNodeDataChange({ active: event.currentTarget.checked })
-                  }
-                />
-              )}
-
-              {selectedNode.data.kind === "timer" && (
-                <NumberInput
-                  label={t("automation.fields.delayMs")}
-                  min={0}
-                  step={100}
-                  value={selectedNode.data.delayMs ?? 0}
-                  onChange={(value) => onSelectedNodeDataChange({ delayMs: toNumber(value) })}
-                />
-              )}
-
-              {selectedNode.data.kind === "output" && (
-                <TextInput
-                  label={t("automation.fields.outputCommand")}
-                  value={selectedNode.data.outputCommand ?? ""}
-                  onChange={(event) =>
-                    onSelectedNodeDataChange({ outputCommand: event.currentTarget.value })
-                  }
-                />
-              )}
-
-              <Textarea
-                label={t("automation.panel.comment")}
-                autosize
-                minRows={2}
-                value={selectedNode.data.description ?? ""}
-                onChange={(event) =>
-                  onSelectedNodeDataChange({ description: event.currentTarget.value })
-                }
-              />
-            </Stack>
-          ) : (
-            <Text size="sm" c="dimmed">
-              {t("automation.panel.selectNodeHint")}
-            </Text>
-          )}
-
-          <Divider />
-
-          <Stack gap="xs">
-            <Group justify="space-between">
-              <Text fw={800} size="sm">
-                {t("automation.panel.simulatedActiveOutputs")}
-              </Text>
-              <Badge color={activeOutputs.length > 0 ? "green" : "gray"} variant="light">
-                {activeOutputs.length}
-              </Badge>
-            </Group>
-
-            {activeOutputs.length === 0 ? (
-              <Text size="xs" c="dimmed">
-                {t("automation.panel.noActiveOutput")}
-              </Text>
+                <JsonPreview snapshot={snapshot} edgeCount={edges.length} />
+              </Stack>
             ) : (
-              activeOutputs.map((node) => (
-                <Badge key={node.id} color="green" variant="filled" w="fit-content">
-                  {node.data.ioKey ?? node.data.label}: {node.data.outputCommand ?? "on"}
-                </Badge>
-              ))
+              <Stack gap="sm">
+                <Text size="sm" c="dimmed">
+                  {t("automation.panel.selectNodeHint")}
+                </Text>
+
+                <Divider />
+                <ActiveOutputsPanel activeOutputs={activeOutputs} />
+                <Divider />
+                <JsonPreview snapshot={snapshot} edgeCount={edges.length} />
+              </Stack>
             )}
-          </Stack>
-
-          <Divider />
-
-          <Stack gap="xs" style={{ flex: 1, minHeight: 0 }}>
-            <Group justify="space-between">
-              <Text fw={800} size="sm">
-                {t("automation.panel.jsonPreview")}
-              </Text>
-              <Badge variant="light" color="gray">
-                {t("automation.panel.edges", { count: edges.length })}
-              </Badge>
-            </Group>
-
-            <Textarea
-              value={JSON.stringify(snapshot, null, 2)}
-              readOnly
-              autosize={false}
-              styles={{
-                input: {
-                  minHeight: 190,
-                  height: "100%",
-                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                  fontSize: 11,
-                },
-              }}
-            />
-          </Stack>
+          </ScrollArea>
         </Stack>
       </Card>
     </Group>
+  );
+}
+
+type SelectedNodeEditorProps = {
+  node: AutomationNode;
+  onChange: (patch: Partial<AutomationFlowNodeData>) => void;
+  onDelete: () => void;
+};
+
+function SelectedNodeEditor({ node, onChange, onDelete }: SelectedNodeEditorProps) {
+  const { t } = useTranslation();
+
+  return (
+    <Stack gap="sm">
+      <Group justify="space-between" align="flex-start">
+        <Box>
+          <Badge variant="light" color="blue">
+            {getNodeTitle(node.data.kind, NODE_DEFINITIONS[node.data.kind].title, t)}
+          </Badge>
+          <Text size="xs" c="dimmed" mt={4}>
+            {node.id}
+          </Text>
+        </Box>
+
+        <ActionIcon color="red" variant="light" onClick={onDelete}>
+          <IconTrash size={16} />
+        </ActionIcon>
+      </Group>
+
+      <TextInput
+        label={t("automation.panel.label")}
+        value={node.data.label}
+        onChange={(event) => onChange({ label: event.currentTarget.value })}
+      />
+
+      <TextInput
+        label={t("automation.panel.ioKey")}
+        description={t("automation.panel.ioKeyDescription")}
+        value={node.data.ioKey ?? ""}
+        onChange={(event) => onChange({ ioKey: event.currentTarget.value })}
+      />
+
+      {node.data.kind === "sensor" && <SensorNodeFields node={node} onChange={onChange} />}
+      {node.data.kind === "turnout" && <TurnoutNodeFields node={node} onChange={onChange} />}
+      {node.data.kind === "signal" && <SignalNodeFields node={node} onChange={onChange} />}
+      {node.data.kind === "turnoutCommand" && <TurnoutCommandNodeFields node={node} onChange={onChange} />}
+
+      {node.data.kind === "ifThenElse" && (
+        <Text size="xs" c="dimmed">
+          {t("automation.fields.ifThenElseInfo")}
+        </Text>
+      )}
+
+      {isInputNode(node.data.kind) && (
+        <Switch
+          checked={node.data.active === true}
+          label={t("automation.fields.simulatedInputActive")}
+          onChange={(event) => onChange({ active: event.currentTarget.checked })}
+        />
+      )}
+
+      {node.data.kind === "timer" && (
+        <NumberInput
+          label={t("automation.fields.delayMs")}
+          min={0}
+          step={100}
+          value={node.data.delayMs ?? 0}
+          onChange={(value) => onChange({ delayMs: toNumber(value) })}
+        />
+      )}
+
+      {node.data.kind === "output" && (
+        <TextInput
+          label={t("automation.fields.outputCommand")}
+          value={node.data.outputCommand ?? ""}
+          onChange={(event) => onChange({ outputCommand: event.currentTarget.value })}
+        />
+      )}
+
+      <Textarea
+        label={t("automation.panel.comment")}
+        autosize
+        minRows={2}
+        value={node.data.description ?? ""}
+        onChange={(event) => onChange({ description: event.currentTarget.value })}
+      />
+    </Stack>
+  );
+}
+
+function SensorNodeFields({ node, onChange }: SelectedNodeEditorProps) {
+  const { t } = useTranslation();
+
+  return (
+    <NumberInput
+      label={t("automation.fields.sensorAddress")}
+      description={t("automation.fields.sensorAddressDescription")}
+      min={0}
+      step={1}
+      value={node.data.sensorAddress ?? 0}
+      onChange={(value) => {
+        const address = toNumber(value);
+        onChange({
+          sensorAddress: address,
+          ioKey: `sensor:${address}`,
+        });
+        wsApi.getLayoutRuntimeSnapshot();
+      }}
+    />
+  );
+}
+
+function TurnoutNodeFields({ node, onChange }: SelectedNodeEditorProps) {
+  const { t } = useTranslation();
+
+  return (
+    <Stack gap="xs">
+      <NumberInput
+        label={t("automation.fields.turnoutAddress")}
+        description={t("automation.fields.turnoutAddressDescription")}
+        min={0}
+        step={1}
+        value={node.data.turnoutAddress ?? 0}
+        onChange={(value) => {
+          const address = toNumber(value);
+          const logicalClosed = node.data.turnoutClosed ?? true;
+          onChange({
+            turnoutAddress: address,
+            ioKey: getTurnoutIoKey(address, logicalClosed),
+          });
+          wsApi.getLayoutRuntimeSnapshot();
+        }}
+      />
+
+      <Switch
+        checked={node.data.turnoutClosed ?? true}
+        label={t("automation.fields.turnoutExpectedClosed")}
+        description={t("automation.fields.turnoutExpectedClosedDescription")}
+        onChange={(event) => {
+          const logicalClosed = event.currentTarget.checked;
+          const address = node.data.turnoutAddress ?? 0;
+          onChange({
+            turnoutClosed: logicalClosed,
+            ioKey: getTurnoutIoKey(address, logicalClosed),
+          });
+          wsApi.getLayoutRuntimeSnapshot();
+        }}
+      />
+
+      <Switch
+        checked={node.data.turnoutClosedValue ?? true}
+        label={t("automation.fields.physicalClosedMeansLogicalClosed")}
+        description={t("automation.fields.physicalClosedMeansLogicalClosedDescription")}
+        onChange={(event) => {
+          onChange({ turnoutClosedValue: event.currentTarget.checked });
+          wsApi.getLayoutRuntimeSnapshot();
+        }}
+      />
+    </Stack>
+  );
+}
+
+function SignalNodeFields({ node, onChange }: SelectedNodeEditorProps) {
+  const { t } = useTranslation();
+  const addressLength = node.data.signalAddressLength ?? 1;
+
+  return (
+    <Stack gap="xs">
+      <NumberInput
+        label={t("automation.fields.signalAddress")}
+        description={t("automation.fields.signalAddressDescription")}
+        min={0}
+        step={1}
+        value={node.data.signalAddress ?? 0}
+        onChange={(value) => {
+          const address = toNumber(value);
+          onChange({
+            signalAddress: address,
+            ioKey: getSignalIoKey(address),
+          });
+        }}
+      />
+
+      <Text size="xs" c="dimmed">
+        Bemenetek: green, yellow, white. Pontosan egy true bemenet állítja a jelzőképet. Ha nincs true vagy több true érkezik, a parancs red lesz.
+      </Text>
+
+      <Group gap="xs" wrap="wrap">
+        <Badge color="red" variant="light">red: {getSignalAspectBits(node.data, "red")}</Badge>
+        <Badge color="yellow" variant="light">yellow: {getSignalAspectBits(node.data, "yellow")}</Badge>
+        <Badge color="green" variant="light">green: {getSignalAspectBits(node.data, "green")}</Badge>
+        <Badge color="gray" variant="light">white: {getSignalAspectBits(node.data, "white")}</Badge>
+        <Badge color="blue" variant="light">len: {addressLength}</Badge>
+      </Group>
+    </Stack>
+  );
+}
+
+function TurnoutCommandNodeFields({ node, onChange }: SelectedNodeEditorProps) {
+  const { t } = useTranslation();
+
+  return (
+    <Stack gap="xs">
+      <NumberInput
+        label={t("automation.fields.turnoutAddress")}
+        description={t("automation.fields.turnoutCommandAddressDescription")}
+        min={0}
+        step={1}
+        value={node.data.turnoutAddress ?? 0}
+        onChange={(value) => {
+          const address = toNumber(value);
+          const logicalClosed = node.data.turnoutClosed ?? true;
+          onChange({
+            turnoutAddress: address,
+            ioKey: getTurnoutCommandIoKey(address, logicalClosed),
+            outputCommand: getTurnoutStateLabel(logicalClosed),
+          });
+        }}
+      />
+
+      <Switch
+        checked={node.data.turnoutClosed ?? true}
+        label={t("automation.fields.turnoutCommandClosed")}
+        description={t("automation.fields.turnoutCommandClosedDescription")}
+        onChange={(event) => {
+          const logicalClosed = event.currentTarget.checked;
+          const address = node.data.turnoutAddress ?? 0;
+          onChange({
+            turnoutClosed: logicalClosed,
+            ioKey: getTurnoutCommandIoKey(address, logicalClosed),
+            outputCommand: getTurnoutStateLabel(logicalClosed),
+          });
+        }}
+      />
+
+      <Switch
+        checked={node.data.turnoutClosedValue ?? true}
+        label={t("automation.fields.physicalClosedMeansLogicalClosed")}
+        description={t("automation.fields.physicalClosedMeansLogicalClosedCommandDescription")}
+        onChange={(event) => onChange({ turnoutClosedValue: event.currentTarget.checked })}
+      />
+    </Stack>
+  );
+}
+
+function ActiveOutputsPanel({ activeOutputs }: { activeOutputs: AutomationNode[] }) {
+  const { t } = useTranslation();
+
+  return (
+    <Stack gap="xs">
+      <Group justify="space-between">
+        <Text fw={800} size="sm">
+          {t("automation.panel.simulatedActiveOutputs")}
+        </Text>
+        <Badge color={activeOutputs.length > 0 ? "green" : "gray"} variant="light">
+          {activeOutputs.length}
+        </Badge>
+      </Group>
+
+      {activeOutputs.length === 0 ? (
+        <Text size="xs" c="dimmed">
+          {t("automation.panel.noActiveOutput")}
+        </Text>
+      ) : (
+        activeOutputs.map((node) => (
+          <Badge key={node.id} color={node.data.outputCommand === "red" ? "red" : "green"} variant="filled" w="fit-content">
+            {node.data.ioKey ?? node.data.label}: {node.data.outputCommand ?? "on"}
+          </Badge>
+        ))
+      )}
+    </Stack>
+  );
+}
+
+function JsonPreview({ snapshot, edgeCount }: { snapshot: AutomationFlowDocumentDto; edgeCount: number }) {
+  const { t } = useTranslation();
+
+  return (
+    <Stack gap="xs" style={{ minHeight: 0 }}>
+      <Group justify="space-between">
+        <Text fw={800} size="sm">
+          {t("automation.panel.jsonPreview")}
+        </Text>
+        <Badge variant="light" color="gray">
+          {t("automation.panel.edges", { count: edgeCount })}
+        </Badge>
+      </Group>
+
+      <Textarea
+        value={JSON.stringify(snapshot, null, 2)}
+        readOnly
+        autosize={false}
+        styles={{
+          input: {
+            minHeight: 190,
+            height: "100%",
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            fontSize: 11,
+          },
+        }}
+      />
+    </Stack>
   );
 }
 
@@ -1659,6 +1732,13 @@ function createSnapshot(
       data: {
         ...node.data,
         pageId: getNodePageId(node),
+        ...(node.data.kind === "signal" && typeof node.data.signalAddress === "number"
+          ? {
+              ioKey: getSignalIoKey(node.data.signalAddress),
+              signalAspect: "red",
+              outputCommand: "red",
+            }
+          : {}),
       },
     })),
     edges: edges.map(edge => ({
