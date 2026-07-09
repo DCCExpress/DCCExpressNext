@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import type {
   AutomationFlowNodeData,
+  AutomationSignalAspect,
 } from "../../../../../common/src/automationFlow";
 
 import {
@@ -47,6 +48,20 @@ function getSingleOutputBadge(data: AutomationFlowNodeData, label?: string) {
       top: "50%",
     },
   ];
+}
+
+function getResolvedSignalAspect(data: AutomationFlowNodeData): AutomationSignalAspect {
+  const value = data.resolvedSignalAspect;
+
+  if (value === "green" || value === "yellow" || value === "white" || value === "red") {
+    return value;
+  }
+
+  if (data.signalAspect === "green" || data.signalAspect === "yellow" || data.signalAspect === "white" || data.signalAspect === "red") {
+    return data.signalAspect;
+  }
+
+  return "red";
 }
 
 function BlockOccupiedNode({ data, selected }: AutomationTypedNodeProps) {
@@ -224,13 +239,18 @@ function RouteLockNode({ data, selected }: AutomationTypedNodeProps) {
 
 function SignalNode({ data, selected }: AutomationTypedNodeProps) {
   const { t } = useTranslation();
-  const aspect = data.signalAspect ?? "yellow";
+  const aspect = getResolvedSignalAspect(data);
 
   return (
     <AutomationNodeCard
       data={data}
       selected={selected}
       kind="signal"
+      targetHandles={[
+        { id: "green", top: "30%" },
+        { id: "yellow", top: "50%" },
+        { id: "white", top: "70%" },
+      ]}
       detail={typeof data.signalAddress === "number"
         ? (
             <Stack gap={2}>
@@ -243,8 +263,11 @@ function SignalNode({ data, selected }: AutomationTypedNodeProps) {
               <Text size="xs" c="dimmed">
                 {t("automation.graph.signalBits", {
                   length: data.signalAddressLength ?? 1,
-                  bits: getSignalAspectValue(data),
+                  bits: getSignalAspectValue(data, aspect),
                 })}
+              </Text>
+              <Text size="xs" c="dimmed">
+                green / yellow / white bemenet, hibánál red
               </Text>
             </Stack>
           )
@@ -253,17 +276,17 @@ function SignalNode({ data, selected }: AutomationTypedNodeProps) {
   );
 }
 
-function getSignalAspectValue(data: AutomationFlowNodeData): number {
-  switch (data.signalAspect ?? "yellow") {
-    case "red":
-      return data.signalValueRed ?? 0;
+function getSignalAspectValue(data: AutomationFlowNodeData, aspect: AutomationSignalAspect): number {
+  switch (aspect) {
     case "green":
       return data.signalValueGreen ?? 0;
     case "white":
       return data.signalValueWhite ?? 0;
     case "yellow":
-    default:
       return data.signalValueYellow ?? 0;
+    case "red":
+    default:
+      return data.signalValueRed ?? 0;
   }
 }
 
