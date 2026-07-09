@@ -7,6 +7,7 @@ import {
   Text,
 } from "@mantine/core";
 import { IconPlayerPlay, IconTrash } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { LayoutView } from "../../models/editor/core/LayoutView";
@@ -81,6 +82,7 @@ export default function RouteTurnoutSelectionPropertyEditor({
   onUpdateSelectedElement,
   setBusy,
 }: RouteTurnoutSelectionPropertyEditorProps) {
+  const { t } = useTranslation();
   const commandCenter = useCommandCenter();
   const items = getItems(selectedElement, prop);
   const hasTurnouts = items.length > 0;
@@ -119,11 +121,11 @@ export default function RouteTurnoutSelectionPropertyEditor({
       routeButton: selectedElement,
       layout,
       commandCenterLocked: commandCenter.locked,
-      busyText: "Route is being tested...",
+      busyText: t("propertyPanel.routeTurnouts.testing"),
       onCommandCenterBusy: () => {
         showWarningMessage(
-          "Route test",
-          "Command center is busy."
+          t("propertyPanel.routeTurnouts.testTitle"),
+          t("propertyPanel.routeTurnouts.commandCenterBusy")
         );
       },
       ...(setBusy !== undefined
@@ -140,7 +142,9 @@ export default function RouteTurnoutSelectionPropertyEditor({
           variant={turnoutSelectionMode ? "filled" : "light"}
           onClick={() => setTurnoutSelectionMode(!turnoutSelectionMode)}
         >
-          {turnoutSelectionMode ? "Finish selection" : "Add turnouts"}
+          {turnoutSelectionMode
+            ? t("propertyPanel.routeTurnouts.finishSelection")
+            : t("propertyPanel.routeTurnouts.addTurnouts")}
         </Button>
 
         <Button
@@ -152,19 +156,19 @@ export default function RouteTurnoutSelectionPropertyEditor({
             void testRouteButton();
           }}
         >
-          Test route
+          {t("propertyPanel.routeTurnouts.testRoute")}
         </Button>
       </Group>
 
       <Text size="xs" c="dimmed">
         {turnoutSelectionMode
-          ? "Click turnouts on the layout to add them, then press Finish selection."
-          : "Use Add turnouts to pick turnouts from the layout. Click a preview below to change its stored route state only. Test route sends the same turnout commands as clicking the route button."}
+          ? t("propertyPanel.routeTurnouts.selectionHintActive")
+          : t("propertyPanel.routeTurnouts.selectionHint")}
       </Text>
 
       {items.length === 0 ? (
         <Text size="xs" c="dimmed">
-          No turnouts selected
+          {t("propertyPanel.routeTurnouts.noneSelected")}
         </Text>
       ) : (
         <Stack gap={6}>
@@ -179,7 +183,7 @@ export default function RouteTurnoutSelectionPropertyEditor({
                   gap="xs"
                 >
                   <Text size="xs" c="red">
-                    Missing turnout: {item.turnoutId}
+                    {t("propertyPanel.routeTurnouts.missingTurnout", { id: item.turnoutId })}
                   </Text>
 
                   <ActionIcon
@@ -237,10 +241,10 @@ export default function RouteTurnoutSelectionPropertyEditor({
 
                 <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
                   <Text size="xs" fw={500} truncate>
-                    {turnout.name || "Turnout"}
+                    {turnout.name || t("propertyPanel.routeTurnouts.turnoutFallback")}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    Route state: {logicalLabel}
+                    {t("propertyPanel.routeTurnouts.routeState", { state: logicalLabel })}
                   </Text>
                 </Stack>
 
@@ -248,7 +252,7 @@ export default function RouteTurnoutSelectionPropertyEditor({
                   size="sm"
                   color="red"
                   variant="subtle"
-                  title="Remove turnout"
+                  title={t("propertyPanel.routeTurnouts.removeTurnout")}
                   onClick={event => {
                     event.stopPropagation();
                     removeTurnout(
