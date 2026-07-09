@@ -1,6 +1,10 @@
 // server/src/ws/handlers/wsScriptMessageHandlers.ts
 
 import {
+  FEATURE_ENABLE_SCRIPT_ENGINE,
+} from "../../../../common/src/featureFlags.js";
+
+import {
   scriptRuntimeStore,
 } from "../../services/scriptRuntimeStore.js";
 
@@ -15,6 +19,17 @@ export const handleScriptMessage: WsMessageHandler = async ({
 }) => {
   switch (msg.type) {
     case "runScript": {
+      if (!FEATURE_ENABLE_SCRIPT_ENGINE) {
+        sendToClient(ws, {
+          type: "scriptRejected",
+          data: {
+            reason: "Script engine is disabled.",
+          },
+        });
+
+        return true;
+      }
+
       try {
         const {
           script,
@@ -45,10 +60,21 @@ export const handleScriptMessage: WsMessageHandler = async ({
     }
 
     case "stopScript":
-      scriptRuntimeStore.stopCurrent();
+      if (FEATURE_ENABLE_SCRIPT_ENGINE) {
+        scriptRuntimeStore.stopCurrent();
+      }
       return true;
 
     case "getScriptRuntimeState":
+      if (!FEATURE_ENABLE_SCRIPT_ENGINE) {
+        sendToClient(ws, {
+          type: "scriptStateChanged",
+          data: null,
+        });
+
+        return true;
+      }
+
       sendToClient(ws, {
         type: "scriptDocumentChanged",
         data: scriptRuntimeStore.getDocument(),
