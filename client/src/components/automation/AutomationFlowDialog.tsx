@@ -1,4 +1,4 @@
-import { Badge, Box, Group, Modal, Text, Title } from "@mantine/core";
+import { Box, Group, Modal, Title } from "@mantine/core";
 import { IconCpu } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import AutomationFlowEditor from "./AutomationFlowEditor";
@@ -19,20 +19,10 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
       radius="md"
       padding="md"
       title={
-        <Group gap="sm" align="flex-start">
+        <Group gap="sm" align="center">
           <IconCpu size={28} />
-
           <Box>
-            <Group gap="xs" align="center">
-              <Title order={4}>{t("automation.dialog.title")}</Title>
-              <Badge color="orange" variant="light">
-                {t("automation.dialog.badge")}
-              </Badge>
-            </Group>
-
-            <Text size="xs" c="dimmed">
-              {t("automation.dialog.description")}
-            </Text>
+            <Title order={4}>{t("automation.dialog.title")}</Title>
           </Box>
         </Group>
       }
