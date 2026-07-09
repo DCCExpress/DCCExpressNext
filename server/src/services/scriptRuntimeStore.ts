@@ -4,7 +4,14 @@ import { randomUUID } from "node:crypto";
 
 import { dataDir } from "../paths.js";
 import { layoutRuntimeStore } from "./layoutRuntimeStore.js";
-import { railwayTopologyStore } from "./railwayTopologyStore.js";
+import {
+    findTurnoutByAccessoryAddress,
+    getTurnoutPhysicalClosedValue,
+} from "./railwayCommandHelpers.js";
+
+import {
+    ELEMENT_TYPES,
+} from "../../../common/src/layout/elementTypes.js";
 
 import type {
     SerializedLayoutDto,
@@ -56,6 +63,12 @@ type BroadcastFn = (
     message: TypedServerWsMessage
 ) => void;
 
+type SignalScriptAspect =
+    | "red"
+    | "yellow"
+    | "green"
+    | "white";
+
 class ScriptStoppedError extends Error {
     constructor() {
         super("Script stopped");
@@ -64,6 +77,89 @@ class ScriptStoppedError extends Error {
 }
 
 const MAX_SCRIPT_LOG_ITEMS = 500;
+
+const SIGNAL_ELEMENT_TYPES = new Set<string>([
+    ELEMENT_TYPES.TRACK_SIGNAL2,
+    ELEMENT_TYPES.TRACK_SIGNAL3,
+    ELEMENT_TYPES.TRACK_SIGNAL4,
+]);
+
+function numberValue(
+    value: unknown,
+    fallback: number
+): number {
+    return typeof value === "number" && Number.isFinite(value)
+        ? value
+        : fallback;
+}
+
+function getSignalAspectBits(
+    element: SerializedLayoutElementDto,
+    aspect: SignalScriptAspect
+): number {
+    switch (aspect) {
+        case "green":
+            return numberValue(element.valueGreen, 2);
+        case "white":
+            return numberValue(element.valueWhite, 3);
+        case "yellow":
+            return numberValue(element.valueYellow, 1);
+        case "red":
+        default:
+            return numberValue(element.valueRed, 0);
+    }
+}
+
+function getSignalAddressLength(
+    element: SerializedLayoutElementDto
+): number {
+    return Math.max(
+        1,
+        Math.floor(numberValue(element.addressLength, 1))
+    );
+}
+
+function findSignalElementByAddress(
+    layout: SerializedLayoutDto | null,
+    address: number
+): SerializedLayoutElementDto | null {
+    if (!layout?.layers) {
+        return null;
+    }
+
+    for (const layer of layout.layers) {
+        for (const element of layer.elements ?? []) {
+            if (
+                typeof element.type === "string" &&
+                SIGNAL_ELEMENT_TYPES.has(element.type) &&
+                element.address === address
+            ) {
+                return element;
+            }
+        }
+    }
+
+    return null;
+}
+
+function findElementByIdInLayout(
+    layout: SerializedLayoutDto | null,
+    elementId: string
+): SerializedLayoutElementDto | null {
+    if (!layout?.layers) {
+        return null;
+    }
+
+    for (const layer of layout.layers) {
+        for (const element of layer.elements ?? []) {
+            if (element.id === elementId) {
+                return element;
+            }
+        }
+    }
+
+    return null;
+}
 
 class ServerScriptSession {
     private state: ScriptStateDto;
@@ -138,6 +234,12 @@ const {
 
   setTurnout,
   getTurnoutState,
+  setBasicAccessory,
+
+  setSignalRed,
+  setSignalYellow,
+  setSignalGreen,
+  setSignalWhite,
 
   setLocoFunction,
 
@@ -163,9 +265,7 @@ return (async () => {
             await fn(api);
 
             if (this.detachedAsyncError) {
-                const error =
-                    this.detachedAsyncError;
-
+                const error = this.detachedAsyncError;
                 this.detachedAsyncError = null;
                 throw error;
             }
@@ -231,9 +331,7 @@ return (async () => {
 
     private async check(): Promise<void> {
         if (this.detachedAsyncError) {
-            const error =
-                this.detachedAsyncError;
-
+            const error = this.detachedAsyncError;
             this.detachedAsyncError = null;
             throw error;
         }
@@ -251,8 +349,7 @@ return (async () => {
             await this.check();
 
             const remaining = ms - elapsed;
-            const currentDelay =
-                Math.min(step, remaining);
+            const currentDelay = Math.min(step, remaining);
 
             await new Promise<void>(resolve =>
                 setTimeout(resolve, currentDelay)
@@ -287,26 +384,27 @@ return (async () => {
             "powerOff",
             "emergencyStop",
             "setTurnout",
+            "setBasicAccessory",
+            "setSignalRed",
+            "setSignalYellow",
+            "setSignalGreen",
+            "setSignalWhite",
             "setLocoFunction",
         ] as const;
 
-        const mutableApi =
-            api as Record<string, unknown>;
+        const mutableApi = api as Record<string, unknown>;
 
         for (const key of asyncApiKeys) {
-            const value =
-                mutableApi[key];
+            const value = mutableApi[key];
 
             if (typeof value !== "function") {
                 continue;
             }
 
-            const fn =
-                value as (...args: unknown[]) => unknown;
+            const fn = value as (...args: unknown[]) => unknown;
 
             mutableApi[key] = (...args: unknown[]) => {
-                const result =
-                    fn(...args);
+                const result = fn(...args);
 
                 if (
                     result &&
@@ -322,6 +420,56 @@ return (async () => {
         }
 
         return api;
+    }
+
+    private async setSignalAspect(
+        address: number,
+        aspect: SignalScriptAspect
+    ): Promise<void> {
+        await this.check();
+
+        if (!Number.isFinite(address) || address <= 0) {
+            throw new Error(
+                `Invalid signal address: ${address}.`
+            );
+        }
+
+        const signalElement = findSignalElementByAddress(
+            layoutRuntimeStore.getLayout(),
+            address
+        );
+
+        if (!signalElement) {
+            throw new Error(
+                `Signal not found for address ${address}.`
+            );
+        }
+
+        const addressLength = getSignalAddressLength(signalElement);
+        const bits = getSignalAspectBits(signalElement, aspect);
+
+        for (let i = 0; i < addressLength; i += 1) {
+            await this.check();
+
+            const accessoryAddress = address + i;
+            const active = ((bits >> i) & 1) === 1;
+            const ok = await this.commands.setBasicAccessory(
+                accessoryAddress,
+                active
+            );
+
+            if (!ok) {
+                throw new Error(
+                    `Could not set signal accessory ${accessoryAddress}.`
+                );
+            }
+        }
+
+        this.log(
+            `Signal #${address} set to ${aspect}.`
+        );
+
+        await this.check();
     }
 
     private createApi() {
@@ -393,19 +541,8 @@ return (async () => {
                     );
                 }
 
-                const topology =
-                    railwayTopologyStore.getTopology();
-
-                if (!topology) {
-                    throw new Error(
-                        "No server-side topology is available."
-                    );
-                }
-
                 const turnout =
-                    topology.getTurnouts().find(
-                        item => item.turnoutAddress === address
-                    );
+                    findTurnoutByAccessoryAddress(address);
 
                 if (!turnout) {
                     throw new Error(
@@ -421,7 +558,11 @@ return (async () => {
                  * A command center viszont fizikai boolean értéket vár.
                  */
                 const physicalClosed =
-                    closed === turnout.turnoutClosedValue;
+                    getTurnoutPhysicalClosedValue(
+                        turnout,
+                        address,
+                        closed
+                    );
 
                 const ok =
                     await this.commands.setTurnout(
@@ -444,6 +585,51 @@ return (async () => {
                 return this.commands.getTurnoutState(
                     address
                 );
+            },
+
+            setBasicAccessory: async (
+                address: number,
+                active: boolean
+            ) => {
+                await this.check();
+
+                const ok =
+                    await this.commands.setBasicAccessory(
+                        address,
+                        active
+                    );
+
+                if (!ok) {
+                    throw new Error(
+                        `Could not set basic accessory ${address}.`
+                    );
+                }
+
+                await this.check();
+            },
+
+            setSignalRed: async (
+                address: number
+            ) => {
+                await this.setSignalAspect(address, "red");
+            },
+
+            setSignalYellow: async (
+                address: number
+            ) => {
+                await this.setSignalAspect(address, "yellow");
+            },
+
+            setSignalGreen: async (
+                address: number
+            ) => {
+                await this.setSignalAspect(address, "green");
+            },
+
+            setSignalWhite: async (
+                address: number
+            ) => {
+                await this.setSignalAspect(address, "white");
             },
 
             setLocoFunction: async (
@@ -575,11 +761,8 @@ return (async () => {
             return null;
         }
 
-        const layout =
-            layoutRuntimeStore.getLayout();
-
         return findElementByIdInLayout(
-            layout,
+            layoutRuntimeStore.getLayout(),
             elementId
         );
     }
@@ -629,25 +812,6 @@ return (async () => {
             listener(snapshot);
         }
     }
-}
-
-function findElementByIdInLayout(
-    layout: SerializedLayoutDto | null,
-    elementId: string
-): SerializedLayoutElementDto | null {
-    if (!layout?.layers) {
-        return null;
-    }
-
-    for (const layer of layout.layers) {
-        for (const element of layer.elements ?? []) {
-            if (element.id === elementId) {
-                return element;
-            }
-        }
-    }
-
-    return null;
 }
 
 class ScriptRuntimeStore {
