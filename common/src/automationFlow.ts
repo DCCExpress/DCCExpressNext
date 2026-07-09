@@ -91,6 +91,19 @@ export type AutomationFlowDocumentDto = {
   updatedAt?: string;
 };
 
+export type AutomationFlowRuntimeStatus =
+  | "running"
+  | "stopped";
+
+export type AutomationFlowRuntimeSnapshotDto = {
+  status: AutomationFlowRuntimeStatus;
+  running: boolean;
+  updatedAt: string;
+  lastReason?: string;
+  lastEvaluationAt?: string;
+  lastError?: string;
+};
+
 export type AutomationFlowCommandAction =
   | "load"
   | "save";
@@ -108,6 +121,24 @@ export type AutomationFlowResponsePayload = {
   message?: string;
   document?: AutomationFlowDocumentDto;
   created?: boolean;
+};
+
+export type AutomationFlowRuntimeCommandAction =
+  | "snapshot"
+  | "run"
+  | "stop";
+
+export type AutomationFlowRuntimeCommandPayload = {
+  requestId: string;
+  action: AutomationFlowRuntimeCommandAction;
+};
+
+export type AutomationFlowRuntimeResponsePayload = {
+  requestId: string;
+  action: AutomationFlowRuntimeCommandAction;
+  ok: boolean;
+  message?: string;
+  snapshot?: AutomationFlowRuntimeSnapshotDto;
 };
 
 export const createDefaultAutomationFlowPage = (): AutomationFlowPageDto => ({
