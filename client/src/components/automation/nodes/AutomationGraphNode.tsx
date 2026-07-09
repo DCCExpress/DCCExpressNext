@@ -1,4 +1,7 @@
 import {
+  Badge,
+  Button,
+  Group,
   Stack,
   Text,
 } from "@mantine/core";
@@ -13,6 +16,10 @@ import type {
   AutomationFlowNodeData,
   AutomationSignalAspect,
 } from "../../../../../common/src/automationFlow";
+
+import {
+  wsApi,
+} from "../../../services/wsApi";
 
 import {
   AutomationNodeCard,
@@ -80,6 +87,28 @@ function getResolvedSignalAspect(data: AutomationFlowNodeData): AutomationSignal
   return "red";
 }
 
+function getActualLogicalTurnoutClosed(data: AutomationFlowNodeData): boolean {
+  const expectedLogicalClosed = data.turnoutClosed ?? true;
+
+  if (data.outputValid !== true) {
+    return expectedLogicalClosed;
+  }
+
+  return data.active === true
+    ? expectedLogicalClosed
+    : !expectedLogicalClosed;
+}
+
+function getPhysicalTurnoutClosed(logicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
+  const physicalClosedForLogicalClosed = turnoutClosedValue ?? true;
+  return logicalClosed ? physicalClosedForLogicalClosed : !physicalClosedForLogicalClosed;
+}
+
+function stopNodeButtonEvent(event: React.MouseEvent): void {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 function BlockOccupiedNode({ data, selected }: AutomationTypedNodeProps) {
   return <AutomationNodeCard data={data} selected={selected} kind="blockOccupied" />;
 }
@@ -106,7 +135,25 @@ function SensorNode({ data, selected }: AutomationTypedNodeProps) {
 function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
   const { t } = useTranslation();
   const expectedState = getLogicalTurnoutLabel(data.turnoutClosed);
+  const actualLogicalClosed = getActualLogicalTurnoutClosed(data);
+  const actualState = getLogicalTurnoutLabel(actualLogicalClosed);
+  const nextLogicalClosed = !actualLogicalClosed;
+  const nextState = getLogicalTurnoutLabel(nextLogicalClosed);
   const closedValueKey = getPhysicalClosedKey(data.turnoutClosedValue);
+  const canToggle = typeof data.turnoutAddress === "number" && data.turnoutAddress > 0;
+
+  const handleToggleTurnout = (event: React.MouseEvent): void => {
+    stopNodeButtonEvent(event);
+
+    if (!canToggle) {
+      return;
+    }
+
+    wsApi.setTurnout(
+      data.turnoutAddress as number,
+      getPhysicalTurnoutClosed(nextLogicalClosed, data.turnoutClosedValue)
+    );
+  };
 
   return (
     <AutomationNodeCard
@@ -115,13 +162,30 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
       kind="turnout"
       detail={typeof data.turnoutAddress === "number"
         ? (
-            <Text size="xs" c="dimmed">
-              {t("automation.graph.turnoutState", {
-                address: data.turnoutAddress,
-                state: t(`automation.graph.${expectedState}`),
-                closedValue: t(`automation.graph.${closedValueKey}`),
-              })}
-            </Text>
+            <Stack gap={4}>
+              <Text size="xs" c="dimmed">
+                {t("automation.graph.turnoutState", {
+                  address: data.turnoutAddress,
+                  state: t(`automation.graph.${expectedState}`),
+                  closedValue: t(`automation.graph.${closedValueKey}`),
+                })}
+              </Text>
+              <Group gap={6} wrap="nowrap">
+                <Badge color={data.outputValid === true ? data.active === true ? "green" : "blue" : "gray"} variant={data.active === true ? "filled" : "light"} size="xs">
+                  actual: {t(`automation.graph.${actualState}`)}
+                </Badge>
+                <Button
+                  size="compact-xs"
+                  variant="light"
+                  disabled={!canToggle}
+                  onPointerDown={stopNodeButtonEvent}
+                  onMouseDown={stopNodeButtonEvent}
+                  onClick={handleToggleTurnout}
+                >
+                  → {t(`automation.graph.${nextState}`)}
+                </Button>
+              </Group>
+            </Stack>
           )
         : null}
     />
