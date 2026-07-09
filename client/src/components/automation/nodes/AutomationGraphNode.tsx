@@ -241,6 +241,7 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
       selected={selected}
       kind="turnout"
       showIoKey={false}
+      outputBadges={getSingleOutputBadge(data)}
       detail={typeof data.turnoutAddress === "number"
         ? (
             <Group gap={6} wrap="nowrap">
