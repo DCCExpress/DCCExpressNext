@@ -25,6 +25,7 @@ type EditorToolbarProps = {
   onCursorToolClick: () => void;
   onOpenElementPicker: () => void;
   onOpenAutomationFlow: () => void;
+  automationDisabled: boolean;
   onDeleteToolClick: () => void;
   onFitLayout: () => void;
   canUndo: boolean;
@@ -40,6 +41,7 @@ export default function EditorToolbar({
   onCursorToolClick,
   onOpenElementPicker,
   onOpenAutomationFlow,
+  automationDisabled,
   onDeleteToolClick,
   onFitLayout,
   canUndo,
@@ -68,6 +70,7 @@ export default function EditorToolbar({
         <ActionIcon
           variant="light"
           color="violet"
+          disabled={automationDisabled}
           onClick={onOpenAutomationFlow}
           onMouseDown={event => event.preventDefault()}
           aria-label={t("automation.dialog.title")}
