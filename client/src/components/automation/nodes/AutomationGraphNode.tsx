@@ -47,10 +47,6 @@ function getLogicalTurnoutLabel(closed: boolean | undefined): "closed" | "thrown
   return closed === false ? "thrown" : "closed";
 }
 
-function getPhysicalClosedKey(closedValue: boolean | undefined): "physicalFalse" | "physicalTrue" {
-  return closedValue === false ? "physicalFalse" : "physicalTrue";
-}
-
 function getOutputActive(data: AutomationFlowNodeData): boolean {
   return data.active === true;
 }
@@ -128,6 +124,14 @@ function getActualLogicalTurnoutClosed(data: AutomationFlowNodeData): boolean {
 function getPhysicalTurnoutClosed(logicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
   const physicalClosedForLogicalClosed = turnoutClosedValue ?? true;
   return logicalClosed ? physicalClosedForLogicalClosed : !physicalClosedForLogicalClosed;
+}
+
+function getBooleanBadgeColor(valid: boolean, value: boolean): "green" | "red" | "gray" {
+  if (!valid) {
+    return "gray";
+  }
+
+  return value ? "green" : "red";
 }
 
 function stopNodeButtonEvent(event: MouseEvent): void {
@@ -208,13 +212,13 @@ function SensorNode({ data, selected }: AutomationTypedNodeProps) {
 
 function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
   const { t } = useTranslation();
-  const expectedState = getLogicalTurnoutLabel(data.turnoutClosed);
   const actualLogicalClosed = getActualLogicalTurnoutClosed(data);
   const actualState = getLogicalTurnoutLabel(actualLogicalClosed);
   const nextLogicalClosed = !actualLogicalClosed;
   const nextState = getLogicalTurnoutLabel(nextLogicalClosed);
-  const closedValueKey = getPhysicalClosedKey(data.turnoutClosedValue);
   const canToggle = typeof data.turnoutAddress === "number" && data.turnoutAddress > 0;
+  const valid = data.outputValid === true;
+  const active = data.active === true;
 
   useAutomationSelectedKindMarker("turnout", selected);
 
@@ -236,32 +240,28 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
       data={data}
       selected={selected}
       kind="turnout"
+      showIoKey={false}
       detail={typeof data.turnoutAddress === "number"
         ? (
-            <Stack gap={4}>
-              <Text size="xs" c="dimmed">
-                {t("automation.graph.turnoutState", {
-                  address: data.turnoutAddress,
-                  state: t(`automation.graph.${expectedState}`),
-                  closedValue: t(`automation.graph.${closedValueKey}`),
-                })}
-              </Text>
-              <Group gap={6} wrap="nowrap">
-                <Badge color={data.outputValid === true ? data.active === true ? "green" : "blue" : "gray"} variant={data.active === true ? "filled" : "light"} size="xs">
-                  actual: {t(`automation.graph.${actualState}`)}
-                </Badge>
-                <Button
-                  size="compact-xs"
-                  variant="light"
-                  disabled={!canToggle}
-                  onPointerDown={stopNodeButtonEvent}
-                  onMouseDown={stopNodeButtonEvent}
-                  onClick={handleToggleTurnout}
-                >
-                  → {t(`automation.graph.${nextState}`)}
-                </Button>
-              </Group>
-            </Stack>
+            <Group gap={6} wrap="nowrap">
+              <Badge
+                color={getBooleanBadgeColor(valid, active)}
+                variant={valid ? "filled" : "light"}
+                size="xs"
+              >
+                actual: {t(`automation.graph.${actualState}`)}
+              </Badge>
+              <Button
+                size="compact-xs"
+                variant="light"
+                disabled={!canToggle}
+                onPointerDown={stopNodeButtonEvent}
+                onMouseDown={stopNodeButtonEvent}
+                onClick={handleToggleTurnout}
+              >
+                → {t(`automation.graph.${nextState}`)}
+              </Button>
+            </Group>
           )
         : null}
     />
@@ -325,14 +325,14 @@ function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
           id: "then",
           label: "THEN",
           active: conditionActive,
-          valid: conditionValid && conditionActive,
+          valid: conditionValid,
           top: "35%",
         },
         {
           id: "else",
           label: "ELSE",
           active: conditionValid && !conditionActive,
-          valid: conditionValid && !conditionActive,
+          valid: conditionValid,
           top: "65%",
         },
       ]}
@@ -513,7 +513,6 @@ function getSignalAspectValue(data: AutomationFlowNodeData, aspect: AutomationSi
 function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
   const { t } = useTranslation();
   const targetState = getLogicalTurnoutLabel(data.turnoutClosed);
-  const closedValueKey = getPhysicalClosedKey(data.turnoutClosedValue);
 
   useAutomationSelectedKindMarker("turnoutCommand", selected);
 
@@ -522,14 +521,11 @@ function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
       data={data}
       selected={selected}
       kind="turnoutCommand"
+      showIoKey={false}
       detail={typeof data.turnoutAddress === "number"
         ? (
             <Text size="xs" c="dimmed">
-              {t("automation.graph.turnoutCommand", {
-                address: data.turnoutAddress,
-                state: t(`automation.graph.${targetState}`),
-                closedValue: t(`automation.graph.${closedValueKey}`),
-              })}
+              #{data.turnoutAddress} → {t(`automation.graph.${targetState}`)}
             </Text>
           )
         : null}
