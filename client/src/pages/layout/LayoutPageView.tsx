@@ -173,6 +173,7 @@ export function LayoutPageView(props: LayoutPageViewProps) {
 
         <AppShell.Footer>
           <StatusBar
+            editMode={editMode}
             rightPanelMode={rightPanelMode}
             setRightPanelMode={setRightPanelMode}
           />
