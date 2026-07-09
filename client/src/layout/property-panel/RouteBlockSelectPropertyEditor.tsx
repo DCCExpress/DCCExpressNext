@@ -1,10 +1,13 @@
 import { Select, Stack, Text } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { Graph } from "../../../../common/src/railway/graph";
 import type { PropertyChangeHandler } from "./propertyPanelTypes";
-import { useTranslation } from "react-i18next";
+import {
+  getPropertyLabel,
+} from "./propertyTranslations";
 
 type RouteBlockSelectData = Array<{
   value: string;
@@ -33,7 +36,7 @@ export default function RouteBlockSelectPropertyEditor({
   return (
     <Stack gap={6}>
       <Select
-        label={prop.label}
+        label={getPropertyLabel(t, prop)}
         placeholder={t("routesPanel.selectBlock")}
         data={routeGraphBlockSelectData}
         value={(selectedElement as any)[prop.key] || null}
