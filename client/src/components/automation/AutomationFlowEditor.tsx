@@ -21,7 +21,6 @@ import {
 } from "@mantine/core";
 import {
   IconDeviceFloppy,
-  IconPlayerPlay,
   IconPlus,
   IconRefresh,
   IconTrash,
@@ -54,6 +53,9 @@ import {
   DEFAULT_AUTOMATION_FLOW_PAGE_ID,
   createDefaultAutomationFlowPage,
 } from "../../../../common/src/automationFlow";
+import {
+  ELEMENT_TYPES,
+} from "../../../../common/src/layout/elementTypes";
 import type {
   SerializedLayoutDto,
   SerializedLayoutElementDto,
@@ -87,7 +89,25 @@ type SignalMapping = {
   valueWhite: number;
 };
 
+type LayoutElementSelectOption = {
+  value: string;
+  label: string;
+  address: number;
+  name: string;
+};
+
+type LayoutTurnoutSelectOption = LayoutElementSelectOption & {
+  turnoutClosedValue: boolean;
+};
+
+type LayoutSignalSelectOption = LayoutElementSelectOption & {
+  mapping: SignalMapping;
+};
+
 type LayoutAutomationMappings = {
+  sensorOptions: LayoutElementSelectOption[];
+  turnoutOptions: LayoutTurnoutSelectOption[];
+  signalOptions: LayoutSignalSelectOption[];
   turnoutClosedValueByAddress: Map<number, boolean>;
   signalByAddress: Map<number, SignalMapping>;
 };
@@ -105,11 +125,27 @@ const DEFAULT_PAGE = createDefaultAutomationFlowPage();
 const EMPTY_NODES: AutomationNode[] = [];
 const EMPTY_EDGES: AutomationEdge[] = [];
 
-function getNodeTitle(kind: AutomationFlowNodeKind, fallback: string, t: (key: string, options?: Record<string, unknown>) => string): string {
+const EMPTY_LAYOUT_MAPPINGS: LayoutAutomationMappings = {
+  sensorOptions: [],
+  turnoutOptions: [],
+  signalOptions: [],
+  turnoutClosedValueByAddress: new Map<number, boolean>(),
+  signalByAddress: new Map<number, SignalMapping>(),
+};
+
+function getNodeTitle(
+  kind: AutomationFlowNodeKind,
+  fallback: string,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string {
   return t(`automation.nodes.${kind}.title`, { defaultValue: fallback });
 }
 
-function getNodeDescription(kind: AutomationFlowNodeKind, fallback: string, t: (key: string, options?: Record<string, unknown>) => string): string {
+function getNodeDescription(
+  kind: AutomationFlowNodeKind,
+  fallback: string,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string {
   return t(`automation.nodes.${kind}.description`, { defaultValue: fallback });
 }
 
@@ -226,21 +262,101 @@ function getSignalAspectBits(data: AutomationFlowNodeData, aspect: AutomationSig
   }
 }
 
-function readTurnoutMapping(element: SerializedLayoutElementDto, result: Map<number, boolean>): void {
+function getElementName(element: SerializedLayoutElementDto, fallback: string): string {
+  const name = (element as { name?: unknown }).name;
+  return typeof name === "string" && name.trim().length > 0
+    ? name.trim()
+    : fallback;
+}
+
+function createElementLabel(address: number, name: string): string {
+  return `#${address} ${name}`;
+}
+
+function sortByAddress<T extends { address: number; label: string }>(items: T[]): T[] {
+  return [...items].sort((left, right) => left.address - right.address || left.label.localeCompare(right.label));
+}
+
+function addUniqueElementOption<T extends LayoutElementSelectOption>(
+  target: T[],
+  seenAddress: Set<number>,
+  option: T
+): void {
+  if (option.address <= 0 || seenAddress.has(option.address)) {
+    return;
+  }
+
+  seenAddress.add(option.address);
+  target.push(option);
+}
+
+function readSensorOption(
+  element: SerializedLayoutElementDto,
+  target: LayoutElementSelectOption[],
+  seenAddress: Set<number>
+): void {
+  if (element.type !== ELEMENT_TYPES.TRACK_SENSOR || typeof element.address !== "number") {
+    return;
+  }
+
+  const name = getElementName(element, `Sensor${element.address}`);
+  addUniqueElementOption(target, seenAddress, {
+    value: String(element.address),
+    address: element.address,
+    name,
+    label: createElementLabel(element.address, name),
+  });
+}
+
+function readTurnoutOptions(
+  element: SerializedLayoutElementDto,
+  target: LayoutTurnoutSelectOption[],
+  seenAddress: Set<number>,
+  turnoutClosedValueByAddress: Map<number, boolean>
+): void {
   if (typeof element.turnoutAddress === "number" && typeof element.turnoutClosedValue === "boolean") {
-    result.set(element.turnoutAddress, element.turnoutClosedValue);
+    const name = getElementName(element, `Turnout${element.turnoutAddress}`);
+    turnoutClosedValueByAddress.set(element.turnoutAddress, element.turnoutClosedValue);
+    addUniqueElementOption(target, seenAddress, {
+      value: String(element.turnoutAddress),
+      address: element.turnoutAddress,
+      name,
+      label: createElementLabel(element.turnoutAddress, name),
+      turnoutClosedValue: element.turnoutClosedValue,
+    });
   }
 
   if (typeof element.turnout1Address === "number" && typeof element.turnout1ClosedValue === "boolean") {
-    result.set(element.turnout1Address, element.turnout1ClosedValue);
+    const name = `${getElementName(element, `Turnout${element.turnout1Address}`)} / 1`;
+    turnoutClosedValueByAddress.set(element.turnout1Address, element.turnout1ClosedValue);
+    addUniqueElementOption(target, seenAddress, {
+      value: String(element.turnout1Address),
+      address: element.turnout1Address,
+      name,
+      label: createElementLabel(element.turnout1Address, name),
+      turnoutClosedValue: element.turnout1ClosedValue,
+    });
   }
 
   if (typeof element.turnout2Address === "number" && typeof element.turnout2ClosedValue === "boolean") {
-    result.set(element.turnout2Address, element.turnout2ClosedValue);
+    const name = `${getElementName(element, `Turnout${element.turnout2Address}`)} / 2`;
+    turnoutClosedValueByAddress.set(element.turnout2Address, element.turnout2ClosedValue);
+    addUniqueElementOption(target, seenAddress, {
+      value: String(element.turnout2Address),
+      address: element.turnout2Address,
+      name,
+      label: createElementLabel(element.turnout2Address, name),
+      turnoutClosedValue: element.turnout2ClosedValue,
+    });
   }
 }
 
-function readSignalMapping(element: SerializedLayoutElementDto, result: Map<number, SignalMapping>): void {
+function readSignalOption(
+  element: SerializedLayoutElementDto,
+  target: LayoutSignalSelectOption[],
+  seenAddress: Set<number>,
+  signalByAddress: Map<number, SignalMapping>
+): void {
   if (
     typeof element.address !== "number" ||
     typeof element.addressLength !== "number" ||
@@ -252,27 +368,55 @@ function readSignalMapping(element: SerializedLayoutElementDto, result: Map<numb
     return;
   }
 
-  result.set(element.address, {
+  const isSignal = element.type === ELEMENT_TYPES.TRACK_SIGNAL2 ||
+    element.type === ELEMENT_TYPES.TRACK_SIGNAL3 ||
+    element.type === ELEMENT_TYPES.TRACK_SIGNAL4;
+
+  if (!isSignal) {
+    return;
+  }
+
+  const mapping: SignalMapping = {
     addressLength: element.addressLength,
     valueRed: element.valueRed,
     valueYellow: element.valueYellow,
     valueGreen: element.valueGreen,
     valueWhite: element.valueWhite,
+  };
+  const name = getElementName(element, `Signal${element.address}`);
+
+  signalByAddress.set(element.address, mapping);
+  addUniqueElementOption(target, seenAddress, {
+    value: String(element.address),
+    address: element.address,
+    name,
+    label: createElementLabel(element.address, name),
+    mapping,
   });
 }
 
 function buildLayoutAutomationMappings(layout: SerializedLayoutDto): LayoutAutomationMappings {
+  const sensorOptions: LayoutElementSelectOption[] = [];
+  const turnoutOptions: LayoutTurnoutSelectOption[] = [];
+  const signalOptions: LayoutSignalSelectOption[] = [];
+  const seenSensorAddresses = new Set<number>();
+  const seenTurnoutAddresses = new Set<number>();
+  const seenSignalAddresses = new Set<number>();
   const turnoutClosedValueByAddress = new Map<number, boolean>();
   const signalByAddress = new Map<number, SignalMapping>();
 
   for (const layer of layout.layers ?? []) {
     for (const element of layer.elements ?? []) {
-      readTurnoutMapping(element, turnoutClosedValueByAddress);
-      readSignalMapping(element, signalByAddress);
+      readSensorOption(element, sensorOptions, seenSensorAddresses);
+      readTurnoutOptions(element, turnoutOptions, seenTurnoutAddresses, turnoutClosedValueByAddress);
+      readSignalOption(element, signalOptions, seenSignalAddresses, signalByAddress);
     }
   }
 
   return {
+    sensorOptions: sortByAddress(sensorOptions),
+    turnoutOptions: sortByAddress(turnoutOptions),
+    signalOptions: sortByAddress(signalOptions),
     turnoutClosedValueByAddress,
     signalByAddress,
   };
@@ -365,10 +509,7 @@ async function loadLayoutAutomationMappings(): Promise<LayoutAutomationMappings>
     return buildLayoutAutomationMappings(layout);
   } catch (error) {
     console.warn("[AutomationFlowEditor] Layout automation mapping load failed:", error);
-    return {
-      turnoutClosedValueByAddress: new Map<number, boolean>(),
-      signalByAddress: new Map<number, SignalMapping>(),
-    };
+    return EMPTY_LAYOUT_MAPPINGS;
   }
 }
 
@@ -528,6 +669,30 @@ function toNumber(value: string | number | null | undefined): number {
   return 0;
 }
 
+function hasOptionValue<T extends { value: string }>(items: T[], value: string): boolean {
+  return items.some(item => item.value === value);
+}
+
+function withCurrentAddressOption<T extends LayoutElementSelectOption>(
+  options: T[],
+  address: number | undefined,
+  fallbackName: string
+): T[] {
+  if (typeof address !== "number" || address <= 0 || hasOptionValue(options, String(address))) {
+    return options;
+  }
+
+  return [
+    ...options,
+    {
+      value: String(address),
+      address,
+      name: fallbackName,
+      label: createElementLabel(address, fallbackName),
+    } as T,
+  ];
+}
+
 export default function AutomationFlowEditor() {
   const { t } = useTranslation();
   const [pages, setPages] = useState<AutomationFlowPageDto[]>([DEFAULT_PAGE]);
@@ -538,6 +703,7 @@ export default function AutomationFlowEditor() {
   const [statusText, setStatusText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [layoutMappings, setLayoutMappings] = useState<LayoutAutomationMappings>(EMPTY_LAYOUT_MAPPINGS);
 
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const evaluationState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
@@ -560,56 +726,55 @@ export default function AutomationFlowEditor() {
   );
 
   const simulatedNodes = useMemo(
-    () =>
-      visibleNodes.map((node) => {
-        const currentSignal = activePageEnabled
-          ? getNodeSignal(evaluationState, node.id)
-          : emptySignal();
-        const resolvedSignalAspect = node.data.kind === "signal"
-          ? currentSignal.signalAspect ?? "red"
-          : undefined;
+    () => visibleNodes.map((node) => {
+      const currentSignal = activePageEnabled
+        ? getNodeSignal(evaluationState, node.id)
+        : emptySignal();
+      const resolvedSignalAspect = node.data.kind === "signal"
+        ? currentSignal.signalAspect ?? "red"
+        : undefined;
 
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            active: currentSignal.valid && currentSignal.value,
-            outputValid: currentSignal.valid,
-            ...(resolvedSignalAspect
-              ? {
-                  resolvedSignalAspect,
-                  outputCommand: resolvedSignalAspect,
-                }
-              : {}),
-          },
-        };
-      }),
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          active: currentSignal.valid && currentSignal.value,
+          outputValid: currentSignal.valid,
+          ...(resolvedSignalAspect
+            ? {
+                resolvedSignalAspect,
+                outputCommand: resolvedSignalAspect,
+              }
+            : {}),
+        },
+      };
+    }),
     [activePageEnabled, evaluationState, visibleNodes]
   );
 
   const simulatedEdges = useMemo(
-    () =>
-      visibleEdges.map((edge) => {
-        const sourceNode = nodeById.get(edge.source);
-        const currentSignal = activePageEnabled
-          ? getEdgeSignalState(edge, sourceNode, evaluationState)
-          : emptySignal();
-        const active = currentSignal.valid;
+    () => visibleEdges.map((edge) => {
+      const sourceNode = nodeById.get(edge.source);
+      const currentSignal = activePageEnabled
+        ? getEdgeSignalState(edge, sourceNode, evaluationState)
+        : emptySignal();
+      const active = currentSignal.valid;
 
-        return {
-          ...edge,
-          animated: active,
-          markerEnd: { type: MarkerType.ArrowClosed },
-          style: {
-            strokeWidth: active ? 3 : 1.5,
-            stroke: active
-              ? currentSignal.value
-                ? "var(--mantine-color-green-5)"
-                : "var(--mantine-color-blue-5)"
-              : "var(--mantine-color-gray-5)",
-          },
-        };
-      }),
+      return {
+        ...edge,
+        type: "bezier",
+        animated: active,
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: {
+          strokeWidth: active ? 3 : 1.5,
+          stroke: active
+            ? currentSignal.value
+              ? "var(--mantine-color-green-5)"
+              : "var(--mantine-color-blue-5)"
+            : "var(--mantine-color-gray-5)",
+        },
+      };
+    }),
     [activePageEnabled, evaluationState, nodeById, visibleEdges]
   );
 
@@ -694,7 +859,7 @@ export default function AutomationFlowEditor() {
     setPages(normalizedPages);
     setActivePageId(normalizedActivePageId);
     setNodes(normalizedNodes);
-    setEdges(document.edges as AutomationEdge[]);
+    setEdges(document.edges.map(edge => ({ ...edge, type: "bezier" })) as AutomationEdge[]);
     setSelectedNodeId(normalizedNodes.find(node => getNodePageId(node) === normalizedActivePageId)?.id ?? null);
   }, []);
 
@@ -705,6 +870,7 @@ export default function AutomationFlowEditor() {
     try {
       const document = await loadAutomationFlowWs();
       const mappings = await loadLayoutAutomationMappings();
+      setLayoutMappings(mappings);
       const mappedDocument = applyLayoutAutomationMappings(document, mappings);
       applyDocument(mappedDocument);
       setStatusText(
@@ -712,8 +878,8 @@ export default function AutomationFlowEditor() {
           nodes: mappedDocument.nodes.length,
           edges: mappedDocument.edges.length,
           pages: normalizePages(mappedDocument.pages).length,
-          turnouts: mappings.turnoutClosedValueByAddress.size,
-          signals: mappings.signalByAddress.size,
+          turnouts: mappings.turnoutOptions.length,
+          signals: mappings.signalOptions.length,
         })
       );
     } catch (error) {
@@ -769,6 +935,7 @@ export default function AutomationFlowEditor() {
     const unsubscribeFlowChanged = wsClient.on("automationFlowChanged", document => {
       void (async () => {
         const mappings = await loadLayoutAutomationMappings();
+        setLayoutMappings(mappings);
         applyDocument(applyLayoutAutomationMappings(document, mappings));
         setStatusText(t("automation.status.changedByOtherClient"));
       })();
@@ -809,7 +976,7 @@ export default function AutomationFlowEditor() {
             connection.targetHandle ?? "in",
             Date.now(),
           ].join("-"),
-          type: "smoothstep",
+          type: "bezier",
           markerEnd: { type: MarkerType.ArrowClosed },
         },
         currentEdges
@@ -886,7 +1053,7 @@ export default function AutomationFlowEditor() {
         ? { ...page, enabled }
         : page
     )));
-    setStatusText(enabled ? "Automatizáció engedélyezve." : "Automatizáció tiltva.");
+    setStatusText(enabled ? t("automation.status.pageEnabled") : t("automation.status.pageDisabled"));
   }
 
   function updateSelectedNodeData(patch: Partial<AutomationFlowNodeData>) {
@@ -927,7 +1094,7 @@ export default function AutomationFlowEditor() {
     setNodes(EMPTY_NODES);
     setEdges(EMPTY_EDGES);
     setSelectedNodeId(null);
-    setStatusText("Üres automatizáció létrehozva.");
+    setStatusText(t("automation.status.emptyCreated"));
   }
 
   async function saveFlow() {
@@ -954,6 +1121,7 @@ export default function AutomationFlowEditor() {
       activeOutputs={activeOutputs}
       activePageId={activePageId}
       edges={edges}
+      layoutMappings={layoutMappings}
       loading={loading}
       nodes={nodes}
       onAddNode={addNode}
@@ -1008,6 +1176,7 @@ type AutomationFlowLayoutProps = {
   activePageId: string;
   children: ReactNode;
   edges: AutomationEdge[];
+  layoutMappings: LayoutAutomationMappings;
   loading: boolean;
   nodes: AutomationNode[];
   onAddNode: (kind: AutomationFlowNodeKind) => void;
@@ -1034,6 +1203,7 @@ function AutomationFlowLayout({
   activePageId,
   children,
   edges,
+  layoutMappings,
   loading,
   nodes,
   onAddNode,
@@ -1042,7 +1212,7 @@ function AutomationFlowLayout({
   onDeleteSelectedNode,
   onLoadFlow,
   onPageChange,
-  onResetFlow,
+  onResetFlow: _onResetFlow,
   onSaveFlow,
   onSelectedNodeDataChange,
   onUpdateActivePageEnabled,
@@ -1066,7 +1236,7 @@ function AutomationFlowLayout({
           <Group justify="space-between">
             <Title order={5}>{t("automation.panel.nodePalette")}</Title>
             <Badge color={activePageEnabled ? "green" : "red"} variant="light">
-              {visibleNodeCount}/{nodes.length} node
+              {t("automation.panel.nodeCount", { visible: visibleNodeCount, total: nodes.length })}
             </Badge>
           </Group>
 
@@ -1077,7 +1247,9 @@ function AutomationFlowLayout({
               label={t("automation.panel.automationPage")}
               data={pages.map(page => ({
                 value: page.id,
-                label: page.enabled === false ? `${page.name} (tiltva)` : page.name,
+                label: page.enabled === false
+                  ? t("automation.panel.disabledPageSuffix", { name: page.name })
+                  : page.name,
               }))}
               value={activePageId}
               onChange={onPageChange}
@@ -1095,8 +1267,8 @@ function AutomationFlowLayout({
 
                 <Switch
                   checked={activePageEnabled}
-                  label="Engedélyezve"
-                  description="Ha ki van kapcsolva, ezt az automatizációs lapot a szerver nem futtatja."
+                  label={t("automation.panel.pageEnabledLabel")}
+                  description={t("automation.panel.pageEnabledDescription")}
                   onChange={(event) => onUpdateActivePageEnabled(event.currentTarget.checked)}
                 />
               </>
@@ -1166,12 +1338,6 @@ function AutomationFlowLayout({
                   <IconRefresh size={16} />
                 </ActionIcon>
               </Tooltip>
-
-              {/* <Tooltip label="Üresre állítás">
-                <ActionIcon variant="light" color="orange" onClick={onResetFlow}>
-                  <IconRefresh size={16} />
-                </ActionIcon>
-              </Tooltip> */}
             </Group>
           </Group>
 
@@ -1183,7 +1349,7 @@ function AutomationFlowLayout({
 
           {!activePageEnabled && (
             <Badge variant="filled" color="red" w="fit-content">
-              Ez az automatizáció tiltva van
+              {t("automation.panel.pageDisabledWarning")}
             </Badge>
           )}
 
@@ -1193,6 +1359,7 @@ function AutomationFlowLayout({
             {selectedNode ? (
               <Stack gap="sm" pr="xs">
                 <SelectedNodeEditor
+                  layoutMappings={layoutMappings}
                   node={selectedNode}
                   onChange={onSelectedNodeDataChange}
                   onDelete={onDeleteSelectedNode}
@@ -1226,12 +1393,13 @@ function AutomationFlowLayout({
 }
 
 type SelectedNodeEditorProps = {
+  layoutMappings: LayoutAutomationMappings;
   node: AutomationNode;
   onChange: (patch: Partial<AutomationFlowNodeData>) => void;
   onDelete: () => void;
 };
 
-function SelectedNodeEditor({ node, onChange, onDelete }: SelectedNodeEditorProps) {
+function SelectedNodeEditor({ layoutMappings, node, onChange, onDelete }: SelectedNodeEditorProps) {
   const { t } = useTranslation();
 
   return (
@@ -1264,10 +1432,10 @@ function SelectedNodeEditor({ node, onChange, onDelete }: SelectedNodeEditorProp
         onChange={(event) => onChange({ ioKey: event.currentTarget.value })}
       />
 
-      {node.data.kind === "sensor" && <SensorNodeFields node={node} onChange={onChange} onDelete={onDelete} />}
-      {node.data.kind === "turnout" && <TurnoutNodeFields node={node} onChange={onChange} onDelete={onDelete} />}
-      {node.data.kind === "signal" && <SignalNodeFields node={node} onChange={onChange} onDelete={onDelete} />}
-      {node.data.kind === "turnoutCommand" && <TurnoutCommandNodeFields node={node} onChange={onChange} onDelete={onDelete} />}
+      {node.data.kind === "sensor" && <SensorNodeFields layoutMappings={layoutMappings} node={node} onChange={onChange} onDelete={onDelete} />}
+      {node.data.kind === "turnout" && <TurnoutNodeFields layoutMappings={layoutMappings} node={node} onChange={onChange} onDelete={onDelete} />}
+      {node.data.kind === "signal" && <SignalNodeFields layoutMappings={layoutMappings} node={node} onChange={onChange} onDelete={onDelete} />}
+      {node.data.kind === "turnoutCommand" && <TurnoutCommandNodeFields layoutMappings={layoutMappings} node={node} onChange={onChange} onDelete={onDelete} />}
 
       {node.data.kind === "ifThenElse" && (
         <Text size="xs" c="dimmed">
@@ -1312,58 +1480,119 @@ function SelectedNodeEditor({ node, onChange, onDelete }: SelectedNodeEditorProp
   );
 }
 
-function SensorNodeFields({ node, onChange }: SelectedNodeEditorProps) {
+function SensorNodeFields({ layoutMappings, node, onChange }: SelectedNodeEditorProps) {
   const { t } = useTranslation();
+  const options = withCurrentAddressOption(
+    layoutMappings.sensorOptions,
+    node.data.sensorAddress,
+    t("automation.fields.manualSensor", { defaultValue: "Manual sensor" })
+  );
+
+  if (options.length === 0) {
+    return (
+      <NumberInput
+        label={t("automation.fields.sensorAddress")}
+        description={t("automation.fields.sensorAddressDescription")}
+        min={0}
+        step={1}
+        value={node.data.sensorAddress ?? 0}
+        onChange={(value) => {
+          const address = toNumber(value);
+          onChange({
+            sensorAddress: address,
+            ioKey: `sensor:${address}`,
+          });
+        }}
+      />
+    );
+  }
 
   return (
-    <NumberInput
+    <Select
       label={t("automation.fields.sensorAddress")}
       description={t("automation.fields.sensorAddressDescription")}
-      min={0}
-      step={1}
-      value={node.data.sensorAddress ?? 0}
+      placeholder={t("automation.fields.selectSensorPlaceholder", { defaultValue: "Válassz szenzort" })}
+      data={options.map(option => ({ value: option.value, label: option.label }))}
+      value={typeof node.data.sensorAddress === "number" ? String(node.data.sensorAddress) : null}
+      searchable
+      allowDeselect={false}
       onChange={(value) => {
-        const address = toNumber(value);
+        const option = options.find(item => item.value === value);
+        if (!option) {
+          return;
+        }
+
         onChange({
-          sensorAddress: address,
-          ioKey: `sensor:${address}`,
+          sensorAddress: option.address,
+          ioKey: `sensor:${option.address}`,
+          label: option.name,
         });
       }}
     />
   );
 }
 
-function TurnoutNodeFields({ node, onChange }: SelectedNodeEditorProps) {
+function TurnoutNodeFields({ layoutMappings, node, onChange }: SelectedNodeEditorProps) {
   const { t } = useTranslation();
+  const logicalClosed = node.data.turnoutClosed ?? true;
+  const options = withCurrentAddressOption(
+    layoutMappings.turnoutOptions,
+    node.data.turnoutAddress,
+    t("automation.fields.manualTurnout", { defaultValue: "Manual turnout" })
+  );
 
   return (
     <Stack gap="xs">
-      <NumberInput
-        label={t("automation.fields.turnoutAddress")}
-        description={t("automation.fields.turnoutAddressDescription")}
-        min={0}
-        step={1}
-        value={node.data.turnoutAddress ?? 0}
-        onChange={(value) => {
-          const address = toNumber(value);
-          const logicalClosed = node.data.turnoutClosed ?? true;
-          onChange({
-            turnoutAddress: address,
-            ioKey: getTurnoutIoKey(address, logicalClosed),
-          });
-        }}
-      />
+      {options.length > 0 ? (
+        <Select
+          label={t("automation.fields.turnoutAddress")}
+          description={t("automation.fields.turnoutAddressDescription")}
+          placeholder={t("automation.fields.selectTurnoutPlaceholder", { defaultValue: "Válassz váltót" })}
+          data={options.map(option => ({ value: option.value, label: option.label }))}
+          value={typeof node.data.turnoutAddress === "number" ? String(node.data.turnoutAddress) : null}
+          searchable
+          allowDeselect={false}
+          onChange={(value) => {
+            const option = options.find(item => item.value === value);
+            if (!option) {
+              return;
+            }
+
+            onChange({
+              turnoutAddress: option.address,
+              turnoutClosedValue: option.turnoutClosedValue ?? node.data.turnoutClosedValue ?? true,
+              ioKey: getTurnoutIoKey(option.address, logicalClosed),
+              label: option.name,
+            });
+          }}
+        />
+      ) : (
+        <NumberInput
+          label={t("automation.fields.turnoutAddress")}
+          description={t("automation.fields.turnoutAddressDescription")}
+          min={0}
+          step={1}
+          value={node.data.turnoutAddress ?? 0}
+          onChange={(value) => {
+            const address = toNumber(value);
+            onChange({
+              turnoutAddress: address,
+              ioKey: getTurnoutIoKey(address, logicalClosed),
+            });
+          }}
+        />
+      )}
 
       <Switch
-        checked={node.data.turnoutClosed ?? true}
+        checked={logicalClosed}
         label={t("automation.fields.turnoutExpectedClosed")}
         description={t("automation.fields.turnoutExpectedClosedDescription")}
         onChange={(event) => {
-          const logicalClosed = event.currentTarget.checked;
+          const nextLogicalClosed = event.currentTarget.checked;
           const address = node.data.turnoutAddress ?? 0;
           onChange({
-            turnoutClosed: logicalClosed,
-            ioKey: getTurnoutIoKey(address, logicalClosed),
+            turnoutClosed: nextLogicalClosed,
+            ioKey: getTurnoutIoKey(address, nextLogicalClosed),
           });
         }}
       />
@@ -1378,29 +1607,64 @@ function TurnoutNodeFields({ node, onChange }: SelectedNodeEditorProps) {
   );
 }
 
-function SignalNodeFields({ node, onChange }: SelectedNodeEditorProps) {
+function SignalNodeFields({ layoutMappings, node, onChange }: SelectedNodeEditorProps) {
   const { t } = useTranslation();
   const addressLength = node.data.signalAddressLength ?? 1;
+  const options = withCurrentAddressOption(
+    layoutMappings.signalOptions,
+    node.data.signalAddress,
+    t("automation.fields.manualSignal", { defaultValue: "Manual signal" })
+  );
 
   return (
     <Stack gap="xs">
-      <NumberInput
-        label={t("automation.fields.signalAddress")}
-        description={t("automation.fields.signalAddressDescription")}
-        min={0}
-        step={1}
-        value={node.data.signalAddress ?? 0}
-        onChange={(value) => {
-          const address = toNumber(value);
-          onChange({
-            signalAddress: address,
-            ioKey: getSignalIoKey(address),
-          });
-        }}
-      />
+      {options.length > 0 ? (
+        <Select
+          label={t("automation.fields.signalAddress")}
+          description={t("automation.fields.signalAddressDescription")}
+          placeholder={t("automation.fields.selectSignalPlaceholder", { defaultValue: "Válassz jelzőt" })}
+          data={options.map(option => ({ value: option.value, label: option.label }))}
+          value={typeof node.data.signalAddress === "number" ? String(node.data.signalAddress) : null}
+          searchable
+          allowDeselect={false}
+          onChange={(value) => {
+            const option = options.find(item => item.value === value);
+            if (!option) {
+              return;
+            }
+
+            const mapping = option.mapping ?? node.data;
+            onChange({
+              signalAddress: option.address,
+              signalAddressLength: mapping.addressLength ?? 1,
+              signalValueRed: mapping.valueRed ?? 0,
+              signalValueYellow: mapping.valueYellow ?? 1,
+              signalValueGreen: mapping.valueGreen ?? 2,
+              signalValueWhite: mapping.valueWhite ?? 3,
+              ioKey: getSignalIoKey(option.address),
+              label: option.name,
+            });
+          }}
+        />
+      ) : (
+        <NumberInput
+          label={t("automation.fields.signalAddress")}
+          description={t("automation.fields.signalAddressDescription")}
+          min={0}
+          step={1}
+          value={node.data.signalAddress ?? 0}
+          onChange={(value) => {
+            const address = toNumber(value);
+            onChange({
+              signalAddress: address,
+              ioKey: getSignalIoKey(address),
+            });
+          }}
+        />
+      )}
 
       <Text size="xs" c="dimmed">
-        Bemenetek: green, yellow, white. Pontosan egy true bemenet állítja a jelzőképet. Ha nincs true vagy több true érkezik, a parancs red lesz.
+        {t("automation.fields.signalInputRule")}
       </Text>
 
       <Group gap="xs" wrap="wrap">
@@ -1408,45 +1672,76 @@ function SignalNodeFields({ node, onChange }: SelectedNodeEditorProps) {
         <Badge color="yellow" variant="light">yellow: {getSignalAspectBits(node.data, "yellow")}</Badge>
         <Badge color="green" variant="light">green: {getSignalAspectBits(node.data, "green")}</Badge>
         <Badge color="gray" variant="light">white: {getSignalAspectBits(node.data, "white")}</Badge>
-        <Badge color="blue" variant="light">len: {addressLength}</Badge>
+        <Badge color="blue" variant="light">{t("automation.fields.addressLengthShort")}: {addressLength}</Badge>
       </Group>
     </Stack>
   );
 }
 
-function TurnoutCommandNodeFields({ node, onChange }: SelectedNodeEditorProps) {
+function TurnoutCommandNodeFields({ layoutMappings, node, onChange }: SelectedNodeEditorProps) {
   const { t } = useTranslation();
+  const logicalClosed = node.data.turnoutClosed ?? true;
+  const options = withCurrentAddressOption(
+    layoutMappings.turnoutOptions,
+    node.data.turnoutAddress,
+    t("automation.fields.manualTurnout", { defaultValue: "Manual turnout" })
+  );
 
   return (
     <Stack gap="xs">
-      <NumberInput
-        label={t("automation.fields.turnoutAddress")}
-        description={t("automation.fields.turnoutCommandAddressDescription")}
-        min={0}
-        step={1}
-        value={node.data.turnoutAddress ?? 0}
-        onChange={(value) => {
-          const address = toNumber(value);
-          const logicalClosed = node.data.turnoutClosed ?? true;
-          onChange({
-            turnoutAddress: address,
-            ioKey: getTurnoutCommandIoKey(address, logicalClosed),
-            outputCommand: getTurnoutStateLabel(logicalClosed),
-          });
-        }}
-      />
+      {options.length > 0 ? (
+        <Select
+          label={t("automation.fields.turnoutAddress")}
+          description={t("automation.fields.turnoutCommandAddressDescription")}
+          placeholder={t("automation.fields.selectTurnoutPlaceholder", { defaultValue: "Válassz váltót" })}
+          data={options.map(option => ({ value: option.value, label: option.label }))}
+          value={typeof node.data.turnoutAddress === "number" ? String(node.data.turnoutAddress) : null}
+          searchable
+          allowDeselect={false}
+          onChange={(value) => {
+            const option = options.find(item => item.value === value);
+            if (!option) {
+              return;
+            }
+
+            onChange({
+              turnoutAddress: option.address,
+              turnoutClosedValue: option.turnoutClosedValue ?? node.data.turnoutClosedValue ?? true,
+              ioKey: getTurnoutCommandIoKey(option.address, logicalClosed),
+              outputCommand: getTurnoutStateLabel(logicalClosed),
+              label: option.name,
+            });
+          }}
+        />
+      ) : (
+        <NumberInput
+          label={t("automation.fields.turnoutAddress")}
+          description={t("automation.fields.turnoutCommandAddressDescription")}
+          min={0}
+          step={1}
+          value={node.data.turnoutAddress ?? 0}
+          onChange={(value) => {
+            const address = toNumber(value);
+            onChange({
+              turnoutAddress: address,
+              ioKey: getTurnoutCommandIoKey(address, logicalClosed),
+              outputCommand: getTurnoutStateLabel(logicalClosed),
+            });
+          }}
+        />
+      )}
 
       <Switch
-        checked={node.data.turnoutClosed ?? true}
+        checked={logicalClosed}
         label={t("automation.fields.turnoutCommandClosed")}
         description={t("automation.fields.turnoutCommandClosedDescription")}
         onChange={(event) => {
-          const logicalClosed = event.currentTarget.checked;
+          const nextLogicalClosed = event.currentTarget.checked;
           const address = node.data.turnoutAddress ?? 0;
           onChange({
-            turnoutClosed: logicalClosed,
-            ioKey: getTurnoutCommandIoKey(address, logicalClosed),
-            outputCommand: getTurnoutStateLabel(logicalClosed),
+            turnoutClosed: nextLogicalClosed,
+            ioKey: getTurnoutCommandIoKey(address, nextLogicalClosed),
+            outputCommand: getTurnoutStateLabel(nextLogicalClosed),
           });
         }}
       />
@@ -1554,7 +1849,7 @@ function createSnapshot(
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      ...(typeof edge.type === "string" ? { type: edge.type } : {}),
+      type: "bezier",
       ...(typeof edge.sourceHandle === "string" ? { sourceHandle: edge.sourceHandle } : {}),
       ...(typeof edge.targetHandle === "string" ? { targetHandle: edge.targetHandle } : {}),
     })),
