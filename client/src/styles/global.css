@@ -5,6 +5,11 @@
   touch-action: none;
 }
 
+body[data-automation-selected-node-kind="turnout"] .mantine-Modal-content .mantine-Group-root > .mantine-Card-root:last-child .mantine-Switch-root,
+body[data-automation-selected-node-kind="turnoutCommand"] .mantine-Modal-content .mantine-Group-root > .mantine-Card-root:last-child .mantine-Switch-root {
+  display: none !important;
+}
+
 .blinkBadge {
   animation: blinkBadge 0.5s infinite;
 }
