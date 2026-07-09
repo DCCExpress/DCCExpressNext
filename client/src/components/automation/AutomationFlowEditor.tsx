@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ActionIcon,
   Badge,
@@ -66,9 +66,6 @@ import {
   saveAutomationFlowWs,
 } from "../../api/automationFlowWsApi";
 import {
-  wsApi,
-} from "../../services/wsApi";
-import {
   wsClient,
 } from "../../services/wsClient";
 import {
@@ -105,154 +102,8 @@ type AutomationEvaluationState = Record<string, AutomationSignalState>;
 
 const SIGNAL_INPUT_ASPECTS: SignalInputAspect[] = ["green", "yellow", "white"];
 const DEFAULT_PAGE = createDefaultAutomationFlowPage();
-
-const INITIAL_NODES: AutomationNode[] = [
-  {
-    id: "block-a1-occupied",
-    type: "automationNode",
-    position: { x: 60, y: 120 },
-    data: {
-      kind: "blockOccupied",
-      label: "A1 szakasz foglalt",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      description: "Próba bemenet. Kapcsold be a jobb oldali panelen.",
-      ioKey: "block:A1",
-      active: false,
-    },
-  },
-  {
-    id: "sensor-1",
-    type: "automationNode",
-    position: { x: 60, y: 280 },
-    data: {
-      kind: "sensor",
-      label: "Szenzor #1",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      description: "Fizikai szenzor bemenet szimulációja.",
-      ioKey: "sensor:1",
-      sensorAddress: 1,
-      active: false,
-    },
-  },
-  {
-    id: "turnout-t1-closed",
-    type: "automationNode",
-    position: { x: 60, y: 440 },
-    data: {
-      kind: "turnout",
-      label: "T1 closed",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      description: "Váltóállapot bemenet. Akkor igaz, ha T1 logikai closed állásban van.",
-      ioKey: "turnout:1:closed",
-      turnoutAddress: 1,
-      turnoutClosed: true,
-      turnoutClosedValue: true,
-      active: false,
-    },
-  },
-  {
-    id: "manual-route-request",
-    type: "automationNode",
-    position: { x: 60, y: 600 },
-    data: {
-      kind: "button",
-      label: "Bejárati út kérése",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      ioKey: "button:route-request",
-      active: true,
-    },
-  },
-  {
-    id: "not-block-a1",
-    type: "automationNode",
-    position: { x: 360, y: 120 },
-    data: {
-      kind: "not",
-      label: "A1 szabad",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      description: "A foglaltság invertálása.",
-    },
-  },
-  {
-    id: "route-and",
-    type: "automationNode",
-    position: { x: 640, y: 300 },
-    data: {
-      kind: "and",
-      label: "S1 sárga feltétel",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      description: "Kézi kérés ÉS szabad szakasz ÉS aktív szenzor ÉS T1 logikai closed.",
-    },
-  },
-  {
-    id: "route-lock-r1",
-    type: "automationNode",
-    position: { x: 930, y: 300 },
-    data: {
-      kind: "routeLock",
-      label: "R1 útvonal zár",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      ioKey: "route:R1",
-    },
-  },
-  {
-    id: "signal-s1",
-    type: "automationNode",
-    position: { x: 1230, y: 220 },
-    data: {
-      kind: "signal",
-      label: "Signal1",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      ioKey: "signal:1:auto",
-      signalAddress: 1,
-      signalAspect: "red",
-      signalAddressLength: 2,
-      signalValueRed: 0,
-      signalValueYellow: 1,
-      signalValueGreen: 2,
-      signalValueWhite: 3,
-      outputCommand: "red",
-    },
-  },
-  {
-    id: "turnout-t2-closed-command",
-    type: "automationNode",
-    position: { x: 1230, y: 380 },
-    data: {
-      kind: "turnoutCommand",
-      label: "T2 állítás closed",
-      pageId: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
-      description: "Aktív feltételnél T2 logikai closed állásba kerül.",
-      ioKey: "turnout-command:2:closed",
-      turnoutAddress: 2,
-      turnoutClosed: true,
-      turnoutClosedValue: true,
-      outputCommand: "closed",
-    },
-  },
-];
-
-const INITIAL_EDGES: AutomationEdge[] = [
-  createEdge("block-a1-occupied", "not-block-a1"),
-  createEdge("not-block-a1", "route-and"),
-  createEdge("sensor-1", "route-and"),
-  createEdge("turnout-t1-closed", "route-and"),
-  createEdge("manual-route-request", "route-and"),
-  createEdge("route-and", "route-lock-r1"),
-  createEdge("route-lock-r1", "signal-s1", "yellow"),
-  createEdge("route-lock-r1", "turnout-t2-closed-command"),
-];
-
-function createEdge(source: string, target: string, targetHandle?: string): AutomationEdge {
-  return {
-    id: [source, targetHandle ?? "in", target].join("-"),
-    source,
-    target,
-    ...(targetHandle ? { targetHandle } : {}),
-    type: "smoothstep",
-    markerEnd: { type: MarkerType.ArrowClosed },
-  };
-}
+const EMPTY_NODES: AutomationNode[] = [];
+const EMPTY_EDGES: AutomationEdge[] = [];
 
 function getNodeTitle(kind: AutomationFlowNodeKind, fallback: string, t: (key: string, options?: Record<string, unknown>) => string): string {
   return t(`automation.nodes.${kind}.title`, { defaultValue: fallback });
@@ -285,12 +136,12 @@ function signal(value: boolean, signalAspect?: AutomationSignalAspect): Automati
   return { valid: true, value, ...(signalAspect ? { signalAspect } : {}) };
 }
 
-function getNodeSignal(evaluation: AutomationEvaluationState, nodeId: string): AutomationSignalState {
-  return evaluation[nodeId] ?? emptySignal();
-}
-
 function signalsEqual(left: AutomationSignalState, right: AutomationSignalState): boolean {
   return left.valid === right.valid && left.value === right.value && left.signalAspect === right.signalAspect;
+}
+
+function getNodeSignal(evaluation: AutomationEvaluationState, nodeId: string): AutomationSignalState {
+  return evaluation[nodeId] ?? emptySignal();
 }
 
 function getNodePageId(node: AutomationNode): string {
@@ -299,31 +150,38 @@ function getNodePageId(node: AutomationNode): string {
     : DEFAULT_AUTOMATION_FLOW_PAGE_ID;
 }
 
+function isPageEnabled(page: AutomationFlowPageDto | undefined): boolean {
+  return page?.enabled !== false;
+}
+
 function createPageId(): string {
   return `page-${Date.now().toString(36)}`;
 }
 
 function normalizePages(pages: AutomationFlowPageDto[] | undefined): AutomationFlowPageDto[] {
-  if (!pages || pages.length === 0) {
-    return [DEFAULT_PAGE];
+  const normalized = (pages ?? [])
+    .filter(page => typeof page.id === "string" && page.id.trim().length > 0)
+    .map(page => ({
+      id: page.id.trim(),
+      name: typeof page.name === "string" && page.name.trim().length > 0
+        ? page.name.trim()
+        : page.id.trim(),
+      enabled: page.enabled !== false,
+    }));
+
+  if (normalized.length === 0) {
+    return [createDefaultAutomationFlowPage()];
   }
 
   const seen = new Set<string>();
-  const result: AutomationFlowPageDto[] = [];
-
-  for (const page of pages) {
-    if (!page.id || seen.has(page.id)) {
-      continue;
+  return normalized.filter(page => {
+    if (seen.has(page.id)) {
+      return false;
     }
 
     seen.add(page.id);
-    result.push({
-      id: page.id,
-      name: page.name?.trim() || page.id,
-    });
-  }
-
-  return result.length > 0 ? result : [DEFAULT_PAGE];
+    return true;
+  });
 }
 
 function getValidActivePageId(pages: AutomationFlowPageDto[], preferredPageId: string | undefined): string {
@@ -346,21 +204,12 @@ function getTurnoutCommandIoKey(address: number, logicalClosed: boolean): string
   return `turnout-command:${address}:${getTurnoutStateLabel(logicalClosed)}`;
 }
 
-function getTurnoutCommandLabel(address: number, logicalClosed: boolean): string {
-  return `T${address} ${getTurnoutStateLabel(logicalClosed)}`;
-}
-
 function getSignalIoKey(address: number): string {
   return `signal:${address}:auto`;
 }
 
 function getLogicalTurnoutClosedFromPhysical(physicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
   return physicalClosed === (turnoutClosedValue ?? true);
-}
-
-function getPhysicalTurnoutClosedFromLogical(logicalClosed: boolean, turnoutClosedValue: boolean | undefined): boolean {
-  const physicalClosedForLogicalClosed = turnoutClosedValue ?? true;
-  return logicalClosed ? physicalClosedForLogicalClosed : !physicalClosedForLogicalClosed;
 }
 
 function getSignalAspectBits(data: AutomationFlowNodeData, aspect: AutomationSignalAspect = "red"): number {
@@ -683,17 +532,17 @@ export default function AutomationFlowEditor() {
   const { t } = useTranslation();
   const [pages, setPages] = useState<AutomationFlowPageDto[]>([DEFAULT_PAGE]);
   const [activePageId, setActivePageId] = useState<string>(DEFAULT_AUTOMATION_FLOW_PAGE_ID);
-  const [nodes, setNodes] = useState<AutomationNode[]>(INITIAL_NODES);
-  const [edges, setEdges] = useState<AutomationEdge[]>(INITIAL_EDGES);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(INITIAL_NODES[0]?.id ?? null);
+  const [nodes, setNodes] = useState<AutomationNode[]>(EMPTY_NODES);
+  const [edges, setEdges] = useState<AutomationEdge[]>(EMPTY_EDGES);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const lastActiveTurnoutCommandsRef = useRef<Set<string>>(new Set());
-  const lastActiveSignalCommandKeysRef = useRef<Set<string>>(new Set());
 
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const evaluationState = useMemo(() => evaluateAutomation(nodes, edges), [nodes, edges]);
+  const activePage = pages.find(page => page.id === activePageId) ?? pages[0];
+  const activePageEnabled = isPageEnabled(activePage);
 
   const visibleNodes = useMemo(
     () => nodes.filter(node => getNodePageId(node) === activePageId),
@@ -713,7 +562,9 @@ export default function AutomationFlowEditor() {
   const simulatedNodes = useMemo(
     () =>
       visibleNodes.map((node) => {
-        const currentSignal = getNodeSignal(evaluationState, node.id);
+        const currentSignal = activePageEnabled
+          ? getNodeSignal(evaluationState, node.id)
+          : emptySignal();
         const resolvedSignalAspect = node.data.kind === "signal"
           ? currentSignal.signalAspect ?? "red"
           : undefined;
@@ -733,14 +584,16 @@ export default function AutomationFlowEditor() {
           },
         };
       }),
-    [evaluationState, visibleNodes]
+    [activePageEnabled, evaluationState, visibleNodes]
   );
 
   const simulatedEdges = useMemo(
     () =>
       visibleEdges.map((edge) => {
         const sourceNode = nodeById.get(edge.source);
-        const currentSignal = getEdgeSignalState(edge, sourceNode, evaluationState);
+        const currentSignal = activePageEnabled
+          ? getEdgeSignalState(edge, sourceNode, evaluationState)
+          : emptySignal();
         const active = currentSignal.valid;
 
         return {
@@ -757,7 +610,7 @@ export default function AutomationFlowEditor() {
           },
         };
       }),
-    [evaluationState, nodeById, visibleEdges]
+    [activePageEnabled, evaluationState, nodeById, visibleEdges]
   );
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
@@ -767,46 +620,52 @@ export default function AutomationFlowEditor() {
   const snapshot = useMemo(() => createSnapshot(pages, activePageId, nodes, edges), [activePageId, edges, nodes, pages]);
 
   const activeOutputs = useMemo<AutomationNode[]>(
-    () => nodes.flatMap<AutomationNode>(node => {
-      if (getNodePageId(node) !== activePageId) {
+    () => {
+      if (!activePageEnabled) {
         return [];
       }
 
-      const currentSignal = getNodeSignal(evaluationState, node.id);
-      if (node.data.kind === "signal") {
-        if (!currentSignal.valid) {
+      return nodes.flatMap<AutomationNode>(node => {
+        if (getNodePageId(node) !== activePageId) {
           return [];
         }
 
-        const aspect = currentSignal.signalAspect ?? "red";
-        const signalData: AutomationFlowNodeData = {
-          ...node.data,
-          outputCommand: aspect,
-          resolvedSignalAspect: aspect,
-          ...(typeof node.data.signalAddress === "number"
-            ? { ioKey: `signal:${node.data.signalAddress}:${aspect}` }
-            : typeof node.data.ioKey === "string"
-              ? { ioKey: node.data.ioKey }
-              : {}),
-        };
+        const currentSignal = getNodeSignal(evaluationState, node.id);
+        if (node.data.kind === "signal") {
+          if (!currentSignal.valid) {
+            return [];
+          }
 
-        return [{
-          ...node,
-          data: signalData,
-        }];
-      }
+          const aspect = currentSignal.signalAspect ?? "red";
+          const signalData: AutomationFlowNodeData = {
+            ...node.data,
+            outputCommand: aspect,
+            resolvedSignalAspect: aspect,
+            ...(typeof node.data.signalAddress === "number"
+              ? { ioKey: `signal:${node.data.signalAddress}:${aspect}` }
+              : typeof node.data.ioKey === "string"
+                ? { ioKey: node.data.ioKey }
+                : {}),
+          };
 
-      if (
-        currentSignal.valid &&
-        currentSignal.value &&
-        (node.data.kind === "turnoutCommand" || node.data.kind === "output")
-      ) {
-        return [node];
-      }
+          return [{
+            ...node,
+            data: signalData,
+          }];
+        }
 
-      return [];
-    }),
-    [activePageId, evaluationState, nodes]
+        if (
+          currentSignal.valid &&
+          currentSignal.value &&
+          (node.data.kind === "turnoutCommand" || node.data.kind === "output")
+        ) {
+          return [node];
+        }
+
+        return [];
+      });
+    },
+    [activePageEnabled, activePageId, evaluationState, nodes]
   );
 
   useEffect(() => {
@@ -815,91 +674,7 @@ export default function AutomationFlowEditor() {
     }
   }, [selectedNode, selectedNodeOnActivePage]);
 
-  useEffect(() => {
-    const nextActiveTurnoutCommands = new Set<string>();
-    const nextActiveSignalCommandKeys = new Set<string>();
-
-    for (const node of nodes) {
-      const currentSignal = getNodeSignal(evaluationState, node.id);
-      if (!currentSignal.valid) {
-        continue;
-      }
-
-      if (node.data.kind === "signal") {
-        const address = node.data.signalAddress;
-        const aspect = currentSignal.signalAspect ?? "red";
-        const addressLength = node.data.signalAddressLength ?? 1;
-        const bits = getSignalAspectBits(node.data, aspect);
-        const commandKey = `${node.id}:${address ?? "?"}:${aspect}:${addressLength}:${bits}`;
-        nextActiveSignalCommandKeys.add(commandKey);
-
-        if (lastActiveSignalCommandKeysRef.current.has(commandKey)) {
-          continue;
-        }
-
-        if (typeof address !== "number" || !Number.isFinite(address)) {
-          setStatusText(t("automation.status.signalCommandMissingAddress", { label: node.data.label }));
-          continue;
-        }
-
-        let allSent = true;
-        for (let i = 0; i < addressLength; i += 1) {
-          const accessoryAddress = address + i;
-          const active = ((bits >> i) & 1) === 1;
-          allSent = wsApi.setBasicAccessory(accessoryAddress, active) && allSent;
-        }
-
-        setStatusText(
-          allSent
-            ? t("automation.status.signalCommandSent", { address, aspect: t(`automation.aspects.${aspect}`), bits })
-            : t("automation.status.signalCommandFailed", { address, aspect: t(`automation.aspects.${aspect}`) })
-        );
-        continue;
-      }
-
-      if (!currentSignal.value) {
-        continue;
-      }
-
-      if (node.data.kind === "turnoutCommand") {
-        nextActiveTurnoutCommands.add(node.id);
-
-        if (lastActiveTurnoutCommandsRef.current.has(node.id)) {
-          continue;
-        }
-
-        const address = node.data.turnoutAddress;
-        if (typeof address !== "number" || !Number.isFinite(address)) {
-          setStatusText(t("automation.status.turnoutCommandMissingAddress", { label: node.data.label }));
-          continue;
-        }
-
-        const logicalClosed = node.data.turnoutClosed ?? true;
-        const physicalClosed = getPhysicalTurnoutClosedFromLogical(logicalClosed, node.data.turnoutClosedValue);
-        const commandLabel = getTurnoutCommandLabel(address, logicalClosed);
-        const sent = wsApi.setTurnout(address, physicalClosed);
-        setStatusText(
-          sent
-            ? t("automation.status.turnoutCommandSent", { label: commandLabel, physicalClosed: String(physicalClosed) })
-            : t("automation.status.turnoutCommandFailed", { label: commandLabel })
-        );
-      }
-    }
-
-    lastActiveTurnoutCommandsRef.current = nextActiveTurnoutCommands;
-    lastActiveSignalCommandKeysRef.current = nextActiveSignalCommandKeys;
-  }, [evaluationState, nodes, t]);
-
   const applyDocument = useCallback((document: AutomationFlowDocumentDto): void => {
-    if (document.nodes.length === 0) {
-      setPages([DEFAULT_PAGE]);
-      setActivePageId(DEFAULT_AUTOMATION_FLOW_PAGE_ID);
-      setNodes(INITIAL_NODES);
-      setEdges(INITIAL_EDGES);
-      setSelectedNodeId(INITIAL_NODES[0]?.id ?? null);
-      return;
-    }
-
     const normalizedPages = normalizePages(document.pages);
     const normalizedActivePageId = getValidActivePageId(normalizedPages, document.activePageId);
     const validPageIds = new Set(normalizedPages.map(page => page.id));
@@ -932,7 +707,6 @@ export default function AutomationFlowEditor() {
       const mappings = await loadLayoutAutomationMappings();
       const mappedDocument = applyLayoutAutomationMappings(document, mappings);
       applyDocument(mappedDocument);
-      wsApi.getLayoutRuntimeSnapshot();
       setStatusText(
         t("automation.status.loaded", {
           nodes: mappedDocument.nodes.length,
@@ -997,11 +771,8 @@ export default function AutomationFlowEditor() {
         const mappings = await loadLayoutAutomationMappings();
         applyDocument(applyLayoutAutomationMappings(document, mappings));
         setStatusText(t("automation.status.changedByOtherClient"));
-        wsApi.getLayoutRuntimeSnapshot();
       })();
     });
-
-    wsApi.getLayoutRuntimeSnapshot();
 
     return () => {
       unsubscribeSensor();
@@ -1071,6 +842,7 @@ export default function AutomationFlowEditor() {
     const page: AutomationFlowPageDto = {
       id: createPageId(),
       name: `${t("automation.panel.automationPage")} ${pages.length + 1}`,
+      enabled: true,
     };
 
     setPages(currentPages => [...currentPages, page]);
@@ -1108,6 +880,15 @@ export default function AutomationFlowEditor() {
     )));
   }
 
+  function updateActivePageEnabled(enabled: boolean) {
+    setPages(currentPages => currentPages.map(page => (
+      page.id === activePageId
+        ? { ...page, enabled }
+        : page
+    )));
+    setStatusText(enabled ? "Automatizáció engedélyezve." : "Automatizáció tiltva.");
+  }
+
   function updateSelectedNodeData(patch: Partial<AutomationFlowNodeData>) {
     if (!selectedNodeId) {
       return;
@@ -1141,12 +922,12 @@ export default function AutomationFlowEditor() {
   }
 
   function resetFlow() {
-    setPages([DEFAULT_PAGE]);
+    setPages([createDefaultAutomationFlowPage()]);
     setActivePageId(DEFAULT_AUTOMATION_FLOW_PAGE_ID);
-    setNodes(INITIAL_NODES);
-    setEdges(INITIAL_EDGES);
-    setSelectedNodeId(INITIAL_NODES[0]?.id ?? null);
-    setStatusText(t("automation.status.resetSample"));
+    setNodes(EMPTY_NODES);
+    setEdges(EMPTY_EDGES);
+    setSelectedNodeId(null);
+    setStatusText("Üres automatizáció létrehozva.");
   }
 
   async function saveFlow() {
@@ -1191,6 +972,7 @@ export default function AutomationFlowEditor() {
       onResetFlow={resetFlow}
       onSaveFlow={() => void saveFlow()}
       onSelectedNodeDataChange={updateSelectedNodeData}
+      onUpdateActivePageEnabled={updateActivePageEnabled}
       onUpdateActivePageName={updateActivePageName}
       pages={pages}
       saving={saving}
@@ -1237,6 +1019,7 @@ type AutomationFlowLayoutProps = {
   onResetFlow: () => void;
   onSaveFlow: () => void;
   onSelectedNodeDataChange: (patch: Partial<AutomationFlowNodeData>) => void;
+  onUpdateActivePageEnabled: (enabled: boolean) => void;
   onUpdateActivePageName: (name: string) => void;
   pages: AutomationFlowPageDto[];
   saving: boolean;
@@ -1262,6 +1045,7 @@ function AutomationFlowLayout({
   onResetFlow,
   onSaveFlow,
   onSelectedNodeDataChange,
+  onUpdateActivePageEnabled,
   onUpdateActivePageName,
   pages,
   saving,
@@ -1273,6 +1057,7 @@ function AutomationFlowLayout({
   const { t } = useTranslation();
   const statusIsError = ["hiba", "error", "fehler"].some(token => statusText?.toLocaleLowerCase().includes(token));
   const activePage = pages.find(page => page.id === activePageId) ?? pages[0];
+  const activePageEnabled = isPageEnabled(activePage);
 
   return (
     <Group align="stretch" gap="md" wrap="nowrap" style={{ minHeight: "calc(100vh - 150px)" }}>
@@ -1280,7 +1065,9 @@ function AutomationFlowLayout({
         <Stack gap="sm">
           <Group justify="space-between">
             <Title order={5}>{t("automation.panel.nodePalette")}</Title>
-            <Badge variant="light">{visibleNodeCount}/{nodes.length} node</Badge>
+            <Badge color={activePageEnabled ? "green" : "red"} variant="light">
+              {visibleNodeCount}/{nodes.length} node
+            </Badge>
           </Group>
 
           <Divider />
@@ -1288,7 +1075,10 @@ function AutomationFlowLayout({
           <Stack gap="xs">
             <Select
               label={t("automation.panel.automationPage")}
-              data={pages.map(page => ({ value: page.id, label: page.name }))}
+              data={pages.map(page => ({
+                value: page.id,
+                label: page.enabled === false ? `${page.name} (tiltva)` : page.name,
+              }))}
               value={activePageId}
               onChange={onPageChange}
               searchable
@@ -1296,11 +1086,20 @@ function AutomationFlowLayout({
             />
 
             {activePage && (
-              <TextInput
-                label={t("automation.panel.pageName")}
-                value={activePage.name}
-                onChange={(event) => onUpdateActivePageName(event.currentTarget.value)}
-              />
+              <>
+                <TextInput
+                  label={t("automation.panel.pageName")}
+                  value={activePage.name}
+                  onChange={(event) => onUpdateActivePageName(event.currentTarget.value)}
+                />
+
+                <Switch
+                  checked={activePageEnabled}
+                  label="Engedélyezve"
+                  description="Ha ki van kapcsolva, ezt az automatizációs lapot a szerver nem futtatja."
+                  onChange={(event) => onUpdateActivePageEnabled(event.currentTarget.checked)}
+                />
+              </>
             )}
 
             <Group grow gap="xs">
@@ -1315,7 +1114,7 @@ function AutomationFlowLayout({
 
           <Divider />
 
-          <ScrollArea h="calc(100vh - 390px)">
+          <ScrollArea h="calc(100vh - 430px)">
             <Stack gap="md" pr="xs">
               {NODE_GROUPS.map((group) => (
                 <Stack key={group} gap="xs">
@@ -1368,7 +1167,7 @@ function AutomationFlowLayout({
                 </ActionIcon>
               </Tooltip>
 
-              <Tooltip label={t("automation.panel.resetSample")}>
+              <Tooltip label="Üresre állítás">
                 <ActionIcon variant="light" color="orange" onClick={onResetFlow}>
                   <IconRefresh size={16} />
                 </ActionIcon>
@@ -1379,6 +1178,12 @@ function AutomationFlowLayout({
           {statusText && (
             <Badge variant="light" color={statusIsError ? "red" : "blue"} w="fit-content">
               {statusText}
+            </Badge>
+          )}
+
+          {!activePageEnabled && (
+            <Badge variant="filled" color="red" w="fit-content">
+              Ez az automatizáció tiltva van
             </Badge>
           )}
 
@@ -1523,7 +1328,6 @@ function SensorNodeFields({ node, onChange }: SelectedNodeEditorProps) {
           sensorAddress: address,
           ioKey: `sensor:${address}`,
         });
-        wsApi.getLayoutRuntimeSnapshot();
       }}
     />
   );
@@ -1547,7 +1351,6 @@ function TurnoutNodeFields({ node, onChange }: SelectedNodeEditorProps) {
             turnoutAddress: address,
             ioKey: getTurnoutIoKey(address, logicalClosed),
           });
-          wsApi.getLayoutRuntimeSnapshot();
         }}
       />
 
@@ -1562,7 +1365,6 @@ function TurnoutNodeFields({ node, onChange }: SelectedNodeEditorProps) {
             turnoutClosed: logicalClosed,
             ioKey: getTurnoutIoKey(address, logicalClosed),
           });
-          wsApi.getLayoutRuntimeSnapshot();
         }}
       />
 
@@ -1570,10 +1372,7 @@ function TurnoutNodeFields({ node, onChange }: SelectedNodeEditorProps) {
         checked={node.data.turnoutClosedValue ?? true}
         label={t("automation.fields.physicalClosedMeansLogicalClosed")}
         description={t("automation.fields.physicalClosedMeansLogicalClosedDescription")}
-        onChange={(event) => {
-          onChange({ turnoutClosedValue: event.currentTarget.checked });
-          wsApi.getLayoutRuntimeSnapshot();
-        }}
+        onChange={(event) => onChange({ turnoutClosedValue: event.currentTarget.checked })}
       />
     </Stack>
   );
@@ -1728,10 +1527,12 @@ function createSnapshot(
   nodes: AutomationNode[],
   edges: AutomationEdge[]
 ): AutomationFlowDocumentDto {
+  const normalizedPages = normalizePages(pages);
+
   return {
     version: 1,
-    name: "Vasútmodell automatika alap",
-    pages: normalizePages(pages),
+    name: "Vasútmodell automatika",
+    pages: normalizedPages,
     activePageId,
     nodes: nodes.map(node => ({
       id: node.id,
