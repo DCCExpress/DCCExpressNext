@@ -27,6 +27,7 @@ export type AutomationSignalAspect =
 export type AutomationFlowPageDto = {
   id: string;
   name: string;
+  enabled?: boolean;
 };
 
 export type AutomationFlowNodeData = Record<string, unknown> & {
@@ -112,6 +113,7 @@ export type AutomationFlowResponsePayload = {
 export const createDefaultAutomationFlowPage = (): AutomationFlowPageDto => ({
   id: DEFAULT_AUTOMATION_FLOW_PAGE_ID,
   name: "Fő lap",
+  enabled: true,
 });
 
 export const createEmptyAutomationFlowDocument = (): AutomationFlowDocumentDto => ({
