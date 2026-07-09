@@ -50,6 +50,22 @@ function getSingleOutputBadge(data: AutomationFlowNodeData, label?: string) {
   ];
 }
 
+function getPayloadPreview(payload: unknown): string {
+  if (payload === undefined) {
+    return "undefined";
+  }
+
+  if (typeof payload === "string") {
+    return payload;
+  }
+
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return String(payload);
+  }
+}
+
 function getResolvedSignalAspect(data: AutomationFlowNodeData): AutomationSignalAspect {
   const value = data.resolvedSignalAspect;
 
@@ -237,6 +253,29 @@ function RouteLockNode({ data, selected }: AutomationTypedNodeProps) {
   );
 }
 
+function FunctionNode({ data, selected }: AutomationTypedNodeProps) {
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="function"
+      outputBadges={getSingleOutputBadge(data, "payload")}
+      detail={(
+        <Stack gap={2}>
+          <Text size="xs" c="dimmed">
+            return → payload
+          </Text>
+          {data.outputValid === true && (
+            <Text size="xs" c="dimmed" truncate>
+              payload: {getPayloadPreview(data.payload)}
+            </Text>
+          )}
+        </Stack>
+      )}
+    />
+  );
+}
+
 function SignalNode({ data, selected }: AutomationTypedNodeProps) {
   const { t } = useTranslation();
   const aspect = getResolvedSignalAspect(data);
@@ -358,6 +397,8 @@ export function AutomationGraphNode(props: AutomationTypedNodeProps) {
       return <LatchNode {...props} />;
     case "routeLock":
       return <RouteLockNode {...props} />;
+    case "function":
+      return <FunctionNode {...props} />;
     case "signal":
       return <SignalNode {...props} />;
     case "turnoutCommand":
