@@ -1,3 +1,5 @@
+import "../../i18n/propertyPanelTranslations";
+
 import type {
   IEditableProperty,
 } from "../../models/editor/elements/PropertyDescriptor";
