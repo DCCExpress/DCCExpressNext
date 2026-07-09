@@ -73,6 +73,33 @@ function getNodeSignal(evaluation: AutomationEvaluationState, nodeId: string): A
   return evaluation[nodeId] ?? emptySignal();
 }
 
+function getNodePageId(node: AutomationFlowNodeDto): string {
+  return typeof node.data.pageId === "string" && node.data.pageId.trim().length > 0
+    ? node.data.pageId
+    : "main";
+}
+
+function getEnabledPageIds(document: AutomationFlowDocumentDto): Set<string> {
+  return new Set(
+    document.pages
+      .filter(page => page.enabled !== false)
+      .map(page => page.id)
+  );
+}
+
+function getEnabledDocument(document: AutomationFlowDocumentDto): AutomationFlowDocumentDto {
+  const enabledPageIds = getEnabledPageIds(document);
+  const nodes = document.nodes.filter(node => enabledPageIds.has(getNodePageId(node)));
+  const nodeIds = new Set(nodes.map(node => node.id));
+  const edges = document.edges.filter(edge => nodeIds.has(edge.source) && nodeIds.has(edge.target));
+
+  return {
+    ...document,
+    nodes,
+    edges,
+  };
+}
+
 function isInputNode(node: AutomationFlowNodeDto): boolean {
   return node.data.kind === "blockOccupied" ||
     node.data.kind === "sensor" ||
@@ -338,8 +365,10 @@ class AutomationFlowRuntimeService {
     }
 
     await automationFlowStore.initialize();
-    const document = automationFlowStore.getDocument();
+    const document = getEnabledDocument(automationFlowStore.getDocument());
     if (document.nodes.length === 0) {
+      this.lastSignalCommandByNode.clear();
+      this.lastTurnoutCommandByNode.clear();
       return;
     }
 
