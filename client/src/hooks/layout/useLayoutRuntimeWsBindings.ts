@@ -63,6 +63,10 @@ import {
 } from "../../models/editor/elements/TrackLevelCrossingElementView";
 
 import {
+  ButtonElementView,
+} from "../../models/editor/elements/ButtonElementView";
+
+import {
   BlockElementView,
 } from "../../models/editor/elements/BlockElementView";
 
@@ -300,6 +304,15 @@ export function useLayoutRuntimeWsBindings({
                   element.barrierClosed = nextClosed;
                   changed = true;
                 }
+              }
+
+              continue;
+            }
+
+            if (element instanceof ButtonElementView) {
+              if (element.address === data.address && element.on !== data.active) {
+                element.on = data.active;
+                changed = true;
               }
             }
           }
