@@ -14,6 +14,12 @@ export class ButtonElementView extends ClickableBaseElementView implements IButt
     textOn: string = "ON";
     textOff: string = "OFF";
 
+    constructor(x: number, y: number) {
+        super(x, y);
+        this.name = "Button";
+        this.layerName = "buildings";
+    }
+
     private sendBasicAccessoryCommand(): void {
         if (this.address <= 0) {
             console.warn("[ButtonElementView] Basic accessory address is missing");
