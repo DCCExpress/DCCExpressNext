@@ -99,18 +99,18 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
   signal: {
     title: "Jelző parancs",
     group: "Kimenet",
-    description: "Jelzőkép vezérlése layoutból betöltött cím és aspect bitminta alapján.",
+    description: "green / yellow / white bemenetek alapján állít jelzőképet; nincs vagy több true esetén red parancsot küld.",
     icon: "🚥",
     defaultData: {
-      ioKey: "signal:1:yellow",
+      ioKey: "signal:1:auto",
       signalAddress: 1,
-      signalAspect: "yellow",
+      signalAspect: "red",
       signalAddressLength: 2,
       signalValueRed: 0,
       signalValueYellow: 1,
       signalValueGreen: 2,
       signalValueWhite: 3,
-      outputCommand: "yellow",
+      outputCommand: "red",
     },
   },
   turnoutCommand: {
