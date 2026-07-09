@@ -10,6 +10,11 @@ body[data-automation-selected-node-kind="turnoutCommand"] .mantine-Modal-content
   display: none !important;
 }
 
+body:not([data-automation-has-selected-node="true"]) .automation-flow-dialog-body > .mantine-Group-root > .mantine-Card-root:last-child .mantine-ScrollArea-root .mantine-Stack-root > .mantine-Stack-root:first-child,
+body:not([data-automation-has-selected-node="true"]) .automation-flow-dialog-body > .mantine-Group-root > .mantine-Card-root:last-child .mantine-ScrollArea-root .mantine-Stack-root > .mantine-Stack-root:first-child + .mantine-Divider-root {
+  display: none !important;
+}
+
 .blinkBadge {
   animation: blinkBadge 0.5s infinite;
 }
