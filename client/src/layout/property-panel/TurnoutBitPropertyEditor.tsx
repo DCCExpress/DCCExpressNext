@@ -1,4 +1,5 @@
 import { Box, Group, Stack, Text } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import BitToggleElement from "../../components/editor/BitToggleElement";
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
@@ -10,6 +11,9 @@ import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer
 import { wsApi } from "../../services/wsApi";
 import { createDoubleTurnoutPreview, createTurnoutPreview } from "./previewFactories";
 import type { PropertyChangeHandler } from "./propertyPanelTypes";
+import {
+  getPropertyLabel,
+} from "./propertyTranslations";
 
 type TurnoutBitPropertyEditorProps = {
   prop: IEditableProperty;
@@ -118,7 +122,8 @@ function createClosedValueProperty(
 
 function renderDoubleTurnoutEditor(
   selectedElement: TrackTurnoutDoubleElementView,
-  onChange: PropertyChangeHandler
+  onChange: PropertyChangeHandler,
+  t: (key: string, options?: Record<string, unknown>) => string
 ) {
   const firstClosedValueProperty = createClosedValueProperty(
     "Turnout 1 Closed Value",
@@ -132,7 +137,7 @@ function renderDoubleTurnoutEditor(
 
   return (
     <Stack gap="xs">
-      <Text size="sm" fw={500}>Double turnout positions</Text>
+      <Text size="sm" fw={500}>{t("propertyPanel.turnout.doublePositions")}</Text>
 
       {DOUBLE_TURNOUT_POSITIONS.map(position => {
         const firstPhysicalValue = getPhysicalValueForLogicalState(
@@ -205,8 +210,10 @@ export default function TurnoutBitPropertyEditor({
   selectedElement,
   onChange,
 }: TurnoutBitPropertyEditorProps) {
+  const { t } = useTranslation();
   const values = selectedElement as unknown as Record<string, unknown>;
   const propValue = Boolean(values[prop.key]);
+  const label = getPropertyLabel(t, prop);
 
   if (
     isDoubleTurnoutElement(selectedElement) &&
@@ -218,14 +225,15 @@ export default function TurnoutBitPropertyEditor({
 
     return renderDoubleTurnoutEditor(
       selectedElement,
-      onChange
+      onChange,
+      t
     );
   }
 
   if (!isTurnoutElement(selectedElement)) {
     return (
       <Group justify="space-between" align="center" wrap="nowrap">
-        <Text size="sm" fw={500}>{prop.label}</Text>
+        <Text size="sm" fw={500}>{label}</Text>
         <BitToggleElement value={propValue} onChange={value => onChange(prop, value)} />
       </Group>
     );
@@ -233,13 +241,13 @@ export default function TurnoutBitPropertyEditor({
 
   return (
     <Stack gap="xs">
-      <Text size="sm" fw={500}>{prop.label}</Text>
+      <Text size="sm" fw={500}>{label}</Text>
 
       <Group justify="space-between" align="center" wrap="nowrap">
         <Box className="route-turnout-preview-button">
           <ElementPreview
             element={createTurnoutPreview(selectedElement, true)}
-            label="Closed"
+            label={t("propertyPanel.turnout.closed")}
             width={40}
             height={40}
             onClick={() => {
@@ -258,7 +266,7 @@ export default function TurnoutBitPropertyEditor({
         <Box className="route-turnout-preview-button">
           <ElementPreview
             element={createTurnoutPreview(selectedElement, false)}
-            label="Opened"
+            label={t("propertyPanel.turnout.opened")}
             width={40}
             height={40}
             onClick={() => {
