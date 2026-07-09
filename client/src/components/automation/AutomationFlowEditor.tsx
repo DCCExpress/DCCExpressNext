@@ -576,7 +576,11 @@ function resolveSignalAspectFromInputs(
     })
   ));
 
-  return trueAspects.length === 1 ? trueAspects[0] : "red";
+  if (trueAspects.length !== 1) {
+    return "red";
+  }
+
+  return trueAspects[0] ?? "red";
 }
 
 function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): AutomationEvaluationState {
@@ -1451,10 +1455,10 @@ function SelectedNodeEditor({ node, onChange, onDelete }: SelectedNodeEditorProp
         onChange={(event) => onChange({ ioKey: event.currentTarget.value })}
       />
 
-      {node.data.kind === "sensor" && <SensorNodeFields node={node} onChange={onChange} />}
-      {node.data.kind === "turnout" && <TurnoutNodeFields node={node} onChange={onChange} />}
-      {node.data.kind === "signal" && <SignalNodeFields node={node} onChange={onChange} />}
-      {node.data.kind === "turnoutCommand" && <TurnoutCommandNodeFields node={node} onChange={onChange} />}
+      {node.data.kind === "sensor" && <SensorNodeFields node={node} onChange={onChange} onDelete={onDelete} />}
+      {node.data.kind === "turnout" && <TurnoutNodeFields node={node} onChange={onChange} onDelete={onDelete} />}
+      {node.data.kind === "signal" && <SignalNodeFields node={node} onChange={onChange} onDelete={onDelete} />}
+      {node.data.kind === "turnoutCommand" && <TurnoutCommandNodeFields node={node} onChange={onChange} onDelete={onDelete} />}
 
       {node.data.kind === "ifThenElse" && (
         <Text size="xs" c="dimmed">
