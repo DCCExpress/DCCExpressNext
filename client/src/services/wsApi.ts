@@ -1,6 +1,7 @@
 // src/services/wsApi.ts
 
 import type {
+  AutomationFlowRuntimeCommandAction,
   ClientWsMessageType,
   ClientWsPayloadMap,
   Direction,
@@ -268,6 +269,25 @@ class WebSocketApi {
 
   getRouteReservations(): boolean {
     return this.send("getRouteReservations", {});
+  }
+
+  sendAutomationFlowRuntimeCommand(action: AutomationFlowRuntimeCommandAction): boolean {
+    return this.send("automationFlowRuntimeCommand", {
+      requestId: generateId(),
+      action,
+    });
+  }
+
+  getAutomationFlowRuntimeState(): boolean {
+    return this.sendAutomationFlowRuntimeCommand("snapshot");
+  }
+
+  startAutomationFlowRuntime(): boolean {
+    return this.sendAutomationFlowRuntimeCommand("run");
+  }
+
+  stopAutomationFlowRuntime(): boolean {
+    return this.sendAutomationFlowRuntimeCommand("stop");
   }
 
   runScript(script: string | undefined, source: ScriptRunSource, elementId: string | null): boolean {
