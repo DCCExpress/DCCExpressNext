@@ -244,7 +244,7 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
       outputBadges={getSingleOutputBadge(data)}
       detail={typeof data.turnoutAddress === "number"
         ? (
-            <Group gap={6} wrap="nowrap" style={{ overflow: "visible" }}>
+            <Group gap={6} wrap="nowrap" style={{ marginTop: 10, overflow: "visible" }}>
               <Badge
                 color={getBooleanBadgeColor(valid, active)}
                 variant={valid ? "filled" : "light"}
@@ -443,6 +443,7 @@ function FunctionNode({ id, data, selected }: AutomationTypedNodeProps) {
                 stopNodeButtonEvent(event);
                 setScriptEditorOpened(true);
               }}
+              style={{ marginTop: 10 }}
             >
               Edit script
             </Button>
