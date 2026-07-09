@@ -113,8 +113,8 @@ class AutomationFlowRuntimeService {
   private config: AutomationFlowRuntimeConfiguration | null = null;
   private evaluating = false;
   private pending = false;
-  private readonly lastTurnoutCommandKeys = new Set<string>();
-  private readonly lastSignalCommandKeys = new Set<string>();
+  private readonly lastTurnoutCommandByNode = new Map<string, string>();
+  private readonly lastSignalCommandByNode = new Map<string, string>();
 
   configure(config: AutomationFlowRuntimeConfiguration): void {
     this.config = config;
@@ -178,6 +178,10 @@ class AutomationFlowRuntimeService {
         }
 
         const logicalClosed = this.config?.getLogicalTurnoutState(address);
+        if (typeof logicalClosed !== "boolean") {
+          return emptySignal();
+        }
+
         const expectedLogicalClosed = node.data.turnoutClosed ?? true;
         return signal(logicalClosed === expectedLogicalClosed);
       }
@@ -349,6 +353,9 @@ class AutomationFlowRuntimeService {
     reason: string,
     commandCenter: CommandCenter
   ): Promise<void> {
+    const evaluatedSignalNodeIds = new Set<string>();
+    const activeTurnoutCommandNodeIds = new Set<string>();
+
     for (const node of document.nodes) {
       const currentSignal = getNodeSignal(evaluation, node.id);
 
@@ -357,6 +364,7 @@ class AutomationFlowRuntimeService {
           continue;
         }
 
+        evaluatedSignalNodeIds.add(node.id);
         await this.executeSignalNode(node, currentSignal.signalAspect ?? "red", reason, commandCenter);
         continue;
       }
@@ -366,7 +374,20 @@ class AutomationFlowRuntimeService {
           continue;
         }
 
+        activeTurnoutCommandNodeIds.add(node.id);
         await this.executeTurnoutCommandNode(node, reason, commandCenter);
+      }
+    }
+
+    for (const nodeId of Array.from(this.lastSignalCommandByNode.keys())) {
+      if (!evaluatedSignalNodeIds.has(nodeId)) {
+        this.lastSignalCommandByNode.delete(nodeId);
+      }
+    }
+
+    for (const nodeId of Array.from(this.lastTurnoutCommandByNode.keys())) {
+      if (!activeTurnoutCommandNodeIds.has(nodeId)) {
+        this.lastTurnoutCommandByNode.delete(nodeId);
       }
     }
   }
@@ -387,7 +408,7 @@ class AutomationFlowRuntimeService {
     const bits = getSignalAspectBits(node.data, aspect);
     const commandKey = `${node.id}:${address}:${aspect}:${addressLength}:${bits}`;
 
-    if (this.lastSignalCommandKeys.has(commandKey)) {
+    if (this.lastSignalCommandByNode.get(node.id) === commandKey) {
       return;
     }
 
@@ -399,7 +420,7 @@ class AutomationFlowRuntimeService {
     }
 
     if (allSent) {
-      this.lastSignalCommandKeys.add(commandKey);
+      this.lastSignalCommandByNode.set(node.id, commandKey);
       log("[AutomationFlowRuntime] Signal command sent:", {
         reason,
         nodeId: node.id,
@@ -435,13 +456,13 @@ class AutomationFlowRuntimeService {
     const physicalClosed = getPhysicalTurnoutClosedFromLogical(logicalClosed, node.data.turnoutClosedValue);
     const commandKey = `${node.id}:${address}:${physicalClosed}`;
 
-    if (this.lastTurnoutCommandKeys.has(commandKey)) {
+    if (this.lastTurnoutCommandByNode.get(node.id) === commandKey) {
       return;
     }
 
     const sent = await commandCenter.setTurnout(address, physicalClosed);
     if (sent) {
-      this.lastTurnoutCommandKeys.add(commandKey);
+      this.lastTurnoutCommandByNode.set(node.id, commandKey);
       log("[AutomationFlowRuntime] Turnout command sent:", {
         reason,
         nodeId: node.id,
