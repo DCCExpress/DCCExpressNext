@@ -7,7 +7,6 @@ import {
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
-  IconBolt,
   IconEditFilled,
   IconMaximize,
   IconPointer,
@@ -24,8 +23,6 @@ type EditorToolbarProps = {
   tool: EditorTool;
   onCursorToolClick: () => void;
   onOpenElementPicker: () => void;
-  onOpenAutomationFlow: () => void;
-  automationDisabled: boolean;
   onDeleteToolClick: () => void;
   onFitLayout: () => void;
   canUndo: boolean;
@@ -40,8 +37,6 @@ export default function EditorToolbar({
   tool,
   onCursorToolClick,
   onOpenElementPicker,
-  onOpenAutomationFlow,
-  automationDisabled,
   onDeleteToolClick,
   onFitLayout,
   canUndo,
@@ -63,19 +58,6 @@ export default function EditorToolbar({
           onMouseDown={event => event.preventDefault()}
         >
           <IconEditFilled size={18} />
-        </ActionIcon>
-      </Tooltip>
-
-      <Tooltip label={t("automation.dialog.title")}>
-        <ActionIcon
-          variant="light"
-          color="violet"
-          disabled={automationDisabled}
-          onClick={onOpenAutomationFlow}
-          onMouseDown={event => event.preventDefault()}
-          aria-label={t("automation.dialog.title")}
-        >
-          <IconBolt size={18} />
         </ActionIcon>
       </Tooltip>
 
