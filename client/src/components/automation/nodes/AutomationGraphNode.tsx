@@ -267,7 +267,7 @@ function SignalNode({ data, selected }: AutomationTypedNodeProps) {
                 })}
               </Text>
               <Text size="xs" c="dimmed">
-                green / yellow / white bemenet, hibánál red
+                {t("automation.graph.signalInputRule")}
               </Text>
             </Stack>
           )
