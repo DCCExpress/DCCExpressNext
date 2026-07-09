@@ -1,5 +1,6 @@
 import { Card, Group, Stack } from "@mantine/core";
 import { useTranslation } from "react-i18next";
+import "../../i18n/propertyPanelTranslations";
 
 import AppModal from "../common/AppModal";
 import ElementPreview from "../../models/editor/rendering/ElementPreviewRenderer";
