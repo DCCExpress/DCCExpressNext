@@ -17,6 +17,10 @@ export type AutomationNodeDefinition = {
   defaultData?: Partial<AutomationFlowNodeData>;
 };
 
+export const DEFAULT_FUNCTION_SCRIPT = `// payload: az első aktív bemenet payload értéke
+// inputs: az összes aktív bemenet { value, payload } tömbje
+return payload;`;
+
 export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefinition> = {
   blockOccupied: {
     title: "Szakasz foglalt",
@@ -95,6 +99,15 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     description: "Váltók, szakaszok és jelzők logikai útvonal-zárolása.",
     icon: "🛤",
     defaultData: { ioKey: "route:R1" },
+  },
+  function: {
+    title: "Function",
+    group: "Logika",
+    description: "JavaScript feldolgozó node. A return érték payloadként megy tovább.",
+    icon: "ƒ",
+    defaultData: {
+      functionScript: DEFAULT_FUNCTION_SCRIPT,
+    },
   },
   signal: {
     title: "Jelző parancs",
