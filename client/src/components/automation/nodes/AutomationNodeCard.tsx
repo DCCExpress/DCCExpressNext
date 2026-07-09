@@ -51,6 +51,10 @@ type AutomationNodeCardProps = {
   showIoKey?: boolean;
 };
 
+const NODE_WIDTH = 226;
+const NODE_MIN_HEIGHT = 104;
+const OUTPUT_BADGE_SLOT_WIDTH = 76;
+
 function getHandleHorizontalStyle(position: Position) {
   if (position === Position.Left) {
     return {
@@ -119,6 +123,8 @@ function renderOutputBadges(
           position: "absolute",
           right: 12,
           top: badge.top ?? "50%",
+          width: OUTPUT_BADGE_SLOT_WIDTH,
+          justifyContent: "center",
           transform: "translateY(-50%)",
           pointerEvents: "none",
           zIndex: 3,
@@ -152,6 +158,7 @@ export function AutomationNodeCard({
   const resolvedTargetHandles = targetHandles ?? (hasTargetHandle(kind) ? [{}] : []);
   const resolvedSourceHandles = sourceHandles ?? (hasSourceHandle(kind) ? [{}] : []);
   const resolvedOutputBadges = outputBadges ?? [];
+  const hasOutputBadges = resolvedOutputBadges.length > 0;
 
   const borderColor = selected
     ? "var(--mantine-color-blue-6)"
@@ -181,7 +188,10 @@ export function AutomationNodeCard({
       data-automation-output-valid={outputValid ? "true" : "false"}
       data-automation-output-value={active ? "true" : "false"}
       style={{
-        minWidth: 190,
+        width: NODE_WIDTH,
+        minWidth: NODE_WIDTH,
+        maxWidth: NODE_WIDTH,
+        minHeight: NODE_MIN_HEIGHT,
         borderColor,
         borderWidth: selected ? 3 : active ? 2 : outputValid ? 2 : 1,
         boxShadow,
@@ -192,40 +202,61 @@ export function AutomationNodeCard({
             : "var(--mantine-color-body)",
         position: "relative",
         zIndex: selected ? 2 : undefined,
+        overflow: "visible",
       }}
     >
       {renderHandles("target", Position.Left, resolvedTargetHandles)}
 
-      <Stack gap={6} pr={resolvedOutputBadges.length > 0 ? 82 : 0}>
+      {!hasOutputBadges && active && (
+        <Badge
+          color="green"
+          variant="filled"
+          size="xs"
+          style={{
+            position: "absolute",
+            right: 12,
+            top: 12,
+            pointerEvents: "none",
+            zIndex: 3,
+          }}
+        >
+          {t("automation.badge.on")}
+        </Badge>
+      )}
+
+      <Stack
+        gap={6}
+        pr={hasOutputBadges ? OUTPUT_BADGE_SLOT_WIDTH + 8 : 0}
+        style={{
+          minHeight: NODE_MIN_HEIGHT - 18,
+          overflow: "hidden",
+        }}
+      >
         <Group justify="space-between" gap="xs" wrap="nowrap">
-          <Group gap="xs" wrap="nowrap">
-            <Text fw={900} size="lg" lh={1}>
+          <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+            <Text fw={900} size="lg" lh={1} style={{ flexShrink: 0 }}>
               {definition.icon}
             </Text>
-            <Box>
-              <Text fw={800} size="sm" lh={1.15}>
+            <Box style={{ minWidth: 0 }}>
+              <Text fw={800} size="sm" lh={1.15} truncate>
                 {data.label}
               </Text>
-              <Text size="xs" c="dimmed" lh={1.15}>
+              <Text size="xs" c="dimmed" lh={1.15} truncate>
                 {t(`automation.nodes.${kind}.title`, { defaultValue: definition.title })}
               </Text>
             </Box>
           </Group>
-
-          {active && resolvedOutputBadges.length === 0 && (
-            <Badge color="green" variant="filled" size="xs">
-              {t("automation.badge.on")}
-            </Badge>
-          )}
         </Group>
 
         {showIoKey && data.ioKey && (
-          <Badge variant="light" color="gray" size="xs" w="fit-content">
+          <Badge variant="light" color="gray" size="xs" w="fit-content" maw="100%">
             {data.ioKey}
           </Badge>
         )}
 
-        {detail}
+        <Box style={{ minHeight: 24, overflow: "hidden" }}>
+          {detail}
+        </Box>
       </Stack>
 
       {renderOutputBadges(resolvedOutputBadges, t)}
