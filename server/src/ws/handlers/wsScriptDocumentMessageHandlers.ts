@@ -1,5 +1,9 @@
 // server/src/ws/handlers/wsScriptDocumentMessageHandlers.ts
 
+import {
+  FEATURE_ENABLE_SCRIPT_ENGINE,
+} from "../../../../common/src/featureFlags.js";
+
 import type {
   ScriptDocumentResponsePayload,
 } from "../../../../common/src/types.js";
@@ -28,6 +32,17 @@ export const handleScriptDocumentMessage: WsMessageHandler = async context => {
   }
 
   const { requestId, action } = context.msg.data;
+
+  if (!FEATURE_ENABLE_SCRIPT_ENGINE) {
+    sendScriptDocumentResponse(context, {
+      requestId,
+      action,
+      ok: false,
+      message: "Script engine is disabled.",
+    });
+
+    return true;
+  }
 
   try {
     switch (action) {
