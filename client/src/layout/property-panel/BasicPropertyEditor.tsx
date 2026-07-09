@@ -12,10 +12,15 @@ import {
   IconFolderOpen,
   IconPlayerPlayFilled,
 } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { PropertyChangeHandler } from "./propertyPanelTypes";
+import {
+  getPropertyLabel,
+  getPropertyOptionLabel,
+} from "./propertyTranslations";
 
 const DEFAULT_COLORS = [
   "#000000",
@@ -53,14 +58,21 @@ export default function BasicPropertyEditor({
   selectedElement,
   onChange,
 }: BasicPropertyEditorProps) {
+  const { t } = useTranslation();
   const value = (selectedElement as any)[prop.key];
+  const label = getPropertyLabel(t, prop);
 
   if (prop.type === "select" || prop.key === "barrierType") {
+    const options = prop.options ?? BARRIER_TYPE_OPTIONS;
+
     return (
       <Select
-        label={prop.label}
+        label={label}
         disabled={prop.readonly === true}
-        data={prop.options ?? BARRIER_TYPE_OPTIONS}
+        data={options.map(option => ({
+          value: option.value,
+          label: getPropertyOptionLabel(t, prop, option),
+        }))}
         value={String(value ?? "")}
         onChange={nextValue => {
           if (nextValue !== null) {
@@ -74,7 +86,7 @@ export default function BasicPropertyEditor({
   if (prop.type === "string") {
     return (
       <TextInput
-        label={prop.label}
+        label={label}
         readOnly={prop.readonly}
         type="text"
         value={value ?? ""}
@@ -86,7 +98,7 @@ export default function BasicPropertyEditor({
   if (prop.type === "audiofile") {
     return (
       <TextInput
-        label="Audio file"
+        label={label || t("propertyPanel.audio.file")}
         value={value ?? ""}
         onChange={event => onChange(prop, event.target.value)}
         rightSection={
@@ -106,7 +118,7 @@ export default function BasicPropertyEditor({
                   {...fileButtonProps}
                   size="sm"
                   variant="subtle"
-                  title="Choose audio file"
+                  title={t("propertyPanel.audio.chooseFile")}
                   onClick={event => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -121,7 +133,7 @@ export default function BasicPropertyEditor({
             <ActionIcon
               size="sm"
               variant="subtle"
-              title="Test audio"
+              title={t("propertyPanel.audio.test")}
               onClick={event => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -140,7 +152,7 @@ export default function BasicPropertyEditor({
   if (prop.type === "number") {
     return (
       <NumberInput
-        label={prop.label}
+        label={label}
         disabled={prop.readonly === true}
         min={prop.min}
         max={prop.max}
@@ -153,7 +165,7 @@ export default function BasicPropertyEditor({
   if (prop.type === "boolean" || prop.type === "checkbox") {
     return (
       <Checkbox
-        label={prop.label}
+        label={label}
         disabled={prop.readonly === true}
         checked={Boolean(value)}
         onChange={event => onChange(prop, event.target.checked)}
@@ -166,7 +178,7 @@ export default function BasicPropertyEditor({
 
     return (
       <>
-        <label>{prop.label}</label>
+        <label>{label}</label>
 
         <div
           style={{
