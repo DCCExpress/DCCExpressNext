@@ -49,6 +49,9 @@ function normalizePage(input: unknown): AutomationFlowPageDto | null {
     name: typeof input.name === "string" && input.name.trim().length > 0
       ? input.name.trim()
       : id,
+    enabled: typeof input.enabled === "boolean"
+      ? input.enabled
+      : true,
   };
 }
 
