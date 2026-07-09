@@ -160,6 +160,12 @@ function canHandleWithoutCommandCenter(type: string): boolean {
   );
 }
 
+function shouldEvaluateAutomationAfterClientCommand(type: string): boolean {
+  return type === "setTurnout" ||
+    type === "setSensor" ||
+    type === "setBasicAccessory";
+}
+
 export function broadcastAll(
   message: TypedServerWsMessage,
   exclude?: WebSocket
@@ -298,6 +304,12 @@ export async function setupWebSocketServer(
         sendToClient,
         broadcast,
       });
+
+      if (shouldEvaluateAutomationAfterClientCommand(msg.type)) {
+        void automationFlowRuntimeService.evaluate(`client:${msg.type}`).catch(error => {
+          logError("[AutomationFlowRuntime] Client command evaluation failed:", error);
+        });
+      }
     });
 
     ws.on("close", () => {
