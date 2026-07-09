@@ -92,7 +92,7 @@ export default function ElementPickerDialog({
               onPick(ELEMENT_TYPES.TRACK_STRAIGHT);
               onClose();
             }} />
-            <ElementPreview element={tracklevelcrossing} label="Level crossing" width={40} height={40} onClick={() => {
+            <ElementPreview element={tracklevelcrossing} label={t("editor.elements.levelCrossing")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.TRACK_LEVEL_CROSSING);
               onClose();
             }} />
@@ -191,7 +191,7 @@ export default function ElementPickerDialog({
               onPick(ELEMENT_TYPES.BUTTON_AUDIO);
               onClose();
             }} />
-            <ElementPreview element={audiolistbutton} label="Audio list" width={40} height={40} onClick={() => {
+            <ElementPreview element={audiolistbutton} label={t("editor.elements.audioList")} width={40} height={40} onClick={() => {
               onPick(ELEMENT_TYPES.BUTTON_AUDIO_LIST);
               onClose();
             }} />
