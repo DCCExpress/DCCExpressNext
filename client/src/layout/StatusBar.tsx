@@ -30,8 +30,10 @@ import {
 
 import type {
   AutomationFlowRuntimeSnapshotDto,
-  TaskManagerSnapshot,
 } from "../../../common/src/types";
+import type {
+  TaskManagerSnapshot,
+} from "../../../common/src/task";
 import {
   FEATURE_ENABLE_SCRIPT_ENGINE,
 } from "../../../common/src/featureFlags";
