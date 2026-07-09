@@ -3,6 +3,7 @@
 import type {
   AppSettingsCommandAction,
   AutomationFlowCommandAction,
+  AutomationFlowRuntimeCommandAction,
   BlockAutomationCommandAction,
   ClientWsMessageType,
   ClientWsMessageUnion,
@@ -96,6 +97,10 @@ function isBlockAutomationCommandAction(value: unknown): value is BlockAutomatio
 
 function isAutomationFlowCommandAction(value: unknown): value is AutomationFlowCommandAction {
   return value === "load" || value === "save";
+}
+
+function isAutomationFlowRuntimeCommandAction(value: unknown): value is AutomationFlowRuntimeCommandAction {
+  return value === "snapshot" || value === "run" || value === "stop";
 }
 
 function isTaskManagerCommandAction(value: unknown): value is TaskManagerCommandAction {
@@ -493,6 +498,16 @@ function parsePayload<TType extends ClientWsMessageType>(
         requestId: base.data.requestId,
         action: base.data.action,
         ...(isRecord(base.data.document) ? { document: base.data.document } : {}),
+      });
+    }
+
+    case "automationFlowRuntimeCommand": {
+      const base = parseRequestCommandBase(type, data);
+      if (!base.ok) return base;
+      if (!isAutomationFlowRuntimeCommandAction(base.data.action)) return invalidPayload(type, "action is invalid.");
+      return ok<TType>({
+        requestId: base.data.requestId,
+        action: base.data.action,
       });
     }
 
