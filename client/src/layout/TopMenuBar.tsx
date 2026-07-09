@@ -1,7 +1,6 @@
 import { Group } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { EditorTool } from "../models/editor/types/EditorTypes";
-import AutomationFlowDialog from "../components/automation/AutomationFlowDialog";
 import DiagnosticsDialog from "../components/diagnostics/DiagnosticsDialog";
 import IntegrityCheckDialog from "../components/diagnostics/IntegrityCheckDialog";
 import EditorToolbar from "./top-menu/EditorToolbar";
@@ -74,23 +73,6 @@ export default function TopMenuBar({
   const [helpOpened, setHelpOpened] = useState(false);
   const [diagnosticsOpened, setDiagnosticsOpened] = useState(false);
   const [integrityCheckOpened, setIntegrityCheckOpened] = useState(false);
-  const [automationFlowOpened, setAutomationFlowOpened] = useState(false);
-
-  const automationDisabled = editMode;
-
-  useEffect(() => {
-    if (automationDisabled) {
-      setAutomationFlowOpened(false);
-    }
-  }, [automationDisabled]);
-
-  const openAutomationFlow = () => {
-    if (automationDisabled) {
-      return;
-    }
-
-    setAutomationFlowOpened(true);
-  };
 
   return (
     <>
@@ -102,8 +84,6 @@ export default function TopMenuBar({
             onGoHome={onGoHome}
             onOpenLocos={onOpenLocos}
             onOpenBlocks={onOpenBlocks}
-            onOpenAutomationFlow={openAutomationFlow}
-            automationDisabled={automationDisabled}
             onOpenDiagnostics={() => setDiagnosticsOpened(true)}
             onOpenIntegrityCheck={() => setIntegrityCheckOpened(true)}
             onSaveLayout={onSaveLayout}
@@ -118,8 +98,6 @@ export default function TopMenuBar({
             tool={tool}
             onCursorToolClick={onCursorToolClick}
             onOpenElementPicker={onOpenElementPicker}
-            onOpenAutomationFlow={openAutomationFlow}
-            automationDisabled={automationDisabled}
             onDeleteToolClick={onDeleteToolClick}
             onFitLayout={onFitLayout}
             canUndo={canUndo}
@@ -140,11 +118,6 @@ export default function TopMenuBar({
       <QuickHelpDialog
         opened={helpOpened}
         onClose={() => setHelpOpened(false)}
-      />
-
-      <AutomationFlowDialog
-        opened={!automationDisabled && automationFlowOpened}
-        onClose={() => setAutomationFlowOpened(false)}
       />
 
       <DiagnosticsDialog
