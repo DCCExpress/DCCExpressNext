@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
   type MouseEvent,
 } from "react";
@@ -134,6 +135,22 @@ function stopNodeButtonEvent(event: MouseEvent): void {
   event.stopPropagation();
 }
 
+function useAutomationSelectedKindMarker(kind: string, selected: boolean): void {
+  useEffect(() => {
+    if (!selected) {
+      return;
+    }
+
+    document.body.dataset.automationSelectedNodeKind = kind;
+
+    return () => {
+      if (document.body.dataset.automationSelectedNodeKind === kind) {
+        delete document.body.dataset.automationSelectedNodeKind;
+      }
+    };
+  }, [kind, selected]);
+}
+
 async function saveFunctionScriptToDocument(
   nodeId: string,
   script: string
@@ -198,6 +215,8 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
   const nextState = getLogicalTurnoutLabel(nextLogicalClosed);
   const closedValueKey = getPhysicalClosedKey(data.turnoutClosedValue);
   const canToggle = typeof data.turnoutAddress === "number" && data.turnoutAddress > 0;
+
+  useAutomationSelectedKindMarker("turnout", selected);
 
   const handleToggleTurnout = (event: MouseEvent): void => {
     stopNodeButtonEvent(event);
@@ -495,6 +514,8 @@ function TurnoutCommandNode({ data, selected }: AutomationTypedNodeProps) {
   const { t } = useTranslation();
   const targetState = getLogicalTurnoutLabel(data.turnoutClosed);
   const closedValueKey = getPhysicalClosedKey(data.turnoutClosedValue);
+
+  useAutomationSelectedKindMarker("turnoutCommand", selected);
 
   return (
     <AutomationNodeCard
