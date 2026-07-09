@@ -1,4 +1,8 @@
 import {
+  useState,
+  type MouseEvent,
+} from "react";
+import {
   Badge,
   Button,
   Group,
@@ -13,17 +17,26 @@ import type {
 import { useTranslation } from "react-i18next";
 
 import type {
+  AutomationFlowDocumentDto,
   AutomationFlowNodeData,
   AutomationSignalAspect,
 } from "../../../../../common/src/automationFlow";
 
 import {
+  loadAutomationFlowWs,
+  saveAutomationFlowWs,
+} from "../../../api/automationFlowWsApi";
+import {
   wsApi,
 } from "../../../services/wsApi";
 
+import FunctionScriptEditorDialog from "../FunctionScriptEditorDialog";
 import {
   AutomationNodeCard,
 } from "./AutomationNodeCard";
+import {
+  DEFAULT_FUNCTION_SCRIPT,
+} from "./automationNodeDefinitions";
 
 type AutomationNode = Node<AutomationFlowNodeData, "automationNode">;
 
@@ -73,6 +86,18 @@ function getPayloadPreview(payload: unknown): string {
   }
 }
 
+function getFunctionScript(data: AutomationFlowNodeData): string {
+  if (typeof data.functionScript === "string") {
+    return data.functionScript;
+  }
+
+  if (typeof data.description === "string" && data.description.includes("return")) {
+    return data.description;
+  }
+
+  return DEFAULT_FUNCTION_SCRIPT;
+}
+
 function getResolvedSignalAspect(data: AutomationFlowNodeData): AutomationSignalAspect {
   const value = data.resolvedSignalAspect;
 
@@ -104,9 +129,41 @@ function getPhysicalTurnoutClosed(logicalClosed: boolean, turnoutClosedValue: bo
   return logicalClosed ? physicalClosedForLogicalClosed : !physicalClosedForLogicalClosed;
 }
 
-function stopNodeButtonEvent(event: React.MouseEvent): void {
+function stopNodeButtonEvent(event: MouseEvent): void {
   event.preventDefault();
   event.stopPropagation();
+}
+
+async function saveFunctionScriptToDocument(
+  nodeId: string,
+  script: string
+): Promise<void> {
+  const document = await loadAutomationFlowWs();
+  let found = false;
+
+  const nextDocument: AutomationFlowDocumentDto = {
+    ...document,
+    nodes: document.nodes.map(node => {
+      if (node.id !== nodeId) {
+        return node;
+      }
+
+      found = true;
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          functionScript: script,
+        },
+      };
+    }),
+  };
+
+  if (!found) {
+    throw new Error("Function node is not saved on the server yet. Save the automation flow first, then edit the script.");
+  }
+
+  await saveAutomationFlowWs(nextDocument);
 }
 
 function BlockOccupiedNode({ data, selected }: AutomationTypedNodeProps) {
@@ -142,7 +199,7 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
   const closedValueKey = getPhysicalClosedKey(data.turnoutClosedValue);
   const canToggle = typeof data.turnoutAddress === "number" && data.turnoutAddress > 0;
 
-  const handleToggleTurnout = (event: React.MouseEvent): void => {
+  const handleToggleTurnout = (event: MouseEvent): void => {
     stopNodeButtonEvent(event);
 
     if (!canToggle) {
@@ -317,26 +374,67 @@ function RouteLockNode({ data, selected }: AutomationTypedNodeProps) {
   );
 }
 
-function FunctionNode({ data, selected }: AutomationTypedNodeProps) {
+function FunctionNode({ id, data, selected }: AutomationTypedNodeProps) {
+  const [scriptEditorOpened, setScriptEditorOpened] = useState(false);
+  const [scriptError, setScriptError] = useState<string | null>(null);
+  const script = getFunctionScript(data);
+
+  const handleSaveFunctionScript = async (value: string): Promise<void> => {
+    try {
+      setScriptError(null);
+      await saveFunctionScriptToDocument(id, value);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setScriptError(message);
+      throw error;
+    }
+  };
+
   return (
-    <AutomationNodeCard
-      data={data}
-      selected={selected}
-      kind="function"
-      outputBadges={getSingleOutputBadge(data, "payload")}
-      detail={(
-        <Stack gap={2}>
-          <Text size="xs" c="dimmed">
-            return → payload
-          </Text>
-          {data.outputValid === true && (
-            <Text size="xs" c="dimmed" truncate>
-              payload: {getPayloadPreview(data.payload)}
+    <>
+      <AutomationNodeCard
+        data={data}
+        selected={selected}
+        kind="function"
+        outputBadges={getSingleOutputBadge(data, "payload")}
+        detail={(
+          <Stack gap={4}>
+            <Text size="xs" c="dimmed">
+              return → payload
             </Text>
-          )}
-        </Stack>
-      )}
-    />
+            {data.outputValid === true && (
+              <Text size="xs" c="dimmed" truncate>
+                payload: {getPayloadPreview(data.payload)}
+              </Text>
+            )}
+            {scriptError && (
+              <Text size="xs" c="red">
+                {scriptError}
+              </Text>
+            )}
+            <Button
+              size="compact-xs"
+              variant="light"
+              onPointerDown={stopNodeButtonEvent}
+              onMouseDown={stopNodeButtonEvent}
+              onClick={(event) => {
+                stopNodeButtonEvent(event);
+                setScriptEditorOpened(true);
+              }}
+            >
+              Edit script
+            </Button>
+          </Stack>
+        )}
+      />
+      <FunctionScriptEditorDialog
+        opened={scriptEditorOpened}
+        title={`${data.label} function script`}
+        value={script}
+        onSave={handleSaveFunctionScript}
+        onClose={() => setScriptEditorOpened(false)}
+      />
+    </>
   );
 }
 
