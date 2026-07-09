@@ -107,7 +107,6 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     icon: "ƒ",
     defaultData: {
       description: DEFAULT_FUNCTION_SCRIPT,
-      functionScript: DEFAULT_FUNCTION_SCRIPT,
     },
   },
   signal: {
