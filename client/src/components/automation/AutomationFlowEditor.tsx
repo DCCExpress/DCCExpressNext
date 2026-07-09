@@ -766,8 +766,8 @@ export default function AutomationFlowEditor() {
     : null;
   const snapshot = useMemo(() => createSnapshot(pages, activePageId, nodes, edges), [activePageId, edges, nodes, pages]);
 
-  const activeOutputs = useMemo(
-    () => nodes.flatMap(node => {
+  const activeOutputs = useMemo<AutomationNode[]>(
+    () => nodes.flatMap<AutomationNode>(node => {
       if (getNodePageId(node) !== activePageId) {
         return [];
       }
@@ -779,16 +779,20 @@ export default function AutomationFlowEditor() {
         }
 
         const aspect = currentSignal.signalAspect ?? "red";
+        const signalData: AutomationFlowNodeData = {
+          ...node.data,
+          outputCommand: aspect,
+          resolvedSignalAspect: aspect,
+          ...(typeof node.data.signalAddress === "number"
+            ? { ioKey: `signal:${node.data.signalAddress}:${aspect}` }
+            : typeof node.data.ioKey === "string"
+              ? { ioKey: node.data.ioKey }
+              : {}),
+        };
+
         return [{
           ...node,
-          data: {
-            ...node.data,
-            outputCommand: aspect,
-            resolvedSignalAspect: aspect,
-            ioKey: typeof node.data.signalAddress === "number"
-              ? `signal:${node.data.signalAddress}:${aspect}`
-              : node.data.ioKey,
-          },
+          data: signalData,
         }];
       }
 
