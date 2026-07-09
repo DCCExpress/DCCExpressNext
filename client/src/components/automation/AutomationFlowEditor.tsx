@@ -1425,13 +1425,6 @@ function SelectedNodeEditor({ layoutMappings, node, onChange, onDelete }: Select
         onChange={(event) => onChange({ label: event.currentTarget.value })}
       />
 
-      <TextInput
-        label={t("automation.panel.ioKey")}
-        description={t("automation.panel.ioKeyDescription")}
-        value={node.data.ioKey ?? ""}
-        onChange={(event) => onChange({ ioKey: event.currentTarget.value })}
-      />
-
       {node.data.kind === "sensor" && <SensorNodeFields layoutMappings={layoutMappings} node={node} onChange={onChange} onDelete={onDelete} />}
       {node.data.kind === "turnout" && <TurnoutNodeFields layoutMappings={layoutMappings} node={node} onChange={onChange} onDelete={onDelete} />}
       {node.data.kind === "signal" && <SignalNodeFields layoutMappings={layoutMappings} node={node} onChange={onChange} onDelete={onDelete} />}
