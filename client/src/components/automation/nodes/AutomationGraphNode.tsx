@@ -244,11 +244,12 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
       outputBadges={getSingleOutputBadge(data)}
       detail={typeof data.turnoutAddress === "number"
         ? (
-            <Group gap={6} wrap="nowrap">
+            <Group gap={6} wrap="nowrap" style={{ overflow: "visible" }}>
               <Badge
                 color={getBooleanBadgeColor(valid, active)}
                 variant={valid ? "filled" : "light"}
                 size="xs"
+                style={{ flexShrink: 0 }}
               >
                 actual: {t(`automation.graph.${actualState}`)}
               </Badge>
@@ -259,6 +260,7 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
                 onPointerDown={stopNodeButtonEvent}
                 onMouseDown={stopNodeButtonEvent}
                 onClick={handleToggleTurnout}
+                style={{ flexShrink: 0 }}
               >
                 → {t(`automation.graph.${nextState}`)}
               </Button>
