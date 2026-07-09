@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "name": "Vasútmodell automatika",
+  "pages": [
+    {
+      "id": "main",
+      "name": "Fő lap",
+      "enabled": true
+    },
+    {
+      "id": "page-mrc5e59y",
+      "name": "Szabadbattyán váltók",
+      "enabled": true
+    }
+  ],
+  "activePageId": "main",
+  "nodes": [
+    {
+      "id": "turnout-1783504679014",
+      "type": "automationNode",
+      "position": {
+        "x": 352,
+        "y": -464
+      },
+      "data": {
+        "kind": "turnout",
+        "label": "Váltó állapot",
+        "description": "Váltóállás bemenet. Például: T1 closed → Signal1 yellow.",
+        "ioKey": "turnout:10:closed",
+        "turnoutAddress": 10,
+        "turnoutClosed": true,
+        "active": true,
+        "turnoutClosedValue": true,
+        "pageId": "main"
+      }
+    },
+    {
+      "id": "and-1783504859879",
+      "type": "automationNode",
+      "position": {
+        "x": 912,
+        "y": -448
+      },
+      "data": {
+        "kind": "and",
+        "label": "AND",
+        "description": "Akkor igaz, ha minden bemenete igaz.",
+        "pageId": "main"
+      }
+    },
+    {
+      "id": "turnout-1783504868881",
+      "type": "automationNode",
+      "position": {
+        "x": 400,
+        "y": 0
+      },
+      "data": {
+        "kind": "turnout",
+        "label": "Váltó állapot",
+        "description": "Váltóállás bemenet. Például: T1 closed → Signal1 yellow.",
+        "ioKey": "turnout:11:closed",
+        "turnoutAddress": 11,
+        "turnoutClosed": true,
+        "active": true,
+        "turnoutClosedValue": false,
+        "pageId": "main"
+      }
+    },
+    {
+      "id": "signal-1783517330521",
+      "type": "automationNode",
+      "position": {
+        "x": 1520,
+        "y": -464
+      },
+      "data": {
+        "kind": "signal",
+        "label": "Jelző parancs",
+        "description": "Jelzőkép vezérlése layoutból betöltött cím és aspect bitminta alapján.",
+        "ioKey": "signal:120:auto",
+        "signalAddress": 120,
+        "signalAspect": "red",
+        "signalAddressLength": 5,
+        "signalValueRed": 2,
+        "signalValueYellow": 4,
+        "signalValueGreen": 1,
+        "signalValueWhite": 8,
+        "outputCommand": "red",
+        "pageId": "main"
+      }
+    },
+    {
+      "id": "turnout-1783519410774",
+      "type": "automationNode",
+      "position": {
+        "x": 176,
+        "y": -48
+      },
+      "data": {
+        "kind": "turnout",
+        "label": "Váltó állapot",
+        "pageId": "page-mrc5e59y",
+        "description": "Logikai váltóállás bemenet. A fizikai closed bitet a turnoutClosedValue fordítja logikai állásra.",
+        "ioKey": "turnout:1:closed",
+        "turnoutAddress": 1,
+        "turnoutClosed": true,
+        "turnoutClosedValue": true,
+        "active": false
+      }
+    },
+    {
+      "id": "signal-1783576112519",
+      "type": "automationNode",
+      "position": {
+        "x": 1552,
+        "y": -160
+      },
+      "data": {
+        "kind": "signal",
+        "label": "Signal command",
+        "pageId": "main",
+        "description": "Controls a signal aspect from the layout address and aspect bit pattern.",
+        "ioKey": "signal:135:auto",
+        "signalAddress": 135,
+        "signalAspect": "red",
+        "signalAddressLength": 5,
+        "signalValueRed": 2,
+        "signalValueYellow": 4,
+        "signalValueGreen": 1,
+        "signalValueWhite": 8,
+        "outputCommand": "red"
+      }
+    },
+    {
+      "id": "signal-1783576125374",
+      "type": "automationNode",
+      "position": {
+        "x": 1568,
+        "y": 80
+      },
+      "data": {
+        "kind": "signal",
+        "label": "Signal command",
+        "pageId": "main",
+        "description": "Controls a signal aspect from the layout address and aspect bit pattern.",
+        "ioKey": "signal:140:auto",
+        "signalAddress": 140,
+        "signalAspect": "red",
+        "signalAddressLength": 5,
+        "signalValueRed": 2,
+        "signalValueYellow": 4,
+        "signalValueGreen": 1,
+        "signalValueWhite": 8,
+        "outputCommand": "red"
+      }
+    },
+    {
+      "id": "not-1783576169839",
+      "type": "automationNode",
+      "position": {
+        "x": 992,
+        "y": 128
+      },
+      "data": {
+        "kind": "not",
+        "label": "NOT",
+        "pageId": "main",
+        "description": "Inverts the first valid input."
+      }
+    },
+    {
+      "id": "and-1783576237528",
+      "type": "automationNode",
+      "position": {
+        "x": 120,
+        "y": 360
+      },
+      "data": {
+        "kind": "and",
+        "label": "AND",
+        "pageId": "main",
+        "description": "True when every valid input is true."
+      }
+    },
+    {
+      "id": "and-1783576240078",
+      "type": "automationNode",
+      "position": {
+        "x": 1232,
+        "y": -112
+      },
+      "data": {
+        "kind": "and",
+        "label": "AND",
+        "pageId": "main",
+        "description": "True when every valid input is true."
+      }
+    },
+    {
+      "id": "not-1783576259612",
+      "type": "automationNode",
+      "position": {
+        "x": 912,
+        "y": -192
+      },
+      "data": {
+        "kind": "not",
+        "label": "NOT",
+        "pageId": "main",
+        "description": "Inverts the first valid input."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "turnout-1783504679014-out-and-1783504859879-in-1783524649600",
+      "source": "turnout-1783504679014",
+      "target": "and-1783504859879",
+      "type": "bezier"
+    },
+    {
+      "id": "turnout-1783504868881-out-and-1783504859879-in-1783524652809",
+      "source": "turnout-1783504868881",
+      "target": "and-1783504859879",
+      "type": "bezier"
+    },
+    {
+      "id": "and-1783504859879-out-signal-1783517330521-green-1783574992877",
+      "source": "and-1783504859879",
+      "target": "signal-1783517330521",
+      "type": "bezier",
+      "targetHandle": "green"
+    },
+    {
+      "id": "turnout-1783504868881-out-not-1783576169839-in-1783576177090",
+      "source": "turnout-1783504868881",
+      "target": "not-1783576169839",
+      "type": "bezier"
+    },
+    {
+      "id": "not-1783576169839-out-signal-1783576125374-yellow-1783576208087",
+      "source": "not-1783576169839",
+      "target": "signal-1783576125374",
+      "type": "bezier",
+      "targetHandle": "yellow"
+    },
+    {
+      "id": "and-1783576240078-out-signal-1783576112519-yellow-1783576248653",
+      "source": "and-1783576240078",
+      "target": "signal-1783576112519",
+      "type": "bezier",
+      "targetHandle": "yellow"
+    },
+    {
+      "id": "turnout-1783504679014-out-not-1783576259612-in-1783576272210",
+      "source": "turnout-1783504679014",
+      "target": "not-1783576259612",
+      "type": "bezier"
+    },
+    {
+      "id": "not-1783576259612-out-and-1783576240078-in-1783576283103",
+      "source": "not-1783576259612",
+      "target": "and-1783576240078",
+      "type": "bezier"
+    },
+    {
+      "id": "turnout-1783504868881-out-and-1783576240078-in-1783576287351",
+      "source": "turnout-1783504868881",
+      "target": "and-1783576240078",
+      "type": "bezier"
+    }
+  ],
+  "updatedAt": "2026-07-09T06:30:21.797Z"
+}

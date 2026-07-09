@@ -1163,15 +1163,15 @@ function AutomationFlowLayout({
 
               <Tooltip label={t("automation.panel.loadFromServer")}>
                 <ActionIcon variant="light" onClick={onLoadFlow} loading={loading}>
-                  <IconPlayerPlay size={16} />
-                </ActionIcon>
-              </Tooltip>
-
-              <Tooltip label="Üresre állítás">
-                <ActionIcon variant="light" color="orange" onClick={onResetFlow}>
                   <IconRefresh size={16} />
                 </ActionIcon>
               </Tooltip>
+
+              {/* <Tooltip label="Üresre állítás">
+                <ActionIcon variant="light" color="orange" onClick={onResetFlow}>
+                  <IconRefresh size={16} />
+                </ActionIcon>
+              </Tooltip> */}
             </Group>
           </Group>
 
