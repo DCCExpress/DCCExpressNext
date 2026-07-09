@@ -50,6 +50,26 @@ type AutomationNodeCardProps = {
   outputBadges?: AutomationNodeOutputBadge[];
 };
 
+function getHandleHorizontalStyle(position: Position) {
+  if (position === Position.Left) {
+    return {
+      left: 0,
+      transform: "translate(-50%, -50%)",
+    };
+  }
+
+  if (position === Position.Right) {
+    return {
+      right: 0,
+      transform: "translate(50%, -50%)",
+    };
+  }
+
+  return {
+    transform: "translate(-50%, -50%)",
+  };
+}
+
 function renderHandles(
   type: "source" | "target",
   position: Position,
@@ -64,12 +84,9 @@ function renderHandles(
       style={{
         width: 10,
         height: 10,
-        ...(handle.top !== undefined
-          ? {
-              top: handle.top,
-              transform: "translateY(-50%)",
-            }
-          : {}),
+        top: handle.top ?? "50%",
+        zIndex: 4,
+        ...getHandleHorizontalStyle(position),
       }}
     />
   ));
