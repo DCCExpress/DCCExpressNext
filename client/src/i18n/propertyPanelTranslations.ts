@@ -1,3 +1,5 @@
+import i18n from "i18next";
+
 export const enPropertyPanelTranslations = {
   fields: {
     name: "Name",
@@ -303,3 +305,24 @@ export const deEditorTranslations = {
     audioList: "Audioliste",
   },
 };
+
+function registerLanguageBundle(
+  language: "en" | "hu" | "de",
+  propertyPanel: typeof enPropertyPanelTranslations,
+  editor: typeof enEditorTranslations
+): void {
+  i18n.addResourceBundle(
+    language,
+    "translation",
+    {
+      propertyPanel,
+      editor,
+    },
+    true,
+    true
+  );
+}
+
+registerLanguageBundle("en", enPropertyPanelTranslations, enEditorTranslations);
+registerLanguageBundle("hu", huPropertyPanelTranslations, huEditorTranslations);
+registerLanguageBundle("de", dePropertyPanelTranslations, deEditorTranslations);
