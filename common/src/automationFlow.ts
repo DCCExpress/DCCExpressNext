@@ -13,6 +13,7 @@ export type AutomationFlowNodeKind =
   | "timer"
   | "latch"
   | "routeLock"
+  | "function"
   | "signal"
   | "turnout"
   | "turnoutCommand"
@@ -36,6 +37,8 @@ export type AutomationFlowNodeData = Record<string, unknown> & {
   pageId?: string;
   description?: string;
   ioKey?: string;
+  payload?: unknown;
+  functionScript?: string;
   sensorAddress?: number;
   turnoutAddress?: number;
   /**
