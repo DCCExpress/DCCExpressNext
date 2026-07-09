@@ -8,6 +8,10 @@ import {
   type RawData,
 } from "ws";
 
+import {
+  FEATURE_ENABLE_SCRIPT_ENGINE,
+} from "../../../common/src/featureFlags.js";
+
 import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
@@ -154,6 +158,7 @@ function canHandleWithoutCommandCenter(type: string): boolean {
     type === "appSettingsCommand" ||
     type === "blockAutomationCommand" ||
     type === "automationFlowCommand" ||
+    type === "automationFlowRuntimeCommand" ||
     type === "taskManagerCommand" ||
     type === "fastClockCommand" ||
     type === "fileCommand"
@@ -195,8 +200,11 @@ async function initializeWebSocketRuntimeStores(): Promise<void> {
   await automationFlowRuntimeService.initializeAndEvaluate("startup");
 
   await taskRuntimeStore.initialize();
-  await scriptRuntimeStore.initialize();
-  await scriptRuntimeStore.autoStartIfEnabled();
+
+  if (FEATURE_ENABLE_SCRIPT_ENGINE) {
+    await scriptRuntimeStore.initialize();
+    await scriptRuntimeStore.autoStartIfEnabled();
+  }
 }
 
 export async function setupWebSocketServer(
