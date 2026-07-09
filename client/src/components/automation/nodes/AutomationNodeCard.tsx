@@ -51,6 +51,8 @@ type AutomationNodeCardProps = {
   showIoKey?: boolean;
 };
 
+const NODE_WIDTH = 226;
+
 function getHandleHorizontalStyle(position: Position) {
   if (position === Position.Left) {
     return {
@@ -181,7 +183,9 @@ export function AutomationNodeCard({
       data-automation-output-valid={outputValid ? "true" : "false"}
       data-automation-output-value={active ? "true" : "false"}
       style={{
-        minWidth: 190,
+        width: NODE_WIDTH,
+        minWidth: NODE_WIDTH,
+        maxWidth: NODE_WIDTH,
         borderColor,
         borderWidth: selected ? 3 : active ? 2 : outputValid ? 2 : 1,
         boxShadow,
@@ -198,11 +202,11 @@ export function AutomationNodeCard({
 
       <Stack gap={6} pr={resolvedOutputBadges.length > 0 ? 82 : 0}>
         <Group justify="space-between" gap="xs" wrap="nowrap">
-          <Group gap="xs" wrap="nowrap">
-            <Text fw={900} size="lg" lh={1}>
+          <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+            <Text fw={900} size="lg" lh={1} style={{ flexShrink: 0 }}>
               {definition.icon}
             </Text>
-            <Box>
+            <Box style={{ minWidth: 0 }}>
               <Text fw={800} size="sm" lh={1.15}>
                 {data.label}
               </Text>
