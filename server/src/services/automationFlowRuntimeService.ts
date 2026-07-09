@@ -2,6 +2,7 @@ import type {
   AutomationFlowDocumentDto,
   AutomationFlowEdgeDto,
   AutomationFlowNodeDto,
+  AutomationFlowRuntimeSnapshotDto,
   AutomationSignalAspect,
 } from "../../../common/src/automationFlow.js";
 
@@ -140,11 +141,46 @@ class AutomationFlowRuntimeService {
   private config: AutomationFlowRuntimeConfiguration | null = null;
   private evaluating = false;
   private pending = false;
+  private running = true;
+  private updatedAt = new Date().toISOString();
+  private lastReason: string | undefined;
+  private lastEvaluationAt: string | undefined;
+  private lastError: string | undefined;
   private readonly lastTurnoutCommandByNode = new Map<string, string>();
   private readonly lastSignalCommandByNode = new Map<string, string>();
 
   configure(config: AutomationFlowRuntimeConfiguration): void {
     this.config = config;
+  }
+
+  getSnapshot(): AutomationFlowRuntimeSnapshotDto {
+    return {
+      status: this.running ? "running" : "stopped",
+      running: this.running,
+      updatedAt: this.updatedAt,
+      ...(this.lastReason ? { lastReason: this.lastReason } : {}),
+      ...(this.lastEvaluationAt ? { lastEvaluationAt: this.lastEvaluationAt } : {}),
+      ...(this.lastError ? { lastError: this.lastError } : {}),
+    };
+  }
+
+  async start(reason: string): Promise<AutomationFlowRuntimeSnapshotDto> {
+    this.running = true;
+    this.lastReason = reason;
+    this.lastError = undefined;
+    this.updatedAt = new Date().toISOString();
+    await this.evaluate(reason);
+    return this.getSnapshot();
+  }
+
+  stop(reason: string): AutomationFlowRuntimeSnapshotDto {
+    this.running = false;
+    this.lastReason = reason;
+    this.updatedAt = new Date().toISOString();
+    this.pending = false;
+    this.lastSignalCommandByNode.clear();
+    this.lastTurnoutCommandByNode.clear();
+    return this.getSnapshot();
   }
 
   async initializeAndEvaluate(reason: string): Promise<void> {
@@ -153,6 +189,10 @@ class AutomationFlowRuntimeService {
   }
 
   handleRuntimeEvent(message: TypedServerWsMessage): void {
+    if (!this.running) {
+      return;
+    }
+
     if (message.type !== "sensorChanged" && message.type !== "turnoutChanged") {
       return;
     }
@@ -163,6 +203,10 @@ class AutomationFlowRuntimeService {
   }
 
   async evaluate(reason: string): Promise<void> {
+    if (!this.running) {
+      return;
+    }
+
     if (this.evaluating) {
       this.pending = true;
       return;
@@ -174,7 +218,17 @@ class AutomationFlowRuntimeService {
       do {
         this.pending = false;
         await this.evaluateOnce(reason);
-      } while (this.pending);
+      } while (this.pending && this.running);
+
+      this.lastReason = reason;
+      this.lastEvaluationAt = new Date().toISOString();
+      this.lastError = undefined;
+      this.updatedAt = new Date().toISOString();
+    } catch (error) {
+      this.lastReason = reason;
+      this.lastError = error instanceof Error ? error.message : String(error);
+      this.updatedAt = new Date().toISOString();
+      throw error;
     } finally {
       this.evaluating = false;
     }
