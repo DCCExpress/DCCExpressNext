@@ -32,6 +32,13 @@ type AutomationSignalState = {
   signalAspect?: AutomationSignalAspect;
 };
 
+type AutomationFunctionInput = {
+  valid: boolean;
+  value: boolean;
+  payload: unknown;
+  signalAspect?: AutomationSignalAspect;
+};
+
 type AutomationEvaluationState = Record<string, AutomationSignalState>;
 
 type AutomationFlowRuntimeConfiguration = {
@@ -180,7 +187,7 @@ function evaluateFunctionNode(
     return emptySignal();
   }
 
-  const inputs = inputSignals.map(currentSignal => ({
+  const inputs: AutomationFunctionInput[] = inputSignals.map(currentSignal => ({
     valid: currentSignal.valid,
     value: currentSignal.value,
     payload: getPayload(currentSignal),
@@ -200,7 +207,7 @@ function evaluateFunctionNode(
     `"use strict";\n${script}`
   ) as (
     payload: unknown,
-    inputs: typeof inputs,
+    inputs: AutomationFunctionInput[],
     node: AutomationFlowNodeDto["data"],
     context: Record<string, unknown>
   ) => unknown;
