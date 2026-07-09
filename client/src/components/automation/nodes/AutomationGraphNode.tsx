@@ -244,8 +244,19 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
       outputBadges={getSingleOutputBadge(data)}
       detail={typeof data.turnoutAddress === "number"
         ? (
-            <Group gap={6} wrap="nowrap" style={{ marginTop: 10, overflow: "visible" }}>
+            <Group
+              className="nodrag nopan"
+              gap={6}
+              wrap="nowrap"
+              onPointerDown={stopNodeButtonEvent}
+              onPointerUp={stopNodeButtonEvent}
+              onMouseDown={stopNodeButtonEvent}
+              onMouseUp={stopNodeButtonEvent}
+              onDoubleClick={stopNodeButtonEvent}
+              style={{ marginTop: 10, overflow: "visible" }}
+            >
               <Badge
+                className="nodrag nopan"
                 color={getBooleanBadgeColor(valid, active)}
                 variant={valid ? "filled" : "light"}
                 size="xs"
@@ -254,11 +265,15 @@ function TurnoutNode({ data, selected }: AutomationTypedNodeProps) {
                 actual: {t(`automation.graph.${actualState}`)}
               </Badge>
               <Button
+                className="nodrag nopan"
                 size="compact-xs"
                 variant="light"
                 disabled={!canToggle}
                 onPointerDown={stopNodeButtonEvent}
+                onPointerUp={stopNodeButtonEvent}
                 onMouseDown={stopNodeButtonEvent}
+                onMouseUp={stopNodeButtonEvent}
+                onDoubleClick={stopNodeButtonEvent}
                 onClick={handleToggleTurnout}
                 style={{ flexShrink: 0 }}
               >
@@ -435,10 +450,14 @@ function FunctionNode({ id, data, selected }: AutomationTypedNodeProps) {
               </Text>
             )}
             <Button
+              className="nodrag nopan"
               size="compact-xs"
               variant="light"
               onPointerDown={stopNodeButtonEvent}
+              onPointerUp={stopNodeButtonEvent}
               onMouseDown={stopNodeButtonEvent}
+              onMouseUp={stopNodeButtonEvent}
+              onDoubleClick={stopNodeButtonEvent}
               onClick={(event) => {
                 stopNodeButtonEvent(event);
                 setScriptEditorOpened(true);
