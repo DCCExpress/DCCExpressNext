@@ -14,8 +14,6 @@ type MainMenuActionsProps = {
   onGoHome: () => void;
   onOpenLocos: () => void;
   onOpenBlocks: () => void;
-  onOpenAutomationFlow: () => void;
-  automationDisabled: boolean;
   onOpenDiagnostics: () => void;
   onOpenIntegrityCheck: () => void;
   onSaveLayout: () => void;
@@ -28,8 +26,6 @@ export default function MainMenuActions({
   onGoHome,
   onOpenLocos,
   onOpenBlocks,
-  onOpenAutomationFlow,
-  automationDisabled,
   onOpenDiagnostics,
   onOpenIntegrityCheck,
   onSaveLayout,
@@ -104,10 +100,6 @@ export default function MainMenuActions({
           </Menu.Item>
           <Menu.Item disabled>{t("Trains") + "..."}</Menu.Item>
           <Menu.Item disabled>{t("Routes") + "..."}</Menu.Item>
-          <Divider />
-          <Menu.Item onClick={onOpenAutomationFlow} disabled={automationDisabled}>
-            {t("automation.dialog.title") + "..."}
-          </Menu.Item>
           <Divider />
           <Menu.Item onClick={onOpenIntegrityCheck}>
             Integrity check...
