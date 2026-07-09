@@ -48,7 +48,7 @@ type TopMenuBarProps = {
 };
 
 export default function TopMenuBar({
-  editMode,
+  editMode: _editMode,
   onEditModeChange,
   onGoHome,
   onOpenLocos,
@@ -93,7 +93,7 @@ export default function TopMenuBar({
           />
 
           <EditorToolbar
-            editMode={editMode}
+            editMode={_editMode}
             onEditModeChange={onEditModeChange}
             tool={tool}
             onCursorToolClick={onCursorToolClick}
