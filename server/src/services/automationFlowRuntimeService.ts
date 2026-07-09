@@ -36,7 +36,7 @@ type AutomationFunctionInput = {
   valid: boolean;
   value: boolean;
   payload: unknown;
-  signalAspect?: AutomationSignalAspect;
+  signalAspect?: AutomationSignalAspect | undefined;
 };
 
 type AutomationEvaluationState = Record<string, AutomationSignalState>;
