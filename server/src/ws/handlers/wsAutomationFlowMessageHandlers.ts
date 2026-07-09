@@ -9,6 +9,10 @@ import {
   automationFlowStore,
 } from "../../services/automationFlowStore.js";
 
+import {
+  automationFlowRuntimeService,
+} from "../../services/automationFlowRuntimeService.js";
+
 import type {
   WsMessageHandler,
 } from "./wsHandlerTypes.js";
@@ -57,6 +61,7 @@ export const handleAutomationFlowMessage: WsMessageHandler = async context => {
           context.msg.data.document ?? createEmptyAutomationFlowDocument();
 
         const document = await automationFlowStore.saveDocument(inputDocument);
+        await automationFlowRuntimeService.evaluate("flow-save");
 
         const payload: AutomationFlowResponsePayload = {
           requestId,
