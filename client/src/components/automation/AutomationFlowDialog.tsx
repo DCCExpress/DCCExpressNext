@@ -1,5 +1,6 @@
 import { Box, Group, Title } from "@mantine/core";
 import { IconCpu } from "@tabler/icons-react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import AppModal from "../common/AppModal";
 import AutomationFlowEditor from "./AutomationFlowEditor";
@@ -11,6 +12,12 @@ type AutomationFlowDialogProps = {
 
 export default function AutomationFlowDialog({ opened, onClose }: AutomationFlowDialogProps) {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!opened) {
+      delete document.body.dataset.automationHasSelectedNode;
+    }
+  }, [opened]);
 
   return (
     <AppModal
@@ -48,7 +55,7 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
         },
       }}
     >
-      <Box style={{ flex: 1, minHeight: 0, height: "100%", display: "flex" }}>
+      <Box className="automation-flow-dialog-body" style={{ flex: 1, minHeight: 0, height: "100%", display: "flex" }}>
         <AutomationFlowEditor />
       </Box>
     </AppModal>
