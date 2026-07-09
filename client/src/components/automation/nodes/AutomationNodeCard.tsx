@@ -1,5 +1,6 @@
-import type {
-  ReactNode,
+import {
+  useEffect,
+  type ReactNode,
 } from "react";
 
 import {
@@ -154,6 +155,18 @@ export function AutomationNodeCard({
   const resolvedTargetHandles = targetHandles ?? (hasTargetHandle(kind) ? [{}] : []);
   const resolvedSourceHandles = sourceHandles ?? (hasSourceHandle(kind) ? [{}] : []);
   const resolvedOutputBadges = outputBadges ?? [];
+
+  useEffect(() => {
+    if (!selected) {
+      return;
+    }
+
+    document.body.dataset.automationHasSelectedNode = "true";
+
+    return () => {
+      delete document.body.dataset.automationHasSelectedNode;
+    };
+  }, [selected]);
 
   const borderColor = selected
     ? "var(--mantine-color-blue-6)"
