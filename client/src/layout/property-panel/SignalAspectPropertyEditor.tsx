@@ -1,4 +1,5 @@
 import { Box, Group, NumberInput } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
@@ -15,7 +16,7 @@ type SignalAspectPropertyEditorProps = {
 
 type SignalAspectRow = {
   color: SignalPreviewColor;
-  label: string;
+  labelKey: string;
   valueKey:
     | "valueGreen"
     | "valueRed"
@@ -28,26 +29,26 @@ type SignalAspectRow = {
 const rows: SignalAspectRow[] = [
   {
     color: 1,
-    label: "Green",
+    labelKey: "automation.aspects.green",
     valueKey: "valueGreen",
     send: signal => signal.sendGreen(),
   },
   {
     color: 2,
-    label: "Red",
+    labelKey: "automation.aspects.red",
     valueKey: "valueRed",
     send: signal => signal.sendRed(),
   },
   {
     color: 3,
-    label: "Yellow",
+    labelKey: "automation.aspects.yellow",
     valueKey: "valueYellow",
     send: signal => signal.sendYellow(),
     minAspect: 3,
   },
   {
     color: 4,
-    label: "White",
+    labelKey: "automation.aspects.white",
     valueKey: "valueWhite",
     send: signal => signal.sendWhite(),
     minAspect: 4,
@@ -58,6 +59,7 @@ export default function SignalAspectPropertyEditor({
   selectedElement,
   onUpdateSelectedElement,
 }: SignalAspectPropertyEditorProps) {
+  const { t } = useTranslation();
   const signal = selectedElement as TrackSignalElementView;
 
   return (
@@ -65,12 +67,12 @@ export default function SignalAspectPropertyEditor({
       {rows
         .filter(row => !row.minAspect || signal.aspect >= row.minAspect)
         .map(row => (
-          <Group key={row.label}>
+          <Group key={row.valueKey}>
             <Box className="route-turnout-preview-button">
               <ElementPreview
                 style={{ width: "50%" }}
                 element={createSignalPreview(selectedElement, row.color)}
-                label={row.label}
+                label={t(row.labelKey)}
                 width={40}
                 height={40}
                 translateX={-10}
