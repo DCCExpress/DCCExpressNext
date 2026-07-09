@@ -4,6 +4,10 @@ import type {
   WebSocket,
 } from "ws";
 
+import {
+  FEATURE_ENABLE_SCRIPT_ENGINE,
+} from "../../../common/src/featureFlags.js";
+
 import type {
   PowerInfo,
   TypedServerWsMessage,
@@ -13,6 +17,10 @@ import type {
 import type {
   CommandCenter,
 } from "../commandCenter/CommandCenter.js";
+
+import {
+  automationFlowRuntimeService,
+} from "../services/automationFlowRuntimeService.js";
 
 import {
   scriptRuntimeStore,
@@ -69,14 +77,21 @@ export function sendInitialWebSocketSnapshots({
     },
   });
 
-  sendToClient(ws, {
-    type: "scriptDocumentChanged",
-    data: scriptRuntimeStore.getDocument(),
-  });
+  if (FEATURE_ENABLE_SCRIPT_ENGINE) {
+    sendToClient(ws, {
+      type: "scriptDocumentChanged",
+      data: scriptRuntimeStore.getDocument(),
+    });
+
+    sendToClient(ws, {
+      type: "scriptStateChanged",
+      data: scriptRuntimeStore.getCurrentState(),
+    });
+  }
 
   sendToClient(ws, {
-    type: "scriptStateChanged",
-    data: scriptRuntimeStore.getCurrentState(),
+    type: "automationFlowRuntimeStateChanged",
+    data: automationFlowRuntimeService.getSnapshot(),
   });
 
   sendToClient(ws, {
