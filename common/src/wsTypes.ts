@@ -15,6 +15,8 @@ import type {
 import type {
   AutomationFlowDocumentDto,
   AutomationFlowResponsePayload,
+  AutomationFlowRuntimeResponsePayload,
+  AutomationFlowRuntimeSnapshotDto,
 } from "./automationFlow.js";
 
 import type {
@@ -138,6 +140,7 @@ export const CLIENT_WS_MESSAGE_TYPES = [
   "appSettingsCommand",
   "blockAutomationCommand",
   "automationFlowCommand",
+  "automationFlowRuntimeCommand",
   "taskManagerCommand",
   "fastClockCommand",
   "fileCommand",
@@ -324,6 +327,8 @@ export type ServerWsPayloadMap = {
   blockAutomationResponse: BlockAutomationResponsePayload;
   automationFlowResponse: AutomationFlowResponsePayload;
   automationFlowChanged: AutomationFlowDocumentDto;
+  automationFlowRuntimeResponse: AutomationFlowRuntimeResponsePayload;
+  automationFlowRuntimeStateChanged: AutomationFlowRuntimeSnapshotDto;
   fastClockResponse: FastClockResponsePayload;
   fileResponse: FileResponsePayload;
 
