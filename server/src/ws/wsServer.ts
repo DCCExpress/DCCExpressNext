@@ -25,6 +25,10 @@ import {
 } from "../services/automationFlowStore.js";
 
 import {
+  automationFlowRuntimeService,
+} from "../services/automationFlowRuntimeService.js";
+
+import {
   editorEditModeStore,
 } from "../services/editorEditModeStore.js";
 
@@ -160,6 +164,7 @@ export function broadcastAll(
   message: TypedServerWsMessage,
   exclude?: WebSocket
 ): void {
+  automationFlowRuntimeService.handleRuntimeEvent(message);
   broadcast(message, exclude);
 }
 
@@ -181,9 +186,9 @@ async function initializeWebSocketRuntimeStores(): Promise<void> {
   );
 
   await initializeCommandCenter(conf);
+  await automationFlowRuntimeService.initializeAndEvaluate("startup");
 
   await taskRuntimeStore.initialize();
-
   await scriptRuntimeStore.initialize();
   await scriptRuntimeStore.autoStartIfEnabled();
 }
