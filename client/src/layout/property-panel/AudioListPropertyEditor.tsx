@@ -24,6 +24,7 @@ import {
   IconPlus,
   IconTrash,
 } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import type { AudioListButtonItemDto } from "../../../../common/src/layout/layoutDto";
 import { generateId } from "../../helpers";
@@ -31,6 +32,9 @@ import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import { AudioListButtonElementView } from "../../models/editor/elements/AudioListButtonElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { SelectedElementUpdateHandler } from "./propertyPanelTypes";
+import {
+  getPropertyLabel,
+} from "./propertyTranslations";
 
 type AudioListPropertyEditorProps = {
   prop: IEditableProperty;
@@ -65,6 +69,7 @@ export default function AudioListPropertyEditor({
   selectedElement,
   onUpdateSelectedElement,
 }: AudioListPropertyEditorProps) {
+  const { t } = useTranslation();
   const [opened, setOpened] = useState(false);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
 
@@ -97,7 +102,7 @@ export default function AudioListPropertyEditor({
       ...items,
       {
         id: generateId(),
-        name: "Audio",
+        name: t("propertyPanel.audio.defaultItemName"),
         fileName: "",
       },
     ]);
@@ -145,28 +150,28 @@ export default function AudioListPropertyEditor({
     <>
       <Group justify="space-between" align="center">
         <div>
-          <Text size="sm" fw={500}>{prop.label}</Text>
+          <Text size="sm" fw={500}>{getPropertyLabel(t, prop)}</Text>
           <Text size="xs" c="dimmed">
-            {items.length} audio item{items.length === 1 ? "" : "s"}
+            {t("propertyPanel.audio.itemCount", { count: items.length })}
           </Text>
         </div>
 
         <Button size="xs" onClick={() => setOpened(true)}>
-          Edit list
+          {t("propertyPanel.audio.editList")}
         </Button>
       </Group>
 
       <Modal
         opened={opened}
         onClose={() => setOpened(false)}
-        title="Audio list"
+        title={t("propertyPanel.audio.listTitle")}
         size="lg"
         centered
       >
         <Stack gap="sm">
           <Group justify="space-between" align="flex-start">
             <Text size="sm" c="dimmed" style={{ flex: 1 }}>
-              Add the display name and audio file for each popup row. Drag rows by the grip to set the runtime order.
+              {t("propertyPanel.audio.listDescription")}
             </Text>
 
             <Button
@@ -174,14 +179,14 @@ export default function AudioListPropertyEditor({
               leftSection={<IconPlus size={14} />}
               onClick={addItem}
             >
-              Add audio
+              {t("propertyPanel.audio.addAudio")}
             </Button>
           </Group>
 
           {items.length === 0 ? (
             <Card withBorder p="md">
               <Text size="sm" c="dimmed">
-                No audio rows yet.
+                {t("propertyPanel.audio.emptyRows")}
               </Text>
             </Card>
           ) : (
@@ -189,10 +194,10 @@ export default function AudioListPropertyEditor({
               <Table striped highlightOnHover withTableBorder>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th style={{ width: 78 }}>Order</Table.Th>
-                    <Table.Th>Name</Table.Th>
-                    <Table.Th>File</Table.Th>
-                    <Table.Th style={{ width: 112 }}>Actions</Table.Th>
+                    <Table.Th style={{ width: 78 }}>{t("propertyPanel.audio.order")}</Table.Th>
+                    <Table.Th>{t("propertyPanel.audio.name")}</Table.Th>
+                    <Table.Th>{t("propertyPanel.audio.file")}</Table.Th>
+                    <Table.Th style={{ width: 112 }}>{t("propertyPanel.audio.actions")}</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -222,7 +227,7 @@ export default function AudioListPropertyEditor({
                             size="sm"
                             variant="subtle"
                             color="gray"
-                            title="Drag to reorder"
+                            title={t("propertyPanel.audio.dragToReorder")}
                             style={{ cursor: "grab", touchAction: "none" }}
                           >
                             <IconGripVertical size={16} />
@@ -273,7 +278,7 @@ export default function AudioListPropertyEditor({
                                   {...fileButtonProps}
                                   size="sm"
                                   variant="subtle"
-                                  title="Choose audio file"
+                                  title={t("propertyPanel.audio.chooseFile")}
                                   onClick={event => {
                                     event.preventDefault();
                                     event.stopPropagation();
@@ -293,7 +298,7 @@ export default function AudioListPropertyEditor({
                           <ActionIcon
                             size="sm"
                             variant="subtle"
-                            title="Test audio"
+                            title={t("propertyPanel.audio.test")}
                             disabled={!item.fileName.trim()}
                             onClick={event => {
                               event.preventDefault();
@@ -310,7 +315,7 @@ export default function AudioListPropertyEditor({
                             size="sm"
                             variant="subtle"
                             color="red"
-                            title="Remove audio"
+                            title={t("propertyPanel.audio.removeAudio")}
                             onClick={() => removeItem(item.id)}
                           >
                             <IconTrash size={16} />
@@ -331,7 +336,7 @@ export default function AudioListPropertyEditor({
                     >
                       <Table.Td colSpan={4}>
                         <Text size="sm" c="dimmed" ta="center">
-                          Move to end
+                          {t("propertyPanel.audio.moveToEnd")}
                         </Text>
                       </Table.Td>
                     </Table.Tr>
