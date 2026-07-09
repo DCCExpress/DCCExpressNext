@@ -190,7 +190,7 @@ function normalizeEdge(input: unknown): AutomationFlowEdgeDto | null {
     id,
     source,
     target,
-    ...(typeof input.type === "string" ? { type: input.type } : {}),
+    type: "bezier",
     ...(typeof input.sourceHandle === "string" ? { sourceHandle: input.sourceHandle } : {}),
     ...(typeof input.targetHandle === "string" ? { targetHandle: input.targetHandle } : {}),
   };
