@@ -28,6 +28,7 @@ type SignalInputAspect = Exclude<AutomationSignalAspect, "red">;
 type AutomationSignalState = {
   valid: boolean;
   value: boolean;
+  payload?: unknown;
   signalAspect?: AutomationSignalAspect;
 };
 
@@ -44,18 +45,36 @@ function emptySignal(): AutomationSignalState {
   return { valid: false, value: false };
 }
 
-function signal(value: boolean, signalAspect?: AutomationSignalAspect): AutomationSignalState {
+function signal(
+  value: boolean,
+  signalAspect?: AutomationSignalAspect,
+  payload: unknown = value
+): AutomationSignalState {
   return {
     valid: true,
     value,
+    payload,
     ...(signalAspect ? { signalAspect } : {}),
   };
+}
+
+function payloadsEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  try {
+    return JSON.stringify(left) === JSON.stringify(right);
+  } catch {
+    return false;
+  }
 }
 
 function signalsEqual(left: AutomationSignalState, right: AutomationSignalState): boolean {
   return left.valid === right.valid &&
     left.value === right.value &&
-    left.signalAspect === right.signalAspect;
+    left.signalAspect === right.signalAspect &&
+    payloadsEqual(left.payload, right.payload);
 }
 
 function createIncomingEdgeMap(edges: AutomationFlowEdgeDto[]): Map<string, AutomationFlowEdgeDto[]> {
@@ -72,6 +91,10 @@ function createIncomingEdgeMap(edges: AutomationFlowEdgeDto[]): Map<string, Auto
 
 function getNodeSignal(evaluation: AutomationEvaluationState, nodeId: string): AutomationSignalState {
   return evaluation[nodeId] ?? emptySignal();
+}
+
+function getPayload(signalState: AutomationSignalState): unknown {
+  return signalState.payload ?? signalState.value;
 }
 
 function getNodePageId(node: AutomationFlowNodeDto): string {
@@ -135,6 +158,64 @@ function getSignalAddressLength(data: AutomationFlowNodeDto["data"]): number {
   }
 
   return Math.max(1, Math.floor(raw));
+}
+
+function getFunctionScript(node: AutomationFlowNodeDto): string {
+  if (typeof node.data.functionScript === "string") {
+    return node.data.functionScript;
+  }
+
+  if (typeof node.data.description === "string") {
+    return node.data.description;
+  }
+
+  return "return payload;";
+}
+
+function evaluateFunctionNode(
+  node: AutomationFlowNodeDto,
+  inputSignals: AutomationSignalState[]
+): AutomationSignalState {
+  if (inputSignals.length === 0) {
+    return emptySignal();
+  }
+
+  const inputs = inputSignals.map(currentSignal => ({
+    valid: currentSignal.valid,
+    value: currentSignal.value,
+    payload: getPayload(currentSignal),
+    signalAspect: currentSignal.signalAspect,
+  }));
+
+  const payload = inputs.length === 1
+    ? inputs[0]?.payload
+    : inputs.map(input => input.payload);
+
+  const script = getFunctionScript(node);
+  const fn = new Function(
+    "payload",
+    "inputs",
+    "node",
+    "context",
+    `"use strict";\n${script}`
+  ) as (
+    payload: unknown,
+    inputs: typeof inputs,
+    node: AutomationFlowNodeDto["data"],
+    context: Record<string, unknown>
+  ) => unknown;
+
+  const result = fn(
+    payload,
+    inputs,
+    node.data,
+    {
+      nodeId: node.id,
+      label: node.data.label,
+    }
+  );
+
+  return signal(Boolean(result), undefined, result);
 }
 
 class AutomationFlowRuntimeService {
@@ -249,7 +330,8 @@ class AutomationFlowRuntimeService {
         }
 
         const sensor = commandCenter?.getSensors().find(item => item.address === address);
-        return signal(sensor?.active === true);
+        const active = sensor?.active === true;
+        return signal(active, undefined, active);
       }
 
       case "turnout": {
@@ -264,12 +346,15 @@ class AutomationFlowRuntimeService {
         }
 
         const expectedLogicalClosed = node.data.turnoutClosed ?? true;
-        return signal(logicalClosed === expectedLogicalClosed);
+        const active = logicalClosed === expectedLogicalClosed;
+        return signal(active, undefined, active);
       }
 
       case "blockOccupied":
-      case "button":
-        return signal(node.data.active === true);
+      case "button": {
+        const active = node.data.active === true;
+        return signal(active, undefined, node.data.payload ?? active);
+      }
 
       default:
         return emptySignal();
@@ -292,10 +377,14 @@ class AutomationFlowRuntimeService {
 
     if (sourceNode.data.kind === "ifThenElse") {
       if (edge.sourceHandle === "else") {
-        return sourceSignal.value ? emptySignal() : signal(true);
+        return sourceSignal.value
+          ? emptySignal()
+          : signal(true, undefined, getPayload(sourceSignal));
       }
 
-      return sourceSignal.value ? signal(true) : emptySignal();
+      return sourceSignal.value
+        ? signal(true, undefined, getPayload(sourceSignal))
+        : emptySignal();
     }
 
     return sourceSignal;
@@ -353,7 +442,11 @@ class AutomationFlowRuntimeService {
         switch (node.data.kind) {
           case "and":
             nextSignal = inputSignals.length > 0
-              ? signal(inputSignals.every(currentSignal => currentSignal.value))
+              ? signal(
+                  inputSignals.every(currentSignal => currentSignal.value),
+                  undefined,
+                  inputSignals.map(getPayload)
+                )
               : emptySignal();
             break;
 
@@ -362,15 +455,25 @@ class AutomationFlowRuntimeService {
           case "latch":
           case "routeLock":
           case "turnoutCommand":
-          case "output":
+          case "output": {
+            const firstActiveSignal = inputSignals.find(currentSignal => currentSignal.value) ?? inputSignals[0];
             nextSignal = inputSignals.length > 0
-              ? signal(inputSignals.some(currentSignal => currentSignal.value))
+              ? signal(
+                  inputSignals.some(currentSignal => currentSignal.value),
+                  undefined,
+                  firstActiveSignal ? getPayload(firstActiveSignal) : undefined
+                )
               : emptySignal();
+            break;
+          }
+
+          case "function":
+            nextSignal = evaluateFunctionNode(node, inputSignals);
             break;
 
           case "signal": {
             const aspect = this.resolveSignalAspectFromInputs(incomingEdges, nodeById, evaluation);
-            nextSignal = signal(aspect !== "red", aspect);
+            nextSignal = signal(aspect !== "red", aspect, aspect);
             break;
           }
 
@@ -379,16 +482,23 @@ class AutomationFlowRuntimeService {
               .filter(edge => (edge.targetHandle ?? "if") === "if")
               .map(edge => this.getEdgeSignalState(edge, nodeById.get(edge.source), evaluation))
               .filter(currentSignal => currentSignal.valid);
+            const firstActiveSignal = ifInputSignals.find(currentSignal => currentSignal.value) ?? ifInputSignals[0];
 
             nextSignal = ifInputSignals.length > 0
-              ? signal(ifInputSignals.some(currentSignal => currentSignal.value))
+              ? signal(
+                  ifInputSignals.some(currentSignal => currentSignal.value),
+                  undefined,
+                  firstActiveSignal ? getPayload(firstActiveSignal) : undefined
+                )
               : emptySignal();
             break;
           }
 
           case "not": {
             const firstSignal = inputSignals[0];
-            nextSignal = firstSignal ? signal(!firstSignal.value) : emptySignal();
+            nextSignal = firstSignal
+              ? signal(!firstSignal.value, undefined, !firstSignal.value)
+              : emptySignal();
             break;
           }
 
