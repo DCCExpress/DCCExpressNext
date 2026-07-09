@@ -2,6 +2,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type KeyboardEvent,
 } from "react";
 import {
   ActionIcon,
@@ -142,7 +143,7 @@ export default function FunctionScriptEditorDialog({
     },
   ]);
 
-  const stopEditorShortcuts = (event: React.KeyboardEvent): void => {
+  const stopEditorShortcuts = (event: KeyboardEvent): void => {
     const key = event.key.toLowerCase();
 
     if ((event.ctrlKey || event.metaKey) && key === "s") {
