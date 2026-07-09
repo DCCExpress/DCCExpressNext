@@ -1,5 +1,5 @@
 import { Group } from "@mantine/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EditorTool } from "../models/editor/types/EditorTypes";
 import AutomationFlowDialog from "../components/automation/AutomationFlowDialog";
 import DiagnosticsDialog from "../components/diagnostics/DiagnosticsDialog";
@@ -76,7 +76,21 @@ export default function TopMenuBar({
   const [integrityCheckOpened, setIntegrityCheckOpened] = useState(false);
   const [automationFlowOpened, setAutomationFlowOpened] = useState(false);
 
-  const openAutomationFlow = () => setAutomationFlowOpened(true);
+  const automationDisabled = editMode;
+
+  useEffect(() => {
+    if (automationDisabled) {
+      setAutomationFlowOpened(false);
+    }
+  }, [automationDisabled]);
+
+  const openAutomationFlow = () => {
+    if (automationDisabled) {
+      return;
+    }
+
+    setAutomationFlowOpened(true);
+  };
 
   return (
     <>
@@ -89,6 +103,7 @@ export default function TopMenuBar({
             onOpenLocos={onOpenLocos}
             onOpenBlocks={onOpenBlocks}
             onOpenAutomationFlow={openAutomationFlow}
+            automationDisabled={automationDisabled}
             onOpenDiagnostics={() => setDiagnosticsOpened(true)}
             onOpenIntegrityCheck={() => setIntegrityCheckOpened(true)}
             onSaveLayout={onSaveLayout}
@@ -104,6 +119,7 @@ export default function TopMenuBar({
             onCursorToolClick={onCursorToolClick}
             onOpenElementPicker={onOpenElementPicker}
             onOpenAutomationFlow={openAutomationFlow}
+            automationDisabled={automationDisabled}
             onDeleteToolClick={onDeleteToolClick}
             onFitLayout={onFitLayout}
             canUndo={canUndo}
@@ -127,7 +143,7 @@ export default function TopMenuBar({
       />
 
       <AutomationFlowDialog
-        opened={automationFlowOpened}
+        opened={!automationDisabled && automationFlowOpened}
         onClose={() => setAutomationFlowOpened(false)}
       />
 
