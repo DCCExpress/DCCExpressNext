@@ -28,6 +28,10 @@ import {
   serverRuntimeStatsStore,
 } from "../services/serverRuntimeStatsStore.js";
 
+import {
+  automationFlowRuntimeService,
+} from "../services/automationFlowRuntimeService.js";
+
 import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
@@ -53,6 +57,11 @@ export function configureWebSocketRuntimes({
   getCommandCenter,
   getLogicalTurnoutState,
 }: WsRuntimeConfigurationParams): void {
+
+  automationFlowRuntimeService.configure({
+    getCommandCenter,
+    getLogicalTurnoutState,
+  });
 
   runtimeVariableService.setBroadcast(message => {
     broadcast(message);
