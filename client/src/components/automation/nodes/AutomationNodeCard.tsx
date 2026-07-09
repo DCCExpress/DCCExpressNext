@@ -158,19 +158,17 @@ export function AutomationNodeCard({
     : active
       ? "var(--mantine-color-green-5)"
       : outputValid
-        ? "var(--mantine-color-red-5)"
+        ? "var(--mantine-color-blue-5)"
         : "var(--mantine-color-gray-4)";
 
   const boxShadow = selected
     ? active
       ? "0 0 0 3px rgba(34, 139, 230, 0.48), 0 0 0 6px rgba(64, 192, 87, 0.22), 0 18px 42px rgba(0, 0, 0, 0.26)"
-      : outputValid
-        ? "0 0 0 3px rgba(34, 139, 230, 0.44), 0 0 0 6px rgba(250, 82, 82, 0.18), 0 14px 34px rgba(0, 0, 0, 0.2)"
-        : "0 0 0 3px rgba(34, 139, 230, 0.44), 0 14px 34px rgba(0, 0, 0, 0.2)"
+      : "0 0 0 3px rgba(34, 139, 230, 0.44), 0 14px 34px rgba(0, 0, 0, 0.2)"
     : active
       ? "0 0 0 2px rgba(64, 192, 87, 0.22), 0 14px 34px rgba(0, 0, 0, 0.18)"
       : outputValid
-        ? "0 0 0 2px rgba(250, 82, 82, 0.16), 0 12px 28px rgba(0, 0, 0, 0.14)"
+        ? "0 0 0 2px rgba(34, 139, 230, 0.16), 0 12px 28px rgba(0, 0, 0, 0.14)"
         : undefined;
 
   return (
@@ -190,7 +188,7 @@ export function AutomationNodeCard({
         background: active
           ? "linear-gradient(180deg, rgba(47, 158, 68, 0.14), rgba(20, 120, 60, 0.06))"
           : outputValid
-            ? "linear-gradient(180deg, rgba(250, 82, 82, 0.1), rgba(250, 82, 82, 0.04))"
+            ? "linear-gradient(180deg, rgba(34, 139, 230, 0.1), rgba(34, 139, 230, 0.04))"
             : "var(--mantine-color-body)",
         position: "relative",
         zIndex: selected ? 2 : undefined,
