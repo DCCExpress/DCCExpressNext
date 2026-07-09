@@ -106,7 +106,7 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     description: "JavaScript feldolgozó node. A return érték payloadként megy tovább.",
     icon: "ƒ",
     defaultData: {
-      description: DEFAULT_FUNCTION_SCRIPT,
+      functionScript: DEFAULT_FUNCTION_SCRIPT,
     },
   },
   signal: {
