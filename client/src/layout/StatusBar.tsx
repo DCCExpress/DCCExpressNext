@@ -9,7 +9,7 @@ import {
 } from "@mantine/core";
 
 import {
-  IconCode,
+  IconBolt,
   IconEdit,
   IconListDetails,
   IconPlayerPause,
@@ -29,8 +29,12 @@ import {
 } from "react";
 
 import type {
+  AutomationFlowRuntimeSnapshotDto,
   TaskManagerSnapshot,
-} from "../../../common/src/task";
+} from "../../../common/src/types";
+import {
+  FEATURE_ENABLE_SCRIPT_ENGINE,
+} from "../../../common/src/featureFlags";
 
 import type {
   RightPanelMode,
@@ -39,9 +43,9 @@ import type {
 import StatusActionIcon from "../components/common/StatusActionIcon";
 import StatusBadge from "../components/common/StatusBadge";
 import FastClockStatus from "../components/common/FastClockStatus";
+import AutomationFlowDialog from "../components/automation/AutomationFlowDialog";
 import ScriptEditorDialog from "../components/ScriptEditorDialog";
 import { useCommandCenter } from "../context/CommandCenterContext";
-import { useScriptStatus } from "../hooks/useScriptStatus";
 import { useServerRuntimeStats } from "../hooks/useServerRuntimeStats";
 import { useWsStatus } from "../hooks/useWsStatus";
 import {
@@ -49,7 +53,6 @@ import {
   subscribeServerAudioPlaybackChanged,
   toggleServerAudioPlaybackEnabled,
 } from "../services/audioPlaybackSettings";
-import { scriptEngine } from "../services/scriptEngine";
 import { taskManager } from "../services/tasks/taskManagerSingleton";
 import { wsApi } from "../services/wsApi";
 import { wsClient } from "../services/wsClient";
@@ -58,11 +61,13 @@ import { getWsColor } from "./TopMenuBar";
 import "../styles/global.css";
 
 type StatusBarProps = {
+  editMode: boolean;
   rightPanelMode: RightPanelMode;
   setRightPanelMode: Dispatch<SetStateAction<RightPanelMode>>;
 };
 
 export default function StatusBar({
+  editMode,
   rightPanelMode,
   setRightPanelMode,
 }: StatusBarProps) {
@@ -70,29 +75,20 @@ export default function StatusBar({
   const serverStats = useServerRuntimeStats();
   const { alive, type, name, powerInfo, locked } = useCommandCenter();
 
+  const [automationFlowOpened, setAutomationFlowOpened] = useState(false);
   const [scriptEditorOpened, setScriptEditorOpened] = useState(false);
   const [taskDialogOpened, setTaskDialogOpened] = useState(false);
   const [taskSnapshot, setTaskSnapshot] = useState<TaskManagerSnapshot | null>(null);
   const [serverAudioEnabled, setServerAudioEnabled] = useState(() => isServerAudioPlaybackEnabled());
+  const [automationRuntime, setAutomationRuntime] = useState<AutomationFlowRuntimeSnapshotDto | null>(null);
 
   const wsConnected = wsStatus === "connected";
   const commandCenterOnline = alive && wsConnected;
   const trackPowerOn = powerInfo?.trackVoltageOn === true && wsConnected;
 
-  const { scriptState, stopScript } = useScriptStatus();
-  const scriptStatus = scriptState?.status ?? "idle";
-  const scriptIsRunning = scriptStatus === "running" || scriptStatus === "stopping";
-
-  const scriptBadgeColor =
-    scriptStatus === "running"
-      ? "green"
-      : scriptStatus === "stopping"
-        ? "orange"
-        : scriptStatus === "error"
-          ? "red"
-          : scriptStatus === "finished"
-            ? "blue"
-            : "gray";
+  const automationStatus = automationRuntime?.status ?? "stopped";
+  const automationIsRunning = automationStatus === "running";
+  const automationBadgeColor = automationIsRunning ? "green" : "red";
 
   const runningTaskCount = taskSnapshot?.tasks.filter(task =>
     task.status === "running" || task.status === "finishing"
@@ -121,15 +117,34 @@ export default function StatusBar({
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    const unsubscribeState = wsClient.on("automationFlowRuntimeStateChanged", data => {
+      setAutomationRuntime(data);
+    });
+
+    const unsubscribeResponse = wsClient.on("automationFlowRuntimeResponse", data => {
+      if (data.snapshot) {
+        setAutomationRuntime(data.snapshot);
+      }
+    });
+
+    wsApi.getAutomationFlowRuntimeState();
+
+    return () => {
+      unsubscribeState();
+      unsubscribeResponse();
+    };
+  }, []);
+
   useEffect(() => subscribeServerAudioPlaybackChanged(setServerAudioEnabled), []);
 
-  const handleToggleScript = (): void => {
-    if (scriptIsRunning) {
-      stopScript();
+  const handleToggleAutomation = (): void => {
+    if (automationIsRunning) {
+      wsApi.stopAutomationFlowRuntime();
       return;
     }
 
-    scriptEngine.runCurrent({ source: "control-panel" });
+    wsApi.startAutomationFlowRuntime();
   };
 
   const handleToggleRightPanelMode = (): void => {
@@ -168,9 +183,15 @@ export default function StatusBar({
           <StatusActionIcon tooltip={serverAudioEnabled ? "Server audio playback enabled" : "Server audio playback disabled"} color={serverAudioEnabled ? "green" : "gray"} onClick={handleToggleServerAudio}>{serverAudioEnabled ? <IconVolume size={16} /> : <IconVolumeOff size={16} />}</StatusActionIcon>
           <StatusActionIcon tooltip={rightPanelMode === "loco" ? "Right panel: loco panel" : "Right panel: property panel"} color={rightPanelMode === "loco" ? "green" : "gray"} onClick={handleToggleRightPanelMode}><IconTrain size={16} /></StatusActionIcon>
           <Divider orientation="vertical" />
-          <StatusBadge color={scriptBadgeColor}><Group gap={4} wrap="nowrap"><IconCode size={13} /><span>{scriptStatus.toUpperCase()}</span></Group></StatusBadge>
-          <StatusActionIcon tooltip={scriptIsRunning ? "Stop running script" : "Start script"} color={scriptIsRunning ? "red" : "green"} disabled={scriptStatus === "stopping"} onClick={handleToggleScript}>{scriptIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}</StatusActionIcon>
-          <StatusActionIcon tooltip="Edit script" color="blue" onClick={() => setScriptEditorOpened(true)}><IconEdit size={14} /></StatusActionIcon>
+          <StatusBadge color={automationBadgeColor}><Group gap={4} wrap="nowrap"><IconBolt size={13} /><span>{automationStatus.toUpperCase()}</span></Group></StatusBadge>
+          <StatusActionIcon tooltip={automationIsRunning ? "Stop automation" : "Run automation"} color={automationIsRunning ? "red" : "green"} disabled={!wsConnected} onClick={handleToggleAutomation}>{automationIsRunning ? <IconPlayerStopFilled size={14} /> : <IconPlayerPlayFilled size={14} />}</StatusActionIcon>
+          <StatusActionIcon tooltip="Edit automation" color="blue" disabled={editMode} onClick={() => setAutomationFlowOpened(true)}><IconEdit size={14} /></StatusActionIcon>
+          {FEATURE_ENABLE_SCRIPT_ENGINE && (
+            <>
+              <Divider orientation="vertical" />
+              <StatusActionIcon tooltip="Edit script" color="blue" onClick={() => setScriptEditorOpened(true)}><IconEdit size={14} /></StatusActionIcon>
+            </>
+          )}
           <Divider orientation="vertical" />
           <StatusBadge color={taskBadgeColor}>TASKS {activeTaskCount}</StatusBadge>
           <StatusActionIcon tooltip="Open tasks" color="blue" onClick={handleOpenTasks}><IconListDetails size={14} /></StatusActionIcon>
@@ -185,7 +206,11 @@ export default function StatusBar({
         </Group>
       </Group>
 
-      <ScriptEditorDialog opened={scriptEditorOpened} onClose={() => setScriptEditorOpened(false)} title="Script editor" />
+      <AutomationFlowDialog opened={!editMode && automationFlowOpened} onClose={() => setAutomationFlowOpened(false)} />
+
+      {FEATURE_ENABLE_SCRIPT_ENGINE && (
+        <ScriptEditorDialog opened={scriptEditorOpened} onClose={() => setScriptEditorOpened(false)} title="Script editor" />
+      )}
 
       <Modal opened={taskDialogOpened} onClose={() => setTaskDialogOpened(false)} title="Tasks" size="xl" centered>
         <Stack gap="sm">
