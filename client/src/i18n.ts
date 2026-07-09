@@ -37,8 +37,6 @@ const savedLang = readInitialLanguage();
 const enAutomation = {
   dialog: {
     title: "Railway model automation",
-    badge: "React Flow MVP",
-    description: "Node-RED style graphical logic editor for railway model automation.",
   },
   groups: {
     input: "Input",
@@ -130,6 +128,12 @@ const enAutomation = {
     noActiveOutput: "No active output.",
     edges: "{{count}} edge",
     edges_plural: "{{count}} edges",
+    nodeCount: "{{visible}}/{{total}} node",
+    nodeCount_plural: "{{visible}}/{{total}} nodes",
+    disabledPageSuffix: "{{name}} (disabled)",
+    pageEnabledLabel: "Enabled",
+    pageEnabledDescription: "When disabled, the server will not run this automation page.",
+    pageDisabledWarning: "This automation page is disabled",
   },
   fields: {
     sensorAddress: "Sensor address",
@@ -149,6 +153,8 @@ const enAutomation = {
     signalAspect: "Signal aspect",
     signalAspectDescription: "Choose from a list to avoid typos.",
     currentBitPattern: "Current bit pattern: {{bits}}, address length: {{length}}. These are loaded from the layout signal element.",
+    signalInputRule: "Inputs: green, yellow, white. Exactly one true input sets the signal aspect. If none or more than one input is true, the command is red.",
+    addressLengthShort: "len",
     ifThenElseInfo: "There is one IF input. If the input is valid and true, the THEN output is active; if it is valid and false, the ELSE output is active. With an invalid or unconnected IF input, neither output is active.",
     simulatedInputActive: "Simulated input active",
     delayMs: "Delay ms",
@@ -168,6 +174,7 @@ const enAutomation = {
     ifInput: "IF input: condition",
     thenOutput: "THEN output: when true",
     elseOutput: "ELSE output: when false",
+    signalInputRule: "green / yellow / white input, red on error",
   },
   aspects: {
     red: "Red",
@@ -176,9 +183,12 @@ const enAutomation = {
     white: "White",
   },
   status: {
+    emptyCreated: "Empty automation created.",
     pageCreated: "New automation page created: {{name}}.",
     lastPageCannotDelete: "The last automation page cannot be deleted.",
     pageDeleted: "Automation page deleted: {{name}}.",
+    pageEnabled: "Automation enabled.",
+    pageDisabled: "Automation disabled.",
     resetSample: "Sample automation restored. Press the floppy icon to save.",
     saving: "Saving automation to the server...",
     saveError: "Save error: {{message}}",
@@ -199,8 +209,6 @@ const enAutomation = {
 const huAutomation = {
   dialog: {
     title: "Vasútmodell automatizálás",
-    badge: "React Flow MVP",
-    description: "Node-RED jellegű grafikus logikai szerkesztő vasútmodell automatizáláshoz.",
   },
   groups: {
     input: "Bemenet",
@@ -291,6 +299,11 @@ const huAutomation = {
     simulatedActiveOutputs: "Szimulált aktív kimenetek ezen a lapon",
     noActiveOutput: "Nincs aktív kimenet.",
     edges: "{{count}} él",
+    nodeCount: "{{visible}}/{{total}} node",
+    disabledPageSuffix: "{{name}} (tiltva)",
+    pageEnabledLabel: "Engedélyezve",
+    pageEnabledDescription: "Ha ki van kapcsolva, ezt az automatizációs lapot a szerver nem futtatja.",
+    pageDisabledWarning: "Ez az automatizáció tiltva van",
   },
   fields: {
     sensorAddress: "Szenzor cím",
@@ -310,6 +323,8 @@ const huAutomation = {
     signalAspect: "Jelzőkép",
     signalAspectDescription: "Legördülőből választjuk, hogy ne legyen elgépelés.",
     currentBitPattern: "Aktuális bitminta: {{bits}}, címhossz: {{length}}. Ezeket a pályarajz jelző eleméből töltjük.",
+    signalInputRule: "Bemenetek: green, yellow, white. Pontosan egy true bemenet állítja a jelzőképet. Ha nincs true vagy több true érkezik, a parancs red lesz.",
+    addressLengthShort: "hossz",
     ifThenElseInfo: "Egy IF bemenet van. Ha a bemenet érvényes és igaz, a THEN kimenet aktív; ha érvényes és hamis, az ELSE kimenet aktív. Érvénytelen vagy bekötetlen IF bemenetnél egyik kimenet sem aktív.",
     simulatedInputActive: "Szimulált bemenet aktív",
     delayMs: "Késleltetés ms",
@@ -329,6 +344,7 @@ const huAutomation = {
     ifInput: "IF bemenet: feltétel",
     thenOutput: "THEN kimenet: ha igaz",
     elseOutput: "ELSE kimenet: ha hamis",
+    signalInputRule: "green / yellow / white bemenet, hibánál red",
   },
   aspects: {
     red: "Vörös",
@@ -337,9 +353,12 @@ const huAutomation = {
     white: "Fehér",
   },
   status: {
+    emptyCreated: "Üres automatizáció létrehozva.",
     pageCreated: "Új automatika lap létrehozva: {{name}}.",
     lastPageCannotDelete: "Az utolsó automatika lap nem törölhető.",
     pageDeleted: "Automatika lap törölve: {{name}}.",
+    pageEnabled: "Automatizáció engedélyezve.",
+    pageDisabled: "Automatizáció tiltva.",
     resetSample: "Minta automatika visszaállítva. Mentéshez nyomd meg a floppy ikont.",
     saving: "Automatika mentése a szerverre...",
     saveError: "Mentési hiba: {{message}}",
@@ -360,8 +379,6 @@ const huAutomation = {
 const deAutomation = {
   dialog: {
     title: "Modellbahn-Automatisierung",
-    badge: "React Flow MVP",
-    description: "Grafischer Logikeditor im Node-RED-Stil für Modellbahn-Automatisierung.",
   },
   groups: {
     input: "Eingang",
@@ -453,6 +470,12 @@ const deAutomation = {
     noActiveOutput: "Kein aktiver Ausgang.",
     edges: "{{count}} Kante",
     edges_plural: "{{count}} Kanten",
+    nodeCount: "{{visible}}/{{total}} Node",
+    nodeCount_plural: "{{visible}}/{{total}} Nodes",
+    disabledPageSuffix: "{{name}} (deaktiviert)",
+    pageEnabledLabel: "Aktiviert",
+    pageEnabledDescription: "Wenn deaktiviert, führt der Server diese Automatikseite nicht aus.",
+    pageDisabledWarning: "Diese Automatikseite ist deaktiviert",
   },
   fields: {
     sensorAddress: "Sensoradresse",
@@ -472,6 +495,8 @@ const deAutomation = {
     signalAspect: "Signalbild",
     signalAspectDescription: "Aus der Liste auswählen, damit keine Tippfehler entstehen.",
     currentBitPattern: "Aktuelles Bitmuster: {{bits}}, Adresslänge: {{length}}. Diese Werte werden aus dem Layout-Signalelement geladen.",
+    signalInputRule: "Eingänge: green, yellow, white. Genau ein true-Eingang setzt das Signalbild. Wenn kein oder mehrere Eingänge true sind, wird red gesendet.",
+    addressLengthShort: "Länge",
     ifThenElseInfo: "Es gibt einen IF-Eingang. Ist der Eingang gültig und wahr, ist der THEN-Ausgang aktiv; ist er gültig und falsch, ist der ELSE-Ausgang aktiv. Bei ungültigem oder nicht verbundenem IF-Eingang ist kein Ausgang aktiv.",
     simulatedInputActive: "Simulierter Eingang aktiv",
     delayMs: "Verzögerung ms",
@@ -491,6 +516,7 @@ const deAutomation = {
     ifInput: "IF-Eingang: Bedingung",
     thenOutput: "THEN-Ausgang: wenn wahr",
     elseOutput: "ELSE-Ausgang: wenn falsch",
+    signalInputRule: "green / yellow / white Eingang, bei Fehler red",
   },
   aspects: {
     red: "Rot",
@@ -499,9 +525,12 @@ const deAutomation = {
     white: "Weiß",
   },
   status: {
+    emptyCreated: "Leere Automatik erstellt.",
     pageCreated: "Neue Automatikseite erstellt: {{name}}.",
     lastPageCannotDelete: "Die letzte Automatikseite kann nicht gelöscht werden.",
     pageDeleted: "Automatikseite gelöscht: {{name}}.",
+    pageEnabled: "Automatik aktiviert.",
+    pageDisabled: "Automatik deaktiviert.",
     resetSample: "Beispiel-Automatik wiederhergestellt. Zum Speichern das Diskettensymbol drücken.",
     saving: "Automatik wird auf dem Server gespeichert...",
     saveError: "Speicherfehler: {{message}}",
@@ -603,13 +632,13 @@ const huTranslation = {
     },
   },
   blockActions: {
-    menu: "Blocks",
-    managerTitle: "Block actionök",
+    menu: "Blokkok",
+    managerTitle: "Blokk műveletek",
     blocks: "Blokkok",
     emptyBlocks: "Nincs blokk a layouton.",
     selectBlock: "Válassz egy blokkot a listából, vagy előbb tegyél blokkokat a layoutra.",
     blockDetails: "ID: {{id}} | Cím: {{address}} | Szenzor: {{sensor}}",
-    totalActions: "{{count}} action",
+    totalActions: "{{count}} művelet",
   },
   settings: {
     ...hu.settings,
