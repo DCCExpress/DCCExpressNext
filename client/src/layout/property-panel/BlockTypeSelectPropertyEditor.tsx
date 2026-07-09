@@ -5,6 +5,9 @@ import { BLOCK_TYPES } from "../../../../common/src/layout/elementTypes";
 import type { BaseElementView } from "../../models/editor/core/BaseElementView";
 import type { IEditableProperty } from "../../models/editor/elements/PropertyDescriptor";
 import type { PropertyChangeHandler } from "./propertyPanelTypes";
+import {
+  getPropertyLabel,
+} from "./propertyTranslations";
 
 type BlockTypeSelectPropertyEditorProps = {
   prop: IEditableProperty;
@@ -21,7 +24,7 @@ export default function BlockTypeSelectPropertyEditor({
 
   return (
     <Select
-      label={prop.label}
+      label={getPropertyLabel(t, prop)}
       placeholder={t("block.typePlaceholder")}
       data={[
         {
