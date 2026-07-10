@@ -417,13 +417,19 @@ function keepNewNodesVisible(root: HTMLElement, knownNodeIds: Set<string>): void
 async function refreshServerPageViewports(): Promise<void> {
   try {
     const document = await loadAutomationFlowWs();
-    serverPageViewports = new Map(
-      document.pages.flatMap(page => (
-        isFiniteNumber(page.viewportX) && isFiniteNumber(page.viewportY) && isFiniteNumber(page.viewportZoom)
-          ? [[page.id, { x: page.viewportX, y: page.viewportY, zoom: page.viewportZoom } satisfies PageViewport]]
-          : []
-      ))
-    );
+    const nextServerPageViewports = new Map<string, PageViewport>();
+
+    for (const page of document.pages) {
+      if (isFiniteNumber(page.viewportX) && isFiniteNumber(page.viewportY) && isFiniteNumber(page.viewportZoom)) {
+        nextServerPageViewports.set(page.id, {
+          x: page.viewportX,
+          y: page.viewportY,
+          zoom: page.viewportZoom,
+        });
+      }
+    }
+
+    serverPageViewports = nextServerPageViewports;
   } catch (error) {
     console.warn("[AutomationEditorStateBridge] Page viewport load failed:", error);
   }
