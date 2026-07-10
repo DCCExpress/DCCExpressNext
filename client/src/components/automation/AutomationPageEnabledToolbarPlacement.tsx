@@ -24,13 +24,19 @@ function findOriginalPageEnabledSwitch(
 
   const wanted = normalizeText(pageEnabledLabel);
   const switches = Array.from(editorRoot.querySelectorAll<HTMLElement>(".mantine-Switch-root"));
-
-  return switches.find(switchRoot => {
+  const matchingLabel = switches.find(switchRoot => {
     const label = switchRoot.querySelector<HTMLElement>(
       ".mantine-Switch-label, label"
     );
     return normalizeText(label?.textContent) === wanted;
-  }) ?? null;
+  });
+
+  if (matchingLabel) {
+    return matchingLabel;
+  }
+
+  const firstCard = editorRoot.querySelector<HTMLElement>(".mantine-Card-root");
+  return firstCard?.querySelector<HTMLElement>(".mantine-Switch-root") ?? null;
 }
 
 function findToolbarEnabledSlot(
@@ -53,10 +59,19 @@ function findToolbarEnabledSlot(
 
   const emptyCandidate = [...candidates].reverse().find(element => (
     element.childElementCount === 0 &&
-    element.textContent?.trim().length === 0
+    normalizeText(element.textContent).length === 0
   ));
 
-  return emptyCandidate ?? null;
+  if (emptyCandidate) {
+    return emptyCandidate;
+  }
+
+  const lastChild = toolbarGroup.lastElementChild;
+  return lastChild instanceof HTMLElement &&
+    lastChild !== pageSelectSlot &&
+    lastChild.tagName !== "BUTTON"
+    ? lastChild
+    : null;
 }
 
 function placePageEnabledControl(pageEnabledLabel: string): void {
