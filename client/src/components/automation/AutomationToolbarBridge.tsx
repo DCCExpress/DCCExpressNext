@@ -54,6 +54,13 @@ type MovedElement = {
   element: HTMLElement;
   parent: HTMLElement;
   nextSibling: ChildNode | null;
+  style: {
+    display: string;
+    margin: string;
+    minWidth: string;
+    maxWidth: string;
+    flex: string;
+  };
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -74,8 +81,7 @@ function escapeCssId(value: string): string {
 
 function findButtonByText(root: HTMLElement, label: string): HTMLButtonElement | null {
   const wanted = normalizeText(label);
-
-  return Array.from(root.querySelectorAll("button"))
+  return Array.from(root.querySelectorAll<HTMLButtonElement>("button"))
     .find(button => normalizeText(button.textContent) === wanted) ?? null;
 }
 
@@ -86,8 +92,8 @@ function findIconButton(root: HTMLElement, iconClassName: string): HTMLButtonEle
 
 function findInputByLabel(root: HTMLElement, label: string): HTMLInputElement | null {
   const wanted = normalizeText(label);
-  const labels = Array.from(root.querySelectorAll("label"));
-  const fieldLabel = labels.find(item => normalizeText(item.textContent) === wanted);
+  const fieldLabel = Array.from(root.querySelectorAll<HTMLLabelElement>("label"))
+    .find(item => normalizeText(item.textContent) === wanted);
 
   if (!fieldLabel) {
     return null;
@@ -101,7 +107,7 @@ function findInputByLabel(root: HTMLElement, label: string): HTMLInputElement | 
     }
   }
 
-  return fieldLabel.parentElement?.querySelector("input") ?? null;
+  return fieldLabel.parentElement?.querySelector<HTMLInputElement>("input") ?? null;
 }
 
 function findElementByText(root: HTMLElement, label: string): HTMLElement | null {
@@ -164,7 +170,7 @@ function setNativeInputValue(input: HTMLInputElement, value: string): void {
 }
 
 function readAutomationSnapshot(root: HTMLElement): AutomationSnapshot {
-  for (const textarea of Array.from(root.querySelectorAll("textarea"))) {
+  for (const textarea of Array.from(root.querySelectorAll<HTMLTextAreaElement>("textarea"))) {
     try {
       const parsed: unknown = JSON.parse(textarea.value);
 
@@ -224,22 +230,40 @@ function compactMovedField(element: HTMLElement): void {
   }
 }
 
-function moveElement(element: HTMLElement | null, slot: HTMLElement, ref: { current: MovedElement | null }): void {
-  if (!element) {
-    return;
+function rememberMovedElement(element: HTMLElement): MovedElement {
+  return {
+    element,
+    parent: element.parentElement as HTMLElement,
+    nextSibling: element.nextSibling,
+    style: {
+      display: element.style.display,
+      margin: element.style.margin,
+      minWidth: element.style.minWidth,
+      maxWidth: element.style.maxWidth,
+      flex: element.style.flex,
+    },
+  };
+}
+
+function moveElementToSlot(
+  element: HTMLElement | null,
+  slot: HTMLElement,
+  movedRef: { current: MovedElement | null }
+): HTMLElement | null {
+  const target = movedRef.current?.element ?? element;
+  if (!target) {
+    return null;
   }
 
-  if (!ref.current) {
-    ref.current = {
-      element,
-      parent: element.parentElement as HTMLElement,
-      nextSibling: element.nextSibling,
-    };
+  if (!movedRef.current && target.parentElement) {
+    movedRef.current = rememberMovedElement(target);
   }
 
-  if (element.parentElement !== slot) {
-    slot.appendChild(element);
+  if (target.parentElement !== slot) {
+    slot.appendChild(target);
   }
+
+  return target;
 }
 
 function restoreMovedElement(moved: MovedElement | null): void {
@@ -249,10 +273,11 @@ function restoreMovedElement(moved: MovedElement | null): void {
 
   delete moved.element.dataset.automationToolbarPageSelect;
   delete moved.element.dataset.automationToolbarEnabledSwitch;
-  moved.element.style.margin = "";
-  moved.element.style.minWidth = "";
-  moved.element.style.maxWidth = "";
-  moved.element.style.flex = "";
+  moved.element.style.display = moved.style.display;
+  moved.element.style.margin = moved.style.margin;
+  moved.element.style.minWidth = moved.style.minWidth;
+  moved.element.style.maxWidth = moved.style.maxWidth;
+  moved.element.style.flex = moved.style.flex;
   moved.parent.insertBefore(moved.element, moved.nextSibling);
 }
 
@@ -287,14 +312,19 @@ function useAutomationToolbarDom(
   }), [t]);
 
   useEffect(() => {
-    const dialogRoot = document.querySelector<HTMLElement>(".automation-flow-dialog-body");
     const editorRoot = document.querySelector<HTMLElement>(".automation-flow-editor-body");
+    const dialogRoot = document.querySelector<HTMLElement>(".automation-flow-dialog-body");
     const pageSelectSlot = pageSelectSlotRef.current;
     const enabledSlot = enabledSlotRef.current;
 
-    if (!dialogRoot || !editorRoot || !pageSelectSlot || !enabledSlot) {
+    if (!editorRoot || !dialogRoot || !pageSelectSlot || !enabledSlot) {
       return;
     }
+
+    const root = editorRoot;
+    const dialog = dialogRoot;
+    const pageSlot = pageSelectSlot;
+    const switchSlot = enabledSlot;
 
     function hideElement(element: HTMLElement | null): void {
       if (!element) {
@@ -323,33 +353,58 @@ function useAutomationToolbarDom(
 
     function syncDom(): void {
       const pageSelectInput = movedPageSelectRef.current?.element.querySelector<HTMLInputElement>("input") ??
-        findInputByLabel(dialogRoot, labels.automationPage);
+        findInputByLabel(dialog, labels.automationPage) ??
+        findInputByLabel(root, labels.automationPage);
       const enabledInput = movedEnabledSwitchRef.current?.element.querySelector<HTMLInputElement>("input") ??
-        findInputByLabel(dialogRoot, labels.pageEnabled);
-      const pageNameInput = findInputByLabel(editorRoot, labels.pageName);
-      const addButton = findButtonByText(editorRoot, labels.addPage);
-      const deleteButton = findButtonByText(editorRoot, labels.deletePage);
-      const saveButton = findIconButton(editorRoot, "tabler-icon-device-floppy");
-      const loadButton = findIconButton(editorRoot, "tabler-icon-refresh");
-      const pageSelectRoot = movedPageSelectRef.current?.element ?? findFieldRoot(pageSelectInput);
-      const enabledRoot = movedEnabledSwitchRef.current?.element ?? findFieldRoot(enabledInput);
+        findInputByLabel(dialog, labels.pageEnabled) ??
+        findInputByLabel(root, labels.pageEnabled);
+      const pageNameInput = findInputByLabel(root, labels.pageName) ?? findInputByLabel(dialog, labels.pageName);
+      const addButton = findButtonByText(root, labels.addPage) ?? findButtonByText(dialog, labels.addPage);
+      const deleteButton = findButtonByText(root, labels.deletePage) ?? findButtonByText(dialog, labels.deletePage);
+      const saveButton = findIconButton(root, "tabler-icon-device-floppy") ?? findIconButton(dialog, "tabler-icon-device-floppy");
+      const loadButton = findIconButton(root, "tabler-icon-refresh") ?? findIconButton(dialog, "tabler-icon-refresh");
+      const pageSelectRoot = moveElementToSlot(
+        movedPageSelectRef.current?.element ?? findFieldRoot(pageSelectInput),
+        pageSlot,
+        movedPageSelectRef
+      );
+      const enabledRoot = moveElementToSlot(
+        movedEnabledSwitchRef.current?.element ?? findFieldRoot(enabledInput),
+        switchSlot,
+        movedEnabledSwitchRef
+      );
       const pageNameRoot = findFieldRoot(pageNameInput);
       const addDeleteGroup = findButtonGroup(addButton, deleteButton);
       const saveLoadGroup = findButtonGroup(saveButton, loadButton) ?? findButtonGroup(loadButton, saveButton);
       const pageSelectLabel = pageSelectRoot?.querySelector<HTMLElement>("label") ?? null;
-      const nodePaletteTitle = findElementByText(editorRoot, labels.nodePalette);
+      const nodePaletteTitle = findElementByText(root, labels.nodePalette);
       const nodePaletteGroup = findParentWithClass(nodePaletteTitle, "mantine-Group-root");
       const nodeCountBadge = nodePaletteGroup?.querySelector<HTMLElement>(".mantine-Badge-root") ?? null;
-      const activeOutputsTitle = findElementByText(editorRoot, labels.activeOutputs);
-      const jsonPreviewTitle = findElementByText(editorRoot, labels.jsonPreview);
+      const activeOutputsTitle = findElementByText(root, labels.activeOutputs);
+      const jsonPreviewTitle = findElementByText(root, labels.jsonPreview);
       const activeOutputsRoot = findParentWithClass(activeOutputsTitle, "mantine-Stack-root");
       const jsonPreviewRoot = findParentWithClass(jsonPreviewTitle, "mantine-Stack-root");
-      const propertiesTitle = findElementByText(editorRoot, labels.properties);
+      const propertiesTitle = findElementByText(root, labels.properties);
       const propertiesStack = findParentWithClass(propertiesTitle, "mantine-Stack-root");
 
       if (pageSelectInput) {
         pageSelectInput.readOnly = true;
         pageSelectInput.style.cursor = "pointer";
+      }
+
+      if (pageSelectRoot) {
+        pageSelectRoot.dataset.automationToolbarPageSelect = "true";
+        pageSelectRoot.style.minWidth = "260px";
+        pageSelectRoot.style.maxWidth = "340px";
+        pageSelectRoot.style.flex = "0 1 320px";
+        compactMovedField(pageSelectRoot);
+      }
+
+      if (enabledRoot) {
+        enabledRoot.dataset.automationToolbarEnabledSwitch = "true";
+        enabledRoot.style.minWidth = "auto";
+        enabledRoot.style.maxWidth = "none";
+        compactMovedField(enabledRoot);
       }
 
       elementsRef.current = {
@@ -361,25 +416,7 @@ function useAutomationToolbarDom(
       };
 
       setDeleteDisabled(deleteButton?.disabled === true);
-      setSnapshot(readAutomationSnapshot(editorRoot));
-
-      moveElement(pageSelectRoot, pageSelectSlot, movedPageSelectRef);
-      if (pageSelectRoot) {
-        pageSelectRoot.dataset.automationToolbarPageSelect = "true";
-        pageSelectRoot.style.minWidth = "260px";
-        pageSelectRoot.style.maxWidth = "340px";
-        pageSelectRoot.style.flex = "0 1 320px";
-        compactMovedField(pageSelectRoot);
-      }
-
-      moveElement(enabledRoot, enabledSlot, movedEnabledSwitchRef);
-      if (enabledRoot) {
-        enabledRoot.dataset.automationToolbarEnabledSwitch = "true";
-        enabledRoot.style.minWidth = "auto";
-        enabledRoot.style.maxWidth = "none";
-        compactMovedField(enabledRoot);
-      }
-
+      setSnapshot(readAutomationSnapshot(root));
       hideElement(pageSelectLabel);
       hideElement(pageNameRoot);
       hideElement(addDeleteGroup);
@@ -406,7 +443,7 @@ function useAutomationToolbarDom(
     syncDom();
 
     const observer = new MutationObserver(syncDom);
-    observer.observe(dialogRoot, {
+    observer.observe(root, {
       childList: true,
       subtree: true,
       attributes: true,
@@ -418,12 +455,10 @@ function useAutomationToolbarDom(
     return () => {
       observer.disconnect();
       window.clearInterval(intervalId);
-
       restoreMovedElement(movedPageSelectRef.current);
       restoreMovedElement(movedEnabledSwitchRef.current);
       movedPageSelectRef.current = null;
       movedEnabledSwitchRef.current = null;
-
       hiddenElementsRef.current.forEach((display, element) => {
         element.style.display = display;
       });
