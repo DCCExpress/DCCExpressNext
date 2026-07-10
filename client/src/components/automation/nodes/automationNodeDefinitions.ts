@@ -1,3 +1,5 @@
+import "../automationAccessoryDecoderTranslations";
+
 import type {
   AutomationFlowNodeData,
   AutomationFlowNodeKind,
@@ -140,9 +142,9 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     },
   },
   output: {
-    title: "Accessory decoder output",
+    title: "Accessory decoder",
     group: "Kimenet",
-    description: "Basic accessory decoder kimenet. Az input true/false állapotát küldi ki accessory címre.",
+    description: "Basic accessory decoder kimenet. Az input true/false állapotát accessory címre küldi.",
     icon: "⚡",
     defaultData: {
       ioKey: "accessory:1",
