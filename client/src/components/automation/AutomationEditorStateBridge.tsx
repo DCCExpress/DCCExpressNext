@@ -386,17 +386,17 @@ function setNativeCheckboxChecked(input: HTMLInputElement, checked: boolean): vo
   input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function installToolbarEnabledSwitchRepair(): () => void {
+function installToolbarEnabledSwitchRepair(): void {
   const dialogRoot = getDialogRoot();
   if (!dialogRoot) {
-    return () => undefined;
+    return;
   }
 
   const toolbarSwitch = Array.from(dialogRoot.querySelectorAll<HTMLElement>(".mantine-Switch-root"))
     .find(item => !item.closest(".automation-flow-editor-body"));
 
-  if (!toolbarSwitch) {
-    return () => undefined;
+  if (!toolbarSwitch || toolbarSwitch.dataset.automationEnabledRepairInstalled === "true") {
+    return;
   }
 
   const handleClick = (event: Event): void => {
@@ -411,8 +411,8 @@ function installToolbarEnabledSwitchRepair(): () => void {
     window.setTimeout(() => saveCurrentState(true), 0);
   };
 
+  toolbarSwitch.dataset.automationEnabledRepairInstalled = "true";
   toolbarSwitch.addEventListener("click", handleClick, true);
-  return () => toolbarSwitch.removeEventListener("click", handleClick, true);
 }
 
 export default function AutomationEditorStateBridge({ opened }: AutomationEditorStateBridgeProps) {
@@ -476,14 +476,14 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       });
     }
 
-    const uninstallEnabledRepair = window.setTimeout(installToolbarEnabledSwitchRepair, 0);
+    const repairTimeout = window.setTimeout(installToolbarEnabledSwitchRepair, 0);
     const repairIntervalId = window.setInterval(installToolbarEnabledSwitchRepair, 1000);
     const intervalId = window.setInterval(() => saveCurrentState(), 600);
 
     return () => {
       restoreTimeouts.forEach(timeoutId => window.clearTimeout(timeoutId));
       window.clearTimeout(revealTimeout);
-      window.clearTimeout(uninstallEnabledRepair);
+      window.clearTimeout(repairTimeout);
       window.clearInterval(repairIntervalId);
       observer.disconnect();
       window.clearInterval(intervalId);
