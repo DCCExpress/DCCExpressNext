@@ -32,6 +32,10 @@ import {
   automationFlowRuntimeService,
 } from "../services/automationFlowRuntimeService.js";
 
+import {
+  installAutomationAccessoryOutputRuntimePatch,
+} from "../services/automationAccessoryOutputRuntimePatch.js";
+
 import type {
   TypedServerWsMessage,
 } from "../../../common/src/types.js";
@@ -57,6 +61,8 @@ export function configureWebSocketRuntimes({
   getCommandCenter,
   getLogicalTurnoutState,
 }: WsRuntimeConfigurationParams): void {
+
+  installAutomationAccessoryOutputRuntimePatch(automationFlowRuntimeService);
 
   automationFlowRuntimeService.configure({
     getCommandCenter,
