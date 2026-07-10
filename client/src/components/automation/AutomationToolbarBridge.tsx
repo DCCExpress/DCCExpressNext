@@ -103,6 +103,16 @@ function findInputByLabel(root: HTMLElement, label: string): HTMLInputElement | 
   return fieldLabel.parentElement?.querySelector("input") ?? null;
 }
 
+function findElementByText(root: HTMLElement, label: string): HTMLElement | null {
+  const wanted = normalizeText(label);
+  if (wanted.length === 0) {
+    return null;
+  }
+
+  return Array.from(root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6,p,span,div"))
+    .find(element => normalizeText(element.textContent) === wanted) ?? null;
+}
+
 function findFieldRoot(input: HTMLInputElement | null): HTMLElement | null {
   let current = input?.parentElement ?? null;
 
@@ -115,6 +125,20 @@ function findFieldRoot(input: HTMLInputElement | null): HTMLElement | null {
   }
 
   return input?.parentElement ?? null;
+}
+
+function findParentWithClass(element: HTMLElement | null, className: string): HTMLElement | null {
+  let current = element?.parentElement ?? null;
+
+  for (let depth = 0; current && depth < 8; depth += 1) {
+    if (current.classList.contains(className)) {
+      return current;
+    }
+
+    current = current.parentElement;
+  }
+
+  return null;
 }
 
 function findButtonGroup(firstButton: HTMLButtonElement | null, secondButton: HTMLButtonElement | null): HTMLElement | null {
@@ -203,6 +227,10 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
     pageEnabled: t("automation.panel.pageEnabledLabel"),
     addPage: t("automation.panel.addPage"),
     deletePage: t("automation.panel.deletePage"),
+    nodePalette: t("automation.panel.nodePalette"),
+    properties: t("automation.panel.properties"),
+    activeOutputs: t("automation.panel.activeOutputs"),
+    jsonPreview: t("automation.panel.jsonPreview"),
   }), [t]);
 
   useEffect(() => {
@@ -226,6 +254,19 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       }
 
       element.style.display = "none";
+    }
+
+    function hideAdjacentDividers(element: HTMLElement | null): void {
+      const previous = element?.previousElementSibling;
+      const next = element?.nextElementSibling;
+
+      if (previous instanceof HTMLElement && previous.classList.contains("mantine-Divider-root")) {
+        hideElement(previous);
+      }
+
+      if (next instanceof HTMLElement && next.classList.contains("mantine-Divider-root")) {
+        hideElement(next);
+      }
     }
 
     function movePageSelect(pageSelectRoot: HTMLElement | null): void {
@@ -263,6 +304,15 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       const addDeleteGroup = findButtonGroup(addButton, deleteButton);
       const saveLoadGroup = findButtonGroup(saveButton, loadButton) ?? findButtonGroup(loadButton, saveButton);
       const pageSelectLabel = pageSelectRoot?.querySelector<HTMLElement>("label") ?? null;
+      const nodePaletteTitle = findElementByText(root, labels.nodePalette);
+      const nodePaletteGroup = findParentWithClass(nodePaletteTitle, "mantine-Group-root");
+      const nodeCountBadge = nodePaletteGroup?.querySelector<HTMLElement>(".mantine-Badge-root") ?? null;
+      const activeOutputsTitle = findElementByText(root, labels.activeOutputs);
+      const jsonPreviewTitle = findElementByText(root, labels.jsonPreview);
+      const activeOutputsRoot = findParentWithClass(activeOutputsTitle, "mantine-Stack-root");
+      const jsonPreviewRoot = findParentWithClass(jsonPreviewTitle, "mantine-Stack-root");
+      const propertiesTitle = findElementByText(root, labels.properties);
+      const propertiesStack = findParentWithClass(propertiesTitle, "mantine-Stack-root");
 
       if (pageSelectInput) {
         pageSelectInput.readOnly = true;
@@ -287,6 +337,23 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       hideElement(enabledRoot);
       hideElement(addDeleteGroup);
       hideElement(saveLoadGroup);
+      hideElement(nodeCountBadge);
+      hideElement(activeOutputsRoot);
+      hideAdjacentDividers(activeOutputsRoot);
+      hideElement(jsonPreviewRoot);
+      hideAdjacentDividers(jsonPreviewRoot);
+
+      if (propertiesStack) {
+        Array.from(propertiesStack.children).forEach(child => {
+          if (!(child instanceof HTMLElement)) {
+            return;
+          }
+
+          if (child.classList.contains("mantine-Badge-root") || child.classList.contains("mantine-Divider-root")) {
+            hideElement(child);
+          }
+        });
+      }
     }
 
     syncDom();
