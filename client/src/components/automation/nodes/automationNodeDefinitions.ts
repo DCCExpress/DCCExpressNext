@@ -1,4 +1,5 @@
 import "../automationAccessoryDecoderTranslations";
+import "../automationFilterTranslations";
 
 import type {
   AutomationFlowNodeData,
@@ -75,6 +76,13 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     group: "Logika",
     description: "Invertálja az első bemenetet.",
     icon: "!",
+  },
+  filter: {
+    title: "Filter",
+    group: "Logika",
+    description: "Csak a beállított boolean értékkel egyező bemeneti jelet engedi tovább.",
+    icon: "⏵",
+    defaultData: { filterValue: true },
   },
   ifThenElse: {
     title: "IF / THEN / ELSE",
