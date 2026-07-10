@@ -111,6 +111,8 @@ function usePageActionBridgeDom() {
       return;
     }
 
+    const root = dialogRoot;
+
     function hideElement(element: HTMLElement | null): void {
       if (!element) {
         return;
@@ -124,9 +126,9 @@ function usePageActionBridgeDom() {
     }
 
     function syncDom(): void {
-      const pageNameInput = findInputByLabel(dialogRoot, labels.pageName);
-      const addButton = findButtonByText(dialogRoot, labels.addPage);
-      const deleteButton = findButtonByText(dialogRoot, labels.deletePage);
+      const pageNameInput = findInputByLabel(root, labels.pageName);
+      const addButton = findButtonByText(root, labels.addPage);
+      const deleteButton = findButtonByText(root, labels.deletePage);
       const pageNameRoot = findFieldRoot(pageNameInput);
       const addDeleteGroup = addButton && deleteButton && addButton.parentElement === deleteButton.parentElement
         ? addButton.parentElement
@@ -146,7 +148,7 @@ function usePageActionBridgeDom() {
         return;
       }
 
-      let mountElement = dialogRoot.querySelector<HTMLElement>("[data-automation-page-action-bridge]");
+      let mountElement = root.querySelector<HTMLElement>("[data-automation-page-action-bridge]");
       if (!mountElement) {
         mountElement = document.createElement("div");
         mountElement.dataset.automationPageActionBridge = "true";
@@ -162,7 +164,7 @@ function usePageActionBridgeDom() {
     syncDom();
 
     const observer = new MutationObserver(syncDom);
-    observer.observe(dialogRoot, {
+    observer.observe(root, {
       childList: true,
       subtree: true,
     });
@@ -178,7 +180,7 @@ function usePageActionBridgeDom() {
       });
       restoreDisplayRef.current.clear();
 
-      const mountElement = dialogRoot.querySelector<HTMLElement>("[data-automation-page-action-bridge]");
+      const mountElement = root.querySelector<HTMLElement>("[data-automation-page-action-bridge]");
       mountElement?.remove();
     };
   }, [labels]);
