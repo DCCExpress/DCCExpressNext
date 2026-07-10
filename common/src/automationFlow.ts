@@ -58,6 +58,7 @@ export type AutomationFlowNodeData = Record<string, unknown> & {
   signalValueYellow?: number;
   signalValueGreen?: number;
   signalValueWhite?: number;
+  accessoryAddress?: number;
   delayMs?: number;
   outputCommand?: string;
   active?: boolean;
