@@ -181,27 +181,40 @@ function restoreSelectedNode(root: HTMLElement, nodeId: string | undefined): voi
   }));
 }
 
-function getToolbarPageInput(): HTMLInputElement | null {
-  return document.querySelector<HTMLInputElement>(
-    ".automation-flow-dialog-body [data-automation-toolbar-page-select='true'] input"
+function getToolbarPageRoot(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(
+    ".automation-flow-dialog-body [data-automation-toolbar-page-select='true']"
   );
 }
 
+function getToolbarPageInput(): HTMLInputElement | null {
+  return getToolbarPageRoot()?.querySelector<HTMLInputElement>("input") ?? null;
+}
+
+function dispatchMouseSequence(element: HTMLElement): void {
+  for (const type of ["pointerdown", "mousedown", "mouseup", "click"]) {
+    element.dispatchEvent(new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    }));
+  }
+}
+
 function choosePageOption(pageId: string, pageName: string | undefined): void {
+  const normalizedName = normalizeText(pageName);
   const options = Array.from(document.querySelectorAll<HTMLElement>(
     "[data-combobox-option], [role='option']"
   ));
 
-  const normalizedName = normalizeText(pageName);
   const option = options.find(item => item.getAttribute("value") === pageId) ??
     options.find(item => item.dataset.value === pageId) ??
-    options.find(item => normalizedName.length > 0 && normalizeText(item.textContent) === normalizedName);
+    options.find(item => normalizedName.length > 0 && normalizeText(item.textContent) === normalizedName) ??
+    options.find(item => normalizedName.length > 0 && normalizeText(item.textContent).startsWith(normalizedName));
 
-  option?.dispatchEvent(new MouseEvent("click", {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-  }));
+  if (option) {
+    dispatchMouseSequence(option);
+  }
 }
 
 function getActivePageIdFromToolbar(snapshot: AutomationSnapshot): string | undefined {
@@ -211,9 +224,25 @@ function getActivePageIdFromToolbar(snapshot: AutomationSnapshot): string | unde
   }
 
   const matchingPages = Array.from(snapshot.pageNameById.entries())
-    .filter(([, pageName]) => normalizeText(pageName) === inputValue);
+    .filter(([, pageName]) => {
+      const normalizedPageName = normalizeText(pageName);
+      return normalizedPageName === inputValue || inputValue.startsWith(normalizedPageName);
+    });
 
   return matchingPages.length === 1 ? matchingPages[0]?.[0] : undefined;
+}
+
+function openPageSelect(): void {
+  const root = getToolbarPageRoot();
+  const input = getToolbarPageInput();
+
+  if (root) {
+    dispatchMouseSequence(root);
+  }
+
+  if (input) {
+    dispatchMouseSequence(input);
+  }
 }
 
 function restorePage(root: HTMLElement, pageId: string | undefined): void {
@@ -222,22 +251,16 @@ function restorePage(root: HTMLElement, pageId: string | undefined): void {
   }
 
   const snapshot = readAutomationSnapshot(root);
-  if (snapshot.activePageId === pageId) {
+  if (snapshot.activePageId === pageId || getActivePageIdFromToolbar(snapshot) === pageId) {
     return;
   }
 
-  const input = getToolbarPageInput();
-  if (!input) {
-    return;
-  }
-
-  input.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
-  input.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+  openPageSelect();
 
   const pageName = snapshot.pageNameById.get(pageId);
-  window.setTimeout(() => choosePageOption(pageId, pageName), 0);
-  window.setTimeout(() => choosePageOption(pageId, pageName), 80);
-  window.setTimeout(() => choosePageOption(pageId, pageName), 180);
+  for (const delay of [0, 40, 100, 220, 420]) {
+    window.setTimeout(() => choosePageOption(pageId, pageName), delay);
+  }
 }
 
 function parseViewportTransform(transform: string | undefined): ParsedViewportTransform {
@@ -383,13 +406,14 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       return;
     }
 
+    let canSave = false;
     setCanvasRestoring(true);
 
     const restoreTimeouts = [0, 40, 80, 160, 320, 640, 1000].map(delay => window.setTimeout(restoreCurrentState, delay));
     const revealTimeout = window.setTimeout(() => {
       restoreCurrentState();
+      canSave = true;
       setCanvasRestoring(false);
-      saveCurrentState(true);
     }, 1150);
     const knownNodeIds = new Set<string>();
 
@@ -410,7 +434,9 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       }
 
       keepNewNodesVisible(currentRoot, knownNodeIds);
-      saveCurrentState();
+      if (canSave) {
+        saveCurrentState();
+      }
     });
 
     const observedRoot = getEditorRoot();
@@ -423,7 +449,11 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       });
     }
 
-    const intervalId = window.setInterval(() => saveCurrentState(), 600);
+    const intervalId = window.setInterval(() => {
+      if (canSave) {
+        saveCurrentState();
+      }
+    }, 600);
 
     return () => {
       restoreTimeouts.forEach(timeoutId => window.clearTimeout(timeoutId));
