@@ -1,23 +1,35 @@
 import { useEffect, useLayoutEffect } from "react";
 
-const STORAGE_KEY = "dccexpress.automation.editorState.v2";
+import {
+  loadAutomationFlowWs,
+  saveAutomationFlowWs,
+} from "../../api/automationFlowWsApi";
+
+const STORAGE_KEY = "dccexpress.automation.editorState.v3";
 const RESTORING_DATASET_KEY = "automationViewportRestoring";
 
+type PageViewport = {
+  x: number;
+  y: number;
+  zoom: number;
+};
+
 type AutomationEditorState = {
-  pageText?: string;
+  pageId?: string;
   selectedNodeId?: string;
-  viewportTransform?: string;
+  pageViewports?: Record<string, PageViewport>;
 };
 
 type AutomationEditorStateBridgeProps = {
   opened: boolean;
 };
 
-type ParsedViewportTransform = {
-  x: number;
-  y: number;
-  zoom: number;
+type EditorDocumentSnapshot = {
+  activePageId?: string;
+  pageNameById: Map<string, string>;
 };
+
+let serverPageViewports = new Map<string, PageViewport>();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -27,6 +39,17 @@ function normalizeText(value: string | null | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isPageViewport(value: unknown): value is PageViewport {
+  return isRecord(value) &&
+    isFiniteNumber(value.x) &&
+    isFiniteNumber(value.y) &&
+    isFiniteNumber(value.zoom);
+}
+
 function readStoredState(): AutomationEditorState {
   try {
     const parsed: unknown = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}");
@@ -34,10 +57,19 @@ function readStoredState(): AutomationEditorState {
       return {};
     }
 
+    const pageViewports: Record<string, PageViewport> = {};
+    if (isRecord(parsed.pageViewports)) {
+      for (const [pageId, viewport] of Object.entries(parsed.pageViewports)) {
+        if (isPageViewport(viewport)) {
+          pageViewports[pageId] = viewport;
+        }
+      }
+    }
+
     return {
-      ...(typeof parsed.pageText === "string" ? { pageText: parsed.pageText } : {}),
+      ...(typeof parsed.pageId === "string" ? { pageId: parsed.pageId } : {}),
       ...(typeof parsed.selectedNodeId === "string" ? { selectedNodeId: parsed.selectedNodeId } : {}),
-      ...(typeof parsed.viewportTransform === "string" ? { viewportTransform: parsed.viewportTransform } : {}),
+      ...(Object.keys(pageViewports).length > 0 ? { pageViewports } : {}),
     };
   } catch {
     return {};
@@ -93,32 +125,14 @@ function setCanvasHidden(hidden: boolean): void {
   flowRoot.style.pointerEvents = hidden ? "none" : "";
 }
 
-function getToolbarPageInput(): HTMLInputElement | null {
-  return document.querySelector<HTMLInputElement>(
-    ".automation-flow-dialog-body [data-automation-toolbar-page-select='true'] input"
-  );
-}
-
 function getToolbarPageRoot(): HTMLElement | null {
   return document.querySelector<HTMLElement>(
     ".automation-flow-dialog-body [data-automation-toolbar-page-select='true']"
   );
 }
 
-function getCurrentPageText(): string | undefined {
-  const text = normalizeText(getToolbarPageInput()?.value);
-  return text.length > 0 ? text : undefined;
-}
-
-function getSelectedNodeId(root: HTMLElement): string | undefined {
-  const node = root.querySelector<HTMLElement>(".react-flow__node.selected");
-  const id = node?.getAttribute("data-id");
-  return id && id.trim().length > 0 ? id : undefined;
-}
-
-function getViewportTransform(root: HTMLElement): string | undefined {
-  const transform = getViewport(root)?.style.transform;
-  return transform && transform.trim().length > 0 ? transform : undefined;
+function getToolbarPageInput(): HTMLInputElement | null {
+  return getToolbarPageRoot()?.querySelector<HTMLInputElement>("input") ?? null;
 }
 
 function dispatchMouseSequence(element: HTMLElement): void {
@@ -144,42 +158,173 @@ function openPageSelect(): void {
   }
 }
 
-function choosePageByText(pageText: string | undefined): void {
-  const wanted = normalizeText(pageText);
-  if (wanted.length === 0) {
+function choosePageById(pageId: string | undefined, pageName: string | undefined): void {
+  if (!pageId) {
     return;
   }
 
+  const normalizedName = normalizeText(pageName);
   const options = Array.from(document.querySelectorAll<HTMLElement>("[data-combobox-option], [role='option']"));
-  const option = options.find(item => normalizeText(item.textContent) === wanted) ??
-    options.find(item => normalizeText(item.textContent).startsWith(wanted)) ??
-    options.find(item => normalizeText(item.textContent).includes(wanted));
+  const option = options.find(item => item.getAttribute("value") === pageId) ??
+    options.find(item => item.dataset.value === pageId) ??
+    options.find(item => normalizedName.length > 0 && normalizeText(item.textContent) === normalizedName) ??
+    options.find(item => normalizedName.length > 0 && normalizeText(item.textContent).startsWith(normalizedName));
 
   if (option) {
     dispatchMouseSequence(option);
   }
 }
 
-function restorePage(pageText: string | undefined): void {
-  const wanted = normalizeText(pageText);
-  if (wanted.length === 0 || normalizeText(getToolbarPageInput()?.value) === wanted) {
+function readEditorDocumentSnapshot(root: HTMLElement): EditorDocumentSnapshot {
+  for (const textarea of Array.from(root.querySelectorAll<HTMLTextAreaElement>("textarea"))) {
+    try {
+      const parsed: unknown = JSON.parse(textarea.value);
+      if (!isRecord(parsed)) {
+        continue;
+      }
+
+      const pageNameById = new Map<string, string>();
+      if (Array.isArray(parsed.pages)) {
+        for (const page of parsed.pages) {
+          if (!isRecord(page) || typeof page.id !== "string") {
+            continue;
+          }
+
+          pageNameById.set(page.id, typeof page.name === "string" ? page.name : page.id);
+        }
+      }
+
+      return {
+        ...(typeof parsed.activePageId === "string" ? { activePageId: parsed.activePageId } : {}),
+        pageNameById,
+      };
+    } catch {
+      // Not the JSON preview textarea.
+    }
+  }
+
+  return { pageNameById: new Map<string, string>() };
+}
+
+function getCurrentPageId(root: HTMLElement): string | undefined {
+  return readEditorDocumentSnapshot(root).activePageId;
+}
+
+function getSelectedNodeId(root: HTMLElement): string | undefined {
+  const node = root.querySelector<HTMLElement>(".react-flow__node.selected");
+  const id = node?.getAttribute("data-id");
+  return id && id.trim().length > 0 ? id : undefined;
+}
+
+function parseViewportTransform(transform: string | undefined): PageViewport {
+  const translateMatch = transform?.match(/translate\((-?\d+(?:\.\d+)?)px,\s*(-?\d+(?:\.\d+)?)px\)/u);
+  const scaleMatch = transform?.match(/scale\((-?\d+(?:\.\d+)?)\)/u);
+
+  return {
+    x: translateMatch?.[1] ? Number(translateMatch[1]) : 0,
+    y: translateMatch?.[2] ? Number(translateMatch[2]) : 0,
+    zoom: scaleMatch?.[1] ? Number(scaleMatch[1]) : 1,
+  };
+}
+
+function getCurrentViewport(root: HTMLElement): PageViewport | undefined {
+  const transform = getViewport(root)?.style.transform;
+  if (!transform || transform.trim().length === 0) {
+    return undefined;
+  }
+
+  return parseViewportTransform(transform);
+}
+
+function applyViewport(viewport: PageViewport | undefined): void {
+  if (!viewport) {
+    return;
+  }
+
+  const target = getViewport();
+  if (!target) {
+    return;
+  }
+
+  target.style.transform = `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`;
+}
+
+function getStoredViewport(pageId: string | undefined): PageViewport | undefined {
+  if (!pageId) {
+    return undefined;
+  }
+
+  return readStoredState().pageViewports?.[pageId] ?? serverPageViewports.get(pageId);
+}
+
+function storePageViewport(pageId: string | undefined, viewport: PageViewport | undefined): void {
+  if (!pageId || !viewport || isRestoring()) {
+    return;
+  }
+
+  const previous = readStoredState();
+  writeStoredState({
+    ...previous,
+    pageId,
+    pageViewports: {
+      ...(previous.pageViewports ?? {}),
+      [pageId]: viewport,
+    },
+  });
+}
+
+function saveCurrentState(force = false): void {
+  if (!force && isRestoring()) {
+    return;
+  }
+
+  const root = getEditorRoot();
+  if (!root) {
+    return;
+  }
+
+  const pageId = getCurrentPageId(root);
+  const viewport = getCurrentViewport(root);
+  const selectedNodeId = getSelectedNodeId(root);
+  const previous = readStoredState();
+
+  const nextState: AutomationEditorState = {
+    ...previous,
+    ...(pageId ? { pageId } : {}),
+    pageViewports: {
+      ...(previous.pageViewports ?? {}),
+      ...(pageId && viewport ? { [pageId]: viewport } : {}),
+    },
+  };
+
+  if (selectedNodeId) {
+    nextState.selectedNodeId = selectedNodeId;
+  } else {
+    delete nextState.selectedNodeId;
+  }
+
+  writeStoredState(nextState);
+}
+
+function restorePage(pageId: string | undefined): void {
+  if (!pageId) {
+    return;
+  }
+
+  const root = getEditorRoot();
+  if (!root) {
+    return;
+  }
+
+  const snapshot = readEditorDocumentSnapshot(root);
+  if (snapshot.activePageId === pageId) {
     return;
   }
 
   openPageSelect();
+  const pageName = snapshot.pageNameById.get(pageId);
   for (const delay of [0, 40, 90, 180, 360, 720]) {
-    window.setTimeout(() => choosePageByText(pageText), delay);
-  }
-}
-
-function restoreViewport(transform: string | undefined): void {
-  if (!transform) {
-    return;
-  }
-
-  const viewport = getViewport();
-  if (viewport) {
-    viewport.style.transform = transform;
+    window.setTimeout(() => choosePageById(pageId, pageName), delay);
   }
 }
 
@@ -196,24 +341,27 @@ function restoreSelectedNode(root: HTMLElement, nodeId: string | undefined): voi
   }
 }
 
-function parseViewportTransform(transform: string | undefined): ParsedViewportTransform {
-  const translateMatch = transform?.match(/translate\((-?\d+(?:\.\d+)?)px,\s*(-?\d+(?:\.\d+)?)px\)/u);
-  const scaleMatch = transform?.match(/scale\((-?\d+(?:\.\d+)?)\)/u);
-
-  return {
-    x: translateMatch?.[1] ? Number(translateMatch[1]) : 0,
-    y: translateMatch?.[2] ? Number(translateMatch[2]) : 0,
-    zoom: scaleMatch?.[1] ? Number(scaleMatch[1]) : 1,
-  };
-}
-
-function setViewportTransform(nextTransform: ParsedViewportTransform): void {
-  const viewport = getViewport();
-  if (!viewport) {
+function restoreCurrentPageViewport(): void {
+  const root = getEditorRoot();
+  if (!root) {
     return;
   }
 
-  viewport.style.transform = `translate(${nextTransform.x}px, ${nextTransform.y}px) scale(${nextTransform.zoom})`;
+  applyViewport(getStoredViewport(getCurrentPageId(root)));
+}
+
+function restoreCurrentState(): void {
+  const root = getEditorRoot();
+  const stored = readStoredState();
+  if (!root) {
+    return;
+  }
+
+  restorePage(stored.pageId);
+  window.setTimeout(restoreCurrentPageViewport, 0);
+  window.setTimeout(restoreCurrentPageViewport, 80);
+  window.setTimeout(restoreCurrentPageViewport, 180);
+  restoreSelectedNode(root, stored.selectedNodeId);
 }
 
 function moveViewportToShowNode(root: HTMLElement, node: HTMLElement): void {
@@ -237,56 +385,11 @@ function moveViewportToShowNode(root: HTMLElement, node: HTMLElement): void {
   }
 
   const current = parseViewportTransform(viewport.style.transform);
-  setViewportTransform({
+  applyViewport({
     ...current,
     x: current.x + (paneRect.left + margin - nodeRect.left),
     y: current.y + (paneRect.top + margin - nodeRect.top),
   });
-}
-
-function saveCurrentState(force = false): void {
-  if (!force && isRestoring()) {
-    return;
-  }
-
-  const root = getEditorRoot();
-  if (!root) {
-    return;
-  }
-
-  const previous = readStoredState();
-  const pageText = getCurrentPageText();
-  const selectedNodeId = getSelectedNodeId(root);
-  const viewportTransform = getViewportTransform(root);
-  const nextState: AutomationEditorState = { ...previous };
-
-  if (pageText) {
-    nextState.pageText = pageText;
-  }
-
-  if (selectedNodeId) {
-    nextState.selectedNodeId = selectedNodeId;
-  } else {
-    delete nextState.selectedNodeId;
-  }
-
-  if (viewportTransform) {
-    nextState.viewportTransform = viewportTransform;
-  }
-
-  writeStoredState(nextState);
-}
-
-function restoreCurrentState(): void {
-  const root = getEditorRoot();
-  const stored = readStoredState();
-  if (!root) {
-    return;
-  }
-
-  restorePage(stored.pageText);
-  restoreViewport(stored.viewportTransform);
-  restoreSelectedNode(root, stored.selectedNodeId);
 }
 
 function keepNewNodesVisible(root: HTMLElement, knownNodeIds: Set<string>): void {
@@ -306,6 +409,53 @@ function keepNewNodesVisible(root: HTMLElement, knownNodeIds: Set<string>): void
   const newestNode = newNodes[newNodes.length - 1];
   if (newestNode) {
     moveViewportToShowNode(root, newestNode);
+    const pageId = getCurrentPageId(root);
+    storePageViewport(pageId, getCurrentViewport(root));
+  }
+}
+
+async function refreshServerPageViewports(): Promise<void> {
+  try {
+    const document = await loadAutomationFlowWs();
+    serverPageViewports = new Map(
+      document.pages.flatMap(page => (
+        isFiniteNumber(page.viewportX) && isFiniteNumber(page.viewportY) && isFiniteNumber(page.viewportZoom)
+          ? [[page.id, { x: page.viewportX, y: page.viewportY, zoom: page.viewportZoom } satisfies PageViewport]]
+          : []
+      ))
+    );
+  } catch (error) {
+    console.warn("[AutomationEditorStateBridge] Page viewport load failed:", error);
+  }
+}
+
+async function persistPageViewportsToServer(): Promise<void> {
+  const stored = readStoredState();
+  const pageViewports = stored.pageViewports ?? {};
+  if (Object.keys(pageViewports).length === 0) {
+    return;
+  }
+
+  try {
+    const document = await loadAutomationFlowWs();
+    const nextDocument = {
+      ...document,
+      pages: document.pages.map(page => {
+        const viewport = pageViewports[page.id];
+        return viewport
+          ? {
+              ...page,
+              viewportX: viewport.x,
+              viewportY: viewport.y,
+              viewportZoom: viewport.zoom,
+            }
+          : page;
+      }),
+    };
+
+    await saveAutomationFlowWs(nextDocument);
+  } catch (error) {
+    console.warn("[AutomationEditorStateBridge] Page viewport save failed:", error);
   }
 }
 
@@ -324,15 +474,18 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
   useEffect(() => {
     if (!opened) {
       saveCurrentState(true);
+      void persistPageViewportsToServer();
       setCanvasHidden(false);
       return;
     }
 
     let canSave = false;
+    let currentPageId: string | undefined;
     const knownNodeIds = new Set<string>();
     const root = getEditorRoot();
 
     if (root) {
+      currentPageId = getCurrentPageId(root);
       for (const node of Array.from(root.querySelectorAll<HTMLElement>(".react-flow__node"))) {
         const id = node.getAttribute("data-id");
         if (id) {
@@ -342,6 +495,7 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
     }
 
     setCanvasHidden(true);
+    void refreshServerPageViewports().then(() => restoreCurrentState());
 
     const restoreTimeouts = [0, 40, 80, 160, 320, 640, 1000, 1450, 1900].map(delay => (
       window.setTimeout(restoreCurrentState, delay)
@@ -357,10 +511,26 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       canSave = true;
     }, 2150);
 
-    const observer = new MutationObserver(() => {
+    function tick(): void {
       const currentRoot = getEditorRoot();
       if (!currentRoot) {
         return;
+      }
+
+      const nextPageId = getCurrentPageId(currentRoot);
+      if (nextPageId && currentPageId && nextPageId !== currentPageId) {
+        storePageViewport(currentPageId, getCurrentViewport(currentRoot));
+        currentPageId = nextPageId;
+        setRestoring(true);
+        for (const delay of [0, 40, 100, 220]) {
+          window.setTimeout(() => applyViewport(getStoredViewport(nextPageId)), delay);
+        }
+        window.setTimeout(() => setRestoring(false), 260);
+        return;
+      }
+
+      if (nextPageId && !currentPageId) {
+        currentPageId = nextPageId;
       }
 
       keepNewNodesVisible(currentRoot, knownNodeIds);
@@ -368,10 +538,11 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       if (canSave) {
         saveCurrentState();
       } else {
-        restoreViewport(readStoredState().viewportTransform);
+        restoreCurrentPageViewport();
       }
-    });
+    }
 
+    const observer = new MutationObserver(tick);
     const observedRoot = getEditorRoot();
     if (observedRoot) {
       observer.observe(observedRoot, {
@@ -382,11 +553,12 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       });
     }
 
-    const intervalId = window.setInterval(() => {
+    const intervalId = window.setInterval(tick, 350);
+    const persistIntervalId = window.setInterval(() => {
       if (canSave) {
-        saveCurrentState();
+        void persistPageViewportsToServer();
       }
-    }, 600);
+    }, 5000);
 
     return () => {
       restoreTimeouts.forEach(timeoutId => window.clearTimeout(timeoutId));
@@ -394,8 +566,10 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       window.clearTimeout(saveEnableTimeout);
       observer.disconnect();
       window.clearInterval(intervalId);
+      window.clearInterval(persistIntervalId);
       setCanvasHidden(false);
       saveCurrentState(true);
+      void persistPageViewportsToServer();
     };
   }, [opened]);
 
