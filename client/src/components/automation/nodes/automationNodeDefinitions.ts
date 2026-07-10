@@ -140,11 +140,15 @@ export const NODE_DEFINITIONS: Record<AutomationFlowNodeKind, AutomationNodeDefi
     },
   },
   output: {
-    title: "Kimenet",
+    title: "Accessory decoder output",
     group: "Kimenet",
-    description: "Általános runtime kimeneti parancs.",
+    description: "Basic accessory decoder kimenet. Az input true/false állapotát küldi ki accessory címre.",
     icon: "⚡",
-    defaultData: { ioKey: "output:1", outputCommand: "on" },
+    defaultData: {
+      ioKey: "accessory:1",
+      accessoryAddress: 1,
+      outputCommand: "1",
+    },
   },
 };
 
