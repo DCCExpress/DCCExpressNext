@@ -6,7 +6,6 @@ import {
   Divider,
   Group,
   Modal,
-  Paper,
   Stack,
   Switch,
   Text,
@@ -300,7 +299,6 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       const pageSelectRoot = findFieldRoot(pageSelectInput);
       const pageNameRoot = findFieldRoot(pageNameInput);
       const enabledRoot = findFieldRoot(enabledInput);
-      const pageControlsRoot = pageSelectRoot?.parentElement ?? pageNameRoot?.parentElement ?? enabledRoot?.parentElement ?? null;
       const addDeleteGroup = findButtonGroup(addButton, deleteButton);
       const saveLoadGroup = findButtonGroup(saveButton, loadButton) ?? findButtonGroup(loadButton, saveButton);
       const pageSelectLabel = pageSelectRoot?.querySelector<HTMLElement>("label") ?? null;
@@ -332,7 +330,6 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       setSnapshot(readAutomationSnapshot(root));
       movePageSelect(pageSelectRoot);
       hideElement(pageSelectLabel);
-      hideElement(pageControlsRoot);
       hideElement(pageNameRoot);
       hideElement(enabledRoot);
       hideElement(addDeleteGroup);
@@ -512,7 +509,7 @@ export default function AutomationToolbarBridge() {
   const renameDisabled = draftName.trim().length === 0 || renameDuplicate;
 
   return (
-    <Paper withBorder radius="md" p={6} mb="xs" style={{ flex: "0 0 auto" }}>
+    <Box style={{ flex: "0 0 auto", marginTop: 6, marginBottom: 8 }}>
       <Group justify="space-between" gap="sm" wrap="nowrap">
         <Group gap="xs" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
           <Tooltip label={text.load}>
@@ -631,6 +628,6 @@ export default function AutomationToolbarBridge() {
           </Group>
         </Stack>
       </Modal>
-    </Paper>
+    </Box>
   );
 }
