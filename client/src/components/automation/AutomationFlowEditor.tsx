@@ -203,6 +203,15 @@ function normalizePages(pages: AutomationFlowPageDto[] | undefined): AutomationF
         ? page.name.trim()
         : page.id.trim(),
       enabled: page.enabled !== false,
+      ...(typeof page.viewportX === "number" && Number.isFinite(page.viewportX)
+        ? { viewportX: page.viewportX }
+        : {}),
+      ...(typeof page.viewportY === "number" && Number.isFinite(page.viewportY)
+        ? { viewportY: page.viewportY }
+        : {}),
+      ...(typeof page.viewportZoom === "number" && Number.isFinite(page.viewportZoom)
+        ? { viewportZoom: page.viewportZoom }
+        : {}),
     }));
 
   if (normalized.length === 0) {
@@ -615,6 +624,14 @@ function evaluateAutomation(nodes: AutomationNode[], edges: AutomationEdge[]): A
             ? signal(inputSignals.some((currentSignal) => currentSignal.value))
             : emptySignal();
           break;
+        case "filter": {
+          const firstSignal = inputSignals[0];
+          const filterValue = node.data.filterValue ?? true;
+          nextSignal = firstSignal && firstSignal.value === filterValue
+            ? signal(firstSignal.value, firstSignal.signalAspect)
+            : emptySignal();
+          break;
+        }
         case "signal": {
           const aspect = resolveSignalAspectFromInputs(incomingEdges, nodeById, evaluation);
           nextSignal = signal(aspect !== "red", aspect);
@@ -1434,6 +1451,15 @@ function SelectedNodeEditor({ layoutMappings, node, onChange, onDelete }: Select
         <Text size="xs" c="dimmed">
           {t("automation.fields.ifThenElseInfo")}
         </Text>
+      )}
+
+      {node.data.kind === "filter" && (
+        <Switch
+          checked={node.data.filterValue ?? true}
+          label={t("automation.fields.filterValue")}
+          description={t("automation.fields.filterValueDescription")}
+          onChange={(event) => onChange({ filterValue: event.currentTarget.checked })}
+        />
       )}
 
       {isInputNode(node.data.kind) && (
