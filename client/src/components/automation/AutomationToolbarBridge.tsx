@@ -246,6 +246,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       const pageSelectRoot = findFieldRoot(pageSelectInput);
       const pageNameRoot = findFieldRoot(pageNameInput);
       const addDeleteGroup = findButtonGroup(addButton, deleteButton);
+      const saveLoadGroup = findButtonGroup(saveButton, loadButton) ?? findButtonGroup(loadButton, saveButton);
 
       elementsRef.current = {
         pageNameInput,
@@ -260,6 +261,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       movePageSelect(pageSelectRoot);
       hideElement(pageNameRoot);
       hideElement(addDeleteGroup);
+      hideElement(saveLoadGroup);
     }
 
     syncDom();
