@@ -3,10 +3,12 @@ import {
   Badge,
   Box,
   Button,
+  Divider,
   Group,
   Modal,
   Paper,
   Stack,
+  Switch,
   Text,
   TextInput,
   Tooltip,
@@ -44,6 +46,7 @@ type AutomationSnapshot = {
 
 type OriginalDomElements = {
   pageNameInput: HTMLInputElement | null;
+  enabledInput: HTMLInputElement | null;
   addButton: HTMLButtonElement | null;
   deleteButton: HTMLButtonElement | null;
   saveButton: HTMLButtonElement | null;
@@ -185,6 +188,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
   const [deleteDisabled, setDeleteDisabled] = useState(false);
   const elementsRef = useRef<OriginalDomElements>({
     pageNameInput: null,
+    enabledInput: null,
     addButton: null,
     deleteButton: null,
     saveButton: null,
@@ -196,6 +200,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
   const labels = useMemo(() => ({
     automationPage: t("automation.panel.automationPage"),
     pageName: t("automation.panel.pageName"),
+    pageEnabled: t("automation.panel.pageEnabledLabel"),
     addPage: t("automation.panel.addPage"),
     deletePage: t("automation.panel.deletePage"),
   }), [t]);
@@ -236,23 +241,37 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
         };
       }
 
+      pageSelectRoot.dataset.automationToolbarPageSelect = "true";
+      pageSelectRoot.style.margin = "0";
+      pageSelectRoot.style.minWidth = "260px";
+      pageSelectRoot.style.maxWidth = "340px";
       slot.appendChild(pageSelectRoot);
     }
 
     function syncDom(): void {
       const pageSelectInput = findInputByLabel(root, labels.automationPage);
       const pageNameInput = findInputByLabel(root, labels.pageName);
+      const enabledInput = findInputByLabel(root, labels.pageEnabled);
       const addButton = findButtonByText(root, labels.addPage);
       const deleteButton = findButtonByText(root, labels.deletePage);
       const saveButton = findIconButton(root, "tabler-icon-device-floppy");
       const loadButton = findIconButton(root, "tabler-icon-refresh");
       const pageSelectRoot = findFieldRoot(pageSelectInput);
       const pageNameRoot = findFieldRoot(pageNameInput);
+      const enabledRoot = findFieldRoot(enabledInput);
+      const pageControlsRoot = pageSelectRoot?.parentElement ?? pageNameRoot?.parentElement ?? enabledRoot?.parentElement ?? null;
       const addDeleteGroup = findButtonGroup(addButton, deleteButton);
       const saveLoadGroup = findButtonGroup(saveButton, loadButton) ?? findButtonGroup(loadButton, saveButton);
+      const pageSelectLabel = pageSelectRoot?.querySelector<HTMLElement>("label") ?? null;
+
+      if (pageSelectInput) {
+        pageSelectInput.readOnly = true;
+        pageSelectInput.style.cursor = "pointer";
+      }
 
       elementsRef.current = {
         pageNameInput,
+        enabledInput,
         addButton,
         deleteButton,
         saveButton,
@@ -262,7 +281,10 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       setDeleteDisabled(deleteButton?.disabled === true);
       setSnapshot(readAutomationSnapshot(root));
       movePageSelect(pageSelectRoot);
+      hideElement(pageSelectLabel);
+      hideElement(pageControlsRoot);
       hideElement(pageNameRoot);
+      hideElement(enabledRoot);
       hideElement(addDeleteGroup);
       hideElement(saveLoadGroup);
     }
@@ -274,7 +296,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["disabled", "value"],
+      attributeFilter: ["disabled", "value", "checked"],
     });
 
     const intervalId = window.setInterval(syncDom, 600);
@@ -285,6 +307,10 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
 
       const moved = movedPageSelectRef.current;
       if (moved?.element.isConnected) {
+        delete moved.element.dataset.automationToolbarPageSelect;
+        moved.element.style.margin = "";
+        moved.element.style.minWidth = "";
+        moved.element.style.maxWidth = "";
         moved.parent.insertBefore(moved.element, moved.nextSibling);
       }
       movedPageSelectRef.current = null;
@@ -318,6 +344,7 @@ export default function AutomationToolbarBridge() {
   const visibleNodeCount = activePage
     ? snapshot.nodes.filter(node => node.data?.pageId === activePage.id || (!node.data?.pageId && activePage.id === "main")).length
     : 0;
+  const pageEnabled = activePage?.enabled !== false;
 
   const text = {
     create: t("automation.panel.createPageDialogTitle", { defaultValue: "Új automatika lap" }),
@@ -334,6 +361,8 @@ export default function AutomationToolbarBridge() {
     }),
     load: t("automation.panel.loadFromServer"),
     save: t("automation.panel.saveToServer"),
+    page: t("automation.panel.page", { defaultValue: "Page" }),
+    enabled: t("automation.panel.pageEnabledLabel", { defaultValue: "Enabled" }),
     pages: t("automation.panel.pages", { defaultValue: "Lapok" }),
     nodes: t("automation.panel.nodeCount", { visible: visibleNodeCount, total: snapshot.nodes.length }),
     edges: t("automation.panel.edges", { count: snapshot.edges.length }),
@@ -406,16 +435,37 @@ export default function AutomationToolbarBridge() {
     setDialog(null);
   }
 
+  function toggleEnabled(): void {
+    elementsRef.current.enabledInput?.click();
+  }
+
   const createDuplicate = dialog === "create" && hasDuplicatePageName(draftName, "create");
   const renameDuplicate = dialog === "rename" && hasDuplicatePageName(draftName, "rename");
   const createDisabled = draftName.trim().length === 0 || createDuplicate;
   const renameDisabled = draftName.trim().length === 0 || renameDuplicate;
 
   return (
-    <Paper withBorder radius="md" p="xs" mb="sm" style={{ flex: "0 0 auto" }}>
+    <Paper withBorder radius="md" p={6} mb="xs" style={{ flex: "0 0 auto" }}>
       <Group justify="space-between" gap="sm" wrap="nowrap">
         <Group gap="xs" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-          <Box ref={pageSelectSlotRef} style={{ minWidth: 260, maxWidth: 360, flex: "0 1 340px" }} />
+          <Tooltip label={text.load}>
+            <ActionIcon variant="light" aria-label={text.load} onClick={() => elementsRef.current.loadButton?.click()}>
+              <IconRefresh size={16} />
+            </ActionIcon>
+          </Tooltip>
+
+          <Tooltip label={text.save}>
+            <ActionIcon variant="light" aria-label={text.save} onClick={() => elementsRef.current.saveButton?.click()}>
+              <IconDeviceFloppy size={16} />
+            </ActionIcon>
+          </Tooltip>
+
+          <Divider orientation="vertical" />
+
+          <Text size="sm" fw={700} c="dimmed" style={{ whiteSpace: "nowrap" }}>
+            {text.page}:
+          </Text>
+          <Box ref={pageSelectSlotRef} style={{ minWidth: 260, maxWidth: 340, flex: "0 1 320px" }} />
 
           <Tooltip label={text.createAction}>
             <ActionIcon variant="light" aria-label={text.createAction} onClick={openCreateDialog}>
@@ -440,6 +490,15 @@ export default function AutomationToolbarBridge() {
               <IconTrash size={16} />
             </ActionIcon>
           </Tooltip>
+
+          <Switch
+            size="xs"
+            checked={pageEnabled}
+            label={text.enabled}
+            disabled={!activePage || !elementsRef.current.enabledInput}
+            onChange={toggleEnabled}
+            styles={{ label: { whiteSpace: "nowrap" } }}
+          />
         </Group>
 
         <Group gap="xs" wrap="nowrap">
@@ -451,18 +510,6 @@ export default function AutomationToolbarBridge() {
           <Badge variant="light" color="blue">{text.pages}: {snapshot.pages.length}</Badge>
           <Badge variant="light" color="gray">{text.nodes}</Badge>
           <Badge variant="light" color="gray">{text.edges}</Badge>
-
-          <Tooltip label={text.load}>
-            <ActionIcon variant="light" aria-label={text.load} onClick={() => elementsRef.current.loadButton?.click()}>
-              <IconRefresh size={16} />
-            </ActionIcon>
-          </Tooltip>
-
-          <Tooltip label={text.save}>
-            <ActionIcon variant="light" aria-label={text.save} onClick={() => elementsRef.current.saveButton?.click()}>
-              <IconDeviceFloppy size={16} />
-            </ActionIcon>
-          </Tooltip>
         </Group>
       </Group>
 
