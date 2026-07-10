@@ -12,6 +12,12 @@ type AutomationEditorStateBridgeProps = {
   opened: boolean;
 };
 
+type ParsedViewportTransform = {
+  x: number;
+  y: number;
+  zoom: number;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -178,6 +184,58 @@ function restorePage(root: HTMLElement, pageId: string | undefined): void {
   window.setTimeout(() => choosePageOption(pageId, pageName), 80);
 }
 
+function parseViewportTransform(transform: string | undefined): ParsedViewportTransform {
+  const translateMatch = transform?.match(/translate\((-?\d+(?:\.\d+)?)px,\s*(-?\d+(?:\.\d+)?)px\)/u);
+  const scaleMatch = transform?.match(/scale\((-?\d+(?:\.\d+)?)\)/u);
+
+  return {
+    x: translateMatch?.[1] ? Number(translateMatch[1]) : 0,
+    y: translateMatch?.[2] ? Number(translateMatch[2]) : 0,
+    zoom: scaleMatch?.[1] ? Number(scaleMatch[1]) : 1,
+  };
+}
+
+function setViewportTransform(root: HTMLElement, nextTransform: ParsedViewportTransform): void {
+  const viewport = root.querySelector<HTMLElement>(".react-flow__viewport");
+  if (!viewport) {
+    return;
+  }
+
+  viewport.style.transform = `translate(${nextTransform.x}px, ${nextTransform.y}px) scale(${nextTransform.zoom})`;
+  writeStoredState({
+    ...readStoredState(),
+    viewportTransform: viewport.style.transform,
+  });
+}
+
+function moveViewportToShowNode(root: HTMLElement, node: HTMLElement): void {
+  const viewport = root.querySelector<HTMLElement>(".react-flow__viewport");
+  const pane = root.querySelector<HTMLElement>(".react-flow__pane") ?? root.querySelector<HTMLElement>(".react-flow__renderer");
+  if (!viewport || !pane) {
+    return;
+  }
+
+  const paneRect = pane.getBoundingClientRect();
+  const nodeRect = node.getBoundingClientRect();
+  const margin = 48;
+
+  const isVisible = nodeRect.left >= paneRect.left + margin &&
+    nodeRect.top >= paneRect.top + margin &&
+    nodeRect.right <= paneRect.right - margin &&
+    nodeRect.bottom <= paneRect.bottom - margin;
+
+  if (isVisible) {
+    return;
+  }
+
+  const current = parseViewportTransform(viewport.style.transform);
+  setViewportTransform(root, {
+    ...current,
+    x: current.x + (paneRect.left + margin - nodeRect.left),
+    y: current.y + (paneRect.top + margin - nodeRect.top),
+  });
+}
+
 function saveCurrentState(): void {
   const root = getEditorRoot();
   if (!root) {
@@ -227,17 +285,10 @@ function keepNewNodesVisible(root: HTMLElement, knownNodeIds: Set<string>): void
     return;
   }
 
-  const viewport = root.querySelector<HTMLElement>(".react-flow__viewport");
-  const currentTransform = viewport?.style.transform;
-  if (currentTransform) {
-    writeStoredState({
-      ...readStoredState(),
-      viewportTransform: currentTransform,
-    });
-  }
-
   const newestNode = newNodes[newNodes.length - 1];
-  newestNode?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (newestNode) {
+    moveViewportToShowNode(root, newestNode);
+  }
 }
 
 export default function AutomationEditorStateBridge({ opened }: AutomationEditorStateBridgeProps) {
