@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Badge,
+  Box,
   Button,
   Group,
   Modal,
@@ -22,6 +23,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type RefObject,
 } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -177,7 +179,7 @@ function readAutomationSnapshot(root: HTMLElement): AutomationSnapshot {
   };
 }
 
-function useAutomationToolbarDom(pageSelectSlotRef: React.RefObject<HTMLDivElement | null>) {
+function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | null>) {
   const { t } = useTranslation();
   const [snapshot, setSnapshot] = useState<AutomationSnapshot>({ activePageId: null, pages: [], nodes: [], edges: [] });
   const [deleteDisabled, setDeleteDisabled] = useState(false);
@@ -199,11 +201,10 @@ function useAutomationToolbarDom(pageSelectSlotRef: React.RefObject<HTMLDivEleme
   }), [t]);
 
   useEffect(() => {
-    const bodyRoot = document.querySelector<HTMLElement>(".automation-flow-dialog-body");
     const editorRoot = document.querySelector<HTMLElement>(".automation-flow-editor-body");
     const pageSelectSlot = pageSelectSlotRef.current;
 
-    if (!bodyRoot || !editorRoot || !pageSelectSlot) {
+    if (!editorRoot || !pageSelectSlot) {
       return;
     }
 
