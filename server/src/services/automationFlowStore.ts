@@ -50,6 +50,10 @@ function normalizePage(input: unknown): AutomationFlowPageDto | null {
     return null;
   }
 
+  const viewportX = optionalNumber(input.viewportX);
+  const viewportY = optionalNumber(input.viewportY);
+  const viewportZoom = optionalNumber(input.viewportZoom);
+
   return {
     id,
     name: typeof input.name === "string" && input.name.trim().length > 0
@@ -58,9 +62,9 @@ function normalizePage(input: unknown): AutomationFlowPageDto | null {
     enabled: typeof input.enabled === "boolean"
       ? input.enabled
       : true,
-    ...(optionalNumber(input.viewportX) !== undefined ? { viewportX: optionalNumber(input.viewportX) } : {}),
-    ...(optionalNumber(input.viewportY) !== undefined ? { viewportY: optionalNumber(input.viewportY) } : {}),
-    ...(optionalNumber(input.viewportZoom) !== undefined ? { viewportZoom: optionalNumber(input.viewportZoom) } : {}),
+    ...(viewportX !== undefined ? { viewportX } : {}),
+    ...(viewportY !== undefined ? { viewportY } : {}),
+    ...(viewportZoom !== undefined ? { viewportZoom } : {}),
   };
 }
 
