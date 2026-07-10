@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect } from "react";
 
 const STORAGE_KEY = "dccexpress.automation.editorState.v1";
 
+const VIEWPORT_RESTORING_DATASET_KEY = "automationViewportRestoring";
+
 type AutomationEditorState = {
   pageId?: string;
   selectedNodeId?: string;
@@ -16,6 +18,11 @@ type ParsedViewportTransform = {
   x: number;
   y: number;
   zoom: number;
+};
+
+type AutomationSnapshot = {
+  activePageId?: string;
+  pageNameById: Map<string, string>;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -52,8 +59,25 @@ function writeStoredState(state: AutomationEditorState): void {
   }
 }
 
+function isViewportRestoring(): boolean {
+  return document.body.dataset[VIEWPORT_RESTORING_DATASET_KEY] === "true";
+}
+
+function setViewportRestoring(restoring: boolean): void {
+  if (restoring) {
+    document.body.dataset[VIEWPORT_RESTORING_DATASET_KEY] = "true";
+    return;
+  }
+
+  delete document.body.dataset[VIEWPORT_RESTORING_DATASET_KEY];
+}
+
 function getEditorRoot(): HTMLElement | null {
   return document.querySelector<HTMLElement>(".automation-flow-editor-body");
+}
+
+function getDialogRoot(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(".automation-flow-dialog-body");
 }
 
 function getReactFlowRoot(root: HTMLElement | null = getEditorRoot()): HTMLElement | null {
@@ -61,6 +85,8 @@ function getReactFlowRoot(root: HTMLElement | null = getEditorRoot()): HTMLEleme
 }
 
 function setCanvasRestoring(restoring: boolean): void {
+  setViewportRestoring(restoring);
+
   const flowRoot = getReactFlowRoot();
   if (!flowRoot) {
     return;
@@ -78,7 +104,11 @@ function setCanvasRestoring(restoring: boolean): void {
   flowRoot.style.pointerEvents = "";
 }
 
-function readAutomationSnapshot(root: HTMLElement): { activePageId?: string; pageNameById: Map<string, string> } {
+function normalizeText(value: string | null | undefined): string {
+  return (value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function readAutomationSnapshot(root: HTMLElement): AutomationSnapshot {
   for (const textarea of Array.from(root.querySelectorAll("textarea"))) {
     try {
       const parsed: unknown = JSON.parse(textarea.value);
@@ -162,10 +192,6 @@ function getToolbarPageInput(): HTMLInputElement | null {
   );
 }
 
-function normalizeText(value: string | null | undefined): string {
-  return (value ?? "").replace(/\s+/g, " ").trim();
-}
-
 function choosePageOption(pageId: string, pageName: string | undefined): void {
   const options = Array.from(document.querySelectorAll<HTMLElement>(
     "[data-combobox-option], [role='option']"
@@ -181,6 +207,18 @@ function choosePageOption(pageId: string, pageName: string | undefined): void {
     cancelable: true,
     view: window,
   }));
+}
+
+function getActivePageIdFromToolbar(snapshot: AutomationSnapshot): string | undefined {
+  const inputValue = normalizeText(getToolbarPageInput()?.value);
+  if (inputValue.length === 0) {
+    return undefined;
+  }
+
+  const matchingPages = Array.from(snapshot.pageNameById.entries())
+    .filter(([, pageName]) => normalizeText(pageName) === inputValue);
+
+  return matchingPages.length === 1 ? matchingPages[0]?.[0] : undefined;
 }
 
 function restorePage(root: HTMLElement, pageId: string | undefined): void {
@@ -204,6 +242,7 @@ function restorePage(root: HTMLElement, pageId: string | undefined): void {
   const pageName = snapshot.pageNameById.get(pageId);
   window.setTimeout(() => choosePageOption(pageId, pageName), 0);
   window.setTimeout(() => choosePageOption(pageId, pageName), 80);
+  window.setTimeout(() => choosePageOption(pageId, pageName), 180);
 }
 
 function parseViewportTransform(transform: string | undefined): ParsedViewportTransform {
@@ -258,7 +297,11 @@ function moveViewportToShowNode(root: HTMLElement, node: HTMLElement): void {
   });
 }
 
-function saveCurrentState(): void {
+function saveCurrentState(force = false): void {
+  if (!force && isViewportRestoring()) {
+    return;
+  }
+
   const root = getEditorRoot();
   if (!root) {
     return;
@@ -268,13 +311,24 @@ function saveCurrentState(): void {
   const snapshot = readAutomationSnapshot(root);
   const selectedNodeId = getSelectedNodeId(root);
   const viewportTransform = getViewportTransform(root);
+  const activePageId = snapshot.activePageId ?? getActivePageIdFromToolbar(snapshot);
+  const nextState: AutomationEditorState = { ...previous };
 
-  writeStoredState({
-    ...previous,
-    ...(snapshot.activePageId ? { pageId: snapshot.activePageId } : {}),
-    ...(selectedNodeId ? { selectedNodeId } : {}),
-    ...(viewportTransform ? { viewportTransform } : {}),
-  });
+  if (activePageId) {
+    nextState.pageId = activePageId;
+  }
+
+  if (selectedNodeId) {
+    nextState.selectedNodeId = selectedNodeId;
+  } else {
+    delete nextState.selectedNodeId;
+  }
+
+  if (viewportTransform) {
+    nextState.viewportTransform = viewportTransform;
+  }
+
+  writeStoredState(nextState);
 }
 
 function restoreCurrentState(): void {
@@ -313,6 +367,54 @@ function keepNewNodesVisible(root: HTMLElement, knownNodeIds: Set<string>): void
   }
 }
 
+function findNodePanelEnabledInput(): HTMLInputElement | null {
+  const root = getEditorRoot();
+  const nodePanel = root?.querySelector<HTMLElement>(".mantine-Group-root > .mantine-Card-root:first-child");
+  return nodePanel?.querySelector<HTMLInputElement>(".mantine-Switch-root input[type='checkbox']") ?? null;
+}
+
+function setNativeCheckboxChecked(input: HTMLInputElement, checked: boolean): void {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "checked")?.set;
+
+  if (setter) {
+    setter.call(input, checked);
+  } else {
+    input.checked = checked;
+  }
+
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function installToolbarEnabledSwitchRepair(): () => void {
+  const dialogRoot = getDialogRoot();
+  if (!dialogRoot) {
+    return () => undefined;
+  }
+
+  const toolbarSwitch = Array.from(dialogRoot.querySelectorAll<HTMLElement>(".mantine-Switch-root"))
+    .find(item => !item.closest(".automation-flow-editor-body"));
+
+  if (!toolbarSwitch) {
+    return () => undefined;
+  }
+
+  const handleClick = (event: Event): void => {
+    const input = findNodePanelEnabledInput();
+    if (!input) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    setNativeCheckboxChecked(input, !input.checked);
+    window.setTimeout(() => saveCurrentState(true), 0);
+  };
+
+  toolbarSwitch.addEventListener("click", handleClick, true);
+  return () => toolbarSwitch.removeEventListener("click", handleClick, true);
+}
+
 export default function AutomationEditorStateBridge({ opened }: AutomationEditorStateBridgeProps) {
   useLayoutEffect(() => {
     if (!opened) {
@@ -329,7 +431,7 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
 
   useEffect(() => {
     if (!opened) {
-      saveCurrentState();
+      saveCurrentState(true);
       setCanvasRestoring(false);
       return;
     }
@@ -340,6 +442,7 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
     const revealTimeout = window.setTimeout(() => {
       restoreCurrentState();
       setCanvasRestoring(false);
+      saveCurrentState(true);
     }, 1150);
     const knownNodeIds = new Set<string>();
 
@@ -369,19 +472,23 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ["class", "style", "data-id"],
+        attributeFilter: ["class", "style", "data-id", "checked", "value"],
       });
     }
 
-    const intervalId = window.setInterval(saveCurrentState, 600);
+    const uninstallEnabledRepair = window.setTimeout(installToolbarEnabledSwitchRepair, 0);
+    const repairIntervalId = window.setInterval(installToolbarEnabledSwitchRepair, 1000);
+    const intervalId = window.setInterval(() => saveCurrentState(), 600);
 
     return () => {
       restoreTimeouts.forEach(timeoutId => window.clearTimeout(timeoutId));
       window.clearTimeout(revealTimeout);
+      window.clearTimeout(uninstallEnabledRepair);
+      window.clearInterval(repairIntervalId);
       observer.disconnect();
       window.clearInterval(intervalId);
       setCanvasRestoring(false);
-      saveCurrentState();
+      saveCurrentState(true);
     };
   }, [opened]);
 
