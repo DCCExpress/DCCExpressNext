@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import AppModal from "../common/AppModal";
 import AutomationFlowEditor from "./AutomationFlowEditor";
+import AutomationPageActionsBridge from "./AutomationPageActionsBridge";
 
 type AutomationFlowDialogProps = {
   opened: boolean;
@@ -57,6 +58,7 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
     >
       <Box className="automation-flow-dialog-body" style={{ flex: 1, minHeight: 0, height: "100%", display: "flex" }}>
         <AutomationFlowEditor />
+        <AutomationPageActionsBridge />
       </Box>
     </AppModal>
   );
