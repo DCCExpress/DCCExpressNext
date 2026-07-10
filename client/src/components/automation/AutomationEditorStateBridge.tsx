@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect } from "react";
 
 const STORAGE_KEY = "dccexpress.automation.editorState.v1";
-
 const VIEWPORT_RESTORING_DATASET_KEY = "automationViewportRestoring";
 
 type AutomationEditorState = {
@@ -74,10 +73,6 @@ function setViewportRestoring(restoring: boolean): void {
 
 function getEditorRoot(): HTMLElement | null {
   return document.querySelector<HTMLElement>(".automation-flow-editor-body");
-}
-
-function getDialogRoot(): HTMLElement | null {
-  return document.querySelector<HTMLElement>(".automation-flow-dialog-body");
 }
 
 function getReactFlowRoot(root: HTMLElement | null = getEditorRoot()): HTMLElement | null {
@@ -367,54 +362,6 @@ function keepNewNodesVisible(root: HTMLElement, knownNodeIds: Set<string>): void
   }
 }
 
-function findNodePanelEnabledInput(): HTMLInputElement | null {
-  const root = getEditorRoot();
-  const nodePanel = root?.querySelector<HTMLElement>(".mantine-Group-root > .mantine-Card-root:first-child");
-  return nodePanel?.querySelector<HTMLInputElement>(".mantine-Switch-root input[type='checkbox']") ?? null;
-}
-
-function setNativeCheckboxChecked(input: HTMLInputElement, checked: boolean): void {
-  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "checked")?.set;
-
-  if (setter) {
-    setter.call(input, checked);
-  } else {
-    input.checked = checked;
-  }
-
-  input.dispatchEvent(new Event("input", { bubbles: true }));
-  input.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-function installToolbarEnabledSwitchRepair(): void {
-  const dialogRoot = getDialogRoot();
-  if (!dialogRoot) {
-    return;
-  }
-
-  const toolbarSwitch = Array.from(dialogRoot.querySelectorAll<HTMLElement>(".mantine-Switch-root"))
-    .find(item => !item.closest(".automation-flow-editor-body"));
-
-  if (!toolbarSwitch || toolbarSwitch.dataset.automationEnabledRepairInstalled === "true") {
-    return;
-  }
-
-  const handleClick = (event: Event): void => {
-    const input = findNodePanelEnabledInput();
-    if (!input) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    setNativeCheckboxChecked(input, !input.checked);
-    window.setTimeout(() => saveCurrentState(true), 0);
-  };
-
-  toolbarSwitch.dataset.automationEnabledRepairInstalled = "true";
-  toolbarSwitch.addEventListener("click", handleClick, true);
-}
-
 export default function AutomationEditorStateBridge({ opened }: AutomationEditorStateBridgeProps) {
   useLayoutEffect(() => {
     if (!opened) {
@@ -476,15 +423,11 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       });
     }
 
-    const repairTimeout = window.setTimeout(installToolbarEnabledSwitchRepair, 0);
-    const repairIntervalId = window.setInterval(installToolbarEnabledSwitchRepair, 1000);
     const intervalId = window.setInterval(() => saveCurrentState(), 600);
 
     return () => {
       restoreTimeouts.forEach(timeoutId => window.clearTimeout(timeoutId));
       window.clearTimeout(revealTimeout);
-      window.clearTimeout(repairTimeout);
-      window.clearInterval(repairIntervalId);
       observer.disconnect();
       window.clearInterval(intervalId);
       setCanvasRestoring(false);
