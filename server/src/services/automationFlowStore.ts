@@ -31,6 +31,12 @@ function toNumber(value: unknown, fallback: number): number {
     : fallback;
 }
 
+function optionalNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
 function normalizePage(input: unknown): AutomationFlowPageDto | null {
   if (!isRecord(input)) {
     return null;
@@ -52,6 +58,9 @@ function normalizePage(input: unknown): AutomationFlowPageDto | null {
     enabled: typeof input.enabled === "boolean"
       ? input.enabled
       : true,
+    ...(optionalNumber(input.viewportX) !== undefined ? { viewportX: optionalNumber(input.viewportX) } : {}),
+    ...(optionalNumber(input.viewportY) !== undefined ? { viewportY: optionalNumber(input.viewportY) } : {}),
+    ...(optionalNumber(input.viewportZoom) !== undefined ? { viewportZoom: optionalNumber(input.viewportZoom) } : {}),
   };
 }
 
@@ -259,9 +268,11 @@ class AutomationFlowStore {
       const raw = await fs.readFile(this.filePath, "utf8");
       this.document = normalizeAutomationFlowDocument(JSON.parse(raw));
       this.createdOnInitialize = false;
-    } catch (error: any) {
-      if (error?.code !== "ENOENT") {
-        console.error("[AutomationFlowStore] Failed to read automation flow:", error);
+    } catch (error: unknown) {
+      const code = (error as NodeJS.ErrnoException).code;
+
+      if (code !== "ENOENT") {
+        throw error;
       }
 
       this.document = createEmptyAutomationFlowDocument();
@@ -270,34 +281,29 @@ class AutomationFlowStore {
     }
 
     this.initialized = true;
-
     return { created: this.createdOnInitialize };
   }
 
-  getDocument(): AutomationFlowDocumentDto {
-    return structuredClone(this.document);
+  getCreatedOnInitialize(): boolean {
+    return this.createdOnInitialize;
   }
 
-  async saveDocument(input: AutomationFlowDocumentDto): Promise<AutomationFlowDocumentDto> {
-    await this.initialize();
+  getDocument(): AutomationFlowDocumentDto {
+    return this.document;
+  }
 
+  async saveDocument(document: AutomationFlowDocumentDto): Promise<AutomationFlowDocumentDto> {
     this.document = normalizeAutomationFlowDocument({
-      ...input,
+      ...document,
       updatedAt: new Date().toISOString(),
     });
     await this.persist();
-    this.createdOnInitialize = false;
-
-    return this.getDocument();
+    return this.document;
   }
 
   private async persist(): Promise<void> {
     await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-    await fs.writeFile(
-      this.filePath,
-      JSON.stringify(this.document, null, 2),
-      "utf8"
-    );
+    await fs.writeFile(this.filePath, `${JSON.stringify(this.document, null, 2)}\n`, "utf8");
   }
 }
 
