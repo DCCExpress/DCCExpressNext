@@ -323,6 +323,25 @@ function NotNode({ data, selected }: AutomationTypedNodeProps) {
   );
 }
 
+function FilterNode({ data, selected }: AutomationTypedNodeProps) {
+  const { t } = useTranslation();
+  const filterValue = data.filterValue ?? true;
+
+  return (
+    <AutomationNodeCard
+      data={data}
+      selected={selected}
+      kind="filter"
+      outputBadges={getSingleOutputBadge(data)}
+      detail={(
+        <Text size="xs" c="dimmed">
+          {t("automation.graph.filterValue", { value: String(filterValue) })}
+        </Text>
+      )}
+    />
+  );
+}
+
 function IfThenElseNode({ data, selected }: AutomationTypedNodeProps) {
   const { t } = useTranslation();
   const conditionActive = data.active === true;
@@ -591,6 +610,8 @@ export function AutomationGraphNode(props: AutomationTypedNodeProps) {
       return <OrNode {...props} />;
     case "not":
       return <NotNode {...props} />;
+    case "filter":
+      return <FilterNode {...props} />;
     case "ifThenElse":
       return <IfThenElseNode {...props} />;
     case "timer":
