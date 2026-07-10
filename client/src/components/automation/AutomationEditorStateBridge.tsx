@@ -6,7 +6,7 @@ import {
   saveAutomationFlowWs,
 } from "../../api/automationFlowWsApi";
 
-const STORAGE_KEY = "dccexpress.automation.editorState.v4";
+const STORAGE_KEY = "dccexpress.automation.editorState.v5";
 const DEFAULT_VIEWPORT: PageViewport = { x: 0, y: 0, zoom: 1 };
 const VIEWPORT_EPSILON = 0.001;
 
@@ -178,9 +178,7 @@ function mergeServerViewports(
   const pageViewports = { ...stored.pageViewports };
 
   for (const [pageId, viewport] of serverViewports) {
-    if (!pageViewports[pageId]) {
-      pageViewports[pageId] = viewport;
-    }
+    pageViewports[pageId] = viewport;
   }
 
   return {
@@ -290,6 +288,13 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       }
 
       const viewport = getViewport();
+      const previousViewport = stored.pageViewports?.[pageId];
+      lastViewport = viewport;
+
+      if (previousViewport && viewportsEqual(previousViewport, viewport)) {
+        return;
+      }
+
       stored = {
         ...stored,
         activePageId: pageId,
@@ -298,7 +303,6 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
           [pageId]: viewport,
         },
       };
-      lastViewport = viewport;
       writeStoredState(stored);
     }
 
@@ -309,6 +313,7 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
 
       const selectedNodeId = getSelectedNodeId();
       const selectedNodeByPage = { ...stored.selectedNodeByPage };
+      const previousNodeId = selectedNodeByPage[pageId];
 
       if (selectedNodeId) {
         selectedNodeByPage[pageId] = selectedNodeId;
@@ -316,9 +321,13 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
         delete selectedNodeByPage[pageId];
       }
 
+      if (previousNodeId === selectedNodeByPage[pageId]) {
+        return;
+      }
+
       stored = {
         ...stored,
-        ...(Object.keys(selectedNodeByPage).length > 0 ? { selectedNodeByPage } : {}),
+        selectedNodeByPage,
       };
       writeStoredState(stored);
     }
@@ -329,9 +338,27 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       lastViewport = viewport;
     }
 
+    function schedulePageViewportRestore(pageId: string): void {
+      setCanvasHidden(true);
+
+      for (const delay of [0, 40, 100, 180]) {
+        timers.push(window.setTimeout(() => {
+          if (!disposed && activePageId === pageId) {
+            restorePageViewport(pageId);
+          }
+        }, delay));
+      }
+
+      timers.push(window.setTimeout(() => {
+        if (!disposed && activePageId === pageId) {
+          setCanvasHidden(false);
+        }
+      }, 220));
+    }
+
     function restorePageSelection(pageId: string): void {
       const nodeId = stored.selectedNodeByPage?.[pageId];
-      timers.push(window.setTimeout(() => restoreSelectedNode(nodeId), 80));
+      timers.push(window.setTimeout(() => restoreSelectedNode(nodeId), 100));
     }
 
     function resetKnownNodes(): void {
@@ -379,15 +406,10 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
         return;
       }
 
-      if (activePageId) {
-        savePageViewport(activePageId);
-        saveSelectedNode(activePageId);
-      }
-
       activePageId = pageId;
       stored = { ...stored, activePageId: pageId };
       writeStoredState(stored);
-      restorePageViewport(pageId);
+      schedulePageViewportRestore(pageId);
       restorePageSelection(pageId);
       resetKnownNodes();
     }
@@ -428,8 +450,7 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
         writeStoredState(stored);
 
         if (activePageId) {
-          restorePageViewport(activePageId);
-          timers.push(window.setTimeout(() => restorePageViewport(activePageId as string), 100));
+          schedulePageViewportRestore(activePageId);
         }
       })
       .catch(error => {
@@ -456,7 +477,7 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
       setCanvasHidden(false);
     }, 750));
 
-    const intervalId = window.setInterval(tick, 150);
+    const intervalId = window.setInterval(tick, 50);
 
     return () => {
       disposed = true;
