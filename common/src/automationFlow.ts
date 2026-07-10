@@ -29,6 +29,9 @@ export type AutomationFlowPageDto = {
   id: string;
   name: string;
   enabled?: boolean;
+  viewportX?: number;
+  viewportY?: number;
+  viewportZoom?: number;
 };
 
 export type AutomationFlowNodeData = Record<string, unknown> & {
