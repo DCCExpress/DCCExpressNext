@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import AppModal from "../common/AppModal";
 import AutomationEditorStateBridge from "./AutomationEditorStateBridge";
 import AutomationFlowEditor from "./AutomationFlowEditor";
+import AutomationPageEnabledToolbarPlacement from "./AutomationPageEnabledToolbarPlacement";
 import AutomationToolbarBridge from "./AutomationToolbarBridge";
 
 type AutomationFlowDialogProps = {
@@ -62,6 +63,7 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
         }}
       >
         <AutomationToolbarBridge />
+        <AutomationPageEnabledToolbarPlacement />
         <Box className="automation-flow-editor-body" style={{ flex: 1, minHeight: 0, display: "flex" }}>
           <ReactFlowProvider>
             <AutomationEditorStateBridge opened={opened} />
