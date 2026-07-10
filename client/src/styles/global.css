@@ -5,10 +5,6 @@
   touch-action: none;
 }
 
-.automation-flow-editor-body > .mantine-Group-root > .mantine-Card-root:first-child .mantine-Switch-root {
-  display: none !important;
-}
-
 body[data-automation-selected-node-kind="turnout"] .mantine-Modal-content .mantine-Group-root > .mantine-Card-root:last-child .mantine-Switch-root,
 body[data-automation-selected-node-kind="turnoutCommand"] .mantine-Modal-content .mantine-Group-root > .mantine-Card-root:last-child .mantine-Switch-root {
   display: none !important;
