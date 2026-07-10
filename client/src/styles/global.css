@@ -15,56 +15,6 @@ body:not([data-automation-has-selected-node="true"]) .automation-flow-dialog-bod
   display: none !important;
 }
 
-/* Automation toolbar order:
-   load, save, separator, page label/select, enabled, separator, page actions. */
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > button:has(svg.tabler-icon-refresh) {
-  order: 1;
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > button:has(svg.tabler-icon-device-floppy) {
-  order: 2;
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > .mantine-Divider-root {
-  order: 3;
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > .mantine-Text-root {
-  order: 4;
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > :has(> [data-automation-toolbar-page-select="true"]) {
-  order: 5;
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > :has(> [data-automation-toolbar-enabled-switch="true"]) {
-  order: 6;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > :has(> [data-automation-toolbar-enabled-switch="true"])::after {
-  content: "";
-  display: block;
-  width: 1px;
-  height: 24px;
-  margin-left: 10px;
-  background: var(--mantine-color-default-border);
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > button:has(svg.tabler-icon-plus) {
-  order: 7;
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > button:has(svg.tabler-icon-pencil) {
-  order: 8;
-}
-
-.automation-flow-dialog-body .mantine-Group-root:has(> * > [data-automation-toolbar-page-select="true"]) > button:has(svg.tabler-icon-trash) {
-  order: 9;
-}
-
 .blinkBadge {
   animation: blinkBadge 0.5s infinite;
 }
