@@ -208,6 +208,9 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       return;
     }
 
+    const root = editorRoot;
+    const slot = pageSelectSlot;
+
     function hideElement(element: HTMLElement | null): void {
       if (!element) {
         return;
@@ -221,7 +224,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
     }
 
     function movePageSelect(pageSelectRoot: HTMLElement | null): void {
-      if (!pageSelectRoot || pageSelectRoot.parentElement === pageSelectSlot) {
+      if (!pageSelectRoot || pageSelectRoot.parentElement === slot) {
         return;
       }
 
@@ -233,16 +236,16 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
         };
       }
 
-      pageSelectSlot.appendChild(pageSelectRoot);
+      slot.appendChild(pageSelectRoot);
     }
 
     function syncDom(): void {
-      const pageSelectInput = findInputByLabel(editorRoot, labels.automationPage);
-      const pageNameInput = findInputByLabel(editorRoot, labels.pageName);
-      const addButton = findButtonByText(editorRoot, labels.addPage);
-      const deleteButton = findButtonByText(editorRoot, labels.deletePage);
-      const saveButton = findIconButton(editorRoot, "tabler-icon-device-floppy");
-      const loadButton = findIconButton(editorRoot, "tabler-icon-refresh");
+      const pageSelectInput = findInputByLabel(root, labels.automationPage);
+      const pageNameInput = findInputByLabel(root, labels.pageName);
+      const addButton = findButtonByText(root, labels.addPage);
+      const deleteButton = findButtonByText(root, labels.deletePage);
+      const saveButton = findIconButton(root, "tabler-icon-device-floppy");
+      const loadButton = findIconButton(root, "tabler-icon-refresh");
       const pageSelectRoot = findFieldRoot(pageSelectInput);
       const pageNameRoot = findFieldRoot(pageNameInput);
       const addDeleteGroup = findButtonGroup(addButton, deleteButton);
@@ -257,7 +260,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       };
 
       setDeleteDisabled(deleteButton?.disabled === true);
-      setSnapshot(readAutomationSnapshot(editorRoot));
+      setSnapshot(readAutomationSnapshot(root));
       movePageSelect(pageSelectRoot);
       hideElement(pageNameRoot);
       hideElement(addDeleteGroup);
@@ -267,7 +270,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
     syncDom();
 
     const observer = new MutationObserver(syncDom);
-    observer.observe(editorRoot, {
+    observer.observe(root, {
       childList: true,
       subtree: true,
       attributes: true,
