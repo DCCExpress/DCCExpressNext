@@ -11,13 +11,40 @@ type AutomationFlowDialogProps = {
   onClose: () => void;
 };
 
+function clearAutomationSelectedMarkers(): void {
+  delete document.body.dataset.automationHasSelectedNode;
+  delete document.body.dataset.automationSelectedNodeKind;
+}
+
+function clearReactFlowSelection(): void {
+  const pane = document.querySelector<HTMLElement>(".automation-flow-dialog-body .react-flow__pane");
+  if (!pane) {
+    clearAutomationSelectedMarkers();
+    return;
+  }
+
+  pane.dispatchEvent(new MouseEvent("click", {
+    bubbles: true,
+    cancelable: true,
+    view: window,
+  }));
+  clearAutomationSelectedMarkers();
+}
+
 export default function AutomationFlowDialog({ opened, onClose }: AutomationFlowDialogProps) {
   const { t } = useTranslation();
 
   useEffect(() => {
     if (!opened) {
-      delete document.body.dataset.automationHasSelectedNode;
+      clearAutomationSelectedMarkers();
+      return;
     }
+
+    const timeoutIds = [0, 80, 250, 700].map(delay => window.setTimeout(clearReactFlowSelection, delay));
+
+    return () => {
+      timeoutIds.forEach(timeoutId => window.clearTimeout(timeoutId));
+    };
   }, [opened]);
 
   return (
