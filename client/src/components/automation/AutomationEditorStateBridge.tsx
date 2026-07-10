@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 
 const STORAGE_KEY = "dccexpress.automation.editorState.v1";
 
@@ -54,6 +54,28 @@ function writeStoredState(state: AutomationEditorState): void {
 
 function getEditorRoot(): HTMLElement | null {
   return document.querySelector<HTMLElement>(".automation-flow-editor-body");
+}
+
+function getReactFlowRoot(root: HTMLElement | null = getEditorRoot()): HTMLElement | null {
+  return root?.querySelector<HTMLElement>(".react-flow") ?? null;
+}
+
+function setCanvasRestoring(restoring: boolean): void {
+  const flowRoot = getReactFlowRoot();
+  if (!flowRoot) {
+    return;
+  }
+
+  if (restoring) {
+    flowRoot.dataset.automationViewportRestoring = "true";
+    flowRoot.style.visibility = "hidden";
+    flowRoot.style.pointerEvents = "none";
+    return;
+  }
+
+  delete flowRoot.dataset.automationViewportRestoring;
+  flowRoot.style.visibility = "";
+  flowRoot.style.pointerEvents = "";
 }
 
 function readAutomationSnapshot(root: HTMLElement): { activePageId?: string; pageNameById: Map<string, string> } {
@@ -292,13 +314,33 @@ function keepNewNodesVisible(root: HTMLElement, knownNodeIds: Set<string>): void
 }
 
 export default function AutomationEditorStateBridge({ opened }: AutomationEditorStateBridgeProps) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!opened) {
-      saveCurrentState();
+      setCanvasRestoring(false);
       return;
     }
 
-    const restoreTimeouts = [0, 80, 200, 500, 900].map(delay => window.setTimeout(restoreCurrentState, delay));
+    setCanvasRestoring(true);
+
+    return () => {
+      setCanvasRestoring(false);
+    };
+  }, [opened]);
+
+  useEffect(() => {
+    if (!opened) {
+      saveCurrentState();
+      setCanvasRestoring(false);
+      return;
+    }
+
+    setCanvasRestoring(true);
+
+    const restoreTimeouts = [0, 40, 80, 160, 320, 640, 1000].map(delay => window.setTimeout(restoreCurrentState, delay));
+    const revealTimeout = window.setTimeout(() => {
+      restoreCurrentState();
+      setCanvasRestoring(false);
+    }, 1150);
     const knownNodeIds = new Set<string>();
 
     const root = getEditorRoot();
@@ -335,8 +377,10 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
 
     return () => {
       restoreTimeouts.forEach(timeoutId => window.clearTimeout(timeoutId));
+      window.clearTimeout(revealTimeout);
       observer.disconnect();
       window.clearInterval(intervalId);
+      setCanvasRestoring(false);
       saveCurrentState();
     };
   }, [opened]);
