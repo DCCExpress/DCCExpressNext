@@ -7,7 +7,6 @@ import {
   Group,
   Modal,
   Stack,
-  Switch,
   Text,
   TextInput,
   Tooltip,
@@ -45,7 +44,6 @@ type AutomationSnapshot = {
 
 type OriginalDomElements = {
   pageNameInput: HTMLInputElement | null;
-  enabledInput: HTMLInputElement | null;
   addButton: HTMLButtonElement | null;
   deleteButton: HTMLButtonElement | null;
   saveButton: HTMLButtonElement | null;
@@ -205,13 +203,31 @@ function readAutomationSnapshot(root: HTMLElement): AutomationSnapshot {
   };
 }
 
-function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | null>) {
+function compactMovedField(element: HTMLElement): void {
+  element.style.margin = "0";
+  element.style.minWidth = "auto";
+  element.style.maxWidth = "none";
+
+  const label = element.querySelector<HTMLElement>("label");
+  if (label) {
+    label.style.whiteSpace = "nowrap";
+  }
+
+  const description = element.querySelector<HTMLElement>(".mantine-InputWrapper-description, .mantine-Switch-description");
+  if (description) {
+    description.style.display = "none";
+  }
+}
+
+function useAutomationToolbarDom(
+  pageSelectSlotRef: RefObject<HTMLDivElement | null>,
+  enabledSlotRef: RefObject<HTMLDivElement | null>
+) {
   const { t } = useTranslation();
   const [snapshot, setSnapshot] = useState<AutomationSnapshot>({ activePageId: null, pages: [], nodes: [], edges: [] });
   const [deleteDisabled, setDeleteDisabled] = useState(false);
   const elementsRef = useRef<OriginalDomElements>({
     pageNameInput: null,
-    enabledInput: null,
     addButton: null,
     deleteButton: null,
     saveButton: null,
@@ -219,6 +235,7 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
   });
   const hiddenElementsRef = useRef(new Map<HTMLElement, string>());
   const movedPageSelectRef = useRef<MovedElement | null>(null);
+  const movedEnabledSwitchRef = useRef<MovedElement | null>(null);
 
   const labels = useMemo(() => ({
     automationPage: t("automation.panel.automationPage"),
@@ -235,13 +252,15 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
   useEffect(() => {
     const editorRoot = document.querySelector<HTMLElement>(".automation-flow-editor-body");
     const pageSelectSlot = pageSelectSlotRef.current;
+    const enabledSlot = enabledSlotRef.current;
 
-    if (!editorRoot || !pageSelectSlot) {
+    if (!editorRoot || !pageSelectSlot || !enabledSlot) {
       return;
     }
 
     const root = editorRoot;
-    const slot = pageSelectSlot;
+    const pageSlot = pageSelectSlot;
+    const switchSlot = enabledSlot;
 
     function hideElement(element: HTMLElement | null): void {
       if (!element) {
@@ -268,24 +287,47 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       }
     }
 
-    function movePageSelect(pageSelectRoot: HTMLElement | null): void {
-      if (!pageSelectRoot || pageSelectRoot.parentElement === slot) {
+    function moveElement(element: HTMLElement | null, slot: HTMLElement, ref: { current: MovedElement | null }): void {
+      if (!element || element.parentElement === slot) {
         return;
       }
 
-      if (!movedPageSelectRef.current) {
-        movedPageSelectRef.current = {
-          element: pageSelectRoot,
-          parent: pageSelectRoot.parentElement as HTMLElement,
-          nextSibling: pageSelectRoot.nextSibling,
+      if (!ref.current) {
+        ref.current = {
+          element,
+          parent: element.parentElement as HTMLElement,
+          nextSibling: element.nextSibling,
         };
       }
 
+      slot.appendChild(element);
+    }
+
+    function movePageSelect(pageSelectRoot: HTMLElement | null): void {
+      moveElement(pageSelectRoot, pageSlot, movedPageSelectRef);
+
+      if (!pageSelectRoot) {
+        return;
+      }
+
       pageSelectRoot.dataset.automationToolbarPageSelect = "true";
-      pageSelectRoot.style.margin = "0";
       pageSelectRoot.style.minWidth = "260px";
       pageSelectRoot.style.maxWidth = "340px";
-      slot.appendChild(pageSelectRoot);
+      pageSelectRoot.style.flex = "0 1 320px";
+      compactMovedField(pageSelectRoot);
+    }
+
+    function moveEnabledSwitch(enabledRoot: HTMLElement | null): void {
+      moveElement(enabledRoot, switchSlot, movedEnabledSwitchRef);
+
+      if (!enabledRoot) {
+        return;
+      }
+
+      enabledRoot.dataset.automationToolbarEnabledSwitch = "true";
+      enabledRoot.style.minWidth = "auto";
+      enabledRoot.style.maxWidth = "none";
+      compactMovedField(enabledRoot);
     }
 
     function syncDom(): void {
@@ -319,7 +361,6 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
 
       elementsRef.current = {
         pageNameInput,
-        enabledInput,
         addButton,
         deleteButton,
         saveButton,
@@ -329,9 +370,9 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       setDeleteDisabled(deleteButton?.disabled === true);
       setSnapshot(readAutomationSnapshot(root));
       movePageSelect(pageSelectRoot);
+      moveEnabledSwitch(enabledRoot);
       hideElement(pageSelectLabel);
       hideElement(pageNameRoot);
-      hideElement(enabledRoot);
       hideElement(addDeleteGroup);
       hideElement(saveLoadGroup);
       hideElement(nodeCountBadge);
@@ -369,22 +410,27 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
       observer.disconnect();
       window.clearInterval(intervalId);
 
-      const moved = movedPageSelectRef.current;
-      if (moved?.element.isConnected) {
-        delete moved.element.dataset.automationToolbarPageSelect;
-        moved.element.style.margin = "";
-        moved.element.style.minWidth = "";
-        moved.element.style.maxWidth = "";
-        moved.parent.insertBefore(moved.element, moved.nextSibling);
+      for (const moved of [movedPageSelectRef.current, movedEnabledSwitchRef.current]) {
+        if (moved?.element.isConnected) {
+          delete moved.element.dataset.automationToolbarPageSelect;
+          delete moved.element.dataset.automationToolbarEnabledSwitch;
+          moved.element.style.margin = "";
+          moved.element.style.minWidth = "";
+          moved.element.style.maxWidth = "";
+          moved.element.style.flex = "";
+          moved.parent.insertBefore(moved.element, moved.nextSibling);
+        }
       }
+
       movedPageSelectRef.current = null;
+      movedEnabledSwitchRef.current = null;
 
       hiddenElementsRef.current.forEach((display, element) => {
         element.style.display = display;
       });
       hiddenElementsRef.current.clear();
     };
-  }, [labels, pageSelectSlotRef]);
+  }, [labels, pageSelectSlotRef, enabledSlotRef]);
 
   return {
     deleteDisabled,
@@ -396,11 +442,12 @@ function useAutomationToolbarDom(pageSelectSlotRef: RefObject<HTMLDivElement | n
 export default function AutomationToolbarBridge() {
   const { t } = useTranslation();
   const pageSelectSlotRef = useRef<HTMLDivElement | null>(null);
+  const enabledSlotRef = useRef<HTMLDivElement | null>(null);
   const {
     deleteDisabled,
     elementsRef,
     snapshot,
-  } = useAutomationToolbarDom(pageSelectSlotRef);
+  } = useAutomationToolbarDom(pageSelectSlotRef, enabledSlotRef);
   const [dialog, setDialog] = useState<PageActionDialog>(null);
   const [draftName, setDraftName] = useState("");
 
@@ -408,7 +455,6 @@ export default function AutomationToolbarBridge() {
   const visibleNodeCount = activePage
     ? snapshot.nodes.filter(node => node.data?.pageId === activePage.id || (!node.data?.pageId && activePage.id === "main")).length
     : 0;
-  const pageEnabled = activePage?.enabled !== false;
 
   const text = {
     create: t("automation.panel.createPageDialogTitle", { defaultValue: "Új automatika lap" }),
@@ -426,7 +472,6 @@ export default function AutomationToolbarBridge() {
     load: t("automation.panel.loadFromServer"),
     save: t("automation.panel.saveToServer"),
     page: t("automation.panel.page", { defaultValue: "Page" }),
-    enabled: t("automation.panel.pageEnabledLabel", { defaultValue: "Enabled" }),
     pages: t("automation.panel.pages", { defaultValue: "Lapok" }),
     nodes: t("automation.panel.nodeCount", { visible: visibleNodeCount, total: snapshot.nodes.length }),
     edges: t("automation.panel.edges", { count: snapshot.edges.length }),
@@ -499,10 +544,6 @@ export default function AutomationToolbarBridge() {
     setDialog(null);
   }
 
-  function toggleEnabled(): void {
-    elementsRef.current.enabledInput?.click();
-  }
-
   const createDuplicate = dialog === "create" && hasDuplicatePageName(draftName, "create");
   const renameDuplicate = dialog === "rename" && hasDuplicatePageName(draftName, "rename");
   const createDisabled = draftName.trim().length === 0 || createDuplicate;
@@ -555,14 +596,7 @@ export default function AutomationToolbarBridge() {
             </ActionIcon>
           </Tooltip>
 
-          <Switch
-            size="xs"
-            checked={pageEnabled}
-            label={text.enabled}
-            disabled={!activePage || !elementsRef.current.enabledInput}
-            onChange={toggleEnabled}
-            styles={{ label: { whiteSpace: "nowrap" } }}
-          />
+          <Box ref={enabledSlotRef} style={{ display: "flex", alignItems: "center" }} />
         </Group>
 
         <Group gap="xs" wrap="nowrap">
