@@ -30,26 +30,38 @@ type RuntimeWithOutputs = {
   __accessoryOutputPatchInstalled?: boolean;
 };
 
-function getAccessoryAddress(node: AutomationFlowNodeDto): number | null {
-  const rawAddress = node.data.accessoryAddress;
-  if (typeof rawAddress === "number" && Number.isFinite(rawAddress) && rawAddress > 0) {
-    return Math.floor(rawAddress);
+function getPositiveInteger(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.floor(value);
   }
 
-  if (typeof node.data.outputCommand === "string") {
-    const parsed = Number(node.data.outputCommand.trim());
+  if (typeof value === "string") {
+    const parsed = Number(value.trim());
     if (Number.isFinite(parsed) && parsed > 0) {
       return Math.floor(parsed);
     }
   }
 
+  return null;
+}
+
+function getAccessoryAddress(node: AutomationFlowNodeDto): number | null {
+  // Backward compatible UI path: the current property panel still edits outputCommand,
+  // so prefer it when it contains a numeric accessory decoder address.
+  const commandAddress = getPositiveInteger(node.data.outputCommand);
+  if (commandAddress !== null) {
+    return commandAddress;
+  }
+
+  const accessoryAddress = getPositiveInteger(node.data.accessoryAddress);
+  if (accessoryAddress !== null) {
+    return accessoryAddress;
+  }
+
   if (typeof node.data.ioKey === "string") {
     const match = node.data.ioKey.match(/^(?:accessory|output):(\d+)$/u);
     if (match?.[1]) {
-      const parsed = Number(match[1]);
-      if (Number.isFinite(parsed) && parsed > 0) {
-        return Math.floor(parsed);
-      }
+      return getPositiveInteger(match[1]);
     }
   }
 
