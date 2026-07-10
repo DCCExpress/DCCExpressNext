@@ -137,6 +137,7 @@ function normalizeNode(input: unknown, validPageIds: Set<string>): AutomationFlo
       pageId,
       ...(typeof data.description === "string" ? { description: data.description } : {}),
       ...(typeof data.ioKey === "string" ? { ioKey: data.ioKey } : {}),
+      ...(typeof data.filterValue === "boolean" ? { filterValue: data.filterValue } : {}),
       ...(typeof data.sensorAddress === "number" && Number.isFinite(data.sensorAddress)
         ? { sensorAddress: data.sensorAddress }
         : {}),
