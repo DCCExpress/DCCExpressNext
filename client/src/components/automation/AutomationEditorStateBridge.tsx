@@ -282,6 +282,8 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
     let stored = readStoredState();
     const timers: number[] = [];
 
+    setCanvasHidden(true);
+
     function savePageViewport(pageId: string | undefined): void {
       if (!pageId) {
         return;
@@ -424,6 +426,11 @@ export default function AutomationEditorStateBridge({ opened }: AutomationEditor
           stored = { ...stored, activePageId: serverState.activePageId };
         }
         writeStoredState(stored);
+
+        if (activePageId) {
+          restorePageViewport(activePageId);
+          timers.push(window.setTimeout(() => restorePageViewport(activePageId as string), 100));
+        }
       })
       .catch(error => {
         console.warn("[AutomationEditorStateBridge] Editor state load failed:", error);
