@@ -1,5 +1,6 @@
 import { Box, Group, Title } from "@mantine/core";
 import { IconCpu } from "@tabler/icons-react";
+import { ReactFlowProvider } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import AppModal from "../common/AppModal";
 import AutomationEditorStateBridge from "./AutomationEditorStateBridge";
@@ -62,8 +63,10 @@ export default function AutomationFlowDialog({ opened, onClose }: AutomationFlow
       >
         <AutomationToolbarBridge />
         <Box className="automation-flow-editor-body" style={{ flex: 1, minHeight: 0, display: "flex" }}>
-          <AutomationEditorStateBridge opened={opened} />
-          <AutomationFlowEditor />
+          <ReactFlowProvider>
+            <AutomationEditorStateBridge opened={opened} />
+            <AutomationFlowEditor />
+          </ReactFlowProvider>
         </Box>
       </Box>
     </AppModal>
