@@ -30,8 +30,62 @@ type PageDomElements = {
   deleteButton: HTMLButtonElement | null;
 };
 
+type AutomationPageSnapshot = {
+  id: string;
+  name: string;
+};
+
+type AutomationSnapshot = {
+  activePageId: string | null;
+  pages: AutomationPageSnapshot[];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function normalizeText(value: string | null | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function normalizePageName(value: string | null | undefined): string {
+  return normalizeText(value).toLocaleLowerCase();
+}
+
+function readAutomationSnapshot(root: HTMLElement): AutomationSnapshot {
+  for (const textarea of Array.from(root.querySelectorAll("textarea"))) {
+    try {
+      const parsed: unknown = JSON.parse(textarea.value);
+
+      if (!isRecord(parsed) || !Array.isArray(parsed.pages)) {
+        continue;
+      }
+
+      const pages = parsed.pages.flatMap<AutomationPageSnapshot>((page) => {
+        if (!isRecord(page) || typeof page.id !== "string" || typeof page.name !== "string") {
+          return [];
+        }
+
+        return [{ id: page.id, name: page.name }];
+      });
+
+      if (pages.length === 0) {
+        continue;
+      }
+
+      return {
+        activePageId: typeof parsed.activePageId === "string" ? parsed.activePageId : null,
+        pages,
+      };
+    } catch {
+      // Not the JSON preview textarea.
+    }
+  }
+
+  return {
+    activePageId: null,
+    pages: [],
+  };
 }
 
 function findButtonByText(root: HTMLElement, label: string): HTMLButtonElement | null {
@@ -92,6 +146,7 @@ function usePageActionBridgeDom() {
   const { t } = useTranslation();
   const [portalElement, setPortalElement] = useState<HTMLElement | null>(null);
   const [deleteDisabled, setDeleteDisabled] = useState(false);
+  const [snapshot, setSnapshot] = useState<AutomationSnapshot>({ activePageId: null, pages: [] });
   const elementsRef = useRef<PageDomElements>({
     pageNameInput: null,
     addButton: null,
@@ -140,6 +195,7 @@ function usePageActionBridgeDom() {
         deleteButton,
       };
       setDeleteDisabled(deleteButton?.disabled === true);
+      setSnapshot(readAutomationSnapshot(root));
 
       hideElement(pageNameRoot);
       hideElement(addDeleteGroup);
@@ -189,6 +245,7 @@ function usePageActionBridgeDom() {
     portalElement,
     elementsRef,
     deleteDisabled,
+    snapshot,
   };
 }
 
@@ -198,6 +255,7 @@ export default function AutomationPageActionsBridge() {
     portalElement,
     elementsRef,
     deleteDisabled,
+    snapshot,
   } = usePageActionBridgeDom();
   const [dialog, setDialog] = useState<PageActionDialog>(null);
   const [draftName, setDraftName] = useState("");
@@ -212,6 +270,7 @@ export default function AutomationPageActionsBridge() {
     deleteAction: t("automation.panel.deletePageAction", { defaultValue: "Törlés" }),
     cancel: t("common.cancel", { defaultValue: "Mégse" }),
     name: t("automation.panel.pageName", { defaultValue: "Lap neve" }),
+    duplicateName: t("automation.panel.duplicatePageName", { defaultValue: "Már van ilyen nevű automatika lap." }),
     deleteConfirm: t("automation.panel.deletePageConfirm", {
       defaultValue: "Biztosan törlöd az aktív automatika lapot? A rajta lévő node-ok és élek is törlődnek.",
     }),
@@ -219,6 +278,21 @@ export default function AutomationPageActionsBridge() {
 
   function getCurrentPageName(): string {
     return elementsRef.current.pageNameInput?.value ?? "";
+  }
+
+  function hasDuplicatePageName(name: string, mode: "create" | "rename"): boolean {
+    const normalizedName = normalizePageName(name);
+    if (normalizedName.length === 0) {
+      return false;
+    }
+
+    return snapshot.pages.some(page => {
+      if (mode === "rename" && snapshot.activePageId && page.id === snapshot.activePageId) {
+        return false;
+      }
+
+      return normalizePageName(page.name) === normalizedName;
+    });
   }
 
   function applyPageName(name: string): void {
@@ -244,7 +318,7 @@ export default function AutomationPageActionsBridge() {
 
   function confirmCreate(): void {
     const name = draftName.trim();
-    if (name.length === 0) {
+    if (name.length === 0 || hasDuplicatePageName(name, "create")) {
       return;
     }
 
@@ -255,7 +329,12 @@ export default function AutomationPageActionsBridge() {
   }
 
   function confirmRename(): void {
-    applyPageName(draftName);
+    const name = draftName.trim();
+    if (name.length === 0 || hasDuplicatePageName(name, "rename")) {
+      return;
+    }
+
+    applyPageName(name);
     setDialog(null);
   }
 
@@ -263,6 +342,11 @@ export default function AutomationPageActionsBridge() {
     elementsRef.current.deleteButton?.click();
     setDialog(null);
   }
+
+  const createDuplicate = dialog === "create" && hasDuplicatePageName(draftName, "create");
+  const renameDuplicate = dialog === "rename" && hasDuplicatePageName(draftName, "rename");
+  const createDisabled = draftName.trim().length === 0 || createDuplicate;
+  const renameDisabled = draftName.trim().length === 0 || renameDuplicate;
 
   const actionButtons = (
     <Group gap="xs" mt="xs" wrap="nowrap">
@@ -302,6 +386,7 @@ export default function AutomationPageActionsBridge() {
           <TextInput
             label={text.name}
             value={draftName}
+            error={createDuplicate ? text.duplicateName : undefined}
             onChange={(event) => setDraftName(event.currentTarget.value)}
             autoFocus
             onKeyDown={(event) => {
@@ -312,7 +397,7 @@ export default function AutomationPageActionsBridge() {
           />
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setDialog(null)}>{text.cancel}</Button>
-            <Button onClick={confirmCreate} disabled={draftName.trim().length === 0}>{text.createAction}</Button>
+            <Button onClick={confirmCreate} disabled={createDisabled}>{text.createAction}</Button>
           </Group>
         </Stack>
       </Modal>
@@ -322,6 +407,7 @@ export default function AutomationPageActionsBridge() {
           <TextInput
             label={text.name}
             value={draftName}
+            error={renameDuplicate ? text.duplicateName : undefined}
             onChange={(event) => setDraftName(event.currentTarget.value)}
             autoFocus
             onKeyDown={(event) => {
@@ -332,7 +418,7 @@ export default function AutomationPageActionsBridge() {
           />
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setDialog(null)}>{text.cancel}</Button>
-            <Button onClick={confirmRename} disabled={draftName.trim().length === 0}>{text.renameAction}</Button>
+            <Button onClick={confirmRename} disabled={renameDisabled}>{text.renameAction}</Button>
           </Group>
         </Stack>
       </Modal>
