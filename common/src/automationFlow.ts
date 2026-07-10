@@ -9,6 +9,7 @@ export type AutomationFlowNodeKind =
   | "and"
   | "or"
   | "not"
+  | "filter"
   | "ifThenElse"
   | "timer"
   | "latch"
@@ -42,6 +43,7 @@ export type AutomationFlowNodeData = Record<string, unknown> & {
   ioKey?: string;
   payload?: unknown;
   functionScript?: string;
+  filterValue?: boolean;
   sensorAddress?: number;
   turnoutAddress?: number;
   /**
