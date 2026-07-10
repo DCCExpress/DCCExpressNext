@@ -474,6 +474,19 @@ class AutomationFlowRuntimeService {
             break;
           }
 
+          case "filter": {
+            const firstSignal = inputSignals[0];
+            const filterValue = node.data.filterValue ?? true;
+            nextSignal = firstSignal && firstSignal.value === filterValue
+              ? signal(
+                  firstSignal.value,
+                  firstSignal.signalAspect,
+                  getPayload(firstSignal)
+                )
+              : emptySignal();
+            break;
+          }
+
           case "function":
             nextSignal = evaluateFunctionNode(node, inputSignals);
             break;
